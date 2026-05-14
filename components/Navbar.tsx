@@ -9,19 +9,22 @@ export default function Navbar() {
       </a>
 
       <div className="hidden gap-8 text-sm text-gray-300 md:flex">
-        <a href="/#features" className="hover:text-white">
-          Features
-        </a>
-        <a href="/#stats" className="hover:text-white">
-          Stats
-        </a>
-        <a href="/#rules" className="hover:text-white">
-          Rules
-        </a>
-        <a href="/tournaments" className="hover:text-white">
-          Tournaments
-        </a>
-      </div>
+  <a href="/rules" className="hover:text-white">
+    Rules
+  </a>
+  <a href="/roles" className="hover:text-white">
+    Roles
+  </a>
+  <a href="/staff" className="hover:text-white">
+    Staff
+  </a>
+  <a href="/stats" className="hover:text-white">
+    Stats
+  </a>
+  <a href="/tournaments" className="hover:text-white">
+    Tournaments
+  </a>
+</div>
 
       <a
         href={serverInfo.inviteUrl}
