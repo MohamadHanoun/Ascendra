@@ -19,9 +19,9 @@ export const tournaments: Tournament[] = [
     date: "Coming soon",
     prize: "To be announced",
     teams: "Open slots",
-    status: "upcoming",
+    status: "open",
     description:
-      "A future RTN tournament designed for players from different video games. Registration will open later through the website.",
+      "A future RTN tournament designed for players from different electronic games. Registration will later require Discord login.",
   },
   {
     id: 2,
@@ -44,5 +44,16 @@ export const tournaments: Tournament[] = [
     status: "upcoming",
     description:
       "A casual event for members who want to play, meet others, and enjoy the community without pressure.",
+  },
+  {
+    id: 4,
+    title: "RTN Test Bracket",
+    game: "Tournament System",
+    date: "Future update",
+    prize: "Testing phase",
+    teams: "Not available",
+    status: "closed",
+    description:
+      "A placeholder tournament used to prepare the future registration, brackets, results, and admin tools.",
   },
 ];
