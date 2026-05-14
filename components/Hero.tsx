@@ -1,3 +1,5 @@
+import { serverInfo } from "@/data/server";
+
 export default function Hero() {
   return (
     <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-24 md:grid-cols-2">
@@ -11,13 +13,12 @@ export default function Hero() {
         </h2>
 
         <p className="mb-8 max-w-xl text-lg leading-8 text-gray-300">
-          A modern Discord server for gaming, events, friends, voice chats, and
-          future XP rewards connected directly with our custom bot.
+          {serverInfo.description}
         </p>
 
         <div className="flex flex-wrap gap-4">
           <a
-            href="https://discord.gg/zP8ptXVvKw"
+            href={serverInfo.inviteUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-xl bg-indigo-500 px-7 py-4 font-bold transition hover:bg-indigo-400"
