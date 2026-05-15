@@ -18,15 +18,6 @@ export const announcements: Announcement[] = [
     important: true,
   },
   {
-    id: 2,
-    title: "Tournament System Planning",
-    category: "Tournaments",
-    date: "Coming soon",
-    description:
-      "Tournament registration, team slots, brackets, and results will be added later as part of the website and admin panel.",
-    important: false,
-  },
-  {
     id: 3,
     title: "XP System Preparation",
     category: "Bot",

@@ -28,20 +28,10 @@ export default async function RulesPage() {
       <PageHeader
         label="RTN Rules"
         title="Keep the community fair, friendly, and fun."
-        description="These rules are loaded from the database and can be managed from the RTN admin panel."
+        description="Read the main rules that help keep RTN fair, friendly, and respectful for everyone."
       />
 
       <section className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="mb-10 rounded-3xl border border-indigo-500/20 bg-indigo-500/10 p-6">
-          <h2 className="mb-3 text-2xl font-bold text-indigo-300">
-            Rules Management Active
-          </h2>
-
-          <p className="leading-7 text-gray-300">
-            RTN admins can now add, hide, delete, and reorder rules from the
-            admin panel. Only active rules are shown here.
-          </p>
-        </div>
 
         {rules.length === 0 ? (
           <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">

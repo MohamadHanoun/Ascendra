@@ -49,18 +49,6 @@ export default async function TournamentsPage() {
           </p>
         </div>
 
-        <div className="mb-10 rounded-3xl border border-indigo-500/20 bg-indigo-500/10 p-6">
-          <h3 className="mb-3 text-2xl font-bold text-indigo-300">
-            Registration System Coming Later
-          </h3>
-
-          <p className="leading-7 text-gray-300">
-            Tournament registration is prepared visually for now. Later, members
-            will be able to log in with Discord, register for tournaments, join
-            teams, and track match results directly from the website.
-          </p>
-        </div>
-
         <TournamentBrowser tournaments={tournaments} />
       </section>
 

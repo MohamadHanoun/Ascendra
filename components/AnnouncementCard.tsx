@@ -37,12 +37,6 @@ export default function AnnouncementCard({
       <p className="flex-1 leading-7 text-gray-300">
         {announcement.description}
       </p>
-
-      <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
-        <p className="text-sm text-gray-400">
-          This update is loaded from the RTN database.
-        </p>
-      </div>
     </article>
   );
 }

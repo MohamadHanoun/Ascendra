@@ -6,11 +6,6 @@ export default function AdminRoleForm() {
       <div className="rounded-3xl border border-blue-500/20 bg-blue-500/10 p-6">
         <div className="mb-8">
           <h2 className="mb-3 text-3xl font-black">Create Role</h2>
-
-          <p className="max-w-2xl leading-7 text-gray-300">
-            Add a new RTN role from the admin panel. Roles are ordered
-            automatically and can be reordered by drag and drop.
-          </p>
         </div>
 
         <form action={createRole} className="grid gap-5">

@@ -22,10 +22,6 @@ export default function RoleCard({ name, color, description }: RoleCardProps) {
       <p className="leading-7 text-gray-300">{description}</p>
 
       <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
-        <p className="text-sm text-gray-400">
-          Discord role linking will be added later through the RTN bot and
-          database.
-        </p>
       </div>
     </article>
   );

@@ -36,9 +36,6 @@ export default function AnnouncementSummary({
         <article className="rounded-3xl border border-white/10 bg-white/5 p-6">
           <p className="mb-2 text-4xl font-black text-cyan-300">Future</p>
           <h2 className="mb-3 text-xl font-bold">Admin Managed</h2>
-          <p className="leading-7 text-gray-300">
-            Later, announcements will be created from the admin panel.
-          </p>
         </article>
       </div>
     </section>

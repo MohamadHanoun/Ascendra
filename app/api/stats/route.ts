@@ -32,11 +32,7 @@ export async function GET() {
           { label: "Tournaments", value: String(tournamentsCount) },
         ],
         details: [
-          {
-            title: "Rules",
-            value: String(rulesCount),
-            description: "Active RTN rules loaded from the database.",
-          },
+          
           {
             title: "Roles",
             value: String(rolesCount),

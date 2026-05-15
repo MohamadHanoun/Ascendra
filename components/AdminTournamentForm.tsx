@@ -6,12 +6,6 @@ export default function AdminTournamentForm() {
       <div className="rounded-3xl border border-cyan-500/20 bg-cyan-500/10 p-6">
         <div className="mb-8">
           <h2 className="mb-3 text-3xl font-black">Create Tournament</h2>
-
-          <p className="max-w-2xl leading-7 text-gray-300">
-            Create a new RTN tournament directly from the admin panel. The
-            tournament will be saved in the database and shown on the
-            tournaments page.
-          </p>
         </div>
 
         <form action={createTournament} className="grid gap-5">

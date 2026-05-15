@@ -32,18 +32,6 @@ export default async function RolesPage() {
       />
 
       <section className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="mb-10 rounded-3xl border border-indigo-500/20 bg-indigo-500/10 p-6">
-          <h2 className="mb-3 text-2xl font-bold text-indigo-300">
-            Discord Role Sync Coming Later
-          </h2>
-
-          <p className="leading-7 text-gray-300">
-            These roles are now loaded from the database. Later, the RTN bot can
-            connect them with real Discord roles, XP rewards, tournament roles,
-            and admin permissions.
-          </p>
-        </div>
-
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {roles.map((role) => (
             <RoleCard

@@ -44,25 +44,11 @@ export default async function AnnouncementsPage() {
       <AnnouncementSummary announcements={announcements} />
 
       <section className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="mb-10 rounded-3xl border border-indigo-500/20 bg-indigo-500/10 p-6">
-          <h2 className="mb-3 text-2xl font-bold text-indigo-300">
-            Announcement System Active
-          </h2>
-
-          <p className="leading-7 text-gray-300">
-            Announcements are loaded from the database and can be managed from
-            the RTN admin panel.
-          </p>
-        </div>
 
         {announcements.length === 0 ? (
           <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
             <h2 className="mb-3 text-2xl font-bold">No announcements yet</h2>
 
-            <p className="text-gray-300">
-              Published announcements will appear here after they are created
-              from the admin panel.
-            </p>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

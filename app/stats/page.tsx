@@ -33,11 +33,6 @@ async function getStatsData() {
     ],
     details: [
       {
-        title: "Rules",
-        value: String(rulesCount),
-        description: "Active RTN rules loaded from the database.",
-      },
-      {
         title: "Roles",
         value: String(rolesCount),
         description: "Active RTN roles prepared for future Discord sync.",
@@ -95,17 +90,6 @@ export default async function StatsPage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="mb-10 rounded-3xl border border-cyan-500/20 bg-cyan-500/10 p-6">
-          <h2 className="mb-3 text-2xl font-bold text-cyan-300">
-            Database Stats Connected
-          </h2>
-
-          <p className="leading-7 text-gray-300">
-            These numbers are now loaded from the RTN database. Later, the
-            Discord bot will add live server activity, XP data, online members,
-            and more advanced statistics.
-          </p>
-        </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {stats.details.map((item) => (

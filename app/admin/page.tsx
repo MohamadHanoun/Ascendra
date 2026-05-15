@@ -178,11 +178,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             Admin access required.
           </h1>
 
-          <p className="mb-8 max-w-xl leading-8 text-gray-300">
-            This page is protected. Login with Discord to continue to the RTN
-            admin panel.
-          </p>
-
           <DiscordLoginButton />
         </section>
 

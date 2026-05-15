@@ -6,11 +6,6 @@ export default function AdminAnnouncementForm() {
       <div className="rounded-3xl border border-indigo-500/20 bg-indigo-500/10 p-6">
         <div className="mb-8">
           <h2 className="mb-3 text-3xl font-black">Create Announcement</h2>
-          <p className="max-w-2xl leading-7 text-gray-300">
-            Create a new RTN announcement directly from the admin panel. The
-            announcement will be saved in the database and shown on the
-            announcements page if it is published.
-          </p>
         </div>
 
         <form action={createAnnouncement} className="grid gap-5">

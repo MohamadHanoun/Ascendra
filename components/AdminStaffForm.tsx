@@ -7,10 +7,6 @@ export default function AdminStaffForm() {
         <div className="mb-8">
           <h2 className="mb-3 text-3xl font-black">Create Staff Member</h2>
 
-          <p className="max-w-2xl leading-7 text-gray-300">
-            Add a new RTN staff member from the admin panel. Staff members are
-            ordered automatically and can be reordered by drag and drop.
-          </p>
         </div>
 
         <form action={createStaffMember} className="grid gap-5">
