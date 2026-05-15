@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import ConfirmDeleteForm from "@/components/ConfirmDeleteForm";
 
 type RuleItem = {
@@ -31,6 +31,11 @@ export default function AdminRuleListClient({
   const itemsRef = useRef(rules);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+  itemsRef.current = rules;
+  setItems(rules);
+}, [rules]);
 
   function updateItems(nextItems: RuleItem[]) {
     itemsRef.current = nextItems;

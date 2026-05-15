@@ -143,7 +143,6 @@ export async function deleteRole(formData: FormData) {
 
   revalidateRolePages();
 }
-
 export async function reorderRoles(formData: FormData) {
   await requireAdmin();
 

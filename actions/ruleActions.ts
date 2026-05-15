@@ -111,6 +111,7 @@ export async function deleteRule(formData: FormData) {
   await normalizeRuleOrder();
 
   revalidateRulePages();
+  redirect("/admin?tab=rules");
 }
 
 export async function reorderRules(formData: FormData) {

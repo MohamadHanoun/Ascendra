@@ -35,9 +35,8 @@ export async function createTournament(formData: FormData) {
   const status = String(formData.get("status") || "upcoming").trim();
 
   const maxSlotsValue = Number(formData.get("maxSlots"));
-  const maxSlots = Number.isFinite(maxSlotsValue) && maxSlotsValue > 0
-    ? maxSlotsValue
-    : 16;
+  const maxSlots =
+    Number.isFinite(maxSlotsValue) && maxSlotsValue > 0 ? maxSlotsValue : 16;
 
   if (!title || !game || !date || !prize || !description) {
     throw new Error("Title, game, date, prize, and description are required.");
@@ -56,7 +55,7 @@ export async function createTournament(formData: FormData) {
   });
 
   revalidateTournamentPages();
-  redirect("/admin");
+  redirect("/admin?tab=tournaments");
 }
 
 export async function updateTournamentStatus(formData: FormData) {
@@ -79,6 +78,7 @@ export async function updateTournamentStatus(formData: FormData) {
   });
 
   revalidateTournamentPages();
+  redirect("/admin?tab=tournaments");
 }
 
 export async function deleteTournament(formData: FormData) {
@@ -97,4 +97,5 @@ export async function deleteTournament(formData: FormData) {
   });
 
   revalidateTournamentPages();
+  redirect("/admin?tab=tournaments");
 }

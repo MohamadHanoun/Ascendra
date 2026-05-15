@@ -7,12 +7,14 @@ type ConfirmDeleteFormProps = {
   id: string;
   action: (formData: FormData) => void | Promise<void>;
   message?: string;
+  onDeleted?: () => void;
 };
 
 export default function ConfirmDeleteForm({
   id,
   action,
   message = "Are you sure you want to delete this item?",
+  onDeleted,
 }: ConfirmDeleteFormProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -25,6 +27,7 @@ export default function ConfirmDeleteForm({
 
       await action(formData);
 
+      onDeleted?.();
       setIsOpen(false);
       router.refresh();
     });

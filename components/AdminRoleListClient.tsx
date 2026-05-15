@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import ConfirmDeleteForm from "@/components/ConfirmDeleteForm";
 
 type RoleItem = {
@@ -35,6 +35,11 @@ export default function AdminRoleListClient({
   const itemsRef = useRef(roles);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    itemsRef.current = roles;
+    setItems(roles);
+  }, [roles]);
 
   function updateItems(nextItems: RoleItem[]) {
     itemsRef.current = nextItems;
@@ -222,9 +227,19 @@ export default function AdminRoleListClient({
                     </form>
 
                     <ConfirmDeleteForm
-                      id={role.id}
-                      action={deleteRole}
-                      message="Are you sure you want to delete this role?"
+                        id={role.id}
+                        action={deleteRole}
+                        message="Are you sure you want to delete this role?"
+                        onDeleted={() => {
+                            const updatedRoles = itemsRef.current
+                            .filter((item) => item.id !== role.id)
+                            .map((item, index) => ({
+                                ...item,
+                                order: index + 1,
+                            }));
+
+                            updateItems(updatedRoles);
+                            }}
                     />
                   </div>
                 </div>

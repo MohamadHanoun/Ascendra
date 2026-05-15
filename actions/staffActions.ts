@@ -73,7 +73,7 @@ export async function createStaffMember(formData: FormData) {
   });
 
   revalidateStaffPages();
-  redirect("/admin");
+  redirect("/admin?tab=staff");
 }
 
 export async function updateStaffMember(formData: FormData) {
@@ -141,9 +141,10 @@ export async function deleteStaffMember(formData: FormData) {
     },
   });
 
-  await normalizeStaffOrder();
+    await normalizeStaffOrder();
 
   revalidateStaffPages();
+  redirect("/admin?tab=staff");
 }
 
 export async function reorderStaffMembers(formData: FormData) {
