@@ -7,6 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import { adminModules } from "@/data/admin";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import AdminAnnouncementForm from "@/components/AdminAnnouncementForm";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -137,6 +138,7 @@ export default async function AdminPage() {
       </section>
 
       <AdminOverview items={overviewItems} />
+      <AdminAnnouncementForm />
 
       <section className="mx-auto max-w-7xl px-6 pb-24">
         <div className="mb-10">
