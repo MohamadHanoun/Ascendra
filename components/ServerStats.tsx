@@ -1,10 +1,17 @@
-import { serverStats } from "@/data/stats";
+type ServerStat = {
+  label: string;
+  value: string;
+};
 
-export default function ServerStats() {
+type ServerStatsProps = {
+  stats: ServerStat[];
+};
+
+export default function ServerStats({ stats }: ServerStatsProps) {
   return (
     <section id="stats" className="mx-auto max-w-7xl px-6 py-12">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {serverStats.map((item) => (
+        {stats.map((item) => (
           <div
             key={item.label}
             className="rounded-2xl border border-white/10 bg-white/5 p-6"
