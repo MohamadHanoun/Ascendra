@@ -30,10 +30,13 @@ const prisma = new PrismaClient({
 async function main() {
   console.log("Start seeding RTN database...");
 
+  // Delete related data first
   await prisma.tournamentRegistration.deleteMany();
   await prisma.team.deleteMany();
   await prisma.xpLog.deleteMany();
+  await prisma.user.deleteMany();
 
+  // Delete content data
   await prisma.rule.deleteMany();
   await prisma.role.deleteMany();
   await prisma.staffMember.deleteMany();
@@ -41,6 +44,7 @@ async function main() {
   await prisma.announcement.deleteMany();
   await prisma.serverSetting.deleteMany();
 
+  // Rules
   await prisma.rule.createMany({
     data: basicRules.map((rule, index) => ({
       text: rule,
@@ -49,6 +53,7 @@ async function main() {
     })),
   });
 
+  // Roles
   await prisma.role.createMany({
     data: serverRoles.map((role, index) => ({
       name: role.name,
@@ -59,6 +64,7 @@ async function main() {
     })),
   });
 
+  // Staff members
   await prisma.staffMember.createMany({
     data: staffMembers.map((member, index) => ({
       name: member.name,
@@ -69,6 +75,7 @@ async function main() {
     })),
   });
 
+  // Tournaments
   await prisma.tournament.createMany({
     data: tournaments.map((tournament) => ({
       title: tournament.title,
@@ -81,6 +88,7 @@ async function main() {
     })),
   });
 
+  // Announcements
   await prisma.announcement.createMany({
     data: announcements.map((announcement) => ({
       title: announcement.title,
@@ -91,6 +99,7 @@ async function main() {
     })),
   });
 
+  // Server settings
   await prisma.serverSetting.createMany({
     data: [
       {
@@ -107,6 +116,40 @@ async function main() {
         key: "discord_invite_url",
         value: "https://discord.gg/zP8ptXVvKw",
         description: "Main Discord invite link.",
+      },
+    ],
+  });
+
+  // Sample XP users for leaderboard
+  await prisma.user.createMany({
+    data: [
+      {
+        discordId: "test-user-1",
+        username: "Mohamad",
+        role: "Founder",
+        xp: 12450,
+        level: 25,
+      },
+      {
+        discordId: "test-user-2",
+        username: "RTN_Player",
+        role: "Member",
+        xp: 8900,
+        level: 18,
+      },
+      {
+        discordId: "test-user-3",
+        username: "TempleRunner",
+        role: "Tournament Player",
+        xp: 6700,
+        level: 14,
+      },
+      {
+        discordId: "test-user-4",
+        username: "RiftHunter",
+        role: "Member",
+        xp: 4200,
+        level: 9,
       },
     ],
   });
