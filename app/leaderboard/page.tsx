@@ -5,6 +5,13 @@ import PageHeader from "@/components/PageHeader";
 import XpSystemPreview from "@/components/XpSystemPreview";
 import type { LeaderboardUser } from "@/data/leaderboard";
 import { prisma } from "@/lib/prisma";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Leaderboard",
+  description:
+    "View RTN community rankings, XP progress, and leaderboard standings.",
+};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

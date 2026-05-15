@@ -3,6 +3,13 @@ import Navbar from "@/components/Navbar";
 import PageHeader from "@/components/PageHeader";
 import StaffCard from "@/components/StaffCard";
 import { prisma } from "@/lib/prisma";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Staff",
+  description:
+    "Meet the people helping build, manage, and improve the RTN community.",
+};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -3,34 +3,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "The Noobs of Temple & Rift",
-    template: "%s | The Noobs of Temple & Rift",
+    default: "RTN | The Noobs of Temple & Rift",
+    template: "%s | RTN",
   },
   description:
-    "A gaming community website for video games, tournaments, announcements, XP leaderboard, Discord stats, and future bot integration.",
-  keywords: [
-    "Discord",
-    "Gaming",
-    "Community",
-    "Tournaments",
-    "Leaderboard",
-    "XP System",
-    "Discord Bot",
-    "The Noobs of Temple & Rift",
-    "RTN",
-  ],
-  authors: [{ name: "The Noobs of Temple & Rift" }],
-  creator: "The Noobs of Temple & Rift",
-  icons: {
-    icon: "/favicon.ico",
-  },
-  openGraph: {
-    title: "The Noobs of Temple & Rift",
-    description:
-      "A gaming community for video games, tournaments, events, XP system, leaderboard, and Discord bot integration.",
-    type: "website",
-    siteName: "The Noobs of Temple & Rift",
-  },
+    "The Noobs of Temple & Rift is a gaming community for players, tournaments, teamwork, and shared moments.",
 };
 
 export default function RootLayout({

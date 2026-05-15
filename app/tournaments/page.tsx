@@ -5,6 +5,13 @@ import TournamentHero from "@/components/TournamentHero";
 import TournamentStatusSummary from "@/components/TournamentStatusSummary";
 import type { Tournament, TournamentStatus } from "@/data/tournaments";
 import { prisma } from "@/lib/prisma";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Tournaments",
+  description:
+    "Explore RTN tournaments, events, team slots, and community competitions.",
+};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

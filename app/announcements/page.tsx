@@ -4,6 +4,13 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import PageHeader from "@/components/PageHeader";
 import { prisma } from "@/lib/prisma";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Announcements",
+  description:
+    "Read the latest RTN community announcements, updates, and event news.",
+};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

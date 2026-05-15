@@ -3,6 +3,13 @@ import Navbar from "@/components/Navbar";
 import PageHeader from "@/components/PageHeader";
 import RoleCard from "@/components/RoleCard";
 import { prisma } from "@/lib/prisma";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Roles",
+  description:
+    "Discover the main RTN roles and how they help organize the community.",
+};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

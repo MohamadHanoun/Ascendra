@@ -19,6 +19,12 @@ import AdminTabNavigation from "@/components/AdminTabNavigation";
 import { adminModules } from "@/data/admin";
 import { prisma } from "@/lib/prisma";
 import AdminToast from "@/components/AdminToast";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Admin",
+  description: "Protected RTN admin dashboard.",
+};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

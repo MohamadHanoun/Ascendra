@@ -3,6 +3,13 @@ import Navbar from "@/components/Navbar";
 import PageHeader from "@/components/PageHeader";
 import RuleCard from "@/components/RuleCard";
 import { prisma } from "@/lib/prisma";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Rules",
+  description:
+    "Read the main RTN rules that help keep the community fair, friendly, and respectful.",
+};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
