@@ -1,6 +1,6 @@
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
-import TournamentCard from "@/components/TournamentCard";
+import TournamentBrowser from "@/components/TournamentBrowser";
 import TournamentHero from "@/components/TournamentHero";
 import TournamentStatusSummary from "@/components/TournamentStatusSummary";
 import type { Tournament, TournamentStatus } from "@/data/tournaments";
@@ -44,8 +44,8 @@ export default async function TournamentsPage() {
           <h2 className="text-4xl font-black">RTN Tournaments</h2>
 
           <p className="mt-4 max-w-2xl text-gray-300">
-            Here you will later find active RTN tournaments, registration forms,
-            team slots, match schedules, brackets, and tournament results.
+            Here you will find RTN tournaments, registration preparation, team
+            slots, match schedules, brackets, and tournament results.
           </p>
         </div>
 
@@ -61,22 +61,7 @@ export default async function TournamentsPage() {
           </p>
         </div>
 
-        {tournaments.length === 0 ? (
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
-            <h2 className="mb-3 text-2xl font-bold">No tournaments yet</h2>
-
-            <p className="text-gray-300">
-              New tournaments will appear here after they are created from the
-              admin panel.
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {tournaments.map((tournament) => (
-              <TournamentCard key={tournament.id} tournament={tournament} />
-            ))}
-          </div>
-        )}
+        <TournamentBrowser tournaments={tournaments} />
       </section>
 
       <Footer />
