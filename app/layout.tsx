@@ -8,6 +8,16 @@ export const metadata: Metadata = {
   },
   description:
     "The Noobs of Temple & Rift is a gaming community for players, tournaments, teamwork, and shared moments.",
+    icons: {
+  icon: "/favicon.svg",
+  shortcut: "/favicon.svg",
+},
+openGraph: {
+  title: "RTN | The Noobs of Temple & Rift",
+  description:
+    "A gaming community for players, tournaments, teamwork, and shared moments.",
+  images: ["/logo-full.svg"],
+},
 };
 
 export default function RootLayout({

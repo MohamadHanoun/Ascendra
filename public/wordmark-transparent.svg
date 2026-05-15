@@ -1,0 +1,16 @@
+<svg width="1000" height="240" viewBox="0 0 1000 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">RTN - The Noobs of Temple &amp; Rift</title>
+  <desc id="desc">Transparent RTN wordmark for The Noobs of Temple &amp; Rift.</desc>
+  <defs>
+    <linearGradient id="rtnGradient" x1="0" y1="0" x2="1000" y2="240" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6366F1"/>
+      <stop offset="0.55" stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#A855F7"/>
+    </linearGradient>
+  </defs>
+
+  <text x="30" y="145" fill="url(#rtnGradient)" font-family="Inter, Arial, sans-serif" font-size="116" font-weight="900" letter-spacing="-0.08em">RTN</text>
+  <text x="310" y="94" fill="white" font-family="Inter, Arial, sans-serif" font-size="48" font-weight="800">The Noobs of</text>
+  <text x="310" y="154" fill="url(#rtnGradient)" font-family="Inter, Arial, sans-serif" font-size="54" font-weight="900">Temple &amp; Rift</text>
+  <text x="313" y="197" fill="#9CA3AF" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="0.22em">GAMING COMMUNITY</text>
+</svg>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const footerLinks = [
   { href: "/tournaments", label: "Tournaments" },
@@ -15,9 +16,22 @@ export default function Footer() {
     <footer className="border-t border-white/10 bg-[#070a12] text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 md:grid-cols-[1.5fr_1fr_1fr]">
         <div>
-          <h2 className="text-2xl font-black">
-            RTN <span className="text-indigo-400">Community</span>
-          </h2>
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo-mark-clean.svg"
+              alt="RTN logo"
+              width={52}
+              height={52}
+              className="rounded-xl"
+            />
+
+            <div>
+              <h2 className="text-2xl font-black">RTN</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-indigo-300">
+                The Noobs of Temple & Rift
+              </p>
+            </div>
+          </div>
 
           <p className="mt-4 max-w-md leading-7 text-gray-400">
             The Noobs of Temple & Rift is a gaming community built around
@@ -65,13 +79,13 @@ export default function Footer() {
           <p>
             © {new Date().getFullYear()} The Noobs of Temple & Rift. All rights
             reserved.
-         </p>
+          </p>
 
           <p>
-           Website by{" "}
+            Website by{" "}
             <span className="font-bold text-indigo-300">Abu 3Day</span>
-         </p>
-       </div>
+          </p>
+        </div>
       </div>
     </footer>
   );
