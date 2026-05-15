@@ -1,5 +1,5 @@
 export type LeaderboardUser = {
-  id: number;
+  id: number | string;
   username: string;
   role: string;
   level: number;
