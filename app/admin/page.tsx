@@ -1,14 +1,12 @@
+import { auth } from "@/auth";
+import AdminAnnouncementForm from "@/components/AdminAnnouncementForm";
+import AdminAnnouncementList from "@/components/AdminAnnouncementList";
 import AdminModuleCard from "@/components/AdminModuleCard";
 import AdminOverview from "@/components/AdminOverview";
 import { DiscordLoginButton, LogoutButton } from "@/components/AuthButtons";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import PageHeader from "@/components/PageHeader";
-import { adminModules } from "@/data/admin";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import AdminAnnouncementForm from "@/components/AdminAnnouncementForm";
-import AdminAnnouncementList from "@/components/AdminAnnouncementList";
 import AdminTournamentForm from "@/components/AdminTournamentForm";
 import AdminTournamentList from "@/components/AdminTournamentList";
 import AdminRuleForm from "@/components/AdminRuleForm";
@@ -17,9 +15,28 @@ import AdminRoleForm from "@/components/AdminRoleForm";
 import AdminRoleList from "@/components/AdminRoleList";
 import AdminStaffForm from "@/components/AdminStaffForm";
 import AdminStaffList from "@/components/AdminStaffList";
+import AdminTabNavigation from "@/components/AdminTabNavigation";
+import { adminModules } from "@/data/admin";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+type AdminPageProps = {
+  searchParams: Promise<{
+    tab?: string;
+  }>;
+};
+
+const allowedTabs = [
+  "overview",
+  "announcements",
+  "tournaments",
+  "rules",
+  "roles",
+  "staff",
+  "modules",
+];
 
 async function getAdminOverview() {
   const [
@@ -60,8 +77,88 @@ async function getAdminOverview() {
   ];
 }
 
-export default async function AdminPage() {
+function renderAdminTab(activeTab: string, overviewItems: Awaited<ReturnType<typeof getAdminOverview>>) {
+  if (activeTab === "overview") {
+    return <AdminOverview items={overviewItems} />;
+  }
+
+  if (activeTab === "announcements") {
+    return (
+      <>
+        <AdminAnnouncementForm />
+        <AdminAnnouncementList />
+      </>
+    );
+  }
+
+  if (activeTab === "tournaments") {
+    return (
+      <>
+        <AdminTournamentForm />
+        <AdminTournamentList />
+      </>
+    );
+  }
+
+  if (activeTab === "rules") {
+    return (
+      <>
+        <AdminRuleForm />
+        <AdminRuleList />
+      </>
+    );
+  }
+
+  if (activeTab === "roles") {
+    return (
+      <>
+        <AdminRoleForm />
+        <AdminRoleList />
+      </>
+    );
+  }
+
+  if (activeTab === "staff") {
+    return (
+      <>
+        <AdminStaffForm />
+        <AdminStaffList />
+      </>
+    );
+  }
+
+  return (
+    <section className="mx-auto max-w-7xl px-6 pb-24">
+      <div className="mb-10">
+        <h2 className="text-4xl font-black">Admin Modules</h2>
+
+        <p className="mt-4 max-w-2xl text-gray-300">
+          These sections are prepared for future management tools. Later, RTN
+          admins will be able to control website content, tournaments, XP
+          settings, and Discord-related data from here.
+        </p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {adminModules.map((module) => (
+          <AdminModuleCard
+            key={module.title}
+            title={module.title}
+            description={module.description}
+            status={module.status}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export default async function AdminPage({ searchParams }: AdminPageProps) {
   const session = await auth();
+  const params = await searchParams;
+
+  const activeTab =
+    params.tab && allowedTabs.includes(params.tab) ? params.tab : "overview";
 
   if (!session?.user) {
     return (
@@ -126,61 +223,31 @@ export default async function AdminPage() {
       <PageHeader
         label="RTN Admin Panel"
         title="Manage the RTN community from one place."
-        description="This admin panel is protected with Discord login and prepared for future database management, tournaments, XP settings, announcements, and live server statistics."
+        description="A protected dashboard for managing announcements, tournaments, rules, roles, staff, and future Discord-powered tools."
       />
 
       <section className="mx-auto max-w-7xl px-6 pb-8">
         <div className="rounded-3xl border border-green-500/20 bg-green-500/10 p-6">
-          <h2 className="mb-3 text-2xl font-bold text-green-300">
-            Logged in as RTN Admin
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-5">
+            <div>
+              <h2 className="mb-3 text-2xl font-bold text-green-300">
+                Logged in as RTN Admin
+              </h2>
 
-          <p className="leading-7 text-gray-300">
-            Welcome, {session.user.name}. This dashboard is currently read-only.
-            Editing tools will be added later.
-          </p>
+              <p className="leading-7 text-gray-300">
+                Welcome, {session.user.name}. Choose a section below to manage
+                the RTN website.
+              </p>
+            </div>
 
-          <div className="mt-6">
             <LogoutButton />
           </div>
         </div>
       </section>
 
-      <AdminOverview items={overviewItems} />
-      <AdminAnnouncementForm />
-      <AdminAnnouncementList />
-      <AdminTournamentForm />
-      <AdminTournamentList />
-      <AdminRuleForm />
-      <AdminRuleList />
-      <AdminRoleForm />
-      <AdminRoleList />
-      <AdminStaffForm />
-      <AdminStaffList />
+      <AdminTabNavigation activeTab={activeTab} />
 
-      
-
-      <section className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="mb-10">
-          <h2 className="text-4xl font-black">Admin Modules</h2>
-          <p className="mt-4 max-w-2xl text-gray-300">
-            These sections are prepared for future management tools. Later, RTN
-            admins will be able to control website content, tournaments, XP
-            settings, and Discord-related data from here.
-          </p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {adminModules.map((module) => (
-            <AdminModuleCard
-              key={module.title}
-              title={module.title}
-              description={module.description}
-              status={module.status}
-            />
-          ))}
-        </div>
-      </section>
+      {renderAdminTab(activeTab, overviewItems)}
 
       <Footer />
     </main>

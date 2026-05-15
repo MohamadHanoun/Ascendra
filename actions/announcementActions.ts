@@ -46,13 +46,13 @@ export async function createAnnouncement(formData: FormData) {
   });
 
   revalidateAnnouncementPages();
-  redirect("/admin");
+  redirect("/admin?tab=announcements");
 }
 
 export async function toggleAnnouncementPublished(formData: FormData) {
   await requireAdmin();
 
-  const id = String(formData.get("id") || "");
+  const id = String(formData.get("id") || "").trim();
   const published = formData.get("published") === "true";
 
   if (!id) {
@@ -69,12 +69,13 @@ export async function toggleAnnouncementPublished(formData: FormData) {
   });
 
   revalidateAnnouncementPages();
+  redirect("/admin?tab=announcements");
 }
 
 export async function toggleAnnouncementImportant(formData: FormData) {
   await requireAdmin();
 
-  const id = String(formData.get("id") || "");
+  const id = String(formData.get("id") || "").trim();
   const important = formData.get("important") === "true";
 
   if (!id) {
@@ -91,12 +92,13 @@ export async function toggleAnnouncementImportant(formData: FormData) {
   });
 
   revalidateAnnouncementPages();
+  redirect("/admin?tab=announcements");
 }
 
 export async function deleteAnnouncement(formData: FormData) {
   await requireAdmin();
 
-  const id = String(formData.get("id") || "");
+  const id = String(formData.get("id") || "").trim();
 
   if (!id) {
     throw new Error("Announcement ID is missing.");

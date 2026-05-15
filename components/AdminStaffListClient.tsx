@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import ConfirmDeleteForm from "@/components/ConfirmDeleteForm";
 
 type StaffItem = {
@@ -36,6 +36,11 @@ export default function AdminStaffListClient({
   const itemsRef = useRef(staffMembers);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    itemsRef.current = staffMembers;
+    setItems(staffMembers);
+  }, [staffMembers]);
 
   function updateItems(nextItems: StaffItem[]) {
     itemsRef.current = nextItems;

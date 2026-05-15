@@ -67,7 +67,7 @@ export async function createRule(formData: FormData) {
   });
 
   revalidateRulePages();
-  redirect("/admin");
+  redirect("/admin?tab=rules");
 }
 
 export async function toggleRuleActive(formData: FormData) {
@@ -90,6 +90,7 @@ export async function toggleRuleActive(formData: FormData) {
   });
 
   revalidateRulePages();
+  redirect("/admin?tab=rules");
 }
 
 export async function deleteRule(formData: FormData) {
