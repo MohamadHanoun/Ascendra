@@ -5,7 +5,7 @@ type AnnouncementCardProps = {
     category: string;
     description: string;
     important: boolean;
-    createdAt: Date;
+    createdAt: Date | string;
   };
 };
 
