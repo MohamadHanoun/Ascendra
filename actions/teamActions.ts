@@ -170,30 +170,37 @@ export async function invitePlayerToTeam(formData: FormData) {
   requireGuildMember(user);
 
   const teamId = String(formData.get("teamId") || "").trim();
+  const playerId = String(formData.get("playerId") || "").trim();
   const player = String(formData.get("player") || "").trim();
 
-  if (!teamId || !player) {
+  if (!teamId || (!playerId && !player)) {
     profileError("Team and player are required.");
   }
 
   const team = await requireTeamLeader(teamId, user.id);
   requireEditableTeam(team.status);
 
-  const invitedUser = await prisma.user.findFirst({
-    where: {
-      OR: [
-        {
-          discordId: player,
+  const invitedUser = playerId
+    ? await prisma.user.findUnique({
+        where: {
+          id: playerId,
         },
-        {
-          username: {
-            equals: player,
-            mode: "insensitive",
-          },
+      })
+    : await prisma.user.findFirst({
+        where: {
+          OR: [
+            {
+              discordId: player,
+            },
+            {
+              username: {
+                equals: player,
+                mode: "insensitive",
+              },
+            },
+          ],
         },
-      ],
-    },
-  });
+      });
 
   if (!invitedUser) {
     profileError("Player was not found. They must login to the website first.");

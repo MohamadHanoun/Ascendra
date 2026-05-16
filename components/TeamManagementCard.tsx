@@ -7,6 +7,7 @@ import {
   updateTeam,
 } from "@/actions/teamActions";
 import ConfirmDeleteForm from "@/components/ConfirmDeleteForm";
+import PlayerInviteSearch from "@/components/PlayerInviteSearch";
 
 const games = ["Valorant", "League of Legends", "CS2", "Dota2"];
 
@@ -231,28 +232,13 @@ export default function TeamManagementCard({ team }: TeamManagementCardProps) {
             <div className="mb-5">
               <h4 className="text-xl font-black">Invite Player</h4>
               <p className="mt-1 text-sm text-gray-400">
-                Invite players who already logged in to the RTN website.
+                Search for registered RTN players and send them a team
+                invitation.
               </p>
             </div>
 
             {canEdit ? (
-              <form action={invitePlayerToTeam} className="grid gap-3 sm:flex">
-                <input type="hidden" name="teamId" value={team.id} />
-
-                <input
-                  name="player"
-                  required
-                  placeholder="Discord username or Discord ID"
-                  className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-cyan-400"
-                />
-
-                <button
-                  type="submit"
-                  className="rounded-xl bg-indigo-500 px-5 py-3 font-bold text-white transition hover:bg-indigo-400"
-                >
-                  Send Invite
-                </button>
-              </form>
+              <PlayerInviteSearch teamId={team.id} />
             ) : (
               <p className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-gray-300">
                 Invitations are locked after team approval.
