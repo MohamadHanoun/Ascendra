@@ -3,7 +3,13 @@ import NavbarClient from "@/components/NavbarClient";
 
 export default async function Navbar() {
   const session = await auth();
-  const isAdmin = Boolean(session?.user?.isAdmin);
 
-  return <NavbarClient isAdmin={isAdmin} />;
+  return (
+    <NavbarClient
+      isAdmin={Boolean(session?.user?.isAdmin)}
+      isLoggedIn={Boolean(session?.user)}
+      userName={session?.user?.name || null}
+      userImage={session?.user?.image || null}
+    />
+  );
 }
