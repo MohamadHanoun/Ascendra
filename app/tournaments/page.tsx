@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { auth } from "@/auth";
+import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import PageHeader from "@/components/PageHeader";
-import EmptyState from "@/components/EmptyState";
+import ProfileNotice from "@/components/ProfileNotice";
+import TournamentRegistrationPanel from "@/components/TournamentRegistrationPanel";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +13,13 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Tournaments",
   description: "Browse RTN tournaments and registration information.",
+};
+
+type TournamentsPageProps = {
+  searchParams: Promise<{
+    message?: string;
+    error?: string;
+  }>;
 };
 
 function statusStyle(status: string) {
@@ -52,7 +62,34 @@ function registrationLabel(status: string) {
   return "Registration Closed";
 }
 
-export default async function TournamentsPage() {
+export default async function TournamentsPage({
+  searchParams,
+}: TournamentsPageProps) {
+  const params = await searchParams;
+  const session = await auth();
+
+  const currentUser = session?.user?.databaseId
+    ? await prisma.user.findUnique({
+        where: {
+          id: session.user.databaseId,
+        },
+        include: {
+          ownedTeams: {
+            where: {
+              status: "approved",
+            },
+            include: {
+              members: true,
+            },
+          },
+        },
+      })
+    : null;
+
+  const ownedTeamIds = new Set(
+    currentUser?.ownedTeams.map((team) => team.id) || [],
+  );
+
   const tournaments = await prisma.tournament.findMany({
     orderBy: {
       createdAt: "desc",
@@ -68,9 +105,21 @@ export default async function TournamentsPage() {
       teamSize: true,
       status: true,
       registrationStatus: true,
-      _count: {
+      registrations: {
+        where: {
+          status: {
+            in: ["registered", "approved"],
+          },
+        },
         select: {
-          registrations: true,
+          id: true,
+          status: true,
+          teamId: true,
+          team: {
+            select: {
+              name: true,
+            },
+          },
         },
       },
     },
@@ -83,10 +132,12 @@ export default async function TournamentsPage() {
       <PageHeader
         label="RTN Tournaments"
         title="Compete with your team."
-        description="Browse upcoming RTN tournaments, check registration status, team size, available slots, and prize details."
+        description="Browse RTN tournaments, check registration status, and register your approved team."
       />
 
       <section className="mx-auto max-w-7xl px-6 pb-24">
+        <ProfileNotice message={params.message} error={params.error} />
+
         {tournaments.length === 0 ? (
           <EmptyState
             title="No tournaments yet"
@@ -95,14 +146,33 @@ export default async function TournamentsPage() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
             {tournaments.map((tournament) => {
-              const usedSlots = tournament._count.registrations;
+              const usedSlots = tournament.registrations.length;
               const remainingSlots = Math.max(
                 tournament.maxSlots - usedSlots,
                 0,
               );
 
-              const registrationIsOpen =
-                tournament.registrationStatus === "open";
+              const availableTeams =
+                currentUser?.ownedTeams
+                  .filter(
+                    (team) =>
+                      team.game === tournament.game &&
+                      team.members.length >= tournament.teamSize,
+                  )
+                  .map((team) => ({
+                    id: team.id,
+                    name: team.name,
+                    game: team.game,
+                    memberCount: team.members.length,
+                  })) || [];
+
+              const activeRegistrations = tournament.registrations
+                .filter((registration) => ownedTeamIds.has(registration.teamId))
+                .map((registration) => ({
+                  id: registration.id,
+                  status: registration.status,
+                  teamName: registration.team.name,
+                }));
 
               return (
                 <article
@@ -194,31 +264,17 @@ export default async function TournamentsPage() {
                       </p>
                     </div>
 
-                    <div className="pt-2">
-                      {registrationIsOpen ? (
-                        <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-4">
-                          <p className="font-bold text-cyan-300">
-                            Registration is open
-                          </p>
-
-                          <p className="mt-2 text-sm leading-6 text-gray-300">
-                            Team registration will be available here after the
-                            registration system is connected.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                          <p className="font-bold text-gray-300">
-                            Registration is closed
-                          </p>
-
-                          <p className="mt-2 text-sm leading-6 text-gray-400">
-                            This tournament is not currently accepting team
-                            registrations.
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                    <TournamentRegistrationPanel
+                      tournamentId={tournament.id}
+                      tournamentStatus={tournament.status}
+                      registrationStatus={tournament.registrationStatus}
+                      slotsRemaining={remainingSlots}
+                      teamSize={tournament.teamSize}
+                      isLoggedIn={Boolean(currentUser)}
+                      isGuildMember={Boolean(currentUser?.isGuildMember)}
+                      availableTeams={availableTeams}
+                      activeRegistrations={activeRegistrations}
+                    />
                   </div>
                 </article>
               );

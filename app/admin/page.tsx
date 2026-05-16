@@ -22,6 +22,7 @@ import Navbar from "@/components/Navbar";
 import PageHeader from "@/components/PageHeader";
 import { adminModules } from "@/data/admin";
 import { prisma } from "@/lib/prisma";
+import AdminTournamentRegistrations from "@/components/AdminTournamentRegistrations";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,6 +51,7 @@ const allowedTabs = [
   "roles",
   "staff",
   "modules",
+  "registrations",
 ];
 
 async function getAdminOverview() {
@@ -131,6 +133,14 @@ function renderAdminTab(
   if (activeTab === "overview") {
     return <AdminOverview items={overviewItems} />;
   }
+  if (activeTab === "registrations") {
+  return (
+    <AdminTournamentRegistrations
+      message={message}
+      error={error}
+    />
+  );
+}
 
   if (activeTab === "announcements") {
     return (
@@ -148,6 +158,9 @@ function renderAdminTab(
         <AdminTournamentList />
       </>
     );
+  }
+  if (activeTab === "registrations") {
+    return <AdminTournamentRegistrations message={message} error={error} />;
   }
 
   if (activeTab === "teams") {

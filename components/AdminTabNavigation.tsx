@@ -13,6 +13,7 @@ const tabs: AdminTab[] = [
   { label: "Overview", value: "overview" },
   { label: "Announcements", value: "announcements" },
   { label: "Tournaments", value: "tournaments" },
+  { label: "Registrations", value: "registrations" },
   { label: "Teams", value: "teams" },
   { label: "Players", value: "players" },
   { label: "Rules", value: "rules" },
