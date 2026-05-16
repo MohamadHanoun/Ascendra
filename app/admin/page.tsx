@@ -4,6 +4,7 @@ import AdminAnnouncementForm from "@/components/AdminAnnouncementForm";
 import AdminAnnouncementList from "@/components/AdminAnnouncementList";
 import AdminModuleCard from "@/components/AdminModuleCard";
 import AdminOverview from "@/components/AdminOverview";
+import AdminPlayersList from "@/components/AdminPlayersList";
 import AdminRoleForm from "@/components/AdminRoleForm";
 import AdminRoleList from "@/components/AdminRoleList";
 import AdminRuleForm from "@/components/AdminRuleForm";
@@ -44,6 +45,7 @@ const allowedTabs = [
   "announcements",
   "tournaments",
   "teams",
+  "players",
   "rules",
   "roles",
   "staff",
@@ -61,14 +63,34 @@ async function getAdminOverview() {
     teamsCount,
     pendingTeamsCount,
   ] = await Promise.all([
-    prisma.rule.count({ where: { isActive: true } }),
-    prisma.role.count({ where: { isActive: true } }),
-    prisma.staffMember.count({ where: { isActive: true } }),
+    prisma.rule.count({
+      where: {
+        isActive: true,
+      },
+    }),
+    prisma.role.count({
+      where: {
+        isActive: true,
+      },
+    }),
+    prisma.staffMember.count({
+      where: {
+        isActive: true,
+      },
+    }),
     prisma.tournament.count(),
-    prisma.announcement.count({ where: { published: true } }),
+    prisma.announcement.count({
+      where: {
+        published: true,
+      },
+    }),
     prisma.user.count(),
     prisma.team.count(),
-    prisma.team.count({ where: { status: "pending" } }),
+    prisma.team.count({
+      where: {
+        status: "pending",
+      },
+    }),
   ]);
 
   return [
@@ -132,6 +154,10 @@ function renderAdminTab(
     return <AdminTeamReview message={message} error={error} />;
   }
 
+  if (activeTab === "players") {
+    return <AdminPlayersList />;
+  }
+
   if (activeTab === "rules") {
     return (
       <>
@@ -162,6 +188,10 @@ function renderAdminTab(
   return (
     <section className="mx-auto max-w-7xl px-6 pb-24">
       <div className="mb-10">
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-indigo-300">
+          Modules
+        </p>
+
         <h2 className="text-4xl font-black">Admin Modules</h2>
 
         <p className="mt-4 max-w-2xl text-gray-300">
@@ -256,24 +286,24 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       <PageHeader
         label="RTN Admin Panel"
         title="Manage the RTN community from one place."
-        description="A protected dashboard for managing announcements, tournaments, teams, rules, roles, staff, and future RTN tools."
+        description="A protected dashboard for managing announcements, tournaments, teams, players, rules, roles, staff, and future RTN tools."
       />
 
-      <section className="mx-auto max-w-7xl px-6 pb-8">
-        <div className="rounded-3xl border border-green-500/20 bg-green-500/10 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-5">
-            <div>
-              <h2 className="mb-3 text-2xl font-bold text-green-300">
-                Logged in as RTN Admin
-              </h2>
+      <section className="mx-auto max-w-7xl px-6 pb-6">
+        <div className="rounded-3xl border border-green-500/20 bg-green-500/10 px-6 py-5">
+          <div>
+            <p className="mb-2 text-sm font-semibold uppercase tracking-[0.25em] text-green-300">
+              Admin Session
+            </p>
 
-              <p className="leading-7 text-gray-300">
-                Welcome, {session.user.name}. Choose a section below to manage
-                the RTN website.
-              </p>
-            </div>
+            <h2 className="text-2xl font-black text-white">
+              Logged in as RTN Admin
+            </h2>
 
-            <LogoutButton />
+            <p className="mt-2 max-w-3xl leading-7 text-gray-300">
+              Welcome, {session.user.name}. Use the sections below to manage RTN
+              content, teams, players, and community tools.
+            </p>
           </div>
         </div>
       </section>
