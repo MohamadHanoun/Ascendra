@@ -8,6 +8,7 @@ import PageHeader from "@/components/PageHeader";
 import ProfileLogoutButton from "@/components/ProfileLogoutButton";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import CreateTeamForm from "@/components/CreateTeamForm";
 
 export const metadata: Metadata = {
   title: "Profile",
@@ -125,6 +126,7 @@ export default async function ProfilePage() {
           </aside>
 
           <div className="grid gap-8">
+            <CreateTeamForm canCreateTeam={user.isGuildMember} />
             <section className="rounded-3xl border border-white/10 bg-white/5 p-8">
               <h2 className="mb-5 text-3xl font-black">My Teams</h2>
 
