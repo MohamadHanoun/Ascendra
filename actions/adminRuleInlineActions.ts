@@ -39,6 +39,11 @@ function getNumber(formData: FormData, name: string) {
   return value;
 }
 
+function revalidateRulePaths() {
+  revalidatePath("/admin");
+  revalidatePath("/rules");
+}
+
 async function requireAdmin(): Promise<AdminRuleActionResult | null> {
   const session = await auth();
 
@@ -60,6 +65,29 @@ async function requireAdmin(): Promise<AdminRuleActionResult | null> {
   return null;
 }
 
+async function normalizeRuleOrders() {
+  const rules = await prisma.rule.findMany({
+    orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+  });
+
+  if (rules.length === 0) {
+    return;
+  }
+
+  await prisma.$transaction(
+    rules.map((rule, index) =>
+      prisma.rule.update({
+        where: {
+          id: rule.id,
+        },
+        data: {
+          order: index + 1,
+        },
+      }),
+    ),
+  );
+}
+
 export async function createRuleInline(
   formData: FormData,
 ): Promise<AdminRuleActionResult> {
@@ -75,22 +103,19 @@ export async function createRuleInline(
     return fail("Rule text is required.");
   }
 
-  const lastRule = await prisma.rule.findFirst({
-    orderBy: {
-      order: "desc",
-    },
-  });
+  const rulesCount = await prisma.rule.count();
 
   await prisma.rule.create({
     data: {
       text,
-      order: lastRule ? lastRule.order + 1 : 1,
+      order: rulesCount + 1,
       isActive: true,
     },
   });
 
-  revalidatePath("/admin");
-  revalidatePath("/rules");
+  await normalizeRuleOrders();
+
+  revalidateRulePaths();
 
   return success("Rule created successfully.");
 }
@@ -130,20 +155,196 @@ export async function updateRuleInline(
     return fail("Rule was not found.");
   }
 
-  await prisma.rule.update({
-    where: {
-      id: rule.id,
-    },
-    data: {
-      text,
-      order,
+  await prisma.$transaction(async (tx) => {
+    await tx.rule.update({
+      where: {
+        id: rule.id,
+      },
+      data: {
+        text,
+      },
+    });
+
+    const orderedRules = await tx.rule.findMany({
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+    });
+
+    const otherRuleIds = orderedRules
+      .filter((currentRule) => currentRule.id !== rule.id)
+      .map((currentRule) => currentRule.id);
+
+    const targetOrder = Math.min(order, orderedRules.length);
+    const reorderedRuleIds = [...otherRuleIds];
+
+    reorderedRuleIds.splice(targetOrder - 1, 0, rule.id);
+
+    for (const [index, currentRuleId] of reorderedRuleIds.entries()) {
+      await tx.rule.update({
+        where: {
+          id: currentRuleId,
+        },
+        data: {
+          order: index + 1,
+        },
+      });
+    }
+  });
+
+  revalidateRulePaths();
+
+  return success("Rule updated successfully.");
+}
+
+export async function reorderRulesInline(
+  formData: FormData,
+): Promise<AdminRuleActionResult> {
+  const authError = await requireAdmin();
+
+  if (authError) {
+    return authError;
+  }
+
+  const rawRuleIds = getValue(formData, "orderedRuleIds");
+
+  if (!rawRuleIds) {
+    return fail("Rule order is missing.");
+  }
+
+  let orderedRuleIds: string[];
+
+  try {
+    const parsed = JSON.parse(rawRuleIds);
+
+    if (!Array.isArray(parsed)) {
+      return fail("Rule order is invalid.");
+    }
+
+    orderedRuleIds = parsed
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+  } catch {
+    return fail("Rule order is invalid.");
+  }
+
+  if (orderedRuleIds.length === 0) {
+    return fail("Rule order is empty.");
+  }
+
+  const uniqueRuleIds = new Set(orderedRuleIds);
+
+  if (uniqueRuleIds.size !== orderedRuleIds.length) {
+    return fail("Rule order contains duplicate rules.");
+  }
+
+  const existingRules = await prisma.rule.findMany({
+    select: {
+      id: true,
     },
   });
 
-  revalidatePath("/admin");
-  revalidatePath("/rules");
+  const existingRuleIds = new Set(existingRules.map((rule) => rule.id));
 
-  return success("Rule updated successfully.");
+  if (orderedRuleIds.length !== existingRules.length) {
+    return fail("Rule order does not match the current rules list.");
+  }
+
+  const hasInvalidRule = orderedRuleIds.some(
+    (ruleId) => !existingRuleIds.has(ruleId),
+  );
+
+  if (hasInvalidRule) {
+    return fail("Rule order contains an unknown rule.");
+  }
+
+  await prisma.$transaction(
+    orderedRuleIds.map((ruleId, index) =>
+      prisma.rule.update({
+        where: {
+          id: ruleId,
+        },
+        data: {
+          order: index + 1,
+        },
+      }),
+    ),
+  );
+
+  revalidateRulePaths();
+
+  return success("Rule order updated.");
+}
+
+export async function moveRuleUpInline(
+  formData: FormData,
+): Promise<AdminRuleActionResult> {
+  return moveRuleInline(formData, -1);
+}
+
+export async function moveRuleDownInline(
+  formData: FormData,
+): Promise<AdminRuleActionResult> {
+  return moveRuleInline(formData, 1);
+}
+
+async function moveRuleInline(
+  formData: FormData,
+  direction: -1 | 1,
+): Promise<AdminRuleActionResult> {
+  const authError = await requireAdmin();
+
+  if (authError) {
+    return authError;
+  }
+
+  const ruleId = getValue(formData, "ruleId") || getValue(formData, "id");
+
+  if (!ruleId) {
+    return fail("Rule ID is missing.");
+  }
+
+  const rules = await prisma.rule.findMany({
+    orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+  });
+
+  const currentIndex = rules.findIndex((rule) => rule.id === ruleId);
+
+  if (currentIndex === -1) {
+    return fail("Rule was not found.");
+  }
+
+  const targetIndex = currentIndex + direction;
+
+  if (targetIndex < 0) {
+    return success("Rule is already at the top.");
+  }
+
+  if (targetIndex >= rules.length) {
+    return success("Rule is already at the bottom.");
+  }
+
+  const reorderedRuleIds = rules.map((rule) => rule.id);
+
+  [reorderedRuleIds[currentIndex], reorderedRuleIds[targetIndex]] = [
+    reorderedRuleIds[targetIndex],
+    reorderedRuleIds[currentIndex],
+  ];
+
+  await prisma.$transaction(
+    reorderedRuleIds.map((currentRuleId, index) =>
+      prisma.rule.update({
+        where: {
+          id: currentRuleId,
+        },
+        data: {
+          order: index + 1,
+        },
+      }),
+    ),
+  );
+
+  revalidateRulePaths();
+
+  return success("Rule order updated.");
 }
 
 export async function activateRuleInline(
@@ -193,8 +394,7 @@ async function setRuleActiveStatus(
     },
   });
 
-  revalidatePath("/admin");
-  revalidatePath("/rules");
+  revalidateRulePaths();
 
   return success(isActive ? "Rule activated." : "Rule deactivated.");
 }
@@ -224,14 +424,30 @@ export async function deleteRuleInline(
     return fail("Rule was not found.");
   }
 
-  await prisma.rule.delete({
-    where: {
-      id: rule.id,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.rule.delete({
+      where: {
+        id: rule.id,
+      },
+    });
+
+    const remainingRules = await tx.rule.findMany({
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+    });
+
+    for (const [index, remainingRule] of remainingRules.entries()) {
+      await tx.rule.update({
+        where: {
+          id: remainingRule.id,
+        },
+        data: {
+          order: index + 1,
+        },
+      });
+    }
   });
 
-  revalidatePath("/admin");
-  revalidatePath("/rules");
+  revalidateRulePaths();
 
   return success("Rule deleted successfully.");
 }
