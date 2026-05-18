@@ -122,15 +122,6 @@ export default function AdminOverview({ items }: AdminOverviewProps) {
           })}
         </div>
       )}
-
-      <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-        <p className="text-sm font-black text-white">Recommended workflow</p>
-
-        <p className="mt-2 text-sm leading-6 text-gray-400">
-          Create tournaments, let players register teams, review registrations,
-          and use announcements to publish important community updates.
-        </p>
-      </div>
     </section>
   );
 }

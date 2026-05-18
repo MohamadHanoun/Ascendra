@@ -130,6 +130,24 @@ async function getAdminOverview() {
   ];
 }
 
+function ModuleStatCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-400">
+        {label}
+      </p>
+
+      <p className="mt-1 text-lg font-black text-white">{value}</p>
+    </div>
+  );
+}
+
 function renderAdminTab(
   activeTab: string,
   overviewItems: Awaited<ReturnType<typeof getAdminOverview>>,
@@ -197,22 +215,38 @@ function renderAdminTab(
     );
   }
 
+  const readyModules = adminModules.filter(
+    (module) => module.status === "Ready",
+  ).length;
+
+  const futureModules = adminModules.filter(
+    (module) => module.status === "Future",
+  ).length;
+
   return (
-    <section className="mx-auto max-w-7xl px-6 pb-24">
-      <div className="mb-10">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-indigo-300">
-          Modules
-        </p>
+    <section className="mx-auto grid max-w-7xl gap-6 px-6 pb-16">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+        <div>
+          <p className="text-sm font-black uppercase tracking-[0.16em] text-cyan-300">
+            Modules
+          </p>
 
-        <h2 className="text-4xl font-black">Admin Modules</h2>
+          <h2 className="mt-2 text-3xl font-black text-white">Admin modules</h2>
 
-        <p className="mt-4 max-w-2xl text-gray-300">
-          Additional RTN management tools can be added here as the platform
-          grows.
-        </p>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
+            View available RTN admin tools and future modules planned for the
+            platform.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <ModuleStatCard label="Total" value={adminModules.length} />
+          <ModuleStatCard label="Ready" value={readyModules} />
+          <ModuleStatCard label="Future" value={futureModules} />
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {adminModules.map((module) => (
           <AdminModuleCard
             key={module.title}
@@ -304,21 +338,27 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       />
 
       <section className="mx-auto max-w-7xl px-6 pb-6">
-        <div className="rounded-3xl border border-green-500/20 bg-green-500/10 px-6 py-5">
-          <div>
-            <p className="mb-2 text-sm font-semibold uppercase tracking-[0.25em] text-green-300">
-              Admin Session
-            </p>
+        <div className="rounded-2xl border border-green-500/20 bg-green-500/10 px-5 py-4">
+          <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-green-300">
+                Admin session
+              </p>
 
-            <h2 className="text-2xl font-black text-white">
-              Logged in as RTN Admin
-            </h2>
+              <h2 className="mt-1 text-xl font-black text-white">
+                Logged in as RTN Admin
+              </h2>
+            </div>
 
-            <p className="mt-2 max-w-3xl leading-7 text-gray-300">
-              Welcome, {session.user.name}. Use the sections below to manage RTN
-              content, tournament registrations, teams, players, and community
-              tools.
-            </p>
+            <div className="rounded-xl border border-green-500/20 bg-black/20 px-4 py-3">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-400">
+                Current admin
+              </p>
+
+              <p className="mt-1 text-sm font-black text-white">
+                {session.user.name}
+              </p>
+            </div>
           </div>
         </div>
       </section>
