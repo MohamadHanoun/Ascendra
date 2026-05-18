@@ -1,34 +1,46 @@
-import { createRule } from "@/actions/ruleActions";
+import { createRuleInline } from "@/actions/adminRuleInlineActions";
+import InlineAdminRuleForm from "@/components/InlineAdminRuleForm";
+
+function inputClass() {
+  return "rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-cyan-400";
+}
 
 export default function AdminRuleForm() {
   return (
-    <section className="mx-auto max-w-7xl px-6 pb-12">
-      <div className="rounded-3xl border border-purple-500/20 bg-purple-500/10 p-6">
-        <div className="mb-8">
-          <h2 className="mb-3 text-3xl font-black">Create Rule</h2>
+    <section className="mx-auto max-w-7xl px-6 pb-10">
+      <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+        <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
+          <p className="text-sm font-black uppercase tracking-[0.14em] text-cyan-300">
+            Rules
+          </p>
 
+          <h2 className="mt-2 text-2xl font-black text-white">Create rule</h2>
+
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
+            Add a new community rule. The rule will be added at the end of the
+            current rules list.
+          </p>
         </div>
 
-        <form action={createRule} className="grid gap-5">
-          <label className="grid gap-2">
-            <span className="font-semibold text-gray-200">Rule Text</span>
-
-            <textarea
-              name="text"
-              required
-              rows={4}
-              placeholder="Example: Respect all members and avoid toxic behavior."
-              className="resize-none rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-purple-400"
-            />
-          </label>
-
-          <button
-            type="submit"
-            className="w-fit rounded-xl bg-purple-500 px-7 py-4 font-bold text-white transition hover:-translate-y-1 hover:bg-purple-400"
+        <div className="p-6">
+          <InlineAdminRuleForm
+            action={createRuleInline}
+            buttonLabel="Create rule"
+            pendingLabel="Creating..."
+            resetOnSuccess
           >
-            Create Rule
-          </button>
-        </form>
+            <label className="grid gap-2">
+              <span className="text-sm font-bold text-gray-200">Rule text</span>
+
+              <textarea
+                name="text"
+                required
+                placeholder="Write the rule text..."
+                className={`${inputClass()} min-h-28 resize-y`}
+              />
+            </label>
+          </InlineAdminRuleForm>
+        </div>
       </div>
     </section>
   );
