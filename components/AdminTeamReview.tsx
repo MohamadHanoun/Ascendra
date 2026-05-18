@@ -121,6 +121,16 @@ export default async function AdminTeamReview({
           createdAt: "desc",
         },
       },
+      results: {
+        include: {
+          tournament: true,
+        },
+        orderBy: [
+          {
+            awardedAt: "desc",
+          },
+        ],
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -128,16 +138,43 @@ export default async function AdminTeamReview({
     take: 80,
   });
 
-  const totalPlayers = teams.reduce(
+  const teamsWithStats = teams.map((team) => {
+    const tournamentPoints = team.results.reduce(
+      (total, result) => total + result.points,
+      0,
+    );
+
+    const bestPlacement =
+      team.results.length > 0
+        ? Math.min(...team.results.map((result) => result.placement))
+        : null;
+
+    return {
+      ...team,
+      tournamentPoints,
+      bestPlacement,
+    };
+  });
+
+  const totalPlayers = teamsWithStats.reduce(
     (sum, team) => sum + team.members.length,
     0,
   );
 
-  const activeTeams = teams.filter((team) => {
+  const activeTeams = teamsWithStats.filter((team) => {
     const status = team.status.toLowerCase();
 
     return status === "approved" || status === "active";
   }).length;
+
+  const totalTournamentPoints = teamsWithStats.reduce(
+    (total, team) => total + team.tournamentPoints,
+    0,
+  );
+
+  const teamsWithResults = teamsWithStats.filter(
+    (team) => team.results.length > 0,
+  ).length;
 
   return (
     <section className="mx-auto grid max-w-7xl gap-6 px-6 pb-16">
@@ -154,46 +191,69 @@ export default async function AdminTeamReview({
           </h1>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
-            View created teams, leaders, players, games, and tournament
-            registrations. Team approval is not required here.
+            View teams, leaders, players, registrations, tournament results, and
+            points.
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <StatCard label="Teams" value={teams.length} />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <StatCard label="Teams" value={teamsWithStats.length} />
           <StatCard label="Active" value={activeTeams} />
           <StatCard label="Players" value={totalPlayers} />
+          <StatCard label="Ranked" value={teamsWithResults} />
+          <StatCard label="Points" value={totalTournamentPoints} />
         </div>
       </div>
 
-      {teams.length === 0 ? (
+      {teamsWithStats.length === 0 ? (
         <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-gray-300">
           No teams found.
         </section>
       ) : (
         <section className="grid gap-5">
-          {teams.map((team) => (
+          {teamsWithStats.map((team) => (
             <article
               key={team.id}
               className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
             >
               <div className="border-b border-white/10 bg-white/[0.03] p-5">
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="text-2xl font-black text-white">
-                      {team.name}
-                    </h2>
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="grid gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h2 className="text-2xl font-black text-white">
+                        {team.name}
+                      </h2>
 
-                    <StatusBadge status={team.status} />
+                      <StatusBadge status={team.status} />
+
+                      {team.tournamentPoints > 0 && (
+                        <span className="inline-flex rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs font-black text-green-300">
+                          {team.tournamentPoints} pts
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-sm leading-6 text-gray-400">
+                      {team.game} · Created {formatDate(team.createdAt)}
+                    </p>
                   </div>
 
-                  <p className="text-sm leading-6 text-gray-400">
-                    {team.game} · Created {formatDate(team.createdAt)}
-                  </p>
+                  <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+                    <StatCard label="Players" value={team.members.length} />
+                    <StatCard label="Regs." value={team.registrations.length} />
+                    <StatCard label="Results" value={team.results.length} />
+                    <StatCard label="Points" value={team.tournamentPoints} />
+                    <StatCard
+                      label="Best"
+                      value={
+                        team.bestPlacement ? `#${team.bestPlacement}` : "-"
+                      }
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)_260px] xl:items-start">
+              <div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)_280px] xl:items-start">
                 <section className="rounded-xl border border-white/10 bg-black/20 p-4">
                   <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-400">
                     Team info
@@ -211,6 +271,17 @@ export default async function AdminTeamReview({
                     <InfoRow
                       label="Registrations"
                       value={team.registrations.length}
+                    />
+                    <InfoRow label="Results" value={team.results.length} />
+                    <InfoRow
+                      label="Tournament points"
+                      value={team.tournamentPoints}
+                    />
+                    <InfoRow
+                      label="Best placement"
+                      value={
+                        team.bestPlacement ? `#${team.bestPlacement}` : "-"
+                      }
                     />
                     <InfoRow
                       label="Created"
@@ -259,6 +330,35 @@ export default async function AdminTeamReview({
                 <aside className="grid content-start gap-4">
                   <section className="rounded-xl border border-white/10 bg-black/20 p-4">
                     <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-400">
+                      Results
+                    </p>
+
+                    <div className="mt-4 grid gap-2">
+                      {team.results.length === 0 ? (
+                        <div className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-gray-400">
+                          No tournament results.
+                        </div>
+                      ) : (
+                        team.results.slice(0, 4).map((result) => (
+                          <div
+                            key={result.id}
+                            className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3"
+                          >
+                            <p className="text-sm font-black text-white">
+                              {result.tournament.title}
+                            </p>
+
+                            <p className="mt-1 text-xs text-gray-500">
+                              #{result.placement} · {result.points} pts
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-400">
                       Registrations
                     </p>
 
@@ -292,8 +392,8 @@ export default async function AdminTeamReview({
                     </p>
 
                     <p className="mt-2 text-sm leading-6 text-gray-400">
-                      Delete this team, its members, invitations, and tournament
-                      registrations.
+                      Delete this team, its members, invitations, registrations,
+                      and tournament results.
                     </p>
 
                     <div className="mt-3">
@@ -303,7 +403,7 @@ export default async function AdminTeamReview({
                         pendingLabel="Deleting..."
                         variant="danger"
                         confirmTitle="Delete team?"
-                        confirmDescription={`Are you sure you want to delete ${team.name}? This will remove the team, members, invitations, and tournament registrations.`}
+                        confirmDescription={`Are you sure you want to delete ${team.name}? This will remove the team, members, invitations, registrations, and tournament results.`}
                         confirmLabel="Delete permanently"
                       >
                         <input type="hidden" name="teamId" value={team.id} />
