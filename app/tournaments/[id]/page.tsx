@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import ProfileNotice from "@/components/ProfileNotice";
 import { TournamentRegistrationPanel } from "@/components/TournamentRegistrationPanel";
+import { getTournamentImageUrl } from "@/lib/tournamentImages";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +43,7 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className={`inline-flex w-fit rounded border px-3 py-1 text-xs font-bold capitalize ${
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize ${
         styles[normalizedStatus] || "border-white/10 bg-white/5 text-gray-300"
       }`}
     >
@@ -104,6 +105,7 @@ export default async function TournamentDetailsPage({
       description: true,
       date: true,
       prize: true,
+      imageUrl: true,
       maxSlots: true,
       teamSize: true,
       status: true,
@@ -145,6 +147,11 @@ export default async function TournamentDetailsPage({
   if (!tournament) {
     notFound();
   }
+
+  const tournamentImage = getTournamentImageUrl(
+    tournament.game,
+    tournament.imageUrl,
+  );
 
   const ownedTeamIds = currentUser?.ownedTeams.map((team) => team.id) || [];
 
@@ -207,12 +214,19 @@ export default async function TournamentDetailsPage({
       <Navbar />
 
       <section className="relative overflow-hidden border-b border-white/10 bg-[#0b0f1a]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.24)_0%,transparent_30%),radial-gradient(circle_at_bottom_left,rgba(34,211,238,0.13)_0%,transparent_28%)]" />
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-35"
+          style={{
+            backgroundImage: `url("${tournamentImage}")`,
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0b0f1a]/60 via-[#0b0f1a]/88 to-[#0b0f1a]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.28)_0%,transparent_32%),radial-gradient(circle_at_bottom_left,rgba(34,211,238,0.14)_0%,transparent_28%)]" />
 
         <div className="relative z-10 mx-auto max-w-7xl px-6 py-16">
           <Link
             href="/tournaments"
-            className="mb-8 inline-flex rounded border border-white/10 px-4 py-2 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+            className="mb-8 inline-flex rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
           >
             ← Back to tournaments
           </Link>
@@ -225,7 +239,7 @@ export default async function TournamentDetailsPage({
                   status={`Registration ${tournament.registrationStatus}`}
                 />
 
-                <span className="inline-flex rounded border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300">
+                <span className="inline-flex rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-black text-cyan-300">
                   {tournament.game}
                 </span>
               </div>
@@ -239,7 +253,14 @@ export default async function TournamentDetailsPage({
               </p>
             </div>
 
-            <section className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+            <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur">
+              <div
+                className="min-h-60 border-b border-white/10 bg-cover bg-center"
+                style={{
+                  backgroundImage: `linear-gradient(to bottom, rgba(11,15,26,0.05), rgba(11,15,26,0.65)), url("${tournamentImage}")`,
+                }}
+              />
+
               <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
                 <p className="text-sm font-black uppercase tracking-[0.14em] text-cyan-300">
                   Tournament Info

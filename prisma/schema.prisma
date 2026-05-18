@@ -20,7 +20,6 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-
   ownedTeams      Team[]       @relation("TeamLeader")
   teamMemberships TeamMember[]
 
@@ -31,14 +30,15 @@ model User {
 }
 
 model Tournament {
-  id          String @id @default(cuid())
+  id          String  @id @default(cuid())
   title       String
   game        String
   description String
   date        String
   prize       String
+  imageUrl    String?
   maxSlots    Int
-  teamSize    Int    @default(1)
+  teamSize    Int     @default(1)
 
   status             String @default("upcoming")
   registrationStatus String @default("closed")

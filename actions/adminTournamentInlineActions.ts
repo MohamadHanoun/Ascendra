@@ -44,6 +44,22 @@ function getNumber(formData: FormData, name: string) {
   return value;
 }
 
+function normalizeImageUrl(imageUrl: string) {
+  if (!imageUrl) {
+    return null;
+  }
+
+  if (imageUrl.startsWith("https://") || imageUrl.startsWith("http://")) {
+    return imageUrl;
+  }
+
+  if (imageUrl.startsWith("/")) {
+    return imageUrl;
+  }
+
+  return "invalid";
+}
+
 async function requireAdmin(): Promise<AdminTournamentActionResult | null> {
   const session = await auth();
 
@@ -71,6 +87,7 @@ function validateTournamentForm(formData: FormData) {
   const description = getValue(formData, "description");
   const date = getValue(formData, "date");
   const prize = getValue(formData, "prize");
+  const imageUrl = normalizeImageUrl(getValue(formData, "imageUrl"));
   const status = getValue(formData, "status") || "upcoming";
   const registrationStatus = getValue(formData, "registrationStatus") || "open";
   const maxSlots = getNumber(formData, "maxSlots");
@@ -111,6 +128,13 @@ function validateTournamentForm(formData: FormData) {
     };
   }
 
+  if (imageUrl === "invalid") {
+    return {
+      ok: false as const,
+      message: "Image URL must start with http://, https://, or /.",
+    };
+  }
+
   if (!maxSlots || maxSlots < 1) {
     return {
       ok: false as const,
@@ -133,6 +157,7 @@ function validateTournamentForm(formData: FormData) {
       description,
       date,
       prize,
+      imageUrl,
       maxSlots,
       teamSize,
       status,

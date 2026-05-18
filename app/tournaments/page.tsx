@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import PageHeader from "@/components/PageHeader";
 import ProfileNotice from "@/components/ProfileNotice";
+import { getTournamentImageUrl } from "@/lib/tournamentImages";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ type TournamentsPageProps = {
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const normalizedStatus = status.toLowerCase();
+  const normalizedStatus = status.toLowerCase().replace("registration ", "");
 
   const styles: Record<string, string> = {
     open: "border-green-500/20 bg-green-500/10 text-green-300",
@@ -48,7 +49,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function InfoCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+    <div className="rounded-xl border border-white/10 bg-black/25 px-4 py-3">
       <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-400">
         {label}
       </p>
@@ -74,6 +75,7 @@ export default async function TournamentsPage({
       description: true,
       date: true,
       prize: true,
+      imageUrl: true,
       maxSlots: true,
       teamSize: true,
       status: true,
@@ -110,65 +112,74 @@ export default async function TournamentsPage({
             description="RTN tournaments will appear here when they are created by the admin team."
           />
         ) : (
-          <div className="grid gap-5">
+          <div className="grid gap-6">
             {tournaments.map((tournament) => {
               const usedSlots = tournament.registrations.length;
               const remainingSlots = Math.max(
                 tournament.maxSlots - usedSlots,
                 0,
               );
+              const tournamentImage = getTournamentImageUrl(
+                tournament.game,
+                tournament.imageUrl,
+              );
 
               return (
                 <article
                   key={tournament.id}
-                  className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] transition hover:border-cyan-400/30 hover:bg-white/[0.06]"
+                  className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] transition hover:border-cyan-400/30 hover:bg-white/[0.06]"
                 >
-                  <div className="border-b border-white/10 bg-white/[0.03] p-5">
-                    <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-3">
-                          <h2 className="text-2xl font-black text-white">
+                  <div className="grid lg:grid-cols-[360px_minmax(0,1fr)]">
+                    <div
+                      className="min-h-72 bg-cover bg-center lg:min-h-full"
+                      style={{
+                        backgroundImage: `linear-gradient(to bottom, rgba(11,15,26,0.05), rgba(11,15,26,0.8)), url("${tournamentImage}")`,
+                      }}
+                    />
+
+                    <div className="grid gap-5 p-6">
+                      <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-start">
+                        <div>
+                          <div className="mb-3 flex flex-wrap gap-2">
+                            <StatusBadge status={tournament.status} />
+                            <StatusBadge
+                              status={`Registration ${tournament.registrationStatus}`}
+                            />
+                          </div>
+
+                          <h2 className="text-3xl font-black text-white">
                             {tournament.title}
                           </h2>
 
-                          <StatusBadge status={tournament.status} />
-                          <StatusBadge
-                            status={`Registration ${tournament.registrationStatus}`}
-                          />
+                          <p className="mt-2 text-sm leading-6 text-gray-400">
+                            {tournament.game} · {tournament.date}
+                          </p>
                         </div>
 
-                        <p className="mt-2 text-sm leading-6 text-gray-400">
-                          {tournament.game} · {tournament.date}
-                        </p>
+                        <Link
+                          href={`/tournaments/${tournament.id}`}
+                          className="inline-flex w-fit rounded-xl bg-indigo-500 px-5 py-3 text-sm font-black text-white transition hover:bg-indigo-400"
+                        >
+                          View details
+                        </Link>
                       </div>
 
-                      <Link
-                        href={`/tournaments/${tournament.id}`}
-                        className="inline-flex w-fit rounded-xl bg-indigo-500 px-5 py-3 text-sm font-black text-white transition hover:bg-indigo-400"
-                      >
-                        View details
-                      </Link>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
-                    <div>
-                      <p className="text-sm leading-7 text-gray-300">
+                      <p className="max-w-4xl text-sm leading-7 text-gray-300">
                         {tournament.description}
                       </p>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <InfoCard label="Prize" value={tournament.prize} />
-                      <InfoCard
-                        label="Team size"
-                        value={`${tournament.teamSize}v${tournament.teamSize}`}
-                      />
-                      <InfoCard
-                        label="Slots used"
-                        value={`${usedSlots}/${tournament.maxSlots}`}
-                      />
-                      <InfoCard label="Slots left" value={remainingSlots} />
+                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <InfoCard label="Prize" value={tournament.prize} />
+                        <InfoCard
+                          label="Team size"
+                          value={`${tournament.teamSize}v${tournament.teamSize}`}
+                        />
+                        <InfoCard
+                          label="Slots used"
+                          value={`${usedSlots}/${tournament.maxSlots}`}
+                        />
+                        <InfoCard label="Slots left" value={remainingSlots} />
+                      </div>
                     </div>
                   </div>
                 </article>

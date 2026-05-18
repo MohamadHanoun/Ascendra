@@ -57,8 +57,8 @@ export default function AdminTournamentForm() {
           </h2>
 
           <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
-            Create a new tournament. It appears immediately after saving without
-            leaving the admin panel.
+            Create a new tournament. A game image is used automatically when no
+            custom image URL is provided.
           </p>
         </div>
 
@@ -102,6 +102,16 @@ export default function AdminTournamentForm() {
               </select>
             </label>
           </div>
+
+          <label className="grid gap-2">
+            <FieldLabel>Image URL</FieldLabel>
+
+            <input
+              name="imageUrl"
+              placeholder="Optional custom image URL"
+              className={inputClass()}
+            />
+          </label>
 
           <label className="grid gap-2">
             <FieldLabel>Description</FieldLabel>
@@ -164,7 +174,7 @@ export default function AdminTournamentForm() {
             </label>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_220px] lg:items-end">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
             <label className="grid gap-2">
               <FieldLabel>Tournament status</FieldLabel>
 

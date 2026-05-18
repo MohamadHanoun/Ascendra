@@ -9,6 +9,7 @@ import {
   updateTournamentInline,
 } from "@/actions/adminTournamentInlineActions";
 import InlineAdminTournamentForm from "@/components/InlineAdminTournamentForm";
+import { getTournamentImageUrl } from "@/lib/tournamentImages";
 import { prisma } from "@/lib/prisma";
 
 const games = ["Valorant", "League of Legends", "CS2", "Dota2"];
@@ -117,8 +118,8 @@ export default async function AdminTournamentList() {
           </h2>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
-            Edit tournament details, control registration, change status, or
-            delete tournaments with confirmation.
+            Edit tournament details, images, registration, status, or delete
+            tournaments with confirmation.
           </p>
         </div>
 
@@ -141,6 +142,10 @@ export default async function AdminTournamentList() {
               tournament.maxSlots - registrationsCount,
               0,
             );
+            const tournamentImage = getTournamentImageUrl(
+              tournament.game,
+              tournament.imageUrl,
+            );
 
             return (
               <article
@@ -148,7 +153,14 @@ export default async function AdminTournamentList() {
                 className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
               >
                 <div className="border-b border-white/10 bg-white/[0.03] p-5">
-                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px] xl:items-start">
+                  <div className="grid gap-5 xl:grid-cols-[220px_minmax(0,1fr)_260px] xl:items-start">
+                    <div
+                      className="min-h-32 rounded-xl border border-white/10 bg-cover bg-center"
+                      style={{
+                        backgroundImage: `linear-gradient(to bottom, rgba(11,15,26,0.1), rgba(11,15,26,0.75)), url("${tournamentImage}")`,
+                      }}
+                    />
+
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-2xl font-black text-white">
@@ -231,6 +243,17 @@ export default async function AdminTournamentList() {
                         </select>
                       </label>
                     </div>
+
+                    <label className="grid gap-2">
+                      <FieldLabel>Image URL</FieldLabel>
+
+                      <input
+                        name="imageUrl"
+                        defaultValue={tournament.imageUrl || ""}
+                        placeholder="Optional custom image URL"
+                        className={inputClass()}
+                      />
+                    </label>
 
                     <label className="grid gap-2">
                       <FieldLabel>Description</FieldLabel>
