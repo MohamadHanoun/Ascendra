@@ -9,8 +9,8 @@ import {
   removeTeamMemberInline,
   updateTeamInline,
 } from "@/actions/teamInlineActions";
-import InlineTeamActionForm from "@/components/InlineTeamActionForm";
 import Footer from "@/components/Footer";
+import InlineTeamActionForm from "@/components/InlineTeamActionForm";
 import Navbar from "@/components/Navbar";
 import ProfileNotice from "@/components/ProfileNotice";
 import { prisma } from "@/lib/prisma";
@@ -66,6 +66,24 @@ function SmallLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+function TeamStatCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+        {label}
+      </p>
+
+      <p className="mt-1 text-lg font-black text-white">{value}</p>
+    </div>
+  );
+}
+
 export default async function TeamDetailsPage({
   params,
   searchParams,
@@ -104,6 +122,23 @@ export default async function TeamDetailsPage({
           createdAt: "desc",
         },
       },
+      results: {
+        include: {
+          tournament: {
+            select: {
+              id: true,
+              title: true,
+              game: true,
+              date: true,
+            },
+          },
+        },
+        orderBy: [
+          {
+            awardedAt: "desc",
+          },
+        ],
+      },
     },
   });
 
@@ -123,6 +158,16 @@ export default async function TeamDetailsPage({
   if (!canManage) {
     redirect("/profile");
   }
+
+  const totalTeamPoints = team.results.reduce(
+    (total, result) => total + result.points,
+    0,
+  );
+
+  const bestPlacement =
+    team.results.length > 0
+      ? Math.min(...team.results.map((result) => result.placement))
+      : null;
 
   return (
     <main className="min-h-screen bg-[#0b0f1a] text-white">
@@ -162,6 +207,10 @@ export default async function TeamDetailsPage({
                   {team.members.length === 1 ? "" : "s"}
                 </span>
 
+                <span className="inline-flex rounded border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs font-bold text-green-300">
+                  {totalTeamPoints} points
+                </span>
+
                 {team.invites.length > 0 && (
                   <span className="inline-flex rounded border border-yellow-500/20 bg-yellow-500/10 px-3 py-1 text-xs font-bold text-yellow-300">
                     {team.invites.length} pending invite
@@ -197,6 +246,81 @@ export default async function TeamDetailsPage({
               </p>
             </div>
           </div>
+        </section>
+
+        <section className="mt-8 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+          <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
+            <SmallLabel>Tournament History</SmallLabel>
+
+            <h2 className="mt-2 text-2xl font-black text-white">
+              Team tournament results
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-gray-400">
+              Results and points this team has earned from official RTN
+              tournaments.
+            </p>
+          </div>
+
+          <div className="grid gap-4 p-6 md:grid-cols-3">
+            <TeamStatCard label="Total points" value={totalTeamPoints} />
+            <TeamStatCard label="Results" value={team.results.length} />
+            <TeamStatCard
+              label="Best placement"
+              value={bestPlacement ? `#${bestPlacement}` : "-"}
+            />
+          </div>
+
+          {team.results.length > 0 && (
+            <div className="border-t border-white/10">
+              <div className="hidden border-b border-white/10 bg-black/20 px-6 py-4 text-xs font-black uppercase tracking-[0.12em] text-gray-400 lg:grid lg:grid-cols-[minmax(0,1fr)_160px_130px_130px]">
+                <span>Tournament</span>
+                <span>Game</span>
+                <span>Placement</span>
+                <span>Points</span>
+              </div>
+
+              <div className="divide-y divide-white/10">
+                {team.results.map((result) => (
+                  <article
+                    key={result.id}
+                    className="grid gap-4 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_160px_130px_130px] lg:items-center"
+                  >
+                    <div>
+                      <Link
+                        href={`/tournaments/${result.tournament.id}`}
+                        className="font-black text-white transition hover:text-cyan-300"
+                      >
+                        {result.tournament.title}
+                      </Link>
+
+                      <p className="mt-1 text-sm text-gray-400">
+                        {result.tournament.date}
+                      </p>
+
+                      {result.note && (
+                        <p className="mt-2 text-sm text-gray-500">
+                          {result.note}
+                        </p>
+                      )}
+                    </div>
+
+                    <p className="text-sm font-bold text-gray-300">
+                      {result.tournament.game}
+                    </p>
+
+                    <p className="text-sm font-black text-yellow-300">
+                      #{result.placement}
+                    </p>
+
+                    <p className="text-sm font-black text-green-300">
+                      {result.points} pts
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">

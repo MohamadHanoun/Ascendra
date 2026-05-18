@@ -1,7 +1,5 @@
-import {
-  deleteTournamentResultInline,
-  saveTournamentResultInline,
-} from "@/actions/adminTournamentResultActions";
+import { deleteTournamentResultInline } from "@/actions/adminTournamentResultActions";
+import AdminTournamentResultForm from "@/components/AdminTournamentResultForm";
 import InlineAdminTournamentForm from "@/components/InlineAdminTournamentForm";
 
 type TournamentRegistrationItem = {
@@ -32,14 +30,6 @@ type AdminTournamentResultsPanelProps = {
   registrations: TournamentRegistrationItem[];
   results: TournamentResultItem[];
 };
-
-function inputClass() {
-  return "w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-cyan-400";
-}
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <span className="text-sm font-bold text-gray-200">{children}</span>;
-}
 
 function PointsPresetCard({ label, value }: { label: string; value: string }) {
   return (
@@ -82,10 +72,11 @@ export default function AdminTournamentResultsPanel({
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 xl:w-[300px]">
+          <div className="grid grid-cols-4 gap-2 xl:w-[420px]">
             <PointsPresetCard label="1st" value="10 pts" />
             <PointsPresetCard label="2nd" value="7 pts" />
             <PointsPresetCard label="3rd" value="5 pts" />
+            <PointsPresetCard label="Play" value="1 pt" />
           </div>
         </div>
 
@@ -95,74 +86,10 @@ export default function AdminTournamentResultsPanel({
             results.
           </div>
         ) : (
-          <InlineAdminTournamentForm
-            action={saveTournamentResultInline}
-            buttonLabel="Save result"
-            pendingLabel="Saving result..."
-            variant="success"
-            className="grid gap-4"
-          >
-            <input type="hidden" name="tournamentId" value={tournamentId} />
-
-            <label className="grid gap-2">
-              <FieldLabel>Team</FieldLabel>
-
-              <select
-                name="teamId"
-                required
-                defaultValue=""
-                className={inputClass()}
-              >
-                <option value="" disabled>
-                  Select team
-                </option>
-
-                {eligibleRegistrations.map((registration) => (
-                  <option key={registration.id} value={registration.teamId}>
-                    {registration.team.name} · {registration.status}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="grid gap-2">
-                <FieldLabel>Placement</FieldLabel>
-
-                <input
-                  name="placement"
-                  type="number"
-                  min="1"
-                  required
-                  placeholder="1"
-                  className={inputClass()}
-                />
-              </label>
-
-              <label className="grid gap-2">
-                <FieldLabel>Points</FieldLabel>
-
-                <input
-                  name="points"
-                  type="number"
-                  min="0"
-                  required
-                  placeholder="10"
-                  className={inputClass()}
-                />
-              </label>
-            </div>
-
-            <label className="grid gap-2">
-              <FieldLabel>Note</FieldLabel>
-
-              <input
-                name="note"
-                placeholder="Optional note, example: Winner, second place, participation..."
-                className={inputClass()}
-              />
-            </label>
-          </InlineAdminTournamentForm>
+          <AdminTournamentResultForm
+            tournamentId={tournamentId}
+            registrations={eligibleRegistrations}
+          />
         )}
 
         {results.length > 0 && (
