@@ -72,6 +72,21 @@ export default async function AdminPlayersList() {
       createdAt: "desc",
     },
     include: {
+      teamMemberships: {
+        include: {
+          team: {
+            include: {
+              results: {
+                select: {
+                  id: true,
+                  points: true,
+                  placement: true,
+                },
+              },
+            },
+          },
+        },
+      },
       _count: {
         select: {
           ownedTeams: true,
@@ -83,9 +98,43 @@ export default async function AdminPlayersList() {
     },
   });
 
-  const guildMembers = players.filter((player) => player.isGuildMember);
-  const admins = players.filter((player) => player.role === "Admin");
-  const externalPlayers = players.length - guildMembers.length;
+  const playersWithPoints = players.map((player) => {
+    const results = player.teamMemberships.flatMap(
+      (membership) => membership.team.results,
+    );
+
+    const tournamentPoints = results.reduce(
+      (total, result) => total + result.points,
+      0,
+    );
+
+    const bestPlacement =
+      results.length > 0
+        ? Math.min(...results.map((result) => result.placement))
+        : null;
+
+    return {
+      ...player,
+      tournamentResults: results.length,
+      tournamentPoints,
+      bestPlacement,
+    };
+  });
+
+  const guildMembers = playersWithPoints.filter(
+    (player) => player.isGuildMember,
+  );
+  const admins = playersWithPoints.filter((player) => player.role === "Admin");
+  const externalPlayers = playersWithPoints.length - guildMembers.length;
+
+  const totalTournamentPoints = playersWithPoints.reduce(
+    (total, player) => total + player.tournamentPoints,
+    0,
+  );
+
+  const rankedPlayers = playersWithPoints.filter(
+    (player) => player.tournamentPoints > 0,
+  ).length;
 
   return (
     <section className="mx-auto grid max-w-7xl gap-6 px-6 pb-16">
@@ -100,33 +149,34 @@ export default async function AdminPlayersList() {
           </h2>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
-            View players who logged in with Discord, their RTN membership
-            status, team activity, and account activity.
+            View players who logged in with Discord, their RTN membership,
+            teams, registrations, and tournament points.
           </p>
         </div>
 
-        <div className="grid grid-cols-4 gap-3">
-          <StatCard label="Total" value={players.length} />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <StatCard label="Total" value={playersWithPoints.length} />
           <StatCard label="Members" value={guildMembers.length} />
           <StatCard label="External" value={externalPlayers} />
-          <StatCard label="Admins" value={admins.length} />
+          <StatCard label="Ranked" value={rankedPlayers} />
+          <StatCard label="Points" value={totalTournamentPoints} />
         </div>
       </div>
 
-      {players.length === 0 ? (
+      {playersWithPoints.length === 0 ? (
         <EmptyState
           title="No players yet"
           description="Players will appear here after they login with Discord."
         />
       ) : (
         <div className="grid gap-5">
-          {players.map((player) => (
+          {playersWithPoints.map((player) => (
             <article
               key={player.id}
               className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
             >
               <div className="border-b border-white/10 bg-white/[0.03] p-5">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                   <div className="flex items-center gap-4">
                     {player.avatar ? (
                       <Image
@@ -150,6 +200,12 @@ export default async function AdminPlayersList() {
 
                         <StatusBadge isGuildMember={player.isGuildMember} />
                         <RoleBadge role={player.role} />
+
+                        {player.tournamentPoints > 0 && (
+                          <span className="inline-flex rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs font-black text-green-300">
+                            {player.tournamentPoints} pts
+                          </span>
+                        )}
                       </div>
 
                       <p className="mt-2 text-sm text-gray-400">
@@ -158,15 +214,25 @@ export default async function AdminPlayersList() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
-                    <StatCard label="Leader" value={player._count.ownedTeams} />
+                  <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
                     <StatCard
                       label="Teams"
                       value={player._count.teamMemberships}
                     />
+                    <StatCard label="Leader" value={player._count.ownedTeams} />
                     <StatCard
                       label="Regs."
                       value={player._count.tournamentRegistrations}
+                    />
+                    <StatCard
+                      label="Results"
+                      value={player.tournamentResults}
+                    />
+                    <StatCard
+                      label="Best"
+                      value={
+                        player.bestPlacement ? `#${player.bestPlacement}` : "-"
+                      }
                     />
                   </div>
                 </div>
@@ -191,10 +257,24 @@ export default async function AdminPlayersList() {
 
                 <section className="rounded-xl border border-white/10 bg-black/20 p-4">
                   <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-400">
-                    Activity
+                    Activity and points
                   </p>
 
                   <div className="mt-4 grid gap-3 text-sm text-gray-300">
+                    <InfoRow
+                      label="Tournament points"
+                      value={player.tournamentPoints}
+                    />
+                    <InfoRow
+                      label="Tournament results"
+                      value={player.tournamentResults}
+                    />
+                    <InfoRow
+                      label="Best placement"
+                      value={
+                        player.bestPlacement ? `#${player.bestPlacement}` : "-"
+                      }
+                    />
                     <InfoRow
                       label="Last login"
                       value={formatDate(player.lastLoginAt)}
@@ -202,14 +282,6 @@ export default async function AdminPlayersList() {
                     <InfoRow
                       label="Last guild check"
                       value={formatDate(player.lastGuildCheckAt)}
-                    />
-                    <InfoRow
-                      label="Owned teams"
-                      value={player._count.ownedTeams}
-                    />
-                    <InfoRow
-                      label="Team memberships"
-                      value={player._count.teamMemberships}
                     />
                     <InfoRow
                       label="Received invites"
