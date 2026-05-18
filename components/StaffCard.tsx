@@ -4,6 +4,20 @@ type StaffCardProps = {
   status: string;
 };
 
+function getStatusClasses(status: string) {
+  const normalizedStatus = status.toLowerCase();
+
+  if (normalizedStatus === "active" || normalizedStatus === "available") {
+    return "border-green-500/20 bg-green-500/10 text-green-300";
+  }
+
+  if (normalizedStatus === "busy") {
+    return "border-yellow-500/20 bg-yellow-500/10 text-yellow-300";
+  }
+
+  return "border-white/10 bg-white/5 text-gray-300";
+}
+
 export default function StaffCard({ name, role, status }: StaffCardProps) {
   const initials = name
     .split(" ")
@@ -12,18 +26,26 @@ export default function StaffCard({ name, role, status }: StaffCardProps) {
     .slice(0, 2);
 
   return (
-    <article className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center transition hover:-translate-y-1 hover:bg-white/10">
-      <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-500 to-cyan-400 text-3xl font-black shadow-lg shadow-indigo-500/20">
+    <article className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center transition hover:border-cyan-400/30 hover:bg-white/[0.06]">
+      <div className="mx-auto mb-5 grid h-20 w-20 place-items-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-2xl font-black text-cyan-200">
         {initials}
       </div>
 
-      <h2 className="mb-2 text-2xl font-bold">{name}</h2>
+      <h2 className="text-2xl font-black text-white">{name}</h2>
 
-      <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-indigo-300">
+      <p className="mt-2 text-sm font-black uppercase tracking-[0.16em] text-cyan-300">
         {role}
       </p>
 
-      <p className="leading-7 text-gray-400">{status}</p>
+      <div className="mt-4 flex justify-center">
+        <span
+          className={`inline-flex rounded-full border px-3 py-1 text-xs font-black capitalize ${getStatusClasses(
+            status,
+          )}`}
+        >
+          {status}
+        </span>
+      </div>
     </article>
   );
 }

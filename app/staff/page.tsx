@@ -4,6 +4,7 @@ import PageHeader from "@/components/PageHeader";
 import StaffCard from "@/components/StaffCard";
 import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
+import EmptyState from "@/components/EmptyState";
 
 export const metadata: Metadata = {
   title: "Staff",
@@ -35,23 +36,27 @@ export default async function StaffPage() {
       <PageHeader
         label="RTN Staff"
         title="The team behind The Noobs of Temple & Rift."
-        description="This page is connected to the database and prepared for future Discord avatars, staff profiles, developer members, and admin management."
+        description="Meet the people helping manage RTN events, community tools, and player experience."
       />
 
       <section className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="mb-10 rounded-3xl border border-cyan-500/20 bg-cyan-500/10 p-6">
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {staffMembers.map((member) => (
-            <StaffCard
-              key={member.id}
-              name={member.name}
-              role={member.role}
-              status={member.status}
-            />
-          ))}
-        </div>
+        {staffMembers.length === 0 ? (
+          <EmptyState
+            title="No active staff yet"
+            description="Staff members will appear here when they are available."
+          />
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {staffMembers.map((member) => (
+              <StaffCard
+                key={member.id}
+                name={member.name}
+                role={member.role}
+                status={member.status}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <Footer />
