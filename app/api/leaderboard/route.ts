@@ -6,24 +6,52 @@ export const runtime = "nodejs";
 export async function GET() {
   try {
     const users = await prisma.user.findMany({
-      orderBy: [
-        {
-          xp: "desc",
+      include: {
+        teamMemberships: {
+          include: {
+            team: {
+              include: {
+                registrations: {
+                  where: {
+                    status: "approved",
+                  },
+                  select: {
+                    id: true,
+                  },
+                },
+              },
+            },
+          },
         },
-        {
-          level: "desc",
-        },
-      ],
+      },
     });
 
-    const leaderboard = users.map((user, index) => ({
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      level: user.level,
-      xp: user.xp,
-      rank: index + 1,
-    }));
+    const leaderboard = users
+      .map((user) => {
+        const approvedRegistrations = user.teamMemberships.reduce(
+          (total, membership) => total + membership.team.registrations.length,
+          0,
+        );
+
+        return {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          approvedRegistrations,
+          tournamentPoints: approvedRegistrations * 10,
+        };
+      })
+      .sort((a, b) => {
+        if (b.tournamentPoints !== a.tournamentPoints) {
+          return b.tournamentPoints - a.tournamentPoints;
+        }
+
+        return b.approvedRegistrations - a.approvedRegistrations;
+      })
+      .map((user, index) => ({
+        ...user,
+        rank: index + 1,
+      }));
 
     return NextResponse.json({
       success: true,

@@ -1,17 +1,15 @@
+import type { Metadata } from "next";
+import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import LeaderboardTable from "@/components/LeaderboardTable";
 import Navbar from "@/components/Navbar";
 import PageHeader from "@/components/PageHeader";
-import XpSystemPreview from "@/components/XpSystemPreview";
 import type { LeaderboardUser } from "@/data/leaderboard";
 import { prisma } from "@/lib/prisma";
-import type { Metadata } from "next";
-import EmptyState from "@/components/EmptyState";
 
 export const metadata: Metadata = {
   title: "Leaderboard",
-  description:
-    "View RTN community rankings, XP progress, and leaderboard standings.",
+  description: "View RTN tournament points and player standings.",
 };
 
 export const runtime = "nodejs";
@@ -19,22 +17,51 @@ export const dynamic = "force-dynamic";
 
 async function getLeaderboard(): Promise<LeaderboardUser[]> {
   const users = await prisma.user.findMany({
-    orderBy: [
-      {
-        xp: "desc",
+    include: {
+      teamMemberships: {
+        include: {
+          team: {
+            include: {
+              registrations: {
+                where: {
+                  status: "approved",
+                },
+                select: {
+                  id: true,
+                },
+              },
+            },
+          },
+        },
       },
-      {
-        level: "desc",
-      },
-    ],
+    },
   });
 
-  return users.map((user, index) => ({
-    id: user.id,
-    username: user.username,
-    role: user.role,
-    level: user.level,
-    xp: user.xp,
+  const leaderboardUsers = users
+    .map((user) => {
+      const approvedRegistrations = user.teamMemberships.reduce(
+        (total, membership) => total + membership.team.registrations.length,
+        0,
+      );
+
+      return {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        approvedRegistrations,
+        tournamentPoints: approvedRegistrations * 10,
+      };
+    })
+    .sort((a, b) => {
+      if (b.tournamentPoints !== a.tournamentPoints) {
+        return b.tournamentPoints - a.tournamentPoints;
+      }
+
+      return b.approvedRegistrations - a.approvedRegistrations;
+    });
+
+  return leaderboardUsers.map((user, index) => ({
+    ...user,
     rank: index + 1,
   }));
 }
@@ -48,31 +75,22 @@ export default async function LeaderboardPage() {
 
       <PageHeader
         label="RTN Leaderboard"
-        title="Levels, XP, and the most active players."
-        description="This page is now connected to the database and prepared for the future RTN XP system, Discord bot, and live community ranking."
+        title="Tournament points standings."
+        description="View RTN players ranked by tournament points earned from approved tournament participation."
       />
 
-      <section className="mx-auto max-w-7xl px-6 pb-12">
-
+      <section className="mx-auto max-w-7xl px-6 pb-24">
         {leaderboardUsers.length > 0 ? (
           <LeaderboardTable users={leaderboardUsers} />
         ) : (
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
-            <EmptyState
-              title="No leaderboard data yet"
-              description="Player rankings will appear here when RTN activity and XP data are available."
-              actionLabel="Join Discord"
-              actionHref={process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "#"}
-            />
-            <p className="text-gray-300">
-              Users will appear here later when Discord login and the RTN bot XP
-              system are connected.
-            </p>
-          </div>
+          <EmptyState
+            title="No tournament points yet"
+            description="Player rankings will appear here when tournament activity is available."
+            actionLabel="View tournaments"
+            actionHref="/tournaments"
+          />
         )}
       </section>
-
-      <XpSystemPreview />
 
       <Footer />
     </main>

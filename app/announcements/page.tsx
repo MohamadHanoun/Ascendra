@@ -1,11 +1,10 @@
+import type { Metadata } from "next";
 import AnnouncementCard from "@/components/AnnouncementCard";
-import AnnouncementSummary from "@/components/AnnouncementSummary";
+import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import PageHeader from "@/components/PageHeader";
 import { prisma } from "@/lib/prisma";
-import type { Metadata } from "next";
-import EmptyState from "@/components/EmptyState";
 
 export const metadata: Metadata = {
   title: "Announcements",
@@ -21,9 +20,14 @@ async function getAnnouncements() {
     where: {
       published: true,
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: [
+      {
+        important: "desc",
+      },
+      {
+        createdAt: "desc",
+      },
+    ],
   });
 
   return announcements.map((announcement) => ({
@@ -45,21 +49,18 @@ export default async function AnnouncementsPage() {
 
       <PageHeader
         label="RTN Announcements"
-        title="News, updates, and community announcements."
-        description="This page is connected to the database and prepared for tournament news, server updates, feature releases, and community events."
+        title="Community news and updates."
+        description="Read the latest RTN announcements, tournament news, server updates, and community events."
       />
 
-      <AnnouncementSummary announcements={announcements} />
-
       <section className="mx-auto max-w-7xl px-6 pb-24">
-
         {announcements.length === 0 ? (
           <EmptyState
             title="No announcements yet"
             description="Published RTN announcements will appear here when new updates are available."
           />
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {announcements.map((announcement) => (
               <AnnouncementCard
                 key={announcement.id}
