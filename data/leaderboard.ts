@@ -4,6 +4,7 @@ export type LeaderboardUser = {
   role: string;
   tournamentPoints: number;
   tournamentResults: number;
+  bestPlacement: number | null;
   rank: number;
 };
 
