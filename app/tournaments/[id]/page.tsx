@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import ProfileNotice from "@/components/ProfileNotice";
-import TournamentRegistrationPanel from "@/components/TournamentRegistrationPanel";
+import { TournamentRegistrationPanel } from "@/components/TournamentRegistrationPanel";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +51,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+function InfoRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-6 px-6 py-5">
       <span className="font-bold text-gray-300">{label}</span>
@@ -91,10 +92,6 @@ export default async function TournamentDetailsPage({
         },
       })
     : null;
-
-  const ownedTeamIds = new Set(
-    currentUser?.ownedTeams.map((team) => team.id) || [],
-  );
 
   const tournament = await prisma.tournament.findUnique({
     where: {
@@ -149,16 +146,45 @@ export default async function TournamentDetailsPage({
     notFound();
   }
 
+  const ownedTeamIds = currentUser?.ownedTeams.map((team) => team.id) || [];
+
+  const userTournamentRegistrations =
+    currentUser && ownedTeamIds.length > 0
+      ? await prisma.tournamentRegistration.findMany({
+          where: {
+            tournamentId: tournament.id,
+            teamId: {
+              in: ownedTeamIds,
+            },
+          },
+          include: {
+            team: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        })
+      : [];
+
   const usedSlots = tournament.registrations.length;
   const remainingSlots = Math.max(tournament.maxSlots - usedSlots, 0);
+
+  const openRegistrationTeamIds = new Set(
+    userTournamentRegistrations
+      .filter((registration) =>
+        ["registered", "approved"].includes(registration.status),
+      )
+      .map((registration) => registration.teamId),
+  );
 
   const availableTeams =
     currentUser?.ownedTeams
       .filter((team) => {
         const gameMatches = team.game === tournament.game;
         const hasEnoughPlayers = team.members.length >= tournament.teamSize;
+        const isAlreadyOpen = openRegistrationTeamIds.has(team.id);
 
-        return gameMatches && hasEnoughPlayers;
+        return gameMatches && hasEnoughPlayers && !isAlreadyOpen;
       })
       .map((team) => ({
         id: team.id,
@@ -167,13 +193,14 @@ export default async function TournamentDetailsPage({
         memberCount: team.members.length,
       })) || [];
 
-  const activeRegistrations = tournament.registrations
-    .filter((registration) => ownedTeamIds.has(registration.teamId))
-    .map((registration) => ({
+  const activeRegistrations = userTournamentRegistrations.map(
+    (registration) => ({
       id: registration.id,
       status: registration.status,
       teamName: registration.team.name,
-    }));
+      rejectionReason: registration.rejectionReason,
+    }),
+  );
 
   return (
     <main className="min-h-screen bg-[#0b0f1a] text-white">
@@ -194,7 +221,6 @@ export default async function TournamentDetailsPage({
             <div>
               <div className="mb-5 flex flex-wrap gap-2">
                 <StatusBadge status={tournament.status} />
-
                 <StatusBadge
                   status={`Registration ${tournament.registrationStatus}`}
                 />
