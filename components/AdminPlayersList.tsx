@@ -16,6 +16,56 @@ function formatDate(date: Date | null) {
   }).format(date);
 }
 
+function StatusBadge({ isGuildMember }: { isGuildMember: boolean }) {
+  return (
+    <span
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${
+        isGuildMember
+          ? "border-green-500/20 bg-green-500/10 text-green-300"
+          : "border-yellow-500/20 bg-yellow-500/10 text-yellow-300"
+      }`}
+    >
+      {isGuildMember ? "RTN Member" : "Login Only"}
+    </span>
+  );
+}
+
+function RoleBadge({ role }: { role: string }) {
+  const isAdmin = role.toLowerCase() === "admin";
+
+  return (
+    <span
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${
+        isAdmin
+          ? "border-red-500/20 bg-red-500/10 text-red-300"
+          : "border-indigo-500/20 bg-indigo-500/10 text-indigo-300"
+      }`}
+    >
+      {role}
+    </span>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-400">
+        {label}
+      </p>
+
+      <p className="mt-1 text-lg font-black text-white">{value}</p>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string | number }) {
+  return (
+    <p>
+      {label}: <span className="break-all font-black text-white">{value}</span>
+    </p>
+  );
+}
+
 export default async function AdminPlayersList() {
   const players = await prisma.user.findMany({
     orderBy: {
@@ -27,6 +77,7 @@ export default async function AdminPlayersList() {
           ownedTeams: true,
           teamMemberships: true,
           receivedTeamInvites: true,
+          tournamentRegistrations: true,
         },
       },
     },
@@ -34,55 +85,31 @@ export default async function AdminPlayersList() {
 
   const guildMembers = players.filter((player) => player.isGuildMember);
   const admins = players.filter((player) => player.role === "Admin");
+  const externalPlayers = players.length - guildMembers.length;
 
   return (
-    <section className="mx-auto max-w-7xl px-6 pb-24">
-      <div className="mb-8">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-cyan-300">
-          Players
-        </p>
-
-        <h2 className="text-4xl font-black">Registered Players</h2>
-
-        <p className="mt-4 max-w-3xl leading-7 text-gray-300">
-          View players who logged in with Discord, their RTN Discord membership
-          status, and their team activity.
-        </p>
-      </div>
-
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-3xl border border-indigo-500/20 bg-indigo-500/10 p-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-300">
-            Total
+    <section className="mx-auto grid max-w-7xl gap-6 px-6 pb-16">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+        <div>
+          <p className="text-sm font-black uppercase tracking-[0.16em] text-cyan-300">
+            Players
           </p>
-          <p className="mt-3 text-4xl font-black">{players.length}</p>
-          <p className="mt-2 text-sm text-gray-300">Registered players</p>
+
+          <h2 className="mt-2 text-3xl font-black text-white">
+            Registered players
+          </h2>
+
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
+            View players who logged in with Discord, their RTN membership
+            status, team activity, and account activity.
+          </p>
         </div>
 
-        <div className="rounded-3xl border border-green-500/20 bg-green-500/10 p-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-green-300">
-            RTN Members
-          </p>
-          <p className="mt-3 text-4xl font-black">{guildMembers.length}</p>
-          <p className="mt-2 text-sm text-gray-300">Can use team features</p>
-        </div>
-
-        <div className="rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-yellow-300">
-            External
-          </p>
-          <p className="mt-3 text-4xl font-black">
-            {players.length - guildMembers.length}
-          </p>
-          <p className="mt-2 text-sm text-gray-300">Logged in only</p>
-        </div>
-
-        <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-300">
-            Admins
-          </p>
-          <p className="mt-3 text-4xl font-black">{admins.length}</p>
-          <p className="mt-2 text-sm text-gray-300">Admin role accounts</p>
+        <div className="grid grid-cols-4 gap-3">
+          <StatCard label="Total" value={players.length} />
+          <StatCard label="Members" value={guildMembers.length} />
+          <StatCard label="External" value={externalPlayers} />
+          <StatCard label="Admins" value={admins.length} />
         </div>
       </div>
 
@@ -92,72 +119,107 @@ export default async function AdminPlayersList() {
           description="Players will appear here after they login with Discord."
         />
       ) : (
-        <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
-          <div className="hidden grid-cols-[1.5fr_1.2fr_1fr_1fr_1fr] gap-4 border-b border-white/10 bg-black/20 px-5 py-4 text-sm font-bold uppercase tracking-[0.16em] text-gray-400 lg:grid">
-            <span>Player</span>
-            <span>Discord ID</span>
-            <span>Status</span>
-            <span>Teams</span>
-            <span>Last Login</span>
-          </div>
+        <div className="grid gap-5">
+          {players.map((player) => (
+            <article
+              key={player.id}
+              className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
+            >
+              <div className="border-b border-white/10 bg-white/[0.03] p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex items-center gap-4">
+                    {player.avatar ? (
+                      <Image
+                        src={player.avatar}
+                        alt={player.username}
+                        width={52}
+                        height={52}
+                        className="rounded-xl"
+                      />
+                    ) : (
+                      <div className="grid h-13 w-13 place-items-center rounded-xl border border-indigo-500/20 bg-indigo-500/10 text-sm font-black text-indigo-300">
+                        RTN
+                      </div>
+                    )}
 
-          <div className="divide-y divide-white/10">
-            {players.map((player) => (
-              <article
-                key={player.id}
-                className="grid gap-4 px-5 py-5 lg:grid-cols-[1.5fr_1.2fr_1fr_1fr_1fr] lg:items-center"
-              >
-                <div className="flex items-center gap-3">
-                  {player.avatar ? (
-                    <Image
-                      src={player.avatar}
-                      alt={player.username}
-                      width={44}
-                      height={44}
-                      className="rounded-xl"
-                    />
-                  ) : (
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-500/20 text-sm font-black text-indigo-300">
-                      RTN
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-2xl font-black text-white">
+                          {player.username}
+                        </h3>
+
+                        <StatusBadge isGuildMember={player.isGuildMember} />
+                        <RoleBadge role={player.role} />
+                      </div>
+
+                      <p className="mt-2 text-sm text-gray-400">
+                        Joined RTN platform {formatDate(player.createdAt)}
+                      </p>
                     </div>
-                  )}
+                  </div>
 
-                  <div className="min-w-0">
-                    <p className="truncate font-bold text-white">
-                      {player.username}
-                    </p>
-
-                    <p className="mt-1 text-sm text-gray-400">{player.role}</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <StatCard label="Leader" value={player._count.ownedTeams} />
+                    <StatCard
+                      label="Teams"
+                      value={player._count.teamMemberships}
+                    />
+                    <StatCard
+                      label="Regs."
+                      value={player._count.tournamentRegistrations}
+                    />
                   </div>
                 </div>
+              </div>
 
-                <code className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-gray-300">
-                  {player.discordId}
-                </code>
+              <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <section className="rounded-xl border border-white/10 bg-black/20 p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-400">
+                    Account info
+                  </p>
 
-                <div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-sm font-bold ${
-                      player.isGuildMember
-                        ? "bg-green-500/20 text-green-300"
-                        : "bg-yellow-500/20 text-yellow-300"
-                    }`}
-                  >
-                    {player.isGuildMember ? "RTN Member" : "Login Only"}
-                  </span>
-                </div>
+                  <div className="mt-4 grid gap-3 text-sm text-gray-300">
+                    <InfoRow label="Username" value={player.username} />
+                    <InfoRow label="Role" value={player.role} />
+                    <InfoRow label="Discord ID" value={player.discordId} />
+                    <InfoRow
+                      label="Guild member"
+                      value={player.isGuildMember ? "Yes" : "No"}
+                    />
+                  </div>
+                </section>
 
-                <div className="text-sm text-gray-300">
-                  <p>Leader: {player._count.ownedTeams}</p>
-                  <p>Joined: {player._count.teamMemberships}</p>
-                </div>
+                <section className="rounded-xl border border-white/10 bg-black/20 p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-400">
+                    Activity
+                  </p>
 
-                <p className="text-sm text-gray-400">
-                  {formatDate(player.lastLoginAt)}
-                </p>
-              </article>
-            ))}
-          </div>
+                  <div className="mt-4 grid gap-3 text-sm text-gray-300">
+                    <InfoRow
+                      label="Last login"
+                      value={formatDate(player.lastLoginAt)}
+                    />
+                    <InfoRow
+                      label="Last guild check"
+                      value={formatDate(player.lastGuildCheckAt)}
+                    />
+                    <InfoRow
+                      label="Owned teams"
+                      value={player._count.ownedTeams}
+                    />
+                    <InfoRow
+                      label="Team memberships"
+                      value={player._count.teamMemberships}
+                    />
+                    <InfoRow
+                      label="Received invites"
+                      value={player._count.receivedTeamInvites}
+                    />
+                  </div>
+                </section>
+              </div>
+            </article>
+          ))}
         </div>
       )}
     </section>
