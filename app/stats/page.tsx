@@ -15,6 +15,8 @@ async function getStatsData() {
     tournamentsCount,
     announcementsCount,
     usersCount,
+    teamsCount,
+    approvedRegistrationsCount,
   ] = await Promise.all([
     prisma.rule.count({ where: { isActive: true } }),
     prisma.role.count({ where: { isActive: true } }),
@@ -22,44 +24,56 @@ async function getStatsData() {
     prisma.tournament.count(),
     prisma.announcement.count({ where: { published: true } }),
     prisma.user.count(),
+    prisma.team.count(),
+    prisma.tournamentRegistration.count({
+      where: {
+        status: "approved",
+      },
+    }),
   ]);
 
-  return {
-    summary: [
-      { label: "Rules", value: String(rulesCount) },
-      { label: "Roles", value: String(rolesCount) },
-      { label: "Staff", value: String(staffCount) },
-      { label: "Tournaments", value: String(tournamentsCount) },
-    ],
-    details: [
-      {
-        title: "Roles",
-        value: String(rolesCount),
-        description: "Active RTN roles prepared for future Discord sync.",
-      },
-      {
-        title: "Staff Members",
-        value: String(staffCount),
-        description: "Staff profiles currently stored in the database.",
-      },
-      {
-        title: "Tournaments",
-        value: String(tournamentsCount),
-        description: "Tournament records prepared for future registration.",
-      },
-      {
-        title: "Announcements",
-        value: String(announcementsCount),
-        description: "Published announcements stored in the database.",
-      },
-      {
-        title: "Registered Users",
-        value: String(usersCount),
-        description:
-          "Users will appear here later after Discord login and XP tracking are connected.",
-      },
-    ],
-  };
+  return [
+    {
+      title: "Players",
+      value: String(usersCount),
+      description: "Players who have logged in with Discord.",
+    },
+    {
+      title: "Teams",
+      value: String(teamsCount),
+      description: "Teams created by RTN players.",
+    },
+    {
+      title: "Tournaments",
+      value: String(tournamentsCount),
+      description: "Tournament records available on RTN.",
+    },
+    {
+      title: "Approved Registrations",
+      value: String(approvedRegistrationsCount),
+      description: "Tournament registrations approved by admins.",
+    },
+    {
+      title: "Announcements",
+      value: String(announcementsCount),
+      description: "Published community announcements.",
+    },
+    {
+      title: "Rules",
+      value: String(rulesCount),
+      description: "Active community rules.",
+    },
+    {
+      title: "Roles",
+      value: String(rolesCount),
+      description: "Active community roles.",
+    },
+    {
+      title: "Staff",
+      value: String(staffCount),
+      description: "Visible staff members.",
+    },
+  ];
 }
 
 export default async function StatsPage() {
@@ -71,36 +85,19 @@ export default async function StatsPage() {
 
       <PageHeader
         label="RTN Stats"
-        title="Real community statistics will live here."
-        description="This page is now connected to the database. Later, it will also show live Discord stats collected from the RTN bot."
+        title="Community statistics."
+        description="Current RTN numbers for players, teams, tournaments, registrations, announcements, and community content."
       />
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-6 pb-12 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.summary.map((stat) => (
-          <article
-            key={stat.label}
-            className="rounded-3xl border border-white/10 bg-white/5 p-8"
-          >
-            <p className="text-5xl font-black text-indigo-400">
-              {stat.value}
-            </p>
-            <p className="mt-3 text-gray-300">{stat.label}</p>
-          </article>
+      <section className="mx-auto grid max-w-7xl gap-5 px-6 pb-24 md:grid-cols-2 xl:grid-cols-4">
+        {stats.map((item) => (
+          <StatsDetailCard
+            key={item.title}
+            title={item.title}
+            value={item.value}
+            description={item.description}
+          />
         ))}
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 pb-24">
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {stats.details.map((item) => (
-            <StatsDetailCard
-              key={item.title}
-              title={item.title}
-              value={item.value}
-              description={item.description}
-            />
-          ))}
-        </div>
       </section>
 
       <Footer />
