@@ -56,7 +56,7 @@ export default function AdminOverview({ items }: AdminOverviewProps) {
 
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4">
           <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-400">
-            Active modules
+            Overview cards
           </p>
 
           <p className="mt-1 text-2xl font-black text-white">{items.length}</p>

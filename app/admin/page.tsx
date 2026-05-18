@@ -64,6 +64,8 @@ async function getAdminOverview() {
     usersCount,
     teamsCount,
     pendingRegistrationsCount,
+    tournamentResultsCount,
+    tournamentPoints,
   ] = await Promise.all([
     prisma.rule.count({
       where: {
@@ -93,7 +95,15 @@ async function getAdminOverview() {
         status: "registered",
       },
     }),
+    prisma.tournamentResult.count(),
+    prisma.tournamentResult.aggregate({
+      _sum: {
+        points: true,
+      },
+    }),
   ]);
+
+  const totalTournamentPoints = tournamentPoints._sum.points || 0;
 
   return [
     {
@@ -106,13 +116,30 @@ async function getAdminOverview() {
       label: "Tournaments",
       value: String(tournamentsCount),
       description:
-        "Tournament records prepared for RTN events and future registrations.",
+        "Tournament records prepared for RTN events and team registrations.",
+    },
+    {
+      label: "Players",
+      value: String(usersCount),
+      description:
+        "Players who logged in to RTN using Discord and have a profile record.",
     },
     {
       label: "Teams",
       value: String(teamsCount),
       description:
-        "Teams created by players. Admin approval is only needed for tournament registrations.",
+        "Teams created by players for tournament registration and team play.",
+    },
+    {
+      label: "Tournament Results",
+      value: String(tournamentResultsCount),
+      description:
+        "Final tournament results saved by admins and used for standings.",
+    },
+    {
+      label: "Tournament Points",
+      value: String(totalTournamentPoints),
+      description: "Total points awarded from official RTN tournament results.",
     },
     {
       label: "Pending Registrations",
@@ -120,12 +147,6 @@ async function getAdminOverview() {
       description: `${pendingRegistrationsCount} tournament registration${
         pendingRegistrationsCount === 1 ? "" : "s"
       } waiting for review.`,
-    },
-    {
-      label: "Players",
-      value: String(usersCount),
-      description:
-        "Players who logged in to RTN using Discord and have a profile record.",
     },
   ];
 }
@@ -334,7 +355,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       <PageHeader
         label="RTN Admin Panel"
         title="Manage the RTN community from one place."
-        description="A protected dashboard for managing announcements, tournaments, registrations, teams, players, rules, roles, staff, and future RTN tools."
+        description="A protected dashboard for managing announcements, tournaments, registrations, teams, players, rules, roles, staff, and RTN community tools."
       />
 
       <section className="mx-auto max-w-7xl px-6 pb-6">
