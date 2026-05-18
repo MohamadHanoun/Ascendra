@@ -86,17 +86,8 @@ async function requireTeamLeader(teamId: string, userId: string) {
   return team;
 }
 
-function requireEditableTeam(teamId: string, status: string) {
-  if (status === "pending") {
-    return teamError(
-      teamId,
-      "This team is already submitted for admin review.",
-    );
-  }
-
-  if (status === "approved") {
-    return teamError(teamId, "Approved teams cannot be edited yet.");
-  }
+function requireEditableTeam(_teamId: string, _status: string) {
+  return;
 }
 
 export async function createTeam(formData: FormData) {
@@ -134,7 +125,7 @@ export async function createTeam(formData: FormData) {
         name,
         game,
         leaderId: user.id,
-        status: "draft",
+        status: "approved",
         rejectedAt: null,
         rejectionReason: null,
         submittedAt: null,
@@ -429,9 +420,6 @@ export async function deleteTeam(formData: FormData) {
 
   const team = await requireTeamLeader(teamId, user.id);
 
-  if (team.status === "approved") {
-    return teamError(team.id, "Approved teams cannot be deleted yet.");
-  }
 
   await prisma.team.delete({
     where: {

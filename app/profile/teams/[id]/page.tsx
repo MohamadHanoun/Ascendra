@@ -7,7 +7,6 @@ import {
   deleteTeamInline,
   invitePlayerToTeamInline,
   removeTeamMemberInline,
-  submitTeamForReviewInline,
   updateTeamInline,
 } from "@/actions/teamInlineActions";
 import InlineTeamActionForm from "@/components/InlineTeamActionForm";
@@ -54,7 +53,7 @@ function StatusBadge({ status }: { status: string }) {
         styles[normalizedStatus] || "border-white/10 bg-white/5 text-gray-300"
       }`}
     >
-      {status}
+      {normalizedStatus === "approved" ? "Active" : status}
     </span>
   );
 }
@@ -118,10 +117,8 @@ export default async function TeamDetailsPage({
 
   const isLeader = team.leaderId === session.user.databaseId;
   const canManage = Boolean(currentMembership);
-  const canEdit = isLeader && team.status !== "approved";
-  const canSubmitForReview =
-    isLeader && (team.status === "draft" || team.status === "rejected");
-  const canDelete = isLeader && team.status !== "approved";
+  const canEdit = isLeader;
+  const canDelete = isLeader;
 
   if (!canManage) {
     redirect("/profile");
@@ -176,6 +173,7 @@ export default async function TeamDetailsPage({
               {team.rejectionReason && (
                 <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 p-4">
                   <p className="font-black text-red-300">Team rejected</p>
+
                   <p className="mt-2 leading-7 text-gray-300">
                     Reason: {team.rejectionReason}
                   </p>
@@ -211,7 +209,7 @@ export default async function TeamDetailsPage({
               </h2>
 
               <p className="mt-2 text-sm leading-6 text-gray-400">
-                Edit the team, invite players, submit for review, or delete it
+                Edit the team, invite players, and manage important team actions
                 from one clean place.
               </p>
             </div>
@@ -266,12 +264,12 @@ export default async function TeamDetailsPage({
                   </InlineTeamActionForm>
                 ) : (
                   <div className="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-gray-300">
-                    Approved teams are locked.
+                    Only the team leader can edit this team.
                   </div>
                 )}
               </section>
 
-              {isLeader && canEdit && (
+              {isLeader && (
                 <section className="border-t border-white/10 pt-6">
                   <p className="mb-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500">
                     Invite player
@@ -297,39 +295,6 @@ export default async function TeamDetailsPage({
                       />
                     </label>
                   </InlineTeamActionForm>
-                </section>
-              )}
-
-              {isLeader && (
-                <section className="border-t border-white/10 pt-6">
-                  <p className="mb-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-                    Review
-                  </p>
-
-                  <div className="grid gap-4">
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-bold text-gray-400">
-                          Current status
-                        </p>
-
-                        <div className="mt-2">
-                          <StatusBadge status={team.status} />
-                        </div>
-                      </div>
-
-                      {canSubmitForReview && (
-                        <InlineTeamActionForm
-                          action={submitTeamForReviewInline}
-                          buttonLabel="Submit for review"
-                          pendingLabel="Submitting..."
-                          variant="success"
-                        >
-                          <input type="hidden" name="teamId" value={team.id} />
-                        </InlineTeamActionForm>
-                      )}
-                    </div>
-                  </div>
                 </section>
               )}
 
@@ -400,7 +365,7 @@ export default async function TeamDetailsPage({
                         status={isMemberLeader ? "Leader" : "Member"}
                       />
 
-                      {isLeader && !isMemberLeader && canEdit ? (
+                      {isLeader && !isMemberLeader ? (
                         <InlineTeamActionForm
                           action={removeTeamMemberInline}
                           buttonLabel="Remove"
@@ -444,7 +409,7 @@ export default async function TeamDetailsPage({
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <StatusBadge status="Invited" />
 
-                    {canEdit ? (
+                    {isLeader ? (
                       <InlineTeamActionForm
                         action={cancelTeamInviteInline}
                         buttonLabel="Cancel"
@@ -467,6 +432,12 @@ export default async function TeamDetailsPage({
                   </div>
                 </div>
               ))}
+
+              {team.members.length === 0 && team.invites.length === 0 && (
+                <div className="p-5 text-gray-300">
+                  No players in this team yet.
+                </div>
+              )}
             </div>
           </aside>
         </div>

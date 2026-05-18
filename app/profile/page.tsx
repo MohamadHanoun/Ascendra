@@ -180,7 +180,6 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
                 <ProfileIdentityActions discordId={user.discordId} />
               </div>
-
             </div>
           </div>
         </section>
@@ -256,7 +255,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             <PanelHeader
               label="Create Team"
               title="Start a new team"
-              description="Create a draft team first. Team management happens after creation."
+              description="Create a team, invite players, then register for tournaments."
             />
 
             {user.isGuildMember ? (
@@ -300,7 +299,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     type="submit"
                     className="rounded bg-indigo-500 px-5 py-3 font-black text-white transition hover:bg-indigo-400"
                   >
-                    Create Draft Team
+                    Create Team
                   </button>
 
                   <p className="text-sm leading-6 text-gray-400">

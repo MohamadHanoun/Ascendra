@@ -77,15 +77,7 @@ async function getLeaderTeam(teamId: string, userId: string) {
   };
 }
 
-function getEditableError(status: string) {
-  if (status === "pending") {
-    return "This team is already submitted for admin review.";
-  }
-
-  if (status === "approved") {
-    return "Approved teams cannot be edited yet.";
-  }
-
+function getEditableError(_status: string) {
   return null;
 }
 
@@ -423,10 +415,6 @@ export async function deleteTeamInline(
 
   if (!team) {
     return fail(error || "Team was not found.");
-  }
-
-  if (team.status === "approved") {
-    return fail("Approved teams cannot be deleted yet.");
   }
 
   await prisma.team.delete({
