@@ -1,23 +1,23 @@
 type StatsDetailCardProps = {
   title: string;
   value: string;
-  description: string;
 };
 
 export default function StatsDetailCard({
   title,
   value,
-  description,
 }: StatsDetailCardProps) {
   return (
-    <article className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/20 transition hover:-translate-y-1 hover:border-violet-400/30 hover:bg-white/[0.06]">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-        {title}
-      </p>
+    <article className="grid gap-3 p-5 transition hover:bg-white/[0.035] md:grid-cols-[minmax(0,1fr)_120px] md:items-center">
+      <div>
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+          Metric
+        </p>
 
-      <h2 className="mt-4 text-4xl font-black text-white">{value}</h2>
+        <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
+      </div>
 
-      <p className="mt-4 text-sm leading-6 text-gray-400">{description}</p>
+      <p className="text-2xl font-black text-violet-200">{value}</p>
     </article>
   );
 }

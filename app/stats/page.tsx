@@ -2,7 +2,6 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import StatsDetailCard from "@/components/StatsDetailCard";
 import { prisma } from "@/lib/prisma";
-import { getGameImageUrl } from "@/lib/tournamentImages";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +19,7 @@ function GameStatRow({
 }) {
   return (
     <div
-      className={`flex items-center justify-between gap-4 rounded-2xl border px-4 py-3 ${
+      className={`flex items-center justify-between gap-4 rounded-xl border px-4 py-3 ${
         variant === "points"
           ? "border-emerald-400/25 bg-emerald-500/10"
           : "border-white/10 bg-black/25"
@@ -51,28 +50,17 @@ function GameStatsCard({
   points: number;
 }) {
   return (
-    <article className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 transition hover:-translate-y-1 hover:border-violet-400/30 hover:bg-white/[0.06]">
-      <div
-        className="min-h-40 bg-cover bg-center"
-        style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.08), rgba(7,8,17,0.88)), url("${getGameImageUrl(
-            game,
-          )}")`,
-        }}
-      />
+    <article className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 transition hover:bg-white/[0.06]">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+        Game
+      </p>
 
-      <div className="p-5">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-          Game stats
-        </p>
+      <h2 className="mt-2 text-2xl font-black text-white">{game}</h2>
 
-        <h2 className="mt-2 text-2xl font-black text-white">{game}</h2>
-
-        <div className="mt-5 grid gap-2">
-          <GameStatRow label="Tournaments" value={tournaments} />
-          <GameStatRow label="Results" value={results} />
-          <GameStatRow label="Points" value={points} variant="points" />
-        </div>
+      <div className="mt-5 grid gap-2">
+        <GameStatRow label="Tournaments" value={tournaments} />
+        <GameStatRow label="Results" value={results} />
+        <GameStatRow label="Points" value={points} variant="points" />
       </div>
     </article>
   );
@@ -149,56 +137,19 @@ async function getStatsData() {
   });
 
   const overviewStats = [
+    { title: "Players", value: String(usersCount) },
+    { title: "Teams", value: String(teamsCount) },
+    { title: "Tournaments", value: String(tournamentsCount) },
+    { title: "Results", value: String(tournamentResults.length) },
+    { title: "Points", value: String(tournamentPoints._sum.points || 0) },
     {
-      title: "Players",
-      value: String(usersCount),
-      description: "Players who have logged in with Discord.",
-    },
-    {
-      title: "Teams",
-      value: String(teamsCount),
-      description: "Teams created by Ascendra players.",
-    },
-    {
-      title: "Tournaments",
-      value: String(tournamentsCount),
-      description: "Tournament records available on Ascendra.",
-    },
-    {
-      title: "Tournament Results",
-      value: String(tournamentResults.length),
-      description: "Final tournament results saved by admins.",
-    },
-    {
-      title: "Tournament Points",
-      value: String(tournamentPoints._sum.points || 0),
-      description: "Total points awarded from tournament results.",
-    },
-    {
-      title: "Approved Registrations",
+      title: "Approved registrations",
       value: String(approvedRegistrationsCount),
-      description: "Tournament registrations approved by admins.",
     },
-    {
-      title: "Announcements",
-      value: String(announcementsCount),
-      description: "Published community announcements.",
-    },
-    {
-      title: "Rules",
-      value: String(rulesCount),
-      description: "Active community rules.",
-    },
-    {
-      title: "Roles",
-      value: String(rolesCount),
-      description: "Active community roles.",
-    },
-    {
-      title: "Staff",
-      value: String(staffCount),
-      description: "Visible staff members.",
-    },
+    { title: "News", value: String(announcementsCount) },
+    { title: "Rules", value: String(rulesCount) },
+    { title: "Roles", value: String(rolesCount) },
+    { title: "Staff", value: String(staffCount) },
   ];
 
   return {
@@ -212,51 +163,44 @@ export default async function StatsPage() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.18)_0%,transparent_28%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.14)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#0b0d17_45%,#070811)]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_28%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#0b0d17_45%,#070811)]" />
 
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative overflow-hidden border-b border-white/10">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(7,8,17,0.98),rgba(7,8,17,0.82),rgba(7,8,17,0.98)),url('https://images.unsplash.com/photo-1542751110-97427bbecf20?auto=format&fit=crop&w=2200&q=80')] bg-cover bg-center opacity-70" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.28)_0%,transparent_35%),radial-gradient(circle_at_bottom_left,rgba(34,211,238,0.10)_0%,transparent_28%)]" />
-
-          <div className="relative z-10 mx-auto max-w-[1440px] px-6 py-20 lg:px-10">
-            <p className="mb-5 text-sm font-black uppercase tracking-[0.22em] text-violet-300">
-              Ascendra stats
+        <section className="border-b border-white/10">
+          <div className="mx-auto max-w-[1680px] px-6 py-14 lg:px-10 2xl:px-14">
+            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
+              Platform
             </p>
 
-            <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
-              Community statistics.
+            <h1 className="text-5xl font-black uppercase tracking-tight text-white md:text-6xl">
+              Stats
             </h1>
 
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-300">
-              Current Ascendra numbers for players, teams, tournaments, results,
-              points, and game activity.
+            <p className="mt-4 max-w-2xl text-base leading-7 text-gray-400">
+              Current platform numbers and game activity.
             </p>
           </div>
-
-          <svg
-            className="absolute bottom-[-1px] left-0 w-full text-[#070811]"
-            viewBox="0 0 1440 120"
-            fill="currentColor"
-            preserveAspectRatio="none"
-          >
-            <path d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,42.7C1120,32,1280,32,1360,32L1440,32L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z" />
-          </svg>
         </section>
 
-        <section className="mx-auto grid max-w-[1440px] gap-10 px-6 py-12 lg:px-10">
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-            {overviewStats.map((item) => (
-              <StatsDetailCard
-                key={item.title}
-                title={item.title}
-                value={item.value}
-                description={item.description}
-              />
-            ))}
-          </div>
+        <section className="mx-auto grid max-w-[1680px] gap-10 px-6 py-10 lg:px-10 2xl:px-14">
+          <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+            <div className="hidden border-b border-white/10 bg-black/25 px-5 py-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500 md:grid md:grid-cols-[minmax(0,1fr)_120px]">
+              <span>Metric</span>
+              <span>Value</span>
+            </div>
+
+            <div className="divide-y divide-white/10">
+              {overviewStats.map((item) => (
+                <StatsDetailCard
+                  key={item.title}
+                  title={item.title}
+                  value={item.value}
+                />
+              ))}
+            </div>
+          </section>
 
           <section className="grid gap-5">
             <div>
@@ -267,11 +211,6 @@ export default async function StatsPage() {
               <h2 className="mt-2 text-3xl font-black text-white">
                 Stats by game
               </h2>
-
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
-                Tournament activity grouped by game, including saved results and
-                awarded points.
-              </p>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
