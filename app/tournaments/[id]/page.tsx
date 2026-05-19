@@ -33,7 +33,7 @@ function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     open: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
     approved: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    registered: "border-cyan-400/25 bg-cyan-500/10 text-cyan-300",
+    registered: "border-violet-400/25 bg-violet-500/10 text-violet-200",
     upcoming: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
     pending: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
     closed: "border-red-400/25 bg-red-500/10 text-red-300",
