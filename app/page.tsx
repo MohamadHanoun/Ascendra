@@ -191,7 +191,7 @@ export default async function HomePage() {
           <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(7,8,17,0.98),rgba(7,8,17,0.72),rgba(7,8,17,0.98)),url('https://images.unsplash.com/photo-1542751110-97427bbecf20?auto=format&fit=crop&w=2200&q=80')] bg-cover bg-center opacity-80" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.22)_0%,transparent_34%),radial-gradient(circle_at_bottom_left,rgba(34,211,238,0.08)_0%,transparent_28%)]" />
 
-          <div className="relative z-10 grid gap-12 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10 lg:py-24 2xl:px-16">
+          <div className="relative z-10 mx-auto grid max-w-[1440px] gap-12 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10 lg:py-24">
             <div>
               <p className="mb-5 text-sm font-black uppercase tracking-[0.22em] text-violet-300">
                 Ascendra tournament platform
@@ -288,7 +288,7 @@ export default async function HomePage() {
           </svg>
         </section>
 
-        <section className="px-6 py-20 lg:px-10 2xl:px-16">
+        <section className="mx-auto max-w-[1440px] px-6 py-20 lg:px-10">
           <SectionHeader
             label="How it works"
             title="A simple flow for players and admins."
@@ -307,66 +307,70 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="border-y border-white/10 bg-black/20 px-6 py-20 lg:px-10 2xl:px-16">
-          <SectionHeader
-            label="Tournaments"
-            title="Ascendra tournament list."
-            description="The tournament page should stay clean and focused. Details and registration open in a separate focused page."
-          />
+        <section className="border-y border-white/10 bg-black/20">
+          <div className="mx-auto max-w-[1440px] px-6 py-20 lg:px-10">
+            <SectionHeader
+              label="Tournaments"
+              title="Ascendra tournament list."
+              description="The tournament page should stay clean and focused. Details and registration open in a separate focused page."
+            />
 
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/30">
-            <div className="hidden grid-cols-[1.4fr_1fr_0.8fr_0.8fr_1fr_auto] border-b border-white/10 bg-white/[0.04] px-5 py-4 text-xs font-black uppercase tracking-[0.12em] text-gray-500 lg:grid">
-              <span>Tournament</span>
-              <span>Game</span>
-              <span>Team size</span>
-              <span>Teams</span>
-              <span>Status</span>
-              <span></span>
-            </div>
-
-            {tournaments.length === 0 ? (
-              <div className="px-5 py-8 text-gray-300">
-                No tournaments available yet.
+            <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/30">
+              <div className="hidden grid-cols-[1.4fr_1fr_0.8fr_0.8fr_1fr_auto] border-b border-white/10 bg-white/[0.04] px-5 py-4 text-xs font-black uppercase tracking-[0.12em] text-gray-500 lg:grid">
+                <span>Tournament</span>
+                <span>Game</span>
+                <span>Team size</span>
+                <span>Teams</span>
+                <span>Status</span>
+                <span></span>
               </div>
-            ) : (
-              tournaments.map((tournament) => (
-                <div
-                  key={tournament.id}
-                  className="grid gap-4 border-b border-white/10 px-5 py-5 last:border-b-0 lg:grid-cols-[1.4fr_1fr_0.8fr_0.8fr_1fr_auto] lg:items-center"
-                >
-                  <div>
-                    <p className="font-black text-white">{tournament.title}</p>
-                    <p className="mt-1 text-sm text-gray-500">
-                      {tournament.date}
-                    </p>
-                  </div>
 
-                  <p className="text-sm font-bold text-violet-300">
-                    {tournament.game}
-                  </p>
-
-                  <p className="font-bold text-white">
-                    {tournament.teamSize}v{tournament.teamSize}
-                  </p>
-
-                  <p className="font-bold text-white">
-                    {tournament.registrations.length}/{tournament.maxSlots}
-                  </p>
-
-                  <StatusBadge
-                    status={tournament.status}
-                    variant={getStatusVariant(tournament.status)}
-                  />
-
-                  <Link
-                    href="/tournaments"
-                    className="rounded-xl bg-violet-600 px-4 py-2 text-center text-sm font-black text-white transition hover:bg-violet-500"
-                  >
-                    Details
-                  </Link>
+              {tournaments.length === 0 ? (
+                <div className="px-5 py-8 text-gray-300">
+                  No tournaments available yet.
                 </div>
-              ))
-            )}
+              ) : (
+                tournaments.map((tournament) => (
+                  <div
+                    key={tournament.id}
+                    className="grid gap-4 border-b border-white/10 px-5 py-5 last:border-b-0 lg:grid-cols-[1.4fr_1fr_0.8fr_0.8fr_1fr_auto] lg:items-center"
+                  >
+                    <div>
+                      <p className="font-black text-white">
+                        {tournament.title}
+                      </p>
+                      <p className="mt-1 text-sm text-gray-500">
+                        {tournament.date}
+                      </p>
+                    </div>
+
+                    <p className="text-sm font-bold text-violet-300">
+                      {tournament.game}
+                    </p>
+
+                    <p className="font-bold text-white">
+                      {tournament.teamSize}v{tournament.teamSize}
+                    </p>
+
+                    <p className="font-bold text-white">
+                      {tournament.registrations.length}/{tournament.maxSlots}
+                    </p>
+
+                    <StatusBadge
+                      status={tournament.status}
+                      variant={getStatusVariant(tournament.status)}
+                    />
+
+                    <Link
+                      href="/tournaments"
+                      className="rounded-xl bg-violet-600 px-4 py-2 text-center text-sm font-black text-white transition hover:bg-violet-500"
+                    >
+                      Details
+                    </Link>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </section>
 

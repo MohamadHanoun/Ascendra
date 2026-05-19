@@ -22,7 +22,7 @@ function AscendraMark() {
 export default function Footer() {
   return (
     <footer className="border-t border-white/10 bg-[#06070f] text-white">
-      <div className="grid gap-10 px-6 py-12 md:grid-cols-[1.5fr_1fr_1fr] lg:px-10 2xl:px-16">
+      <div className="mx-auto grid max-w-[1440px] gap-10 px-6 py-12 md:grid-cols-[1.5fr_1fr_1fr] lg:px-10">
         <div>
           <div className="flex items-center gap-3">
             <AscendraMark />

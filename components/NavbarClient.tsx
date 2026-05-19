@@ -158,7 +158,7 @@ export default function NavbarClient({
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#070811]/90 backdrop-blur-xl">
-        <nav className="flex w-full items-center gap-4 px-6 py-4 lg:px-10 2xl:px-16">
+        <nav className="mx-auto flex w-full max-w-[1440px] items-center gap-4 px-6 py-4 lg:px-10">
           <BrandLogo />
 
           <div className="hidden flex-1 items-center justify-center gap-2 lg:flex">
