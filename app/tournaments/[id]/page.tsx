@@ -7,8 +7,8 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import ProfileNotice from "@/components/ProfileNotice";
 import { TournamentRegistrationPanel } from "@/components/TournamentRegistrationPanel";
-import { getTournamentImageUrl } from "@/lib/tournamentImages";
 import { prisma } from "@/lib/prisma";
+import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
 export const dynamic = "force-dynamic";
 
@@ -61,11 +61,51 @@ function InfoRow({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
+function SectionHeader({
+  label,
+  title,
+  description,
+}: {
+  label: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
+      <p className="text-sm font-black uppercase tracking-[0.14em] text-cyan-300">
+        {label}
+      </p>
+
+      <h2 className="mt-2 text-2xl font-black text-white">{title}</h2>
+
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
+        {description}
+      </p>
+    </div>
+  );
+}
+
 function formatDate(date: Date) {
   return date.toLocaleString("en", {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+function PlacementBadge({ placement }: { placement: number }) {
+  const isTopThree = placement <= 3;
+
+  return (
+    <span
+      className={`grid h-11 w-11 place-items-center rounded-xl border text-lg font-black ${
+        isTopThree
+          ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-300"
+          : "border-cyan-400/20 bg-cyan-400/10 text-cyan-200"
+      }`}
+    >
+      #{placement}
+    </span>
+  );
 }
 
 export default async function TournamentDetailsPage({
@@ -110,6 +150,37 @@ export default async function TournamentDetailsPage({
       teamSize: true,
       status: true,
       registrationStatus: true,
+      results: {
+        select: {
+          id: true,
+          placement: true,
+          points: true,
+          note: true,
+          team: {
+            select: {
+              id: true,
+              name: true,
+              game: true,
+              members: {
+                include: {
+                  user: true,
+                },
+                orderBy: {
+                  joinedAt: "asc",
+                },
+              },
+            },
+          },
+        },
+        orderBy: [
+          {
+            placement: "asc",
+          },
+          {
+            awardedAt: "desc",
+          },
+        ],
+      },
       registrations: {
         where: {
           status: {
@@ -242,6 +313,12 @@ export default async function TournamentDetailsPage({
                 <span className="inline-flex rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-black text-cyan-300">
                   {tournament.game}
                 </span>
+
+                {tournament.results.length > 0 && (
+                  <span className="inline-flex rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs font-black text-green-300">
+                    Results posted
+                  </span>
+                )}
               </div>
 
               <h1 className="max-w-4xl text-5xl font-black leading-tight tracking-tight md:text-7xl">
@@ -287,27 +364,63 @@ export default async function TournamentDetailsPage({
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-12">
+      <section className="mx-auto grid max-w-7xl gap-8 px-6 py-12">
         <ProfileNotice
           message={noticeParams.message}
           error={noticeParams.error}
         />
 
+        {tournament.results.length > 0 && (
+          <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
+            <SectionHeader
+              label="Tournament Results"
+              title="Final standings"
+              description="Results and tournament points awarded by the RTN admin team."
+            />
+
+            <div className="divide-y divide-white/10">
+              {tournament.results.map((result) => (
+                <article
+                  key={result.id}
+                  className="grid gap-4 px-6 py-5 md:grid-cols-[70px_minmax(0,1fr)_130px_120px] md:items-center"
+                >
+                  <PlacementBadge placement={result.placement} />
+
+                  <div>
+                    <p className="font-black text-white">{result.team.name}</p>
+
+                    <p className="mt-1 text-sm text-gray-400">
+                      {result.team.game} · {result.team.members.length} player
+                      {result.team.members.length === 1 ? "" : "s"}
+                    </p>
+
+                    {result.note && (
+                      <p className="mt-2 text-sm text-gray-500">
+                        {result.note}
+                      </p>
+                    )}
+                  </div>
+
+                  <p className="text-sm font-black text-green-300">
+                    {result.points} points
+                  </p>
+
+                  <p className="text-sm font-bold text-gray-300">
+                    #{result.placement}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
         <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
           <section className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
-            <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
-              <p className="text-sm font-black uppercase tracking-[0.14em] text-cyan-300">
-                Registration
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black">Register your team</h2>
-
-              <p className="mt-2 text-sm leading-6 text-gray-400">
-                Choose one of your teams that matches this tournament game and
-                has enough players. Tournament registration may still require
-                admin review.
-              </p>
-            </div>
+            <SectionHeader
+              label="Registration"
+              title="Register your team"
+              description="Choose one of your teams that matches this tournament game and has enough players. Tournament registration may still require admin review."
+            />
 
             <div className="p-6">
               <TournamentRegistrationPanel
@@ -325,19 +438,11 @@ export default async function TournamentDetailsPage({
           </section>
 
           <section className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
-            <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
-              <p className="text-sm font-black uppercase tracking-[0.14em] text-cyan-300">
-                Registered Teams
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black">
-                Current registrations
-              </h2>
-
-              <p className="mt-2 text-sm leading-6 text-gray-400">
-                Teams currently registered or waiting for tournament approval.
-              </p>
-            </div>
+            <SectionHeader
+              label="Registered Teams"
+              title="Current registrations"
+              description="Teams currently registered or waiting for tournament approval."
+            />
 
             {tournament.registrations.length === 0 ? (
               <div className="p-6 text-gray-300">No teams registered yet.</div>
