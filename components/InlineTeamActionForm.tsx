@@ -23,18 +23,30 @@ type InlineTeamActionFormProps = {
 
 function getButtonClass(variant: InlineTeamActionFormProps["variant"]) {
   if (variant === "danger") {
-    return "rounded border border-red-500/25 px-4 py-2 text-sm font-black text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50";
+    return "rounded-xl border border-red-500/25 px-4 py-2 text-sm font-black text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50";
   }
 
   if (variant === "success") {
-    return "rounded bg-green-500 px-5 py-3 font-black text-white transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-50";
+    return "rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50";
   }
 
   if (variant === "secondary") {
-    return "rounded border border-white/10 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+    return "rounded-xl border border-white/10 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
   }
 
-  return "rounded bg-indigo-500 px-5 py-3 font-black text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50";
+  return "rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50";
+}
+
+function getConfirmButtonClass(variant: InlineTeamActionFormProps["variant"]) {
+  if (variant === "danger") {
+    return "rounded-xl bg-red-500 px-5 py-3 text-sm font-black text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50";
+  }
+
+  if (variant === "success") {
+    return "rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50";
+  }
+
+  return "rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50";
 }
 
 export default function InlineTeamActionForm({
@@ -110,10 +122,10 @@ export default function InlineTeamActionForm({
 
         {notice && (
           <div
-            className={`rounded-xl border p-3 text-sm font-bold ${
+            className={`rounded-2xl border px-4 py-3 text-sm font-bold ${
               notice.ok
-                ? "border-green-500/20 bg-green-500/10 text-green-300"
-                : "border-red-500/20 bg-red-500/10 text-red-300"
+                ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
+                : "border-red-400/25 bg-red-500/10 text-red-300"
             }`}
           >
             {notice.message}
@@ -122,10 +134,10 @@ export default function InlineTeamActionForm({
       </form>
 
       {confirmOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 px-4">
-          <div className="w-full max-w-md overflow-hidden rounded-xl border border-white/10 bg-[#111827] shadow-2xl shadow-black/40">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#11121d] shadow-2xl shadow-black/40">
             <div className="border-b border-white/10 px-6 py-5">
-              <p className="text-sm font-black uppercase tracking-[0.14em] text-cyan-300">
+              <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
                 Confirmation
               </p>
 
@@ -144,7 +156,7 @@ export default function InlineTeamActionForm({
               <button
                 type="button"
                 onClick={() => setConfirmOpen(false)}
-                className="rounded border border-white/10 px-5 py-3 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
+                className="rounded-xl border border-white/10 px-5 py-3 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
               >
                 Cancel
               </button>
@@ -153,11 +165,7 @@ export default function InlineTeamActionForm({
                 type="button"
                 disabled={pending}
                 onClick={runAction}
-                className={
-                  variant === "danger"
-                    ? "rounded bg-red-500 px-5 py-3 text-sm font-black text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
-                    : "rounded bg-indigo-500 px-5 py-3 text-sm font-black text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
-                }
+                className={getConfirmButtonClass(variant)}
               >
                 {pending ? pendingLabel : confirmLabel}
               </button>
