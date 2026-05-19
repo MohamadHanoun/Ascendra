@@ -84,15 +84,7 @@ function TeamStatCard({
   );
 }
 
-function PanelHeader({
-  label,
-  title,
-  description,
-}: {
-  label: string;
-  title: string;
-  description: string;
-}) {
+function PanelHeader({ label, title }: { label: string; title: string }) {
   return (
     <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
       <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
@@ -100,10 +92,6 @@ function PanelHeader({
       </p>
 
       <h2 className="mt-2 text-2xl font-black text-white">{title}</h2>
-
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
-        {description}
-      </p>
     </div>
   );
 }
@@ -229,7 +217,7 @@ export default async function TeamDetailsPage({
                   <div className="mt-4 flex flex-wrap gap-2">
                     <StatusBadge status={team.status} />
 
-                    <span className="inline-flex rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1 text-xs font-black text-cyan-300">
+                    <span className="inline-flex rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-xs font-black text-violet-200">
                       {team.game}
                     </span>
 
@@ -292,11 +280,7 @@ export default async function TeamDetailsPage({
 
         <section className="mx-auto grid max-w-[1440px] gap-8 px-6 py-12 lg:px-10">
           <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-            <PanelHeader
-              label="Tournament history"
-              title="Team tournament results"
-              description="Results and points this team has earned from official Ascendra tournaments."
-            />
+            <PanelHeader label="Tournament history" title="Team results" />
 
             <div className="grid gap-4 p-6 md:grid-cols-3">
               <TeamStatCard label="Total points" value={totalTeamPoints} />
@@ -361,11 +345,7 @@ export default async function TeamDetailsPage({
 
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
             <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              <PanelHeader
-                label="Team controls"
-                title="Setup and actions"
-                description="Edit the team, invite players, and manage important team actions from one clean place."
-              />
+              <PanelHeader label="Team controls" title="Setup and actions" />
 
               <div className="grid gap-8 p-6">
                 <section>
@@ -462,8 +442,7 @@ export default async function TeamDetailsPage({
                         <p className="font-black text-white">Delete team</p>
 
                         <p className="mt-1 max-w-xl text-sm leading-6 text-gray-400">
-                          Permanently delete this team, its members, and pending
-                          invitations.
+                          This removes the team, members, and pending invites.
                         </p>
                       </div>
 
@@ -491,10 +470,6 @@ export default async function TeamDetailsPage({
                 <h2 className="mt-2 text-xl font-black text-white">
                   Players and invites
                 </h2>
-
-                <p className="mt-2 text-sm leading-6 text-gray-400">
-                  Current members and pending invites.
-                </p>
               </div>
 
               <div className="divide-y divide-white/10">
