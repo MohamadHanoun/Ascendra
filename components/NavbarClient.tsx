@@ -13,7 +13,7 @@ const mainLinks = [
   { href: "/announcements", label: "News" },
 ];
 
-const moreLinks = [
+const footerOnlyLinks = [
   { href: "/about", label: "About" },
   { href: "/rules", label: "Rules" },
   { href: "/roles", label: "Roles" },
@@ -99,27 +99,20 @@ export default function NavbarClient({
   userImage,
 }: NavbarClientProps) {
   const pathname = usePathname();
-  const moreMenuRef = useRef<HTMLDivElement | null>(null);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
   useEffect(() => {
     setIsMenuOpen(false);
-    setIsMoreOpen(false);
     setIsProfileOpen(false);
   }, [pathname]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
-
-      if (moreMenuRef.current && !moreMenuRef.current.contains(target)) {
-        setIsMoreOpen(false);
-      }
 
       if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
         setIsProfileOpen(false);
@@ -128,7 +121,6 @@ export default function NavbarClient({
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setIsMoreOpen(false);
         setIsProfileOpen(false);
         setIsMenuOpen(false);
         setIsLogoutConfirmOpen(false);
@@ -158,54 +150,16 @@ export default function NavbarClient({
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#070811]/90 backdrop-blur-xl">
-        <nav className="mx-auto flex w-full max-w-[1440px] items-center gap-4 px-6 py-4 lg:px-10">
+        <nav className="flex w-full items-center gap-4 px-6 py-4 lg:px-10 2xl:px-14">
           <BrandLogo />
 
           <div className="hidden flex-1 items-center justify-center gap-2 lg:flex">
             {mainLinks.map((link) => (
               <NavLink key={link.href} href={link.href} label={link.label} />
             ))}
-
-            <div ref={moreMenuRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setIsMoreOpen((value) => !value)}
-                aria-expanded={isMoreOpen}
-                className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
-                  moreLinks.some((link) => link.href === pathname)
-                    ? "bg-violet-500/20 text-violet-200"
-                    : "text-gray-300 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                More
-              </button>
-
-              {isMoreOpen && (
-                <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-white/10 bg-[#11121d] p-2 shadow-2xl shadow-black/40">
-                  {moreLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className="block rounded-xl px-4 py-3 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="ml-auto hidden items-center gap-3 lg:flex">
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
-              >
-                Admin
-              </Link>
-            )}
-
             {isLoggedIn ? (
               <div ref={profileMenuRef} className="relative">
                 <button
@@ -264,10 +218,21 @@ export default function NavbarClient({
                       View Profile
                     </Link>
 
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        className="block rounded-xl px-4 py-3 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                      >
+                        Admin Panel
+                      </Link>
+                    )}
+
+                    <div className="my-2 border-t border-white/10" />
+
                     <button
                       type="button"
                       onClick={confirmLogout}
-                      className="mt-1 w-full rounded-xl px-4 py-3 text-left text-sm font-bold text-red-300 transition hover:bg-red-500/10"
+                      className="w-full rounded-xl px-4 py-3 text-left text-sm font-bold text-red-300 transition hover:bg-red-500/10"
                     >
                       Logout
                     </button>
@@ -306,7 +271,7 @@ export default function NavbarClient({
         {isMenuOpen && (
           <div className="border-t border-white/10 bg-[#070811] px-6 py-5 lg:hidden">
             <div className="grid gap-2">
-              {[...mainLinks, ...moreLinks].map((link) => (
+              {mainLinks.map((link) => (
                 <NavLink
                   key={link.href}
                   href={link.href}
@@ -316,16 +281,6 @@ export default function NavbarClient({
               ))}
 
               <div className="mt-3 grid gap-2 border-t border-white/10 pt-4">
-                {isAdmin && (
-                  <Link
-                    href="/admin"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
-                  >
-                    Admin
-                  </Link>
-                )}
-
                 {isLoggedIn ? (
                   <>
                     <Link
@@ -349,6 +304,16 @@ export default function NavbarClient({
                         Profile
                       </span>
                     </Link>
+
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                      >
+                        Admin Panel
+                      </Link>
+                    )}
 
                     <button
                       type="button"
@@ -376,6 +341,23 @@ export default function NavbarClient({
                 >
                   Join Discord
                 </a>
+
+                <div className="mt-3 border-t border-white/10 pt-4">
+                  <p className="mb-2 px-4 text-xs font-black uppercase tracking-[0.16em] text-gray-500">
+                    More pages
+                  </p>
+
+                  <div className="grid gap-2">
+                    {footerOnlyLinks.map((link) => (
+                      <NavLink
+                        key={link.href}
+                        href={link.href}
+                        label={link.label}
+                        onClick={() => setIsMenuOpen(false)}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

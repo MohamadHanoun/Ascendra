@@ -1,11 +1,24 @@
 import Link from "next/link";
 
-const footerLinks = [
+const platformLinks = [
   { href: "/tournaments", label: "Tournaments" },
-  { href: "/announcements", label: "News" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/announcements", label: "News" },
+  { href: "/profile", label: "Profile" },
+];
+
+const communityLinks = [
+  { href: "/about", label: "About" },
   { href: "/rules", label: "Rules" },
+  { href: "/roles", label: "Roles" },
   { href: "/staff", label: "Staff" },
+  { href: "/stats", label: "Stats" },
+];
+
+const legalLinks = [
+  { href: "/terms", label: "Terms" },
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/cookies", label: "Cookie Policy" },
 ];
 
 const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "#";
@@ -19,10 +32,38 @@ function AscendraMark() {
   );
 }
 
+function FooterColumn({
+  title,
+  links,
+}: {
+  title: string;
+  links: { href: string; label: string }[];
+}) {
+  return (
+    <div>
+      <h3 className="mb-4 text-sm font-black uppercase tracking-[0.16em] text-gray-300">
+        {title}
+      </h3>
+
+      <div className="grid gap-3">
+        {links.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="text-sm font-bold text-gray-500 transition hover:text-white"
+          >
+            {link.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Footer() {
   return (
     <footer className="border-t border-white/10 bg-[#06070f] text-white">
-      <div className="mx-auto grid max-w-[1440px] gap-10 px-6 py-12 md:grid-cols-[1.5fr_1fr_1fr] lg:px-10">
+      <div className="grid gap-10 px-6 py-14 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_1fr] lg:px-10 2xl:px-14">
         <div>
           <div className="flex items-center gap-3">
             <AscendraMark />
@@ -37,49 +78,39 @@ export default function Footer() {
             </div>
           </div>
 
-          <p className="mt-4 max-w-md leading-7 text-gray-400">
-            Ascendra is a competitive gaming platform built around tournaments,
-            teams, rankings, and community-driven competition.
+          <p className="mt-5 max-w-md text-sm leading-7 text-gray-500">
+            A community platform for teams, tournaments, rankings, and organized
+            competitive events.
           </p>
         </div>
 
-        <div>
-          <h3 className="mb-4 font-black text-gray-200">Explore</h3>
-
-          <div className="grid gap-3">
-            {footerLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-gray-400 transition hover:text-white"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </div>
+        <FooterColumn title="Platform" links={platformLinks} />
+        <FooterColumn title="Community" links={communityLinks} />
+        <FooterColumn title="Legal" links={legalLinks} />
 
         <div>
-          <h3 className="mb-4 font-black text-gray-200">Join Ascendra</h3>
+          <h3 className="mb-4 text-sm font-black uppercase tracking-[0.16em] text-gray-300">
+            Discord
+          </h3>
 
-          <p className="mb-5 leading-7 text-gray-400">
-            Join the Discord server, meet the community, and stay updated on
-            tournaments, results, and events.
+          <p className="mb-5 text-sm leading-7 text-gray-500">
+            Join the server to follow events, announcements, and tournament
+            updates.
           </p>
 
           <a
             href={discordInvite}
             target="_blank"
             rel="noreferrer"
-            className="inline-block rounded-xl bg-violet-600 px-5 py-3 font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
+            className="inline-block rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
           >
             Join Discord
           </a>
         </div>
       </div>
 
-      <div className="border-t border-white/10 px-6 py-5">
-        <div className="flex flex-col items-center justify-center gap-2 text-center text-sm text-gray-500">
+      <div className="border-t border-white/10 px-6 py-5 lg:px-10 2xl:px-14">
+        <div className="flex flex-col justify-between gap-3 text-sm text-gray-600 md:flex-row md:items-center">
           <p>© {new Date().getFullYear()} Ascendra. All rights reserved.</p>
 
           <p>

@@ -13,19 +13,19 @@ export const metadata: Metadata = {
 
 const features = [
   {
-    title: "Create teams",
+    title: "Create a team",
     description:
-      "Players create teams, invite members, and prepare their squad for tournament registration.",
+      "Build a roster, invite players, and keep your squad ready for events.",
   },
   {
-    title: "Join tournaments",
+    title: "Register for events",
     description:
-      "Approved teams can register for open tournaments that match their game and team size.",
+      "Join open tournaments when your team matches the game and team size.",
   },
   {
-    title: "Admin review",
+    title: "Track results",
     description:
-      "Admins review registrations, approve teams, award points, and keep tournaments organized.",
+      "Follow placements, points, and leaderboard progress after each event.",
   },
 ];
 
@@ -191,20 +191,19 @@ export default async function HomePage() {
           <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(7,8,17,0.98),rgba(7,8,17,0.72),rgba(7,8,17,0.98)),url('https://images.unsplash.com/photo-1542751110-97427bbecf20?auto=format&fit=crop&w=2200&q=80')] bg-cover bg-center opacity-80" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.22)_0%,transparent_34%),radial-gradient(circle_at_bottom_left,rgba(34,211,238,0.08)_0%,transparent_28%)]" />
 
-          <div className="relative z-10 mx-auto grid max-w-[1440px] gap-12 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10 lg:py-24">
+          <div className="relative z-10 grid w-full gap-12 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10 lg:py-24 2xl:px-14">
             <div>
               <p className="mb-5 text-sm font-black uppercase tracking-[0.22em] text-violet-300">
                 Ascendra tournament platform
               </p>
 
               <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
-                Run teams and tournaments without the clutter.
+                Compete in organized community tournaments
               </h1>
 
               <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-300">
-                Create teams, join tournaments, manage registrations, and keep
-                the Ascendra community organized through a clean competitive
-                platform.
+                Create a team, register for events, and follow tournament
+                progress from one clean player hub
               </p>
 
               <div className="mt-9 flex flex-wrap gap-3">
@@ -290,9 +289,9 @@ export default async function HomePage() {
 
         <section className="mx-auto max-w-[1440px] px-6 py-20 lg:px-10">
           <SectionHeader
-            label="How it works"
-            title="A simple flow for players and admins."
-            description="Each part of the platform has one clear purpose, so users know what to do without needing extra explanation."
+            label="Platform flow"
+            title="Teams, events, and results."
+            description="Ascendra keeps the main player actions simple: create a team, enter events, and follow results."
           />
 
           <div className="grid gap-8 md:grid-cols-3">
@@ -373,59 +372,61 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
-
-        <section className="grid gap-10 px-6 py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:px-10 2xl:px-16">
-          <div>
-            <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-violet-300">
-              Player experience
-            </p>
-
-            <h2 className="max-w-3xl text-4xl font-black tracking-tight text-white md:text-5xl">
-              Profile should be clear, not crowded.
-            </h2>
-
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-400">
-              Players should see Discord status, invitations, teams, and
-              tournament access clearly. Full team management should happen in
-              focused pages, not all at once.
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <PrimaryLink href="/profile">Open profile</PrimaryLink>
-              <SecondaryLink href="/tournaments">
-                View tournaments
-              </SecondaryLink>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/30">
-            <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
-              <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
-                Profile structure
+        <section className="border-t border-white/10 bg-black/20">
+          <div className="grid w-full gap-10 px-6 py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:px-10 2xl:px-14">
+            <div>
+              <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-violet-300">
+                Player hub
               </p>
 
-              <h3 className="mt-2 text-2xl font-black text-white">
-                What should be visible first
-              </h3>
+              <h2 className="max-w-3xl text-4xl font-black tracking-tight text-white md:text-5xl">
+                One place for teams and tournament access.
+              </h2>
+
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-400">
+                The profile page gives players a quick overview of their
+                account, invitations, teams, and tournament activity.
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <PrimaryLink href="/profile">Open profile</PrimaryLink>
+                <SecondaryLink href="/tournaments">
+                  View tournaments
+                </SecondaryLink>
+              </div>
             </div>
 
-            <div className="divide-y divide-white/10">
-              {[
-                ["Discord status", "Connected"],
-                ["Team invitations", "Realtime ready"],
-                ["My teams", "Compact list"],
-                ["Tournament points", "Visible progress"],
-              ].map(([label, value]) => (
-                <div
-                  key={label}
-                  className="flex items-center justify-between gap-5 px-6 py-5"
-                >
-                  <span className="font-bold text-white">{label}</span>
-                  <span className="text-right text-sm font-black text-violet-300">
-                    {value}
-                  </span>
-                </div>
-              ))}
+            <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/30">
+              <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
+                <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
+                  Profile overview
+                </p>
+
+                <h3 className="mt-2 text-2xl font-black text-white">
+                  Main player information
+                </h3>
+              </div>
+
+              <div className="divide-y divide-white/10">
+                {[
+                  ["Discord account", "Connection status"],
+                  ["Team invitations", "Pending invites"],
+                  ["My teams", "Created and joined teams"],
+                  ["Tournament access", "Eligible registrations"],
+                  ["Results", "Points and placements"],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="grid gap-2 px-6 py-5 sm:grid-cols-[minmax(0,1fr)_220px] sm:items-center"
+                  >
+                    <span className="font-black text-white">{label}</span>
+
+                    <span className="text-sm font-bold text-gray-400 sm:text-right">
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
