@@ -1,29 +1,37 @@
 const fallbackTournamentImages: Record<string, string> = {
-  Overall:
-    "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1600&q=80",
-  Valorant:
-    "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1600&q=80",
-  "League of Legends":
-    "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1600&q=80",
-  CS2: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?auto=format&fit=crop&w=1600&q=80",
-  Dota2:
-    "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?auto=format&fit=crop&w=1600&q=80",
+  Overall: "/images/games/overall.webp",
+  Valorant: "/images/games/valorant.webp",
+  "League of Legends": "/images/games/league-of-legends.webp",
+  CS2: "/images/games/cs2.webp",
+  Dota2: "/images/games/dota2.webp",
 };
 
-export function getTournamentImageUrl(game: string, imageUrl?: string | null) {
-  if (imageUrl && imageUrl.trim()) {
-    return imageUrl.trim();
-  }
+function isLocalImageUrl(url: string) {
+  return url.startsWith("/");
+}
 
+function isAllowedExternalImageUrl(url: string) {
   return (
-    fallbackTournamentImages[game] ||
-    "https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&w=1600&q=80"
+    url.startsWith("https://cdn.discordapp.com/") ||
+    url.startsWith("https://media.discordapp.net/")
   );
 }
 
+export function getTournamentImageUrl(game: string, imageUrl?: string | null) {
+  const cleanImageUrl = imageUrl?.trim();
+
+  if (cleanImageUrl) {
+    if (
+      isLocalImageUrl(cleanImageUrl) ||
+      isAllowedExternalImageUrl(cleanImageUrl)
+    ) {
+      return cleanImageUrl;
+    }
+  }
+
+  return fallbackTournamentImages[game] || "/images/games/default.webp";
+}
+
 export function getGameImageUrl(game: string) {
-  return (
-    fallbackTournamentImages[game] ||
-    "https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&w=1600&q=80"
-  );
+  return fallbackTournamentImages[game] || "/images/games/default.webp";
 }
