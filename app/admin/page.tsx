@@ -40,6 +40,12 @@ type AdminPageProps = {
   }>;
 };
 
+type AdminOverviewItem = {
+  label: string;
+  value: string;
+  description: string;
+};
+
 const allowedTabs = [
   "overview",
   "announcements",
@@ -53,7 +59,7 @@ const allowedTabs = [
   "modules",
 ];
 
-async function getAdminOverview() {
+async function getAdminOverview(): Promise<AdminOverviewItem[]> {
   const [
     rulesCount,
     rolesCount,
@@ -229,13 +235,14 @@ function AdminAccessShell({
   );
 }
 
-function renderAdminTab(
+async function renderAdminTab(
   activeTab: string,
-  overviewItems: Awaited<ReturnType<typeof getAdminOverview>>,
   message?: string,
   error?: string,
 ) {
   if (activeTab === "overview") {
+    const overviewItems = await getAdminOverview();
+
     return (
       <section className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
         <AdminOverview items={overviewItems} />
@@ -392,9 +399,14 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     );
   }
 
-  const overviewItems = await getAdminOverview();
   const shouldShowGlobalToast =
     activeTab !== "teams" && activeTab !== "registrations";
+
+  const activeTabContent = await renderAdminTab(
+    activeTab,
+    params.message,
+    params.error,
+  );
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
@@ -467,7 +479,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <AdminToast message={params.message} type={toastType} />
         )}
 
-        {renderAdminTab(activeTab, overviewItems, params.message, params.error)}
+        {activeTabContent}
 
         <Footer />
       </div>
