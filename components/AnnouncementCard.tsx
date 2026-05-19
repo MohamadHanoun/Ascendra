@@ -7,6 +7,7 @@ type AnnouncementCardProps = {
     important: boolean;
     createdAt: Date | string;
   };
+  featured?: boolean;
 };
 
 function formatDate(date: Date | string) {
@@ -19,30 +20,55 @@ function formatDate(date: Date | string) {
 
 export default function AnnouncementCard({
   announcement,
+  featured = false,
 }: AnnouncementCardProps) {
   return (
-    <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition hover:border-cyan-400/30 hover:bg-white/[0.06]">
-      <div className="mb-5 flex flex-wrap items-center gap-2">
-        <span className="inline-flex rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-black text-indigo-300">
-          {announcement.category}
-        </span>
-
-        {announcement.important && (
-          <span className="inline-flex rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-1 text-xs font-black text-yellow-300">
-            Important
+    <article
+      className={`flex h-full flex-col overflow-hidden rounded-2xl border transition hover:border-cyan-400/30 hover:bg-white/[0.06] ${
+        announcement.important
+          ? "border-yellow-500/20 bg-yellow-500/[0.06]"
+          : "border-white/10 bg-white/[0.04]"
+      }`}
+    >
+      <div
+        className={`border-b border-white/10 px-5 py-4 ${
+          announcement.important ? "bg-yellow-500/[0.05]" : "bg-white/[0.03]"
+        }`}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-black text-indigo-300">
+            {announcement.category}
           </span>
-        )}
+
+          {announcement.important && (
+            <span className="inline-flex rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-1 text-xs font-black text-yellow-300">
+              Important
+            </span>
+          )}
+
+          <span className="inline-flex rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-black text-gray-400">
+            {formatDate(announcement.createdAt)}
+          </span>
+        </div>
       </div>
 
-      <h2 className="text-2xl font-black text-white">{announcement.title}</h2>
+      <div className="flex flex-1 flex-col p-5">
+        <h2
+          className={`font-black text-white ${
+            featured ? "text-3xl md:text-4xl" : "text-2xl"
+          }`}
+        >
+          {announcement.title}
+        </h2>
 
-      <p className="mt-2 text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-        {formatDate(announcement.createdAt)}
-      </p>
-
-      <p className="mt-5 flex-1 text-sm leading-6 text-gray-400">
-        {announcement.description}
-      </p>
+        <p
+          className={`mt-4 flex-1 leading-7 text-gray-400 ${
+            featured ? "text-base" : "text-sm"
+          }`}
+        >
+          {announcement.description}
+        </p>
+      </div>
     </article>
   );
 }
