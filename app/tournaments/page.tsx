@@ -31,7 +31,7 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
     pending: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
     closed: "border-red-400/25 bg-red-500/10 text-red-300",
     rejected: "border-red-400/25 bg-red-500/10 text-red-300",
-    registered: "border-cyan-400/25 bg-cyan-500/10 text-cyan-300",
+    registered: "border-violet-400/25 bg-violet-500/10 text-violet-200",
     cancelled: "border-white/10 bg-white/5 text-gray-300",
   };
 

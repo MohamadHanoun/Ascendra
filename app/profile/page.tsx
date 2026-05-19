@@ -235,7 +235,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                         {teams.length} team{teams.length === 1 ? "" : "s"}
                       </span>
 
-                      <span className="inline-flex rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1 text-xs font-black text-cyan-300">
+                      <span className="inline-flex rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-xs font-black text-violet-200">
                         {tournamentPoints} points
                       </span>
 
@@ -244,7 +244,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                         {tournamentResults.length === 1 ? "" : "s"}
                       </span>
 
-                      <span className="inline-flex rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1 text-xs font-black text-cyan-300">
+                      <span className="inline-flex rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-xs font-black text-violet-200">
                         {invitations.length} invite
                         {invitations.length === 1 ? "" : "s"}
                       </span>
