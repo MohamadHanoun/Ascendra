@@ -50,15 +50,15 @@ export default function AdminToast({
 
   const styles =
     type === "error"
-      ? "border-red-500/30 bg-red-500/15 text-red-200"
-      : "border-green-500/30 bg-green-500/15 text-green-200";
+      ? "border-red-400/30 bg-red-500/15 text-red-200"
+      : "border-emerald-400/30 bg-emerald-500/15 text-emerald-200";
 
   return (
     <div className="fixed right-6 top-6 z-50 w-[calc(100%-3rem)] max-w-sm">
       <div
-        className={`rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur ${styles}`}
+        className={`rounded-3xl border px-5 py-4 shadow-2xl shadow-black/40 backdrop-blur ${styles}`}
       >
-        <p className="font-bold">
+        <p className="font-black">
           {type === "error" ? "Something went wrong" : "Success"}
         </p>
 
