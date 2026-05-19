@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { saveTournamentResultInline } from "@/actions/adminTournamentResultActions";
+import CustomSelect from "@/components/CustomSelect";
 import InlineAdminTournamentForm from "@/components/InlineAdminTournamentForm";
 
 type TournamentRegistrationItem = {
@@ -82,17 +83,16 @@ export default function AdminTournamentResultForm({
       <label className="grid gap-2">
         <FieldLabel>Team</FieldLabel>
 
-        <select name="teamId" required defaultValue="" className={inputClass()}>
-          <option value="" disabled>
-            Select team
-          </option>
-
-          {registrations.map((registration) => (
-            <option key={registration.id} value={registration.teamId}>
-              {registration.team.name} · {registration.status}
-            </option>
-          ))}
-        </select>
+        <CustomSelect
+          name="teamId"
+          required
+          placeholder="Select team"
+          options={registrations.map((registration) => ({
+            value: registration.teamId,
+            label: registration.team.name,
+            description: `${registration.team.game} · ${registration.status}`,
+          }))}
+        />
       </label>
 
       <div className="grid gap-2">

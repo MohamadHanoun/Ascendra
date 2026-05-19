@@ -6,6 +6,7 @@ import {
   cancelRegistrationInline,
   registerRegistrationInline,
 } from "@/actions/tournamentRegistrationInlineActions";
+import CustomSelect from "@/components/CustomSelect";
 import type { TournamentRegistrationActionResult } from "@/actions/tournamentRegistrationInlineActions";
 
 type AvailableTeam = {
@@ -169,22 +170,18 @@ function RegisterForm({
       <label className="grid gap-2">
         <span className="text-sm font-bold text-gray-200">Choose team</span>
 
-        <select
+        <CustomSelect
           name="teamId"
           required
-          defaultValue=""
-          className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-violet-400"
-        >
-          <option value="" disabled>
-            Select team
-          </option>
-
-          {availableTeams.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.name} · {team.memberCount} players
-            </option>
-          ))}
-        </select>
+          placeholder="Select team"
+          options={availableTeams.map((team) => ({
+            value: team.id,
+            label: team.name,
+            description: `${team.game} · ${team.memberCount} player${
+              team.memberCount === 1 ? "" : "s"
+            }`,
+          }))}
+        />
       </label>
 
       <button
