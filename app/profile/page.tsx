@@ -12,8 +12,8 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Profile",
-  description: "Manage your RTN profile, team invitations, and teams.",
+  title: "Profile | Ascendra",
+  description: "Manage your Ascendra profile, team invitations, and teams.",
 };
 
 type ProfilePageProps = {
@@ -29,17 +29,17 @@ function StatusBadge({ status }: { status: string }) {
   const normalizedStatus = status.toLowerCase();
 
   const styles: Record<string, string> = {
-    approved: "border-green-500/20 bg-green-500/10 text-green-300",
-    member: "border-green-500/20 bg-green-500/10 text-green-300",
+    approved: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+    member: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
     draft: "border-white/10 bg-white/5 text-gray-300",
-    pending: "border-yellow-500/20 bg-yellow-500/10 text-yellow-300",
-    rejected: "border-red-500/20 bg-red-500/10 text-red-300",
-    cancelled: "border-red-500/20 bg-red-500/10 text-red-300",
+    pending: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    rejected: "border-red-400/25 bg-red-500/10 text-red-300",
+    cancelled: "border-red-400/25 bg-red-500/10 text-red-300",
   };
 
   return (
     <span
-      className={`inline-flex w-fit rounded border px-3 py-1 text-xs font-bold capitalize ${
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize tracking-[0.08em] ${
         styles[normalizedStatus] || "border-white/10 bg-white/5 text-gray-300"
       }`}
     >
@@ -59,7 +59,7 @@ function PanelHeader({
 }) {
   return (
     <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
-      <p className="text-sm font-black uppercase tracking-[0.14em] text-cyan-300">
+      <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
         {label}
       </p>
 
@@ -80,12 +80,23 @@ function ProfileStatCard({
   value: string | number;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-400">
+    <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
         {label}
       </p>
 
       <p className="mt-1 text-lg font-black text-white">{value}</p>
+    </div>
+  );
+}
+
+function AscendraAvatarFallback({ username }: { username: string }) {
+  return (
+    <div className="relative grid h-20 w-20 shrink-0 place-items-center rounded-2xl border border-violet-400/25 bg-violet-500/10">
+      <div className="absolute inset-0 rounded-2xl bg-violet-500/25 blur-xl" />
+      <span className="relative text-xl font-black uppercase text-white">
+        {username.slice(0, 2)}
+      </span>
     </div>
   );
 }
@@ -178,59 +189,62 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       : null;
 
   return (
-    <main className="min-h-screen bg-[#0b0f1a] text-white">
-      <Navbar />
+    <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.18)_0%,transparent_28%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.14)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#0b0d17_45%,#070811)]" />
 
-      <section className="mx-auto max-w-[1500px] px-6 py-10">
-        <ProfileNotice message={params.message} error={params.error} />
+      <div className="relative z-10">
+        <Navbar />
 
-        <div className="grid max-w-[900px] gap-8 xl:mx-auto">
-          <div className="grid min-w-0 gap-8">
-            <section className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+        <section className="relative overflow-hidden border-b border-white/10">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(7,8,17,0.98),rgba(7,8,17,0.82),rgba(7,8,17,0.98)),url('https://images.unsplash.com/photo-1542751110-97427bbecf20?auto=format&fit=crop&w=2200&q=80')] bg-cover bg-center opacity-70" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.28)_0%,transparent_35%),radial-gradient(circle_at_bottom_left,rgba(34,211,238,0.10)_0%,transparent_28%)]" />
+
+          <div className="relative z-10 mx-auto max-w-[1440px] px-6 py-14 lg:px-10">
+            <ProfileNotice message={params.message} error={params.error} />
+
+            <section className="mt-4 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/30 backdrop-blur">
               <div className="grid gap-6 p-6 lg:grid-cols-[1fr_auto] lg:items-center">
-                <div className="flex min-w-0 items-center gap-5">
+                <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center">
                   {user.avatar ? (
                     <img
                       src={user.avatar}
                       alt={user.username}
-                      className="h-20 w-20 rounded-xl object-cover"
+                      className="h-20 w-20 shrink-0 rounded-2xl object-cover"
                     />
                   ) : (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-indigo-500 text-xl font-black text-white">
-                      {user.username.slice(0, 2).toUpperCase()}
-                    </div>
+                    <AscendraAvatarFallback username={user.username} />
                   )}
 
                   <div className="min-w-0">
-                    <p className="text-sm font-black uppercase tracking-[0.16em] text-cyan-300">
-                      Player Profile
+                    <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
+                      Player profile
                     </p>
 
-                    <h1 className="mt-2 truncate text-4xl font-black text-white">
+                    <h1 className="mt-2 truncate text-4xl font-black uppercase tracking-tight text-white md:text-5xl">
                       {user.username}
                     </h1>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-4 flex flex-wrap gap-2">
                       {user.isGuildMember ? (
                         <StatusBadge status="Member" />
                       ) : (
                         <StatusBadge status="Not member" />
                       )}
 
-                      <span className="inline-flex rounded border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-300">
+                      <span className="inline-flex rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-xs font-black text-violet-200">
                         {teams.length} team{teams.length === 1 ? "" : "s"}
                       </span>
 
-                      <span className="inline-flex rounded border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300">
+                      <span className="inline-flex rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1 text-xs font-black text-cyan-300">
                         {tournamentPoints} points
                       </span>
 
-                      <span className="inline-flex rounded border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs font-bold text-green-300">
+                      <span className="inline-flex rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1 text-xs font-black text-emerald-300">
                         {tournamentResults.length} result
                         {tournamentResults.length === 1 ? "" : "s"}
                       </span>
 
-                      <span className="inline-flex rounded border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300">
+                      <span className="inline-flex rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1 text-xs font-black text-cyan-300">
                         {invitations.length} invite
                         {invitations.length === 1 ? "" : "s"}
                       </span>
@@ -249,9 +263,22 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 </div>
               </div>
             </section>
+          </div>
 
+          <svg
+            className="absolute bottom-[-1px] left-0 w-full text-[#070811]"
+            viewBox="0 0 1440 120"
+            fill="currentColor"
+            preserveAspectRatio="none"
+          >
+            <path d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,42.7C1120,32,1280,32,1360,32L1440,32L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z" />
+          </svg>
+        </section>
+
+        <section className="mx-auto grid max-w-[1440px] gap-8 px-6 py-12 lg:grid-cols-[minmax(0,1fr)_320px] lg:px-10">
+          <div className="grid min-w-0 gap-8">
             <div className="grid gap-8 lg:grid-cols-2">
-              <section className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+              <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
                 <PanelHeader
                   label="Invitations"
                   title="Team invitations"
@@ -295,7 +322,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
                             <button
                               type="submit"
-                              className="rounded bg-green-500 px-4 py-2 text-sm font-black text-white transition hover:bg-green-400"
+                              className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-white transition hover:bg-emerald-400"
                             >
                               Accept
                             </button>
@@ -315,7 +342,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
                             <button
                               type="submit"
-                              className="rounded border border-red-500/20 px-4 py-2 text-sm font-black text-red-300 transition hover:bg-red-500/10"
+                              className="rounded-xl border border-red-500/20 px-4 py-2 text-sm font-black text-red-300 transition hover:bg-red-500/10"
                             >
                               Reject
                             </button>
@@ -327,9 +354,9 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 )}
               </section>
 
-              <section className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+              <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
                 <PanelHeader
-                  label="Create Team"
+                  label="Create team"
                   title="Start a new team"
                   description="Create a team, invite players, then register for tournaments."
                 />
@@ -345,8 +372,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                         <input
                           name="name"
                           required
-                          placeholder="Example: RTN Wolves"
-                          className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-cyan-400"
+                          placeholder="Example: Ascendra Wolves"
+                          className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400"
                         />
                       </label>
 
@@ -357,7 +384,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                           name="game"
                           required
                           defaultValue=""
-                          className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
+                          className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-violet-400"
                         >
                           <option value="" disabled>
                             Select game
@@ -375,7 +402,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     <div className="flex flex-wrap items-center gap-3">
                       <button
                         type="submit"
-                        className="rounded bg-indigo-500 px-5 py-3 font-black text-white transition hover:bg-indigo-400"
+                        className="rounded-xl bg-violet-600 px-5 py-3 font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
                       >
                         Create Team
                       </button>
@@ -387,14 +414,14 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   </form>
                 ) : (
                   <div className="p-6">
-                    <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-5">
+                    <div className="rounded-2xl border border-yellow-400/25 bg-yellow-500/10 p-5">
                       <p className="font-black text-yellow-300">
-                        RTN Discord required
+                        Ascendra Discord required
                       </p>
 
                       <p className="mt-2 leading-7 text-gray-300">
                         You can login to the website, but team creation requires
-                        membership in the RTN Discord server.
+                        membership in the Ascendra Discord server.
                       </p>
                     </div>
                   </div>
@@ -402,9 +429,9 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               </section>
             </div>
 
-            <section className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
               <PanelHeader
-                label="My Teams"
+                label="My teams"
                 title="Team overview"
                 description="Open a team to manage members, invites, and review status."
               />
@@ -428,7 +455,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     return (
                       <article
                         key={team.id}
-                        className="grid gap-4 rounded-xl border border-white/10 bg-black/20 p-4 md:grid-cols-[minmax(0,1fr)_140px_90px_120px_100px] md:items-center"
+                        className="grid gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 md:grid-cols-[minmax(0,1fr)_140px_90px_120px_100px] md:items-center"
                       >
                         <div className="min-w-0">
                           <p className="truncate font-black text-white">
@@ -454,7 +481,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
                         <Link
                           href={`/profile/teams/${team.id}`}
-                          className="rounded bg-indigo-500 px-4 py-2 text-center text-sm font-black text-white transition hover:bg-indigo-400"
+                          className="rounded-xl bg-violet-600 px-4 py-2 text-center text-sm font-black text-white transition hover:bg-violet-500"
                         >
                           Manage
                         </Link>
@@ -470,15 +497,15 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             </section>
           </div>
 
-          <aside className="mt-8 xl:absolute xl:right-6 xl:top-10 xl:mt-0 xl:w-[300px]">
-            <section className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+          <aside>
+            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 lg:sticky lg:top-24">
               <div className="border-b border-white/10 bg-white/[0.03] p-5">
-                <p className="text-xs font-black uppercase tracking-[0.14em] text-cyan-300">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
                   Progress
                 </p>
 
-                <div className="mt-3 rounded-xl border border-green-500/20 bg-green-500/10 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-green-300">
+                <div className="mt-3 rounded-2xl border border-emerald-400/25 bg-emerald-500/10 p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-300">
                     Total points
                   </p>
 
@@ -509,7 +536,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     <Link
                       key={result.id}
                       href={`/tournaments/${result.tournament.id}`}
-                      className="block rounded-xl border border-white/10 bg-black/20 p-4 transition hover:border-cyan-400/30 hover:bg-white/[0.05]"
+                      className="block rounded-2xl border border-white/10 bg-black/25 p-4 transition hover:border-violet-400/30 hover:bg-white/[0.05]"
                     >
                       <p className="truncate font-black text-white">
                         {result.tournament.title}
@@ -520,11 +547,11 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                       </p>
 
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <span className="inline-flex rounded border border-yellow-500/20 bg-yellow-500/10 px-2 py-1 text-xs font-black text-yellow-300">
+                        <span className="inline-flex rounded-full border border-yellow-400/25 bg-yellow-500/10 px-2 py-1 text-xs font-black text-yellow-300">
                           #{result.placement}
                         </span>
 
-                        <span className="inline-flex rounded border border-green-500/20 bg-green-500/10 px-2 py-1 text-xs font-black text-green-300">
+                        <span className="inline-flex rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2 py-1 text-xs font-black text-emerald-300">
                           {result.points} pts
                         </span>
                       </div>
@@ -540,10 +567,10 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               )}
             </section>
           </aside>
-        </div>
-      </section>
+        </section>
 
-      <Footer />
+        <Footer />
+      </div>
     </main>
   );
 }
