@@ -23,6 +23,24 @@ function formatDate(date: Date | null) {
   }).format(date);
 }
 
+function formatUptime(value: string | undefined) {
+  const uptimeMs = Number(value || 0);
+
+  if (!Number.isFinite(uptimeMs) || uptimeMs <= 0) {
+    return "-";
+  }
+
+  const totalSeconds = Math.floor(uptimeMs / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  return `${minutes}m`;
+}
+
 function formatJsonPreview(value: unknown) {
   if (!value) {
     return "-";
@@ -35,6 +53,50 @@ function formatJsonPreview(value: unknown) {
   }
 }
 
+function getSettingValue(
+  settings: Array<{
+    key: string;
+    value: string;
+  }>,
+  key: string,
+) {
+  return settings.find((setting) => setting.key === key)?.value;
+}
+
+function getBotStatus(lastHeartbeatAt?: string) {
+  if (!lastHeartbeatAt) {
+    return {
+      label: "Offline",
+      description: "No heartbeat received yet.",
+      online: false,
+      date: null as Date | null,
+    };
+  }
+
+  const heartbeatDate = new Date(lastHeartbeatAt);
+
+  if (Number.isNaN(heartbeatDate.getTime())) {
+    return {
+      label: "Offline",
+      description: "Invalid heartbeat timestamp.",
+      online: false,
+      date: null as Date | null,
+    };
+  }
+
+  const diffMs = Date.now() - heartbeatDate.getTime();
+  const online = diffMs <= 120000;
+
+  return {
+    label: online ? "Online" : "Offline",
+    description: online
+      ? "Heartbeat received within the last 2 minutes."
+      : "No recent heartbeat from the bot.",
+    online,
+    date: heartbeatDate,
+  };
+}
+
 function StatusBadge({ status }: { status: string }) {
   return (
     <span
@@ -44,6 +106,48 @@ function StatusBadge({ status }: { status: string }) {
     >
       {status}
     </span>
+  );
+}
+
+function BotStatusCard({
+  label,
+  value,
+  description,
+  online,
+}: {
+  label: string;
+  value: string;
+  description: string;
+  online?: boolean;
+}) {
+  const borderClass =
+    online === undefined
+      ? "border-white/10 bg-white/[0.04]"
+      : online
+        ? "border-emerald-400/25 bg-emerald-500/10"
+        : "border-red-400/25 bg-red-500/10";
+
+  const labelClass =
+    online === undefined
+      ? "text-gray-500"
+      : online
+        ? "text-emerald-300"
+        : "text-red-300";
+
+  return (
+    <div
+      className={`rounded-3xl border p-5 shadow-2xl shadow-black/20 ${borderClass}`}
+    >
+      <p
+        className={`text-xs font-black uppercase tracking-[0.16em] ${labelClass}`}
+      >
+        {label}
+      </p>
+
+      <p className="mt-3 text-2xl font-black text-white">{value}</p>
+
+      <p className="mt-2 text-sm leading-6 text-gray-400">{description}</p>
+    </div>
   );
 }
 
@@ -97,35 +201,65 @@ function RetryButton({ eventId, status }: { eventId: string; status: string }) {
 }
 
 export default async function AdminBotEventsPanel() {
-  const [queuedCount, processingCount, completedCount, failedCount, events] =
-    await Promise.all([
-      prisma.botEvent.count({
-        where: {
-          status: "queued",
+  const [
+    queuedCount,
+    processingCount,
+    completedCount,
+    failedCount,
+    events,
+    settings,
+    lastProcessedEvent,
+  ] = await Promise.all([
+    prisma.botEvent.count({
+      where: {
+        status: "queued",
+      },
+    }),
+    prisma.botEvent.count({
+      where: {
+        status: "processing",
+      },
+    }),
+    prisma.botEvent.count({
+      where: {
+        status: "completed",
+      },
+    }),
+    prisma.botEvent.count({
+      where: {
+        status: "failed",
+      },
+    }),
+    prisma.botEvent.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 30,
+    }),
+    prisma.serverSetting.findMany({
+      where: {
+        key: {
+          in: ["bot.lastHeartbeatAt", "bot.tag", "bot.guildId", "bot.uptimeMs"],
         },
-      }),
-      prisma.botEvent.count({
-        where: {
-          status: "processing",
+      },
+    }),
+    prisma.botEvent.findFirst({
+      where: {
+        processedAt: {
+          not: null,
         },
-      }),
-      prisma.botEvent.count({
-        where: {
-          status: "completed",
-        },
-      }),
-      prisma.botEvent.count({
-        where: {
-          status: "failed",
-        },
-      }),
-      prisma.botEvent.findMany({
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 30,
-      }),
-    ]);
+      },
+      orderBy: {
+        processedAt: "desc",
+      },
+    }),
+  ]);
+
+  const botTag = getSettingValue(settings, "bot.tag") || "Unknown";
+  const guildId = getSettingValue(settings, "bot.guildId") || "-";
+  const uptime = formatUptime(getSettingValue(settings, "bot.uptimeMs"));
+  const lastHeartbeatAt = getSettingValue(settings, "bot.lastHeartbeatAt");
+  const botStatus = getBotStatus(lastHeartbeatAt);
 
   return (
     <div className="grid gap-8">
@@ -138,10 +272,41 @@ export default async function AdminBotEventsPanel() {
           <h2 className="mt-2 text-3xl font-black text-white">Bot events</h2>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
-            Track Discord operations created by Ascendra and retry failed bot
-            work when needed.
+            Track Discord operations, bot status, and failed work from one admin
+            view.
           </p>
         </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <BotStatusCard
+          label="Bot status"
+          value={botStatus.label}
+          description={botStatus.description}
+          online={botStatus.online}
+        />
+
+        <BotStatusCard
+          label="Bot account"
+          value={botTag}
+          description={`Guild: ${guildId}`}
+        />
+
+        <BotStatusCard
+          label="Last heartbeat"
+          value={formatDate(botStatus.date)}
+          description={`Process uptime: ${uptime}`}
+        />
+
+        <BotStatusCard
+          label="Last processed"
+          value={lastProcessedEvent?.type || "-"}
+          description={
+            lastProcessedEvent?.processedAt
+              ? formatDate(lastProcessedEvent.processedAt)
+              : "No processed bot event yet."
+          }
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

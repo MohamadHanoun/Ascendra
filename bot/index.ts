@@ -127,6 +127,29 @@ async function sendTournamentLog(params: {
   });
 }
 
+async function sendHeartbeat() {
+  try {
+    const response = await fetch(`${SITE_URL}/api/bot/heartbeat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${BOT_API_TOKEN}`,
+      },
+      body: JSON.stringify({
+        botTag: client.user?.tag || "Unknown",
+        guildId: GUILD_ID,
+        uptimeMs: Math.floor(process.uptime() * 1000),
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Heartbeat failed: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("[Heartbeat] Failed:", error);
+  }
+}
+
 async function fetchPendingEvents() {
   const response = await fetch(`${SITE_URL}/api/bot/events/pending`, {
     headers: {
@@ -651,6 +674,8 @@ async function processEvent(event: BotEvent) {
       result,
     });
 
+    await sendHeartbeat();
+
     await sendBotLog({
       title: "Bot event completed",
       fields: [
@@ -670,6 +695,8 @@ async function processEvent(event: BotEvent) {
       status: "failed",
       error: message,
     });
+
+    await sendHeartbeat();
 
     await sendBotLog({
       title: "Bot event failed",
@@ -703,6 +730,12 @@ async function pollEvents() {
 
 client.once(Events.ClientReady, async () => {
   console.log(`Bot logged in as ${client.user?.tag}`);
+
+  await sendHeartbeat();
+
+  setInterval(async () => {
+    await sendHeartbeat();
+  }, 60000);
 
   await sendBotLog({
     title: "Bot online",
