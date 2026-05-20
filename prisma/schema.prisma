@@ -125,6 +125,9 @@ model TournamentRegistration {
   discordRoleRequestedAt DateTime?
   discordRoleSyncedAt    DateTime?
 
+  discordChannelName String?
+  discordChannelId   String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -203,4 +206,33 @@ model StaffMember {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model BotEvent {
+  id String @id @default(cuid())
+
+  type   String
+  status String @default("queued")
+
+  priority Int @default(0)
+
+  attempts    Int @default(0)
+  maxAttempts Int @default(3)
+
+  entityType String?
+  entityId   String?
+
+  payload Json
+  result  Json?
+  error   String?
+
+  lockedAt    DateTime?
+  processedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, type])
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }

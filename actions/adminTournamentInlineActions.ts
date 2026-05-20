@@ -44,6 +44,13 @@ function getNumber(formData: FormData, name: string) {
   return value;
 }
 
+function getSiteUrl() {
+  return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(
+    /\/$/,
+    "",
+  );
+}
+
 function normalizeImageUrl(imageUrl: string) {
   if (!imageUrl) {
     return null;
@@ -75,7 +82,7 @@ async function requireAdmin(): Promise<AdminTournamentActionResult | null> {
   }
 
   if (!sessionUser.isAdmin) {
-    return fail("Only RTN admins can manage tournaments.");
+    return fail("Only Ascendra admins can manage tournaments.");
   }
 
   return null;
@@ -181,8 +188,30 @@ export async function createTournamentInline(
     return fail(validation.message);
   }
 
-  await prisma.tournament.create({
+  const tournament = await prisma.tournament.create({
     data: validation.data,
+  });
+
+  await prisma.botEvent.create({
+    data: {
+      type: "tournament_announcement_create",
+      entityType: "tournament",
+      entityId: tournament.id,
+      payload: {
+        tournamentId: tournament.id,
+        title: tournament.title,
+        game: tournament.game,
+        description: tournament.description,
+        date: tournament.date,
+        prize: tournament.prize,
+        imageUrl: tournament.imageUrl,
+        maxSlots: tournament.maxSlots,
+        teamSize: tournament.teamSize,
+        status: tournament.status,
+        registrationStatus: tournament.registrationStatus,
+        websiteUrl: `${getSiteUrl()}/tournaments/${tournament.id}`,
+      },
+    },
   });
 
   revalidatePath("/admin");
