@@ -56,7 +56,7 @@ async function registerTeamForTournament(
   }
 
   if (!user.isGuildMember) {
-    return fail("You must be an RTN Discord member to register.");
+    return fail("You must be an Ascendra Discord member to register.");
   }
 
   const tournamentId = getValue(formData, "tournamentId");
@@ -168,8 +168,10 @@ async function registerTeamForTournament(
   }
 
   revalidatePath(`/tournaments/${tournament.id}`);
+  revalidatePath("/tournaments");
   revalidatePath("/profile");
   revalidatePath("/admin");
+  revalidatePath("/admin?tab=registrations");
 
   return success("Team registered successfully. Waiting for admin review.");
 }
@@ -195,6 +197,7 @@ async function cancelTournamentRegistration(
     },
     include: {
       team: true,
+      tournament: true,
     },
   });
 
@@ -210,6 +213,20 @@ async function cancelTournamentRegistration(
     return fail("This registration is already cancelled.");
   }
 
+  if (registration.status === "approved") {
+    return fail(
+      "Approved registrations cannot be cancelled by players. Please contact an admin.",
+    );
+  }
+
+  if (registration.tournament.registrationStatus !== "open") {
+    return fail("Registration cancellation is closed for this tournament.");
+  }
+
+  if (["closed", "cancelled"].includes(registration.tournament.status)) {
+    return fail("This tournament registration can no longer be cancelled.");
+  }
+
   await prisma.tournamentRegistration.update({
     where: {
       id: registration.id,
@@ -223,8 +240,10 @@ async function cancelTournamentRegistration(
   });
 
   revalidatePath(`/tournaments/${registration.tournamentId}`);
+  revalidatePath("/tournaments");
   revalidatePath("/profile");
   revalidatePath("/admin");
+  revalidatePath("/admin?tab=registrations");
 
   return success("Registration cancelled successfully.");
 }
