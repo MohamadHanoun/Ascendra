@@ -198,7 +198,13 @@ function AdminAccessShell({
         <Navbar />
 
         <section className="relative overflow-hidden border-b border-white/10">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(7,8,17,0.98),rgba(7,8,17,0.82),rgba(7,8,17,0.98)),url('/images/backgrounds/community-hero.webp')] bg-cover bg-center opacity-70" />
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-75"
+            style={{
+              backgroundImage:
+                'linear-gradient(to right, rgba(7,8,17,0.98), rgba(7,8,17,0.82), rgba(7,8,17,0.96)), url("/images/backgrounds/admin-hero.webp")',
+            }}
+          />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.28)_0%,transparent_35%),radial-gradient(circle_at_bottom_left,rgba(34,211,238,0.10)_0%,transparent_28%)]" />
 
           <div className="relative z-10 mx-auto flex max-w-[900px] flex-col items-center px-6 py-28 text-center lg:px-10">
@@ -416,7 +422,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         <Navbar />
 
         <section className="relative overflow-hidden border-b border-white/10">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(7,8,17,0.98),rgba(7,8,17,0.82),rgba(7,8,17,0.98)),url('/images/backgrounds/community-hero.webp')] bg-cover bg-center opacity-70" />
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-75"
+            style={{
+              backgroundImage:
+                'linear-gradient(to right, rgba(7,8,17,0.98), rgba(7,8,17,0.82), rgba(7,8,17,0.96)), url("/images/backgrounds/admin-hero.webp")',
+            }}
+          />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.28)_0%,transparent_35%),radial-gradient(circle_at_bottom_left,rgba(34,211,238,0.10)_0%,transparent_28%)]" />
 
           <div className="relative z-10 mx-auto max-w-[1440px] px-6 py-20 lg:px-10">
