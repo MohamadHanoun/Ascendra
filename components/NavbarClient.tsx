@@ -32,35 +32,36 @@ type NavbarClientProps = {
 
 function AscendraMark({ small = false }: { small?: boolean }) {
   return (
-    <span
-      className={`relative grid shrink-0 place-items-center ${
-        small ? "h-8 w-8" : "h-10 w-10"
-      }`}
-    >
-      <span className="absolute inset-0 rounded-xl bg-violet-500/40 blur-xl" />
-      <span
-        className={`relative rotate-45 border-l-[4px] border-t-[4px] border-violet-400 ${
-          small ? "h-6 w-6" : "h-8 w-8"
-        }`}
-      />
-    </span>
+    <Image
+      src="/images/brand/ascendra-logo-mark.png"
+      alt="Ascendra"
+      width={small ? 32 : 40}
+      height={small ? 32 : 40}
+      className={`${small ? "h-8 w-8" : "h-10 w-10"} object-contain`}
+    />
   );
 }
 
 function BrandLogo() {
   return (
     <Link href="/" className="flex shrink-0 items-center gap-3">
-      <AscendraMark />
+      <Image
+        src="/images/brand/ascendra-logo-mark.png"
+        alt="Ascendra"
+        width={44}
+        height={44}
+        priority
+        className="h-11 w-11 object-contain"
+      />
 
-      <div className="hidden sm:block">
-        <span className="block text-lg font-black uppercase leading-none tracking-[0.18em] text-white">
-          Ascendra
-        </span>
-
-        <span className="text-[10px] font-black uppercase tracking-[0.28em] text-violet-300">
-          Rise Beyond Limits
-        </span>
-      </div>
+      <Image
+        src="/images/brand/ascendra-wordmark.png"
+        alt="Ascendra"
+        width={170}
+        height={45}
+        priority
+        className="h-10 w-auto object-contain"
+      />
     </Link>
   );
 }
@@ -150,7 +151,7 @@ export default function NavbarClient({
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#070811]/90 backdrop-blur-xl">
-        <nav className="flex w-full items-center gap-4 px-6 py-4 lg:px-10 2xl:px-14">
+        <nav className="flex w-full items-center gap-4 px-6 py-3 lg:px-10 2xl:px-14">
           <BrandLogo />
 
           <div className="hidden flex-1 items-center justify-center gap-2 lg:flex">

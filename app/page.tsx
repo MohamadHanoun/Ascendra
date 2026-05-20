@@ -188,7 +188,14 @@ export default async function HomePage() {
         <Navbar />
 
         <section className="relative border-b border-white/10">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(7,8,17,0.98),rgba(7,8,17,0.72),rgba(7,8,17,0.98)),url('/images/backgrounds/community-hero.webp')] bg-cover bg-center opacity-80" />
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-85"
+            style={{
+              backgroundImage:
+                'linear-gradient(to right, rgba(7,8,17,0.98), rgba(7,8,17,0.68), rgba(7,8,17,0.94)), url("/images/backgrounds/home-hero.webp")',
+            }}
+          />
+
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.22)_0%,transparent_34%),radial-gradient(circle_at_bottom_left,rgba(34,211,238,0.08)_0%,transparent_28%)]" />
 
           <div className="relative z-10 grid w-full gap-12 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10 lg:py-24 2xl:px-14">
@@ -203,7 +210,7 @@ export default async function HomePage() {
 
               <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-300">
                 Create a team, register for events, and follow tournament
-                progress from one clean player hub
+                progress from one clean player hub.
               </p>
 
               <div className="mt-9 flex flex-wrap gap-3">
@@ -311,7 +318,7 @@ export default async function HomePage() {
             <SectionHeader
               label="Tournaments"
               title="Ascendra tournament list."
-              description="The tournament page should stay clean and focused. Details and registration open in a separate focused page."
+              description="The tournament page stays clean and focused. Details and registration open in a separate page."
             />
 
             <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/30">
@@ -361,7 +368,7 @@ export default async function HomePage() {
                     />
 
                     <Link
-                      href="/tournaments"
+                      href={`/tournaments/${tournament.id}`}
                       className="rounded-xl bg-violet-600 px-4 py-2 text-center text-sm font-black text-white transition hover:bg-violet-500"
                     >
                       Details
@@ -372,6 +379,7 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
         <section className="border-t border-white/10 bg-black/20">
           <div className="grid w-full gap-10 px-6 py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:px-10 2xl:px-14">
             <div>

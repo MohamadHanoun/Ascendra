@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const platformLinks = [
@@ -22,15 +23,6 @@ const legalLinks = [
 ];
 
 const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "#";
-
-function AscendraMark() {
-  return (
-    <span className="relative grid h-11 w-11 shrink-0 place-items-center">
-      <span className="absolute inset-0 rounded-xl bg-violet-500/40 blur-xl" />
-      <span className="relative h-8 w-8 rotate-45 border-l-4 border-t-4 border-violet-400" />
-    </span>
-  );
-}
 
 function FooterColumn({
   title,
@@ -64,24 +56,22 @@ export default function Footer() {
   return (
     <footer className="border-t border-white/10 bg-[#06070f] text-white">
       <div className="grid gap-10 px-6 py-14 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_1fr] lg:px-10 2xl:px-14">
-        <div>
-          <div className="flex items-center gap-3">
-            <AscendraMark />
+        <div className="flex items-center gap-3">
+          <Image
+            src="/images/brand/ascendra-logo-mark.png"
+            alt="Ascendra"
+            width={50}
+            height={50}
+            className="h-12 w-12 object-contain"
+          />
 
-            <div>
-              <h2 className="text-2xl font-black uppercase tracking-[0.16em]">
-                Ascendra
-              </h2>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-violet-300">
-                Rise Beyond Limits
-              </p>
-            </div>
-          </div>
-
-          <p className="mt-5 max-w-md text-sm leading-7 text-gray-500">
-            A community platform for teams, tournaments, rankings, and organized
-            competitive events.
-          </p>
+          <Image
+            src="/images/brand/ascendra-wordmark.png"
+            alt="Ascendra"
+            width={190}
+            height={50}
+            className="h-11 w-auto object-contain"
+          />
         </div>
 
         <FooterColumn title="Platform" links={platformLinks} />
