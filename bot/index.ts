@@ -597,6 +597,12 @@ async function processTeamAccessRemove(event: BotEvent) {
     title: "Team Discord access removed",
     fields: [
       { name: "Team", value: payload.teamName },
+      { name: "Action", value: payload.action || "removed" },
+      {
+        name: "Reason",
+        value: payload.rejectionReason || "-",
+        inline: false,
+      },
       { name: "Role", value: payload.roleName || payload.roleId },
       { name: "Voice Room", value: payload.channelName || payload.channelId },
       { name: "Members Removed", value: String(roleRemoval.removed.length) },

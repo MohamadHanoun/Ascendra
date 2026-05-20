@@ -262,39 +262,41 @@ export async function rejectRegistrationInline(
         status: "rejected",
         rejectionReason,
         reviewedAt: new Date(),
+
         discordRoleStatus: shouldRemoveAccess ? "pending_remove" : "not_needed",
         discordRoleRequestedAt: shouldRemoveAccess ? new Date() : undefined,
       },
     });
 
-    if (shouldRemoveAccess) {
-      await tx.botEvent.create({
-        data: {
-          type: "team_discord_access_remove",
-          entityType: "registration",
-          entityId: registration.id,
-          payload: {
-            registrationId: registration.id,
+    await tx.botEvent.create({
+      data: {
+        type: "team_discord_access_remove",
+        entityType: "registration",
+        entityId: registration.id,
+        payload: {
+          action: "rejected",
+          rejectionReason,
 
-            tournamentId: registration.tournament.id,
-            tournamentTitle: registration.tournament.title,
+          registrationId: registration.id,
 
-            teamId: registration.team.id,
-            teamName: registration.team.name,
+          tournamentId: registration.tournament.id,
+          tournamentTitle: registration.tournament.title,
 
-            roleId: registration.discordRoleId,
-            roleName: registration.discordRoleName,
+          teamId: registration.team.id,
+          teamName: registration.team.name,
 
-            channelId: registration.discordChannelId,
-            channelName: registration.discordChannelName,
+          roleId: registration.discordRoleId,
+          roleName: registration.discordRoleName,
 
-            guildId: process.env.DISCORD_GUILD_ID,
+          channelId: registration.discordChannelId,
+          channelName: registration.discordChannelName,
 
-            memberDiscordIds,
-          },
+          guildId: process.env.DISCORD_GUILD_ID,
+
+          memberDiscordIds,
         },
-      });
-    }
+      },
+    });
   });
 
   revalidatePath("/admin");
@@ -353,39 +355,40 @@ export async function cancelRegistrationInline(
         status: "cancelled",
         reviewedAt: new Date(),
         cancelledAt: new Date(),
+
         discordRoleStatus: shouldRemoveAccess ? "pending_remove" : "not_needed",
         discordRoleRequestedAt: shouldRemoveAccess ? new Date() : undefined,
       },
     });
 
-    if (shouldRemoveAccess) {
-      await tx.botEvent.create({
-        data: {
-          type: "team_discord_access_remove",
-          entityType: "registration",
-          entityId: registration.id,
-          payload: {
-            registrationId: registration.id,
+    await tx.botEvent.create({
+      data: {
+        type: "team_discord_access_remove",
+        entityType: "registration",
+        entityId: registration.id,
+        payload: {
+          action: "cancelled",
 
-            tournamentId: registration.tournament.id,
-            tournamentTitle: registration.tournament.title,
+          registrationId: registration.id,
 
-            teamId: registration.team.id,
-            teamName: registration.team.name,
+          tournamentId: registration.tournament.id,
+          tournamentTitle: registration.tournament.title,
 
-            roleId: registration.discordRoleId,
-            roleName: registration.discordRoleName,
+          teamId: registration.team.id,
+          teamName: registration.team.name,
 
-            channelId: registration.discordChannelId,
-            channelName: registration.discordChannelName,
+          roleId: registration.discordRoleId,
+          roleName: registration.discordRoleName,
 
-            guildId: process.env.DISCORD_GUILD_ID,
+          channelId: registration.discordChannelId,
+          channelName: registration.discordChannelName,
 
-            memberDiscordIds,
-          },
+          guildId: process.env.DISCORD_GUILD_ID,
+
+          memberDiscordIds,
         },
-      });
-    }
+      },
+    });
   });
 
   revalidatePath("/admin");
