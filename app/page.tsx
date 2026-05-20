@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
+import { auth } from "@/auth";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { prisma } from "@/lib/prisma";
+import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +31,16 @@ const features = [
       "Follow placements, points, and leaderboard progress after each event.",
   },
 ];
+
+type PlayerHubStats = {
+  isLoggedIn: boolean;
+  teamsCount: number;
+  pendingInvitesCount: number;
+  activeRegistrationsCount: number;
+  tournamentResultsCount: number;
+  tournamentPoints: number;
+  bestPlacement: number | null;
+};
 
 function StatusBadge({
   status,
@@ -75,7 +88,7 @@ function PrimaryLink({
   children,
 }: {
   href: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <Link
@@ -92,7 +105,7 @@ function SecondaryLink({
   children,
 }: {
   href: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <Link
@@ -114,7 +127,7 @@ function SectionHeader({
   description: string;
 }) {
   return (
-    <div className="mx-auto mb-12 max-w-3xl text-center">
+    <div className="mx-auto mb-10 max-w-3xl text-center">
       <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-violet-300">
         {label}
       </p>
@@ -140,7 +153,7 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <article className="group rounded-3xl border border-white/10 bg-white/[0.04] p-8 transition hover:-translate-y-1 hover:border-violet-400/30 hover:bg-white/[0.06]">
+    <article className="rounded-3xl border border-white/10 bg-white/[0.045] p-8 shadow-2xl shadow-black/20 backdrop-blur transition hover:-translate-y-1 hover:border-violet-400/30 hover:bg-white/[0.07]">
       <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-violet-600 text-lg font-black text-white shadow-lg shadow-violet-950/30">
         {index}
       </div>
@@ -152,54 +165,354 @@ function FeatureCard({
   );
 }
 
-export default async function HomePage() {
-  const tournaments = await prisma.tournament.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 3,
-    select: {
-      id: true,
-      title: true,
-      game: true,
-      date: true,
-      maxSlots: true,
-      teamSize: true,
-      status: true,
-      registrationStatus: true,
-      registrations: {
-        where: {
-          status: {
-            in: ["registered", "approved"],
+function TournamentMiniCard({
+  tournament,
+}: {
+  tournament: {
+    id: string;
+    title: string;
+    game: string;
+    date: string;
+    imageUrl: string | null;
+    maxSlots: number;
+    teamSize: number;
+    status: string;
+    registrationStatus: string;
+    registrations: { id: string }[];
+  };
+}) {
+  const registeredTeams = tournament.registrations.length;
+
+  const progress =
+    tournament.maxSlots > 0
+      ? Math.min((registeredTeams / tournament.maxSlots) * 100, 100)
+      : 0;
+
+  const imageSrc = getTournamentImageUrl(tournament.game, tournament.imageUrl);
+
+  return (
+    <article className="group overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/20 backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-violet-400/30 hover:bg-white/[0.06]">
+      <div
+        className="relative h-48 overflow-hidden bg-cover bg-center transition duration-500 group-hover:scale-[1.02]"
+        style={{
+          backgroundImage: `url("${imageSrc}")`,
+        }}
+      >
+        <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(7,8,17,0.96)_0%,rgba(7,8,17,0.42)_58%,rgba(7,8,17,0.12)_100%)]" />
+
+        <div className="absolute left-4 right-4 top-4 flex flex-wrap gap-2">
+          <StatusBadge
+            status={tournament.status}
+            variant={getStatusVariant(tournament.status)}
+          />
+          <StatusBadge
+            status={`Registration ${tournament.registrationStatus}`}
+            variant={getStatusVariant(tournament.registrationStatus)}
+          />
+        </div>
+
+        <div className="absolute bottom-4 left-4 right-4">
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-violet-200/90">
+            {tournament.game}
+          </p>
+
+          <h3 className="mt-1 text-3xl font-black leading-none text-white">
+            {tournament.title}
+          </h3>
+        </div>
+      </div>
+
+      <div className="p-5">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-500">
+              Date
+            </p>
+            <p className="mt-1 truncate text-sm font-black text-white">
+              {tournament.date || "TBA"}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-500">
+              Team
+            </p>
+            <p className="mt-1 text-sm font-black text-white">
+              {tournament.teamSize}v{tournament.teamSize}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-500">
+              Slots
+            </p>
+            <p className="mt-1 text-sm font-black text-white">
+              {registeredTeams}/{tournament.maxSlots}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="mb-2 flex items-center justify-between text-xs font-bold text-gray-400">
+            <span>{registeredTeams} registered teams</span>
+            <span>{Math.round(progress)}%</span>
+          </div>
+
+          <div className="h-2 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        <Link
+          href={`/tournaments/${tournament.id}`}
+          className="mt-5 inline-flex w-full justify-center rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white transition hover:bg-violet-500"
+        >
+          View details
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+function PlayerHubStatCard({
+  label,
+  value,
+  description,
+}: {
+  label: string;
+  value: string | number;
+  description: string;
+}) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-black/25 p-5">
+      <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
+        {label}
+      </p>
+
+      <p className="mt-3 text-3xl font-black text-white">{value}</p>
+
+      <p className="mt-2 text-sm leading-6 text-gray-500">{description}</p>
+    </div>
+  );
+}
+
+function PlayerHubSection({ stats }: { stats: PlayerHubStats }) {
+  const bestPlacementValue = stats.bestPlacement
+    ? `#${stats.bestPlacement}`
+    : "-";
+
+  return (
+    <section className="relative py-16 lg:py-20">
+      <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
+        <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-8 shadow-2xl shadow-black/20 backdrop-blur md:p-12">
+          <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+            <div>
+              <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-violet-300">
+                Player hub
+              </p>
+
+              <h2 className="max-w-3xl text-4xl font-black tracking-tight text-white md:text-5xl">
+                {stats.isLoggedIn
+                  ? "Your teams, invitations, and results."
+                  : "Manage teams, invitations, and results from one place."}
+              </h2>
+
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-400">
+                {stats.isLoggedIn
+                  ? "This overview is connected to your account and updates from your teams, invitations, tournament registrations, and results."
+                  : "Login with Discord to create teams, manage invitations, register for tournaments, and track your tournament activity."}
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <PrimaryLink href={stats.isLoggedIn ? "/profile" : "/login"}>
+                  {stats.isLoggedIn ? "Open profile" : "Login with Discord"}
+                </PrimaryLink>
+
+                <SecondaryLink href="/tournaments">
+                  View tournaments
+                </SecondaryLink>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <PlayerHubStatCard
+                label="Teams"
+                value={stats.teamsCount}
+                description="Teams where you are currently a member."
+              />
+
+              <PlayerHubStatCard
+                label="Invites"
+                value={stats.pendingInvitesCount}
+                description="Pending invitations waiting for your response."
+              />
+
+              <PlayerHubStatCard
+                label="Registrations"
+                value={stats.activeRegistrationsCount}
+                description="Active tournament registrations through your teams."
+              />
+
+              <PlayerHubStatCard
+                label="Points"
+                value={stats.tournamentPoints}
+                description={`${stats.tournamentResultsCount} result${
+                  stats.tournamentResultsCount === 1 ? "" : "s"
+                } · Best placement ${bestPlacementValue}`}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+async function getPlayerHubStats(): Promise<PlayerHubStats> {
+  const session = await auth();
+
+  if (!session?.user?.databaseId) {
+    return {
+      isLoggedIn: false,
+      teamsCount: 0,
+      pendingInvitesCount: 0,
+      activeRegistrationsCount: 0,
+      tournamentResultsCount: 0,
+      tournamentPoints: 0,
+      bestPlacement: null,
+    };
+  }
+
+  const userId = session.user.databaseId;
+
+  const [
+    teamsCount,
+    pendingInvitesCount,
+    activeRegistrationsCount,
+    resultStats,
+  ] = await Promise.all([
+    prisma.team.count({
+      where: {
+        members: {
+          some: {
+            userId,
           },
         },
-        select: {
-          id: true,
+      },
+    }),
+
+    prisma.teamInvite.count({
+      where: {
+        invitedUserId: userId,
+        status: "pending",
+      },
+    }),
+
+    prisma.tournamentRegistration.count({
+      where: {
+        status: {
+          in: ["registered", "approved"],
+        },
+        team: {
+          members: {
+            some: {
+              userId,
+            },
+          },
         },
       },
-    },
-  });
+    }),
+
+    prisma.tournamentResult.aggregate({
+      where: {
+        team: {
+          members: {
+            some: {
+              userId,
+            },
+          },
+        },
+      },
+      _count: {
+        id: true,
+      },
+      _sum: {
+        points: true,
+      },
+      _min: {
+        placement: true,
+      },
+    }),
+  ]);
+
+  return {
+    isLoggedIn: true,
+    teamsCount,
+    pendingInvitesCount,
+    activeRegistrationsCount,
+    tournamentResultsCount: resultStats._count.id,
+    tournamentPoints: resultStats._sum.points || 0,
+    bestPlacement: resultStats._min.placement,
+  };
+}
+
+export default async function HomePage() {
+  const [tournaments, playerHubStats] = await Promise.all([
+    prisma.tournament.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 3,
+      select: {
+        id: true,
+        title: true,
+        game: true,
+        date: true,
+        imageUrl: true,
+        maxSlots: true,
+        teamSize: true,
+        status: true,
+        registrationStatus: true,
+        registrations: {
+          where: {
+            status: {
+              in: ["registered", "approved"],
+            },
+          },
+          select: {
+            id: true,
+          },
+        },
+      },
+    }),
+
+    getPlayerHubStats(),
+  ]);
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.18)_0%,transparent_28%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.14)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#0b0d17_45%,#070811)]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
 
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative border-b border-white/10">
+        <section className="relative min-h-[760px] overflow-hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-85"
+            className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage:
-                'linear-gradient(to right, rgba(7,8,17,0.98), rgba(7,8,17,0.68), rgba(7,8,17,0.94)), url("/images/backgrounds/home-hero.webp")',
+              backgroundImage: 'url("/images/backgrounds/home-hero.webp")',
             }}
           />
 
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.22)_0%,transparent_34%),radial-gradient(circle_at_bottom_left,rgba(34,211,238,0.08)_0%,transparent_28%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.82)_0%,rgba(7,8,17,0.45)_44%,rgba(7,8,17,0.58)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.18),transparent_34%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.14),transparent_32%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
-          <div className="relative z-10 grid w-full gap-12 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10 lg:py-24 2xl:px-14">
-            <div>
+          <div className="relative z-10 flex min-h-[760px] items-center px-6 pb-32 pt-20 lg:px-10 2xl:px-14">
+            <div className="max-w-5xl">
               <p className="mb-5 text-sm font-black uppercase tracking-[0.22em] text-violet-300">
                 Ascendra tournament platform
               </p>
@@ -220,224 +533,62 @@ export default async function HomePage() {
                 <SecondaryLink href="/profile">Create a team</SecondaryLink>
               </div>
             </div>
-
-            <div className="rounded-3xl border border-white/10 bg-[#11121d]/85 p-4 shadow-2xl shadow-violet-950/25 backdrop-blur">
-              <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#080912]">
-                <div className="border-b border-white/10 bg-white/[0.03] px-5 py-4">
-                  <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
-                    Upcoming tournaments
-                  </p>
-
-                  <h2 className="mt-2 text-2xl font-black text-white">
-                    Tournament overview
-                  </h2>
-                </div>
-
-                {tournaments.length === 0 ? (
-                  <div className="px-5 py-6">
-                    <p className="font-bold text-white">No tournaments yet</p>
-                    <p className="mt-2 text-sm leading-6 text-gray-400">
-                      Upcoming Ascendra tournaments will appear here when they
-                      are created by the admin team.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-white/10">
-                    {tournaments.map((tournament) => {
-                      const registeredTeams = tournament.registrations.length;
-
-                      return (
-                        <div
-                          key={tournament.id}
-                          className="grid gap-4 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                        >
-                          <div className="min-w-0">
-                            <p className="truncate font-black text-white">
-                              {tournament.title}
-                            </p>
-
-                            <p className="mt-1 text-sm text-gray-400">
-                              {tournament.game} · {tournament.teamSize}v
-                              {tournament.teamSize} · {registeredTeams}/
-                              {tournament.maxSlots} teams
-                            </p>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2 sm:justify-end">
-                            <StatusBadge
-                              status={tournament.status}
-                              variant={getStatusVariant(tournament.status)}
-                            />
-                            <StatusBadge
-                              status={`Registration ${tournament.registrationStatus}`}
-                              variant={getStatusVariant(
-                                tournament.registrationStatus,
-                              )}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <svg
-            className="absolute bottom-[-1px] left-0 w-full text-[#070811]"
-            viewBox="0 0 1440 120"
-            fill="currentColor"
-            preserveAspectRatio="none"
-          >
-            <path d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,42.7C1120,32,1280,32,1360,32L1440,32L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z" />
-          </svg>
-        </section>
-
-        <section className="mx-auto max-w-[1440px] px-6 py-20 lg:px-10">
-          <SectionHeader
-            label="Platform flow"
-            title="Teams, events, and results."
-            description="Ascendra keeps the main player actions simple: create a team, enter events, and follow results."
-          />
-
-          <div className="grid gap-8 md:grid-cols-3">
-            {features.map((feature, index) => (
-              <FeatureCard
-                key={feature.title}
-                index={index + 1}
-                title={feature.title}
-                description={feature.description}
-              />
-            ))}
           </div>
         </section>
 
-        <section className="border-y border-white/10 bg-black/20">
-          <div className="mx-auto max-w-[1440px] px-6 py-20 lg:px-10">
+        <section className="relative -mt-28 pb-16">
+          <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader
-              label="Tournaments"
-              title="Ascendra tournament list."
-              description="The tournament page stays clean and focused. Details and registration open in a separate page."
+              label="Platform flow"
+              title="Teams, events, and results."
+              description="Ascendra keeps the main player actions simple: create a team, enter events, and follow results."
             />
 
-            <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/30">
-              <div className="hidden grid-cols-[1.4fr_1fr_0.8fr_0.8fr_1fr_auto] border-b border-white/10 bg-white/[0.04] px-5 py-4 text-xs font-black uppercase tracking-[0.12em] text-gray-500 lg:grid">
-                <span>Tournament</span>
-                <span>Game</span>
-                <span>Team size</span>
-                <span>Teams</span>
-                <span>Status</span>
-                <span></span>
-              </div>
-
-              {tournaments.length === 0 ? (
-                <div className="px-5 py-8 text-gray-300">
-                  No tournaments available yet.
-                </div>
-              ) : (
-                tournaments.map((tournament) => (
-                  <div
-                    key={tournament.id}
-                    className="grid gap-4 border-b border-white/10 px-5 py-5 last:border-b-0 lg:grid-cols-[1.4fr_1fr_0.8fr_0.8fr_1fr_auto] lg:items-center"
-                  >
-                    <div>
-                      <p className="font-black text-white">
-                        {tournament.title}
-                      </p>
-                      <p className="mt-1 text-sm text-gray-500">
-                        {tournament.date}
-                      </p>
-                    </div>
-
-                    <p className="text-sm font-bold text-violet-300">
-                      {tournament.game}
-                    </p>
-
-                    <p className="font-bold text-white">
-                      {tournament.teamSize}v{tournament.teamSize}
-                    </p>
-
-                    <p className="font-bold text-white">
-                      {tournament.registrations.length}/{tournament.maxSlots}
-                    </p>
-
-                    <StatusBadge
-                      status={tournament.status}
-                      variant={getStatusVariant(tournament.status)}
-                    />
-
-                    <Link
-                      href={`/tournaments/${tournament.id}`}
-                      className="rounded-xl bg-violet-600 px-4 py-2 text-center text-sm font-black text-white transition hover:bg-violet-500"
-                    >
-                      Details
-                    </Link>
-                  </div>
-                ))
-              )}
+            <div className="grid gap-8 md:grid-cols-3">
+              {features.map((feature, index) => (
+                <FeatureCard
+                  key={feature.title}
+                  index={index + 1}
+                  title={feature.title}
+                  description={feature.description}
+                />
+              ))}
             </div>
           </div>
         </section>
 
-        <section className="border-t border-white/10 bg-black/20">
-          <div className="grid w-full gap-10 px-6 py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:px-10 2xl:px-14">
-            <div>
-              <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-violet-300">
-                Player hub
-              </p>
+        <section className="relative py-16 lg:py-20">
+          <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
+            <SectionHeader
+              label="Tournaments"
+              title="Latest tournaments."
+              description="Explore current events, check registration status, and open the full tournament page for details."
+            />
 
-              <h2 className="max-w-3xl text-4xl font-black tracking-tight text-white md:text-5xl">
-                One place for teams and tournament access.
-              </h2>
-
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-400">
-                The profile page gives players a quick overview of their
-                account, invitations, teams, and tournament activity.
-              </p>
-
-              <div className="mt-8 flex flex-wrap gap-3">
-                <PrimaryLink href="/profile">Open profile</PrimaryLink>
-                <SecondaryLink href="/tournaments">
-                  View tournaments
-                </SecondaryLink>
+            {tournaments.length === 0 ? (
+              <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8 text-center text-gray-300 shadow-2xl shadow-black/20">
+                No tournaments available yet.
               </div>
-            </div>
-
-            <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/30">
-              <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
-                <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
-                  Profile overview
-                </p>
-
-                <h3 className="mt-2 text-2xl font-black text-white">
-                  Main player information
-                </h3>
-              </div>
-
-              <div className="divide-y divide-white/10">
-                {[
-                  ["Discord account", "Connection status"],
-                  ["Team invitations", "Pending invites"],
-                  ["My teams", "Created and joined teams"],
-                  ["Tournament access", "Eligible registrations"],
-                  ["Results", "Points and placements"],
-                ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="grid gap-2 px-6 py-5 sm:grid-cols-[minmax(0,1fr)_220px] sm:items-center"
-                  >
-                    <span className="font-black text-white">{label}</span>
-
-                    <span className="text-sm font-bold text-gray-400 sm:text-right">
-                      {value}
-                    </span>
-                  </div>
+            ) : (
+              <div className="grid gap-6 lg:grid-cols-3">
+                {tournaments.map((tournament) => (
+                  <TournamentMiniCard
+                    key={tournament.id}
+                    tournament={tournament}
+                  />
                 ))}
               </div>
+            )}
+
+            <div className="mt-8 flex justify-center">
+              <SecondaryLink href="/tournaments">
+                View all tournaments
+              </SecondaryLink>
             </div>
           </div>
         </section>
+
+        <PlayerHubSection stats={playerHubStats} />
 
         <Footer />
       </div>
