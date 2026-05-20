@@ -1,15 +1,15 @@
-# The Noobs of Temple & Rift — RTN
+# Ascendra
 
-Official website for **The Noobs of Temple & Rift (RTN)**, a modern Discord community focused on electronic games, tournaments, community events, XP progression, and future Discord bot integration.
+Official website for **Ascendra**, a modern Discord community focused on electronic games, tournaments, community events, XP progression, and future Discord bot integration.
 
 Live website:  
-https://rtn-ebon.vercel.app/
+https://ascendra-ebon.vercel.app/
 
 ---
 
 ## About the Project
 
-RTN is a gaming community website built to support a Discord server with a clean and expandable structure.
+Ascendra is a gaming community website built to support a Discord server with a clean and expandable structure.
 
 The current version is a static website prepared for future features such as:
 
