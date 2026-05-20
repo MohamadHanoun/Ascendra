@@ -6,6 +6,7 @@ import {
   cancelTeamInviteInline,
   deleteTeamInline,
   invitePlayerToTeamInline,
+  leaveTeamInline,
   removeTeamMemberInline,
   updateTeamInline,
 } from "@/actions/teamInlineActions";
@@ -434,6 +435,37 @@ export default async function TeamDetailsPage({
                         />
                       </label>
                     </InlineTeamActionForm>
+                  </section>
+                )}
+                
+                {!isLeader && (
+                  <section className="pt-2">
+                    <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-red-300">
+                      Leave team
+                    </p>
+
+                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
+                      <div>
+                        <p className="font-black text-white">Leave this team</p>
+
+                        <p className="mt-1 max-w-xl text-sm leading-6 text-gray-400">
+                          You will be removed from this team. You can only join
+                          again if the team leader sends you a new invitation.
+                        </p>
+                      </div>
+
+                      <InlineTeamActionForm
+                        action={leaveTeamInline}
+                        buttonLabel="Leave team"
+                        pendingLabel="Leaving..."
+                        variant="danger"
+                        confirmTitle="Leave team?"
+                        confirmDescription={`Are you sure you want to leave ${team.name}?`}
+                        confirmLabel="Leave team"
+                      >
+                        <input type="hidden" name="teamId" value={team.id} />
+                      </InlineTeamActionForm>
+                    </div>
                   </section>
                 )}
 

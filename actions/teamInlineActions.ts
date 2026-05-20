@@ -429,3 +429,63 @@ export async function deleteTeamInline(
 
   return success("Team deleted.", `/profile?message=${message}`);
 }
+export async function leaveTeamInline(
+  formData: FormData,
+): Promise<TeamInlineActionResult> {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return fail("Please login first.", "/login");
+  }
+
+  const teamId = getTeamId(formData);
+
+  if (!teamId) {
+    return fail("Team ID is missing.");
+  }
+
+  const team = await prisma.team.findUnique({
+    where: {
+      id: teamId,
+    },
+    include: {
+      members: true,
+    },
+  });
+
+  if (!team) {
+    return fail("Team was not found.");
+  }
+
+  if (team.leaderId === user.id) {
+    return fail(
+      "The team leader cannot leave the team. Delete the team or transfer leadership first.",
+    );
+  }
+
+  const membership = await prisma.teamMember.findUnique({
+    where: {
+      teamId_userId: {
+        teamId: team.id,
+        userId: user.id,
+      },
+    },
+  });
+
+  if (!membership) {
+    return fail("You are not a member of this team.");
+  }
+
+  await prisma.teamMember.delete({
+    where: {
+      id: membership.id,
+    },
+  });
+
+  revalidatePath("/profile");
+  revalidatePath(`/profile/teams/${team.id}`);
+
+  const message = encodeURIComponent("You left the team.");
+
+  return success("You left the team.", `/profile?message=${message}`);
+}
