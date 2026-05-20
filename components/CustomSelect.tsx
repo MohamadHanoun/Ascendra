@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type CustomSelectOption = {
   value: string;
@@ -16,6 +17,13 @@ type CustomSelectProps = {
   required?: boolean;
 };
 
+type DropdownPosition = {
+  top: number;
+  left: number;
+  width: number;
+  maxHeight: number;
+};
+
 export default function CustomSelect({
   name,
   options,
@@ -24,29 +32,158 @@ export default function CustomSelect({
   required = false,
 }: CustomSelectProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [selectedValue, setSelectedValue] = useState(defaultValue);
+  const [position, setPosition] = useState<DropdownPosition>({
+    top: 0,
+    left: 0,
+    width: 0,
+    maxHeight: 280,
+  });
 
   const selectedOption = options.find(
     (option) => option.value === selectedValue,
   );
 
+  function updateDropdownPosition() {
+    if (!buttonRef.current) {
+      return;
+    }
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spacing = 8;
+    const bottomSpace = viewportHeight - rect.bottom - spacing;
+    const topSpace = rect.top - spacing;
+
+    const shouldOpenUp = bottomSpace < 220 && topSpace > bottomSpace;
+
+    const maxHeight = Math.max(
+      180,
+      Math.min(320, shouldOpenUp ? topSpace : bottomSpace),
+    );
+
+    setPosition({
+      left: rect.left,
+      width: rect.width,
+      maxHeight,
+      top: shouldOpenUp
+        ? Math.max(spacing, rect.top - maxHeight - spacing)
+        : rect.bottom + spacing,
+    });
+  }
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    setSelectedValue(defaultValue);
+  }, [defaultValue]);
+
+  useLayoutEffect(() => {
+    if (open) {
+      updateDropdownPosition();
+    }
+  }, [open]);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+
       if (
         wrapperRef.current &&
-        !wrapperRef.current.contains(event.target as Node)
+        !wrapperRef.current.contains(target) &&
+        !(target instanceof HTMLElement && target.closest("[data-select-menu]"))
       ) {
         setOpen(false);
       }
     }
 
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    function handleReposition() {
+      if (open) {
+        updateDropdownPosition();
+      }
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    window.addEventListener("resize", handleReposition);
+    window.addEventListener("scroll", handleReposition, true);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("resize", handleReposition);
+      window.removeEventListener("scroll", handleReposition, true);
     };
-  }, []);
+  }, [open]);
+
+  const dropdown =
+    mounted && open
+      ? createPortal(
+          <div
+            data-select-menu
+            className="fixed z-[99999] rounded-2xl border border-violet-400/25 bg-[#0b0d17] p-2 shadow-2xl shadow-black/80"
+            style={{
+              top: position.top,
+              left: position.left,
+              width: position.width,
+            }}
+          >
+            <div
+              className="overflow-y-auto pr-1"
+              style={{
+                maxHeight: position.maxHeight,
+              }}
+            >
+              {options.length === 0 ? (
+                <div className="rounded-xl px-4 py-3 text-sm font-bold text-gray-500">
+                  No options available
+                </div>
+              ) : (
+                options.map((option) => {
+                  const active = option.value === selectedValue;
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        setSelectedValue(option.value);
+                        setOpen(false);
+                      }}
+                      className={`grid w-full gap-1 rounded-xl px-4 py-3 text-left transition ${
+                        active
+                          ? "border border-violet-400/30 bg-violet-500/15 text-white"
+                          : "text-gray-300 hover:bg-white/[0.06] hover:text-white"
+                      }`}
+                    >
+                      <span className="font-black">{option.label}</span>
+
+                      {option.description && (
+                        <span className="text-xs font-bold text-gray-500">
+                          {option.description}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -58,8 +195,12 @@ export default function CustomSelect({
       />
 
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          updateDropdownPosition();
+          setOpen((current) => !current);
+        }}
         className={`flex w-full items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left transition ${
           open
             ? "border-violet-400 bg-[#0b0d17] shadow-lg shadow-violet-950/30"
@@ -81,45 +222,7 @@ export default function CustomSelect({
         </span>
       </button>
 
-      {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-violet-400/25 bg-[#0b0d17] shadow-2xl shadow-black/60">
-          <div className="max-h-72 overflow-y-auto p-2">
-            {options.length === 0 ? (
-              <div className="rounded-xl px-4 py-3 text-sm font-bold text-gray-500">
-                No options available
-              </div>
-            ) : (
-              options.map((option) => {
-                const active = option.value === selectedValue;
-
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      setSelectedValue(option.value);
-                      setOpen(false);
-                    }}
-                    className={`grid w-full gap-1 rounded-xl px-4 py-3 text-left transition ${
-                      active
-                        ? "border border-violet-400/30 bg-violet-500/15 text-white"
-                        : "text-gray-300 hover:bg-white/[0.06] hover:text-white"
-                    }`}
-                  >
-                    <span className="font-black">{option.label}</span>
-
-                    {option.description && (
-                      <span className="text-xs font-bold text-gray-500">
-                        {option.description}
-                      </span>
-                    )}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
+      {dropdown}
     </div>
   );
 }

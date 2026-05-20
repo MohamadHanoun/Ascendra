@@ -266,7 +266,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         <section className="relative -mt-16 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:grid-cols-[minmax(0,1fr)_320px] lg:px-10">
           <div className="grid min-w-0 gap-8">
             <div className="grid gap-8 lg:grid-cols-2">
-              <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
+              <section className="relative z-40 overflow-visible rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
                 <PanelHeader label="Invitations" title="Team invitations" />
 
                 {invitations.length === 0 ? (
@@ -342,8 +342,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 <PanelHeader label="Create team" title="Start a new team" />
 
                 {user.isGuildMember ? (
-                  <form action={createTeam} className="grid gap-5 p-6">
-                    <div className="grid gap-5 md:grid-cols-2">
+                  <form action={createTeam} className="relative z-40 grid gap-5 p-6">
+                    <div className="relative z-50 grid gap-5 md:grid-cols-2">
                       <label className="grid gap-2">
                         <span className="font-bold text-gray-200">
                           Team Name
