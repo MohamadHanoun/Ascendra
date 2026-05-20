@@ -33,6 +33,38 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function DiscordRoleBadge({ status }: { status: string }) {
+  const normalizedStatus = status.toLowerCase();
+
+  const styles: Record<string, string> = {
+    not_needed: "border-white/10 bg-white/5 text-gray-400",
+    pending_create: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    active: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+    pending_remove: "border-orange-400/25 bg-orange-500/10 text-orange-300",
+    removed: "border-white/10 bg-white/5 text-gray-400",
+    failed: "border-red-400/25 bg-red-500/10 text-red-300",
+  };
+
+  const labels: Record<string, string> = {
+    not_needed: "No role needed",
+    pending_create: "Role queued",
+    active: "Role active",
+    pending_remove: "Removal queued",
+    removed: "Role removed",
+    failed: "Bot failed",
+  };
+
+  return (
+    <span
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${
+        styles[normalizedStatus] || "border-white/10 bg-white/5 text-gray-400"
+      }`}
+    >
+      {labels[normalizedStatus] || status}
+    </span>
+  );
+}
+
 function RoleBadge({ leader }: { leader: boolean }) {
   return (
     <span
@@ -90,6 +122,32 @@ function formatDate(date: Date | null) {
   });
 }
 
+function getDiscordRoleDescription(status: string) {
+  const normalizedStatus = status.toLowerCase();
+
+  if (normalizedStatus === "pending_create") {
+    return "The registration is approved. A future Discord bot can create the role and assign it to the team members.";
+  }
+
+  if (normalizedStatus === "active") {
+    return "The Discord role is marked as active.";
+  }
+
+  if (normalizedStatus === "pending_remove") {
+    return "The registration is no longer active. A future Discord bot can remove the role or remove it from the team members.";
+  }
+
+  if (normalizedStatus === "failed") {
+    return "The last bot operation failed. The bot can retry or update this status later.";
+  }
+
+  if (normalizedStatus === "removed") {
+    return "The Discord role was removed or no longer needs action.";
+  }
+
+  return "No Discord role action is needed for this registration.";
+}
+
 export default async function AdminRegistrationList({
   message,
   error,
@@ -101,6 +159,12 @@ export default async function AdminRegistrationList({
       rejectionReason: true,
       createdAt: true,
       reviewedAt: true,
+      discordRoleStatus: true,
+      discordRoleName: true,
+      discordRoleId: true,
+      discordRoleError: true,
+      discordRoleRequestedAt: true,
+      discordRoleSyncedAt: true,
       tournament: {
         select: {
           title: true,
@@ -181,6 +245,12 @@ export default async function AdminRegistrationList({
     (registration) => registration.status === "cancelled",
   ).length;
 
+  const queuedDiscordRolesCount = registrations.filter((registration) =>
+    ["pending_create", "pending_remove", "failed"].includes(
+      registration.discordRoleStatus,
+    ),
+  ).length;
+
   return (
     <section className="grid gap-6">
       <ProfileNotice message={message} error={error} />
@@ -196,16 +266,18 @@ export default async function AdminRegistrationList({
           </h1>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
-            Review, approve, reject, or cancel team registrations.
+            Review team entries, confirm approved registrations, and prepare
+            Discord role automation for future bot integration.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
           <StatCard label="Total" value={registrations.length} />
           <StatCard label="Pending" value={pendingCount} />
           <StatCard label="Approved" value={approvedCount} />
           <StatCard label="Rejected" value={rejectedCount} />
           <StatCard label="Cancelled" value={cancelledCount} />
+          <StatCard label="Bot queue" value={queuedDiscordRolesCount} />
         </div>
       </div>
 
@@ -413,6 +485,60 @@ export default async function AdminRegistrationList({
                           </InlineAdminRegistrationForm>
                         )}
                       </aside>
+                    </div>
+
+                    <div className="border-t border-white/10 p-4">
+                      <section className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                              Discord role automation
+                            </p>
+
+                            <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
+                              {getDiscordRoleDescription(
+                                registration.discordRoleStatus,
+                              )}
+                            </p>
+                          </div>
+
+                          <DiscordRoleBadge
+                            status={registration.discordRoleStatus}
+                          />
+                        </div>
+
+                        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                          <MiniStat
+                            label="Role name"
+                            value={
+                              registration.discordRoleName || "Not prepared"
+                            }
+                          />
+
+                          <MiniStat
+                            label="Role ID"
+                            value={registration.discordRoleId || "Pending bot"}
+                          />
+
+                          <MiniStat
+                            label="Requested"
+                            value={formatDate(
+                              registration.discordRoleRequestedAt,
+                            )}
+                          />
+
+                          <MiniStat
+                            label="Synced"
+                            value={formatDate(registration.discordRoleSyncedAt)}
+                          />
+                        </div>
+
+                        {registration.discordRoleError && (
+                          <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-300">
+                            {registration.discordRoleError}
+                          </div>
+                        )}
+                      </section>
                     </div>
                   </details>
                 </article>

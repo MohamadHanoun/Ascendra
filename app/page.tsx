@@ -14,7 +14,6 @@ export const metadata: Metadata = {
   description: "Ascendra competitive gaming and tournament platform.",
 };
 
-
 const playerJourney = [
   {
     title: "Verify access",
@@ -220,6 +219,7 @@ function TournamentMiniCard({
             status={tournament.status}
             variant={getStatusVariant(tournament.status)}
           />
+
           <StatusBadge
             status={`Registration ${tournament.registrationStatus}`}
             variant={getStatusVariant(tournament.registrationStatus)}
@@ -243,6 +243,7 @@ function TournamentMiniCard({
             <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-500">
               Date
             </p>
+
             <p className="mt-1 truncate text-sm font-black text-white">
               {tournament.date || "TBA"}
             </p>
@@ -252,6 +253,7 @@ function TournamentMiniCard({
             <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-500">
               Team
             </p>
+
             <p className="mt-1 text-sm font-black text-white">
               {tournament.teamSize}v{tournament.teamSize}
             </p>
@@ -261,6 +263,7 @@ function TournamentMiniCard({
             <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-500">
               Slots
             </p>
+
             <p className="mt-1 text-sm font-black text-white">
               {registeredTeams}/{tournament.maxSlots}
             </p>
@@ -331,14 +334,14 @@ function PlayerHubSection({ stats }: { stats: PlayerHubStats }) {
 
               <h2 className="max-w-3xl text-4xl font-black tracking-tight text-white md:text-5xl">
                 {stats.isLoggedIn
-                  ? "Your teams, invitations, and results."
-                  : "Manage teams, invitations, and results from one place."}
+                  ? "Your competitive activity in one place."
+                  : "A dedicated hub for teams, entries, and results."}
               </h2>
 
               <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-400">
                 {stats.isLoggedIn
-                  ? "This overview is connected to your account and updates from your teams, invitations, tournament registrations, and results."
-                  : "Login with Discord to create teams, manage invitations, register for tournaments, and track your tournament activity."}
+                  ? "Track your teams, invitations, tournament registrations, results, and points directly from your player profile."
+                  : "Sign in with Discord to manage teams, enter tournaments, and follow your competitive record across Ascendra events."}
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -356,19 +359,19 @@ function PlayerHubSection({ stats }: { stats: PlayerHubStats }) {
               <PlayerHubStatCard
                 label="Teams"
                 value={stats.teamsCount}
-                description="Teams where you are currently a member."
+                description="Teams where you are currently listed as a member."
               />
 
               <PlayerHubStatCard
                 label="Invites"
                 value={stats.pendingInvitesCount}
-                description="Pending invitations waiting for your response."
+                description="Pending team invitations waiting for your response."
               />
 
               <PlayerHubStatCard
-                label="Registrations"
+                label="Entries"
                 value={stats.activeRegistrationsCount}
-                description="Active tournament registrations through your teams."
+                description="Active tournament entries connected to your teams."
               />
 
               <PlayerHubStatCard
@@ -537,8 +540,8 @@ export default async function HomePage() {
               </h1>
 
               <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-300">
-                Create a team, register for events, and follow tournament
-                progress from one clean player hub.
+                Manage teams, enter tournaments, and track official results
+                through one competitive platform.
               </p>
 
               <div className="mt-9 flex flex-wrap gap-3">
@@ -556,7 +559,7 @@ export default async function HomePage() {
             <SectionHeader
               label="Tournaments"
               title="Latest tournaments."
-              description="Explore current events, check registration status, and open the full tournament page for details."
+              description="Browse active and upcoming events, review entry requirements, and open each tournament page for registration details."
             />
 
             {tournaments.length === 0 ? (
@@ -581,6 +584,7 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <div className="overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.02))] p-8 shadow-2xl shadow-black/25 backdrop-blur md:p-10">
@@ -591,14 +595,14 @@ export default async function HomePage() {
                   </p>
 
                   <h2 className="max-w-2xl text-4xl font-black tracking-tight text-white md:text-5xl">
-                    From team setup to official rankings.
+                    A structured path for every competitive team.
                   </h2>
                 </div>
 
                 <p className="max-w-3xl text-base leading-8 text-gray-400 lg:justify-self-end">
-                  Ascendra connects team creation, tournament registration,
-                  admin review, and result tracking into one organized
-                  competitive flow.
+                  Ascendra brings roster management, tournament entry, admin
+                  approval, and results tracking into a clear competition
+                  workflow.
                 </p>
               </div>
 
