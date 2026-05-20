@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type FormEvent, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -35,12 +36,14 @@ type TournamentRegistrationPanelProps = {
   activeRegistrations: ActiveRegistration[];
 };
 
+const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "";
+
 function StatusBadge({ status }: { status: string }) {
   const normalizedStatus = status.toLowerCase();
 
   const styles: Record<string, string> = {
     registered: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-    approved: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+    approved: "border-emerald-400/20 bg-emerald-500/[0.06] text-emerald-300/85",
     rejected: "border-red-400/25 bg-red-500/10 text-red-300",
     cancelled: "border-white/10 bg-white/5 text-gray-300",
   };
@@ -71,7 +74,7 @@ function getRegistrationCardStyle(status: string) {
   }
 
   if (normalizedStatus === "approved") {
-    return "border-emerald-400/25 bg-emerald-500/10";
+    return "border-emerald-400/20 bg-emerald-500/[0.06]";
   }
 
   if (normalizedStatus === "cancelled") {
@@ -89,7 +92,7 @@ function getRegistrationTitle(status: string) {
   }
 
   if (normalizedStatus === "approved") {
-    return "Team approved";
+    return "Registration approved";
   }
 
   if (normalizedStatus === "cancelled") {
@@ -308,15 +311,18 @@ function PanelNotice({
   title,
   description,
   variant = "warning",
+  children,
 }: {
   title: string;
   description: string;
-  variant?: "warning" | "danger" | "neutral";
+  variant?: "warning" | "danger" | "neutral" | "success";
+  children?: React.ReactNode;
 }) {
   const styles = {
     warning: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
     danger: "border-red-400/25 bg-red-500/10 text-red-300",
     neutral: "border-white/10 bg-black/20 text-white",
+    success: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
   };
 
   return (
@@ -324,6 +330,73 @@ function PanelNotice({
       <p className="font-black">{title}</p>
 
       <p className="mt-2 text-sm leading-6 text-gray-300">{description}</p>
+
+      {children && <div className="mt-4 flex flex-wrap gap-3">{children}</div>}
+    </div>
+  );
+}
+
+function NoticeLink({
+  href,
+  children,
+  external = false,
+}: {
+  href: string;
+  children: React.ReactNode;
+  external?: boolean;
+}) {
+  if (external) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-black text-white transition hover:bg-violet-500"
+      >
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-black text-white transition hover:bg-violet-500"
+    >
+      {children}
+    </Link>
+  );
+}
+
+function RequirementsList({ teamSize }: { teamSize: number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+        Team requirements
+      </p>
+
+      <ul className="mt-3 grid gap-2 text-sm leading-6 text-gray-300">
+        <li>• The team game must match this tournament.</li>
+        <li>
+          • The team must have at least {teamSize} player
+          {teamSize === 1 ? "" : "s"}.
+        </li>
+        <li>• Only the team leader can register the team.</li>
+        <li>• The tournament must still have open slots.</li>
+      </ul>
+    </div>
+  );
+}
+
+function ApprovedRegistrationInfo() {
+  return (
+    <div className="mt-4 rounded-xl border border-emerald-400/20 bg-black/20 px-4 py-3">
+      <p className="font-black text-emerald-300">Approved by admin</p>
+
+      <p className="mt-1 text-sm leading-6 text-gray-300">
+        This registration is already approved. Players cannot cancel approved
+        registrations. Contact an admin if changes are needed.
+      </p>
     </div>
   );
 }
@@ -348,7 +421,9 @@ function TournamentRegistrationPanel({
       <PanelNotice
         title="Login required"
         description="Login with Discord to register a team for this tournament."
-      />
+      >
+        <NoticeLink href="/login">Login with Discord</NoticeLink>
+      </PanelNotice>
     );
   }
 
@@ -356,8 +431,19 @@ function TournamentRegistrationPanel({
     return (
       <PanelNotice
         title="Discord membership required"
-        description="You must be an Ascendra Discord member to register for tournaments."
-      />
+        description="Your account is logged in, but it is not recognized as a member of the Ascendra Discord server."
+      >
+        {discordInvite ? (
+          <NoticeLink href={discordInvite} external>
+            Join Discord
+          </NoticeLink>
+        ) : (
+          <span className="rounded-xl border border-white/10 px-4 py-2 text-sm font-black text-gray-400">
+            Discord invite not configured
+          </span>
+        )}
+        <NoticeLink href="/login">Refresh login</NoticeLink>
+      </PanelNotice>
     );
   }
 
@@ -400,13 +486,17 @@ function TournamentRegistrationPanel({
                 </div>
               )}
 
-              {["registered", "approved"].includes(registration.status) && (
+              {registration.status === "registered" && (
                 <div className="mt-4">
                   <CancelRegistrationForm
                     registrationId={registration.id}
                     teamName={registration.teamName}
                   />
                 </div>
+              )}
+
+              {registration.status === "approved" && (
+                <ApprovedRegistrationInfo />
               )}
             </div>
           ))}
@@ -434,11 +524,19 @@ function TournamentRegistrationPanel({
         !hasOpenRegistration && (
           <>
             {availableTeams.length === 0 ? (
-              <PanelNotice
-                title="No eligible teams"
-                description={`You need a team that matches this game and has at least ${teamSize} player${teamSize === 1 ? "" : "s"}.`}
-                variant="neutral"
-              />
+              <div className="grid gap-4">
+                <PanelNotice
+                  title="No eligible teams"
+                  description={`You do not currently have a team that matches this tournament and has at least ${teamSize} player${
+                    teamSize === 1 ? "" : "s"
+                  }.`}
+                  variant="neutral"
+                >
+                  <NoticeLink href="/profile">Create or manage team</NoticeLink>
+                </PanelNotice>
+
+                <RequirementsList teamSize={teamSize} />
+              </div>
             ) : (
               <RegisterForm
                 tournamentId={tournamentId}

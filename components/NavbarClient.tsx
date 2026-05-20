@@ -21,7 +21,7 @@ const footerOnlyLinks = [
   { href: "/stats", label: "Stats" },
 ];
 
-const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "#";
+const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "";
 
 type NavbarClientProps = {
   isAdmin: boolean;
@@ -249,14 +249,20 @@ export default function NavbarClient({
               </Link>
             )}
 
-            <a
-              href={discordInvite}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-xl bg-violet-600 px-5 py-2 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
-            >
-              Join Discord
-            </a>
+            {discordInvite ? (
+              <a
+                href={discordInvite}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-xl bg-violet-600 px-5 py-2 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
+              >
+                Join Discord
+              </a>
+            ) : (
+              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-2 text-sm font-black text-gray-500">
+                Discord soon
+              </span>
+            )}
           </div>
 
           <button
@@ -334,14 +340,20 @@ export default function NavbarClient({
                   </Link>
                 )}
 
-                <a
-                  href={discordInvite}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-violet-500"
-                >
-                  Join Discord
-                </a>
+                {discordInvite ? (
+                  <a
+                    href={discordInvite}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-violet-500"
+                  >
+                    Join Discord
+                  </a>
+                ) : (
+                  <span className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm font-black text-gray-500">
+                    Discord soon
+                  </span>
+                )}
 
                 <div className="mt-3 border-t border-white/10 pt-4">
                   <p className="mb-2 px-4 text-xs font-black uppercase tracking-[0.16em] text-gray-500">
