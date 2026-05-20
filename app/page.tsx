@@ -14,21 +14,32 @@ export const metadata: Metadata = {
   description: "Ascendra competitive gaming and tournament platform.",
 };
 
-const features = [
+
+const playerJourney = [
   {
-    title: "Create a team",
+    title: "Verify access",
     description:
-      "Build a roster, invite players, and keep your squad ready for events.",
+      "Players sign in with Discord and connect their account to the Ascendra community.",
   },
   {
-    title: "Register for events",
+    title: "Build a roster",
     description:
-      "Join open tournaments when your team matches the game and team size.",
+      "Team leaders create teams, invite members, and prepare eligible lineups.",
   },
   {
-    title: "Track results",
+    title: "Enter tournaments",
     description:
-      "Follow placements, points, and leaderboard progress after each event.",
+      "Eligible teams register for open events that match their game and team size.",
+  },
+  {
+    title: "Admin review",
+    description:
+      "Registrations are reviewed before teams are confirmed for official events.",
+  },
+  {
+    title: "Results and ranking",
+    description:
+      "Placements award points that update profiles, team history, and leaderboards.",
   },
 ];
 
@@ -143,7 +154,7 @@ function SectionHeader({
   );
 }
 
-function FeatureCard({
+function PlayerJourneyStep({
   index,
   title,
   description,
@@ -153,14 +164,18 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <article className="rounded-3xl border border-white/10 bg-white/[0.045] p-8 shadow-2xl shadow-black/20 backdrop-blur transition hover:-translate-y-1 hover:border-violet-400/30 hover:bg-white/[0.07]">
-      <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-violet-600 text-lg font-black text-white shadow-lg shadow-violet-950/30">
-        {index}
+    <article className="relative rounded-3xl border border-white/10 bg-black/25 p-6 transition hover:border-violet-400/30 hover:bg-white/[0.045]">
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-violet-600 text-sm font-black text-white shadow-lg shadow-violet-950/30">
+          {String(index).padStart(2, "0")}
+        </div>
+
+        <div className="h-px flex-1 bg-gradient-to-r from-violet-400/40 to-transparent" />
       </div>
 
-      <h3 className="text-2xl font-black text-white">{title}</h3>
+      <h3 className="text-xl font-black text-white">{title}</h3>
 
-      <p className="mt-4 leading-7 text-gray-400">{description}</p>
+      <p className="mt-3 text-sm leading-7 text-gray-400">{description}</p>
     </article>
   );
 }
@@ -536,27 +551,6 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="relative -mt-28 pb-16">
-          <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
-            <SectionHeader
-              label="Platform flow"
-              title="Teams, events, and results."
-              description="Ascendra keeps the main player actions simple: create a team, enter events, and follow results."
-            />
-
-            <div className="grid gap-8 md:grid-cols-3">
-              {features.map((feature, index) => (
-                <FeatureCard
-                  key={feature.title}
-                  index={index + 1}
-                  title={feature.title}
-                  description={feature.description}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader
@@ -584,6 +578,40 @@ export default async function HomePage() {
               <SecondaryLink href="/tournaments">
                 View all tournaments
               </SecondaryLink>
+            </div>
+          </div>
+        </section>
+        <section className="relative py-16 lg:py-20">
+          <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
+            <div className="overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.02))] p-8 shadow-2xl shadow-black/25 backdrop-blur md:p-10">
+              <div className="mb-10 grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+                <div>
+                  <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-violet-300">
+                    Player journey
+                  </p>
+
+                  <h2 className="max-w-2xl text-4xl font-black tracking-tight text-white md:text-5xl">
+                    From team setup to official rankings.
+                  </h2>
+                </div>
+
+                <p className="max-w-3xl text-base leading-8 text-gray-400 lg:justify-self-end">
+                  Ascendra connects team creation, tournament registration,
+                  admin review, and result tracking into one organized
+                  competitive flow.
+                </p>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
+                {playerJourney.map((step, index) => (
+                  <PlayerJourneyStep
+                    key={step.title}
+                    index={index + 1}
+                    title={step.title}
+                    description={step.description}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </section>
