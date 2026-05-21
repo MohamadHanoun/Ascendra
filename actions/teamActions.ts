@@ -37,7 +37,7 @@ async function requireUser() {
 
 function requireGuildMember(user: { isGuildMember: boolean }) {
   if (!user.isGuildMember) {
-    profileError("Join the RTN Discord server to use team features.");
+    profileError("Join the Ascendra Discord server to use team features.");
   }
 }
 
@@ -65,6 +65,26 @@ async function requireTeamLeader(teamId: string, userId: string) {
 
 function requireEditableTeam(_status: string) {
   return;
+}
+async function hasActiveTournamentRegistration(teamId: string) {
+  const count = await prisma.tournamentRegistration.count({
+    where: {
+      teamId,
+      status: {
+        in: ["registered", "approved"],
+      },
+    },
+  });
+
+  return count > 0;
+}
+
+async function requireTeamNotInActiveRegistration(teamId: string) {
+  const hasActiveRegistration = await hasActiveTournamentRegistration(teamId);
+
+  if (hasActiveRegistration) {
+    profileError("Team is locked while registered in a tournament.");
+  }
 }
 
 export async function createTeam(formData: FormData) {
@@ -137,9 +157,12 @@ export async function updateTeam(formData: FormData) {
   if (!allowedGames.includes(game)) {
     profileError("Invalid game selected.");
   }
+  
 
   const team = await requireTeamLeader(teamId, user.id);
   requireEditableTeam(team.status);
+
+  await requireTeamNotInActiveRegistration(team.id);
 
   await prisma.team.update({
     where: {
@@ -173,6 +196,7 @@ export async function invitePlayerToTeam(formData: FormData) {
 
   const team = await requireTeamLeader(teamId, user.id);
   requireEditableTeam(team.status);
+  await requireTeamNotInActiveRegistration(team.id);
 
   const invitedUser = await prisma.user.findFirst({
     where: {
@@ -195,7 +219,7 @@ export async function invitePlayerToTeam(formData: FormData) {
   }
 
   if (!invitedUser.isGuildMember) {
-    profileError("This player must join the RTN Discord server first.");
+    profileError("This player must join the Ascendra Discord server first.");
   }
 
   if (invitedUser.id === user.id) {
@@ -327,6 +351,18 @@ export async function respondToTeamInvite(formData: FormData) {
 
   if (response === "accepted") {
     await prisma.$transaction(async (tx) => {
+      const activeRegistration = await prisma.tournamentRegistration.findFirst({
+        where: {
+          teamId: invite.teamId,
+          status: {
+            in: ["registered", "approved"],
+          },
+        },
+      });
+
+      if (activeRegistration) {
+        profileError("Team is locked while registered in a tournament.");
+      }
       await tx.teamMember.upsert({
         where: {
           teamId_userId: {
@@ -385,6 +421,7 @@ export async function removeTeamMember(formData: FormData) {
 
   const team = await requireTeamLeader(teamId, user.id);
   requireEditableTeam(team.status);
+  await requireTeamNotInActiveRegistration(team.id);
 
   const member = await prisma.teamMember.findUnique({
     where: {

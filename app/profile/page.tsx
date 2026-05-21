@@ -448,7 +448,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                         <p className="text-sm text-gray-300">{team.game}</p>
 
                         <p className="text-sm font-bold text-white">
-                          {team.members.length} members
+                          {team.members.length} member
+                          {team.members.length === 1 ? "" : "s"}
                         </p>
 
                         <div>
@@ -459,7 +460,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                           href={`/profile/teams/${team.id}`}
                           className="rounded-xl bg-violet-600 px-4 py-2 text-center text-sm font-black text-white transition hover:bg-violet-500"
                         >
-                          Manage
+                          Open
                         </Link>
 
                         <p className="text-sm text-gray-500 md:col-start-2 md:row-start-2">
