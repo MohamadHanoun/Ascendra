@@ -1,27 +1,44 @@
 import Link from "next/link";
+
 import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
-function StatusBadge({ label, status }: { label: string; status: string }) {
+type Tone = "green" | "yellow" | "red" | "blue" | "gray" | "violet";
+
+function toneClass(tone: Tone) {
+  const styles: Record<Tone, string> = {
+    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    red: "border-red-400/25 bg-red-500/10 text-red-300",
+    blue: "border-blue-400/25 bg-blue-500/10 text-blue-300",
+    gray: "border-white/10 bg-white/5 text-gray-300",
+    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
+  };
+
+  return styles[tone];
+}
+
+function StatusBadge({ status }: { status: string }) {
   const normalizedStatus = status.toLowerCase();
 
-  const styles: Record<string, string> = {
-    open: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    upcoming: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    closed: "border-red-400/25 bg-red-500/10 text-red-300",
-    cancelled: "border-white/10 bg-white/5 text-gray-300",
-    registered: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-    approved: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    rejected: "border-red-400/25 bg-red-500/10 text-red-300",
+  const tones: Record<string, Tone> = {
+    open: "green",
+    upcoming: "yellow",
+    closed: "red",
+    cancelled: "gray",
+    ended: "blue",
+    registered: "violet",
+    approved: "green",
+    rejected: "red",
   };
 
   return (
     <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize tracking-[0.08em] ${
-        styles[normalizedStatus] || "border-white/10 bg-white/5 text-gray-300"
-      }`}
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize ${toneClass(
+        tones[normalizedStatus] || "gray",
+      )}`}
     >
-      {label}: {status}
+      {status}
     </span>
   );
 }
@@ -38,33 +55,21 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-black/25 px-3 py-2">
-      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-500">
-        {label}
-      </p>
-
-      <p className="mt-1 text-sm font-black text-white">{value}</p>
-    </div>
-  );
-}
-
 function ProgressBar({
-  usedSlots,
+  approvedSlots,
   maxSlots,
 }: {
-  usedSlots: number;
+  approvedSlots: number;
   maxSlots: number;
 }) {
   const progress =
-    maxSlots > 0 ? Math.min((usedSlots / maxSlots) * 100, 100) : 0;
+    maxSlots > 0 ? Math.min((approvedSlots / maxSlots) * 100, 100) : 0;
 
   return (
     <div className="grid gap-2">
       <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-400">
         <span>
-          {usedSlots}/{maxSlots}
+          {approvedSlots}/{maxSlots} approved
         </span>
 
         <span>{Math.round(progress)}%</span>
@@ -82,6 +87,18 @@ function ProgressBar({
   );
 }
 
+function getSortPriority(status: string) {
+  const priorities: Record<string, number> = {
+    open: 0,
+    upcoming: 1,
+    closed: 2,
+    ended: 3,
+    cancelled: 4,
+  };
+
+  return priorities[status] ?? 10;
+}
+
 export default async function AdminTournamentList() {
   const tournaments = await prisma.tournament.findMany({
     select: {
@@ -91,13 +108,14 @@ export default async function AdminTournamentList() {
       date: true,
       imageUrl: true,
       maxSlots: true,
+      teamSize: true,
       status: true,
       registrationStatus: true,
       createdAt: true,
       registrations: {
         where: {
           status: {
-            in: ["registered", "approved"],
+            in: ["registered", "approved", "rejected"],
           },
         },
         select: {
@@ -112,18 +130,35 @@ export default async function AdminTournamentList() {
         },
       },
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+  });
+
+  const sortedTournaments = [...tournaments].sort((a, b) => {
+    const statusA = getSortPriority(a.status);
+    const statusB = getSortPriority(b.status);
+
+    if (statusA !== statusB) {
+      return statusA - statusB;
+    }
+
+    return b.createdAt.getTime() - a.createdAt.getTime();
   });
 
   const openTournaments = tournaments.filter(
     (tournament) => tournament.status === "open",
   ).length;
 
-  const openRegistrations = tournaments.filter(
-    (tournament) => tournament.registrationStatus === "open",
+  const endedTournaments = tournaments.filter(
+    (tournament) => tournament.status === "ended",
   ).length;
+
+  const pendingApplications = tournaments.reduce(
+    (total, tournament) =>
+      total +
+      tournament.registrations.filter(
+        (registration) => registration.status === "registered",
+      ).length,
+    0,
+  );
 
   const totalResults = tournaments.reduce(
     (total, tournament) => total + tournament.results.length,
@@ -150,40 +185,52 @@ export default async function AdminTournamentList() {
           </h2>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
-            Open a tournament to edit details, manage registration, and award
-            tournament points.
+            Open a tournament to manage details, registrations, and final
+            results.
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <StatCard label="Total" value={tournaments.length} />
           <StatCard label="Open" value={openTournaments} />
-          <StatCard label="Reg. open" value={openRegistrations} />
+          <StatCard label="Ended" value={endedTournaments} />
+          <StatCard label="Pending" value={pendingApplications} />
           <StatCard label="Results" value={totalResults} />
-          <StatCard label="Points" value={totalPoints} />
         </div>
       </div>
 
-      {tournaments.length === 0 ? (
+      {sortedTournaments.length === 0 ? (
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-gray-300 shadow-2xl shadow-black/20">
           No tournaments found.
         </div>
       ) : (
         <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-          <div className="hidden border-b border-white/10 bg-black/25 px-5 py-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[90px_minmax(0,1fr)_150px_170px_170px_120px] xl:gap-5">
+          <div className="hidden border-b border-white/10 bg-black/25 px-5 py-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[100px_minmax(0,1fr)_170px_220px_170px_120px] xl:gap-5">
             <span>Image</span>
             <span>Tournament</span>
-            <span>Game</span>
             <span>Status</span>
             <span>Slots</span>
+            <span>Activity</span>
             <span>Action</span>
           </div>
 
           <div className="divide-y divide-white/10">
-            {tournaments.map((tournament) => {
-              const usedSlots = tournament.registrations.length;
+            {sortedTournaments.map((tournament) => {
+              const approvedSlots = tournament.registrations.filter(
+                (registration) => registration.status === "approved",
+              ).length;
+
+              const pendingCount = tournament.registrations.filter(
+                (registration) => registration.status === "registered",
+              ).length;
+
+              const rejectedCount = tournament.registrations.filter(
+                (registration) => registration.status === "rejected",
+              ).length;
+
+              const applications = tournament.registrations.length;
               const remainingSlots = Math.max(
-                tournament.maxSlots - usedSlots,
+                tournament.maxSlots - approvedSlots,
                 0,
               );
 
@@ -200,66 +247,64 @@ export default async function AdminTournamentList() {
               return (
                 <article
                   key={tournament.id}
-                  className="grid gap-4 p-5 transition hover:bg-white/[0.035] xl:grid-cols-[90px_minmax(0,1fr)_150px_170px_170px_120px] xl:items-center xl:gap-5"
+                  className="grid gap-4 p-5 transition hover:bg-white/[0.035] xl:grid-cols-[100px_minmax(0,1fr)_170px_220px_170px_120px] xl:items-center xl:gap-5"
                 >
                   <div
-                    className="h-16 w-full rounded-2xl border border-white/10 bg-cover bg-center xl:w-[90px]"
+                    className="h-20 rounded-2xl border border-white/10 bg-cover bg-center xl:w-[100px]"
                     style={{
                       backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.05), rgba(7,8,17,0.60)), url("${tournamentImage}")`,
                     }}
                   />
 
                   <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="truncate text-xl font-black text-white">
-                        {tournament.title}
-                      </h3>
+                    <h3 className="truncate text-xl font-black text-white">
+                      {tournament.title}
+                    </h3>
 
-                      {tournament.results.length > 0 && (
-                        <span className="inline-flex rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1 text-xs font-black text-emerald-300">
-                          {tournament.results.length} result
-                          {tournament.results.length === 1 ? "" : "s"}
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="mt-1 text-sm text-gray-400">
-                      {tournament.date}
+                    <p className="mt-1 text-sm font-bold text-violet-300">
+                      {tournament.game}
                     </p>
 
-                    {tournamentPoints > 0 && (
-                      <p className="mt-1 text-xs font-bold text-emerald-300">
-                        {tournamentPoints} tournament points awarded
-                      </p>
-                    )}
+                    <p className="mt-1 text-sm text-gray-400">
+                      {tournament.date} · {tournament.teamSize}v
+                      {tournament.teamSize}
+                    </p>
                   </div>
-
-                  <p className="text-sm font-bold text-violet-300">
-                    {tournament.game}
-                  </p>
 
                   <div className="flex flex-wrap gap-2">
-                    <StatusBadge
-                      label="Tournament"
-                      status={tournament.status}
-                    />
-                    <StatusBadge
-                      label="Registration"
-                      status={tournament.registrationStatus}
-                    />
+                    <StatusBadge status={tournament.status} />
+                    <StatusBadge status={tournament.registrationStatus} />
                   </div>
 
-                  <div className="grid gap-3">
-                    <div className="grid grid-cols-3 gap-2">
-                      <MiniStat label="Used" value={usedSlots} />
-                      <MiniStat label="Left" value={remainingSlots} />
-                      <MiniStat label="Max" value={tournament.maxSlots} />
-                    </div>
-
+                  <div className="grid gap-2">
                     <ProgressBar
-                      usedSlots={usedSlots}
+                      approvedSlots={approvedSlots}
                       maxSlots={tournament.maxSlots}
                     />
+
+                    <p className="text-xs font-bold text-gray-500">
+                      {remainingSlots} approved slot
+                      {remainingSlots === 1 ? "" : "s"} left
+                    </p>
+                  </div>
+
+                  <div className="grid gap-1 text-sm">
+                    <p className="font-bold text-white">
+                      {applications} application
+                      {applications === 1 ? "" : "s"}
+                    </p>
+
+                    <p className="text-gray-400">
+                      {pendingCount} pending · {rejectedCount} rejected
+                    </p>
+
+                    {tournament.results.length > 0 && (
+                      <p className="font-bold text-emerald-300">
+                        {tournament.results.length} result
+                        {tournament.results.length === 1 ? "" : "s"} ·{" "}
+                        {tournamentPoints} pts
+                      </p>
+                    )}
                   </div>
 
                   <Link
@@ -273,6 +318,13 @@ export default async function AdminTournamentList() {
             })}
           </div>
         </div>
+      )}
+
+      {totalPoints > 0 && (
+        <p className="text-sm text-gray-500">
+          Total awarded tournament points:{" "}
+          <span className="font-black text-white">{totalPoints}</span>
+        </p>
       )}
     </section>
   );

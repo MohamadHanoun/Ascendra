@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
+
 import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
@@ -33,6 +35,7 @@ function StatusBadge({ status }: { status: string }) {
     rejected: "border-red-400/25 bg-red-500/10 text-red-300",
     registered: "border-violet-400/25 bg-violet-500/10 text-violet-200",
     cancelled: "border-white/10 bg-white/5 text-gray-300",
+    ended: "border-blue-400/25 bg-blue-500/10 text-blue-300",
   };
 
   return (
@@ -46,7 +49,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function PageStatCard({
+function CompactStat({
   label,
   value,
 }: {
@@ -54,43 +57,35 @@ function PageStatCard({
   value: string | number;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.045] px-6 py-5 shadow-2xl shadow-black/20 backdrop-blur">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-500">
-        {label}
-      </p>
-
-      <p className="mt-2 text-3xl font-black text-white">{value}</p>
-    </div>
-  );
-}
-
-function MiniInfo({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div>
+    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
       <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
         {label}
       </p>
 
-      <p className="mt-1 text-base font-black text-white">{value}</p>
+      <p className="mt-1 text-xl font-black text-white">{value}</p>
     </div>
   );
 }
 
+function DetailLine({ children }: { children: ReactNode }) {
+  return <p className="text-sm font-bold text-gray-300">{children}</p>;
+}
+
 function ProgressBar({
-  usedSlots,
+  approvedSlots,
   maxSlots,
 }: {
-  usedSlots: number;
+  approvedSlots: number;
   maxSlots: number;
 }) {
   const progress =
-    maxSlots > 0 ? Math.min((usedSlots / maxSlots) * 100, 100) : 0;
+    maxSlots > 0 ? Math.min((approvedSlots / maxSlots) * 100, 100) : 0;
 
   return (
     <div className="grid gap-2">
       <div className="flex items-center justify-between text-xs font-bold text-gray-500">
         <span>
-          {usedSlots}/{maxSlots}
+          {approvedSlots}/{maxSlots} approved
         </span>
 
         <span>{Math.round(progress)}%</span>
@@ -104,6 +99,18 @@ function ProgressBar({
           }}
         />
       </div>
+    </div>
+  );
+}
+
+function SectionTitle({ title, count }: { title: string; count: number }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <h2 className="text-2xl font-black text-white">{title}</h2>
+
+      <span className="rounded-full border border-white/10 bg-black/25 px-3 py-1 text-xs font-black text-gray-400">
+        {count} tournament{count === 1 ? "" : "s"}
+      </span>
     </div>
   );
 }
@@ -130,8 +137,16 @@ export default async function TournamentsPage({
       registrationStatus: true,
       registrations: {
         where: {
-          status: "approved",
+          status: {
+            in: ["registered", "approved", "rejected"],
+          },
         },
+        select: {
+          id: true,
+          status: true,
+        },
+      },
+      results: {
         select: {
           id: true,
         },
@@ -139,16 +154,152 @@ export default async function TournamentsPage({
     },
   });
 
-  const openRegistrationCount = tournaments.filter(
-    (tournament) => tournament.registrationStatus === "open",
-  ).length;
+  const sortedTournaments = [...tournaments].sort((a, b) => {
+    const priority: Record<string, number> = {
+      open: 0,
+      upcoming: 1,
+      closed: 2,
+      ended: 3,
+      cancelled: 4,
+    };
+
+    const statusA = priority[a.status] ?? 10;
+    const statusB = priority[b.status] ?? 10;
+
+    if (statusA !== statusB) {
+      return statusA - statusB;
+    }
+
+    return a.title.localeCompare(b.title);
+  });
+
+  const activeTournaments = sortedTournaments.filter(
+    (tournament) => !["ended", "cancelled"].includes(tournament.status),
+  );
+
+  const archivedTournaments = sortedTournaments.filter((tournament) =>
+    ["ended", "cancelled"].includes(tournament.status),
+  );
 
   const openTournamentCount = tournaments.filter(
     (tournament) => tournament.status === "open",
   ).length;
 
+  const endedTournamentCount = tournaments.filter(
+    (tournament) => tournament.status === "ended",
+  ).length;
+
+  const openRegistrationCount = tournaments.filter(
+    (tournament) =>
+      tournament.registrationStatus === "open" &&
+      !["ended", "cancelled"].includes(tournament.status),
+  ).length;
+
   const gamesCount = new Set(tournaments.map((tournament) => tournament.game))
     .size;
+
+  function renderTournamentList(
+    list: typeof sortedTournaments,
+    emptyTitle: string,
+  ) {
+    if (list.length === 0) {
+      return (
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-gray-300">
+          {emptyTitle}
+        </div>
+      );
+    }
+
+    return (
+      <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
+        <div className="divide-y divide-white/10">
+          {list.map((tournament) => {
+            const approvedSlots = tournament.registrations.filter(
+              (registration) => registration.status === "approved",
+            ).length;
+
+            const applications = tournament.registrations.length;
+            const remainingSlots = Math.max(
+              tournament.maxSlots - approvedSlots,
+              0,
+            );
+
+            const tournamentImage = getTournamentImageUrl(
+              tournament.game,
+              tournament.imageUrl,
+            );
+
+            return (
+              <article
+                key={tournament.id}
+                className="grid gap-5 p-5 transition hover:bg-white/[0.035] lg:grid-cols-[180px_minmax(0,1fr)_230px_140px] lg:items-center"
+              >
+                <div
+                  className="h-28 rounded-2xl border border-white/10 bg-cover bg-center lg:h-24"
+                  style={{
+                    backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.05), rgba(7,8,17,0.65)), url("${tournamentImage}")`,
+                  }}
+                />
+
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="truncate text-2xl font-black text-white">
+                      {tournament.title}
+                    </h3>
+
+                    <StatusBadge status={tournament.status} />
+
+                    {tournament.registrationStatus === "open" &&
+                      !["ended", "cancelled"].includes(tournament.status) && (
+                        <StatusBadge status="Registration open" />
+                      )}
+                  </div>
+
+                  <div className="mt-3 grid gap-1">
+                    <DetailLine>
+                      {tournament.game} · {tournament.date}
+                    </DetailLine>
+
+                    <DetailLine>
+                      Prize: {tournament.prize} · Team: {tournament.teamSize}v
+                      {tournament.teamSize}
+                    </DetailLine>
+                  </div>
+                </div>
+
+                <div className="grid gap-3">
+                  <ProgressBar
+                    approvedSlots={approvedSlots}
+                    maxSlots={tournament.maxSlots}
+                  />
+
+                  <p className="text-xs font-bold text-gray-500">
+                    {remainingSlots} approved slot
+                    {remainingSlots === 1 ? "" : "s"} left · {applications}{" "}
+                    application{applications === 1 ? "" : "s"}
+                  </p>
+
+                  {tournament.results.length > 0 && (
+                    <p className="text-xs font-black text-emerald-300">
+                      {tournament.results.length} result
+                      {tournament.results.length === 1 ? "" : "s"} saved
+                    </p>
+                  )}
+                </div>
+
+                <Link
+                  href={`/tournaments/${tournament.id}`}
+                  className="inline-flex justify-center rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
+                >
+                  Details
+                </Link>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
@@ -180,19 +331,20 @@ export default async function TournamentsPage({
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              Open, upcoming, and completed community events.
+              Register, follow active events, and view completed tournament
+              history.
             </p>
           </div>
         </section>
 
-        <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-7 px-6 pb-16 lg:px-10 2xl:px-14">
+        <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
           <ProfileNotice message={params.message} error={params.error} />
 
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <PageStatCard label="Tournaments" value={tournaments.length} />
-            <PageStatCard label="Open" value={openTournamentCount} />
-            <PageStatCard label="Registration" value={openRegistrationCount} />
-            <PageStatCard label="Games" value={gamesCount} />
+            <CompactStat label="Total" value={tournaments.length} />
+            <CompactStat label="Open" value={openTournamentCount} />
+            <CompactStat label="Registration" value={openRegistrationCount} />
+            <CompactStat label="Ended" value={endedTournamentCount} />
           </section>
 
           {tournaments.length === 0 ? (
@@ -201,110 +353,40 @@ export default async function TournamentsPage({
               description="Events will appear here when they are published."
             />
           ) : (
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-              <div className="hidden bg-white/[0.03] px-6 py-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[minmax(0,1.35fr)_150px_150px_130px_190px_140px] xl:gap-6">
-                <span>Tournament</span>
-                <span>Date</span>
-                <span>Prize</span>
-                <span>Team</span>
-                <span>Slots</span>
-                <span>Action</span>
-              </div>
+            <>
+              <section className="grid gap-4">
+                <SectionTitle
+                  title="Active tournaments"
+                  count={activeTournaments.length}
+                />
 
-              <div className="divide-y divide-white/10">
-                {tournaments.map((tournament) => {
-                  const usedSlots = tournament.registrations.length;
-                  const remainingSlots = Math.max(
-                    tournament.maxSlots - usedSlots,
-                    0,
-                  );
+                {renderTournamentList(
+                  activeTournaments,
+                  "No active tournaments right now.",
+                )}
+              </section>
 
-                  const tournamentImage = getTournamentImageUrl(
-                    tournament.game,
-                    tournament.imageUrl,
-                  );
+              {archivedTournaments.length > 0 && (
+                <section className="grid gap-4">
+                  <SectionTitle
+                    title="Tournament archive"
+                    count={archivedTournaments.length}
+                  />
 
-                  return (
-                    <article
-                      key={tournament.id}
-                      className="grid gap-5 p-5 transition hover:bg-white/[0.035] xl:grid-cols-[minmax(0,1.35fr)_150px_150px_130px_190px_140px] xl:items-center xl:gap-6"
-                    >
-                      <div className="flex min-w-0 gap-5">
-                        <div
-                          className="relative h-24 w-36 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-cover bg-center"
-                          style={{
-                            backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.05), rgba(7,8,17,0.55)), url("${tournamentImage}")`,
-                          }}
-                        />
+                  {renderTournamentList(
+                    archivedTournaments,
+                    "No archived tournaments yet.",
+                  )}
+                </section>
+              )}
+            </>
+          )}
 
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="truncate text-2xl font-black text-white">
-                              {tournament.title}
-                            </h2>
-
-                            <StatusBadge status={tournament.status} />
-                            <StatusBadge
-                              status={`Registration ${tournament.registrationStatus}`}
-                            />
-                          </div>
-
-                          <p className="mt-2 text-base font-bold text-violet-300">
-                            {tournament.game}
-                          </p>
-
-                          <div className="mt-4 flex flex-wrap gap-6 xl:hidden">
-                            <MiniInfo label="Date" value={tournament.date} />
-                            <MiniInfo label="Prize" value={tournament.prize} />
-                            <MiniInfo
-                              label="Team"
-                              value={`${tournament.teamSize}v${tournament.teamSize}`}
-                            />
-                            <MiniInfo
-                              label="Approved left"
-                              value={remainingSlots}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="hidden xl:block">
-                        <MiniInfo label="Date" value={tournament.date} />
-                      </div>
-
-                      <div className="hidden xl:block">
-                        <MiniInfo label="Prize" value={tournament.prize} />
-                      </div>
-
-                      <div className="hidden xl:block">
-                        <MiniInfo
-                          label="Team"
-                          value={`${tournament.teamSize}v${tournament.teamSize}`}
-                        />
-                      </div>
-
-                      <div className="grid gap-2">
-                        <ProgressBar
-                          usedSlots={usedSlots}
-                          maxSlots={tournament.maxSlots}
-                        />
-
-                        <p className="text-xs font-bold text-gray-500">
-                          {remainingSlots} approved slots left
-                        </p>
-                      </div>
-
-                      <Link
-                        href={`/tournaments/${tournament.id}`}
-                        className="inline-flex justify-center rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
-                      >
-                        Details
-                      </Link>
-                    </article>
-                  );
-                })}
-              </div>
-            </section>
+          {gamesCount > 0 && (
+            <p className="text-sm text-gray-500">
+              Showing tournaments across {gamesCount} game
+              {gamesCount === 1 ? "" : "s"}.
+            </p>
           )}
         </section>
 
