@@ -3,18 +3,27 @@
 import Link from "next/link";
 import { type FormEvent, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+
 import {
   cancelRegistrationInline,
   registerRegistrationInline,
 } from "@/actions/tournamentRegistrationInlineActions";
-import CustomSelect from "@/components/CustomSelect";
 import type { TournamentRegistrationActionResult } from "@/actions/tournamentRegistrationInlineActions";
+import CustomSelect from "@/components/CustomSelect";
 
 type AvailableTeam = {
   id: string;
   name: string;
   game: string;
   memberCount: number;
+};
+
+type UnavailableTeam = {
+  id: string;
+  name: string;
+  game: string;
+  memberCount: number;
+  reason: string;
 };
 
 type ActiveRegistration = {
@@ -33,6 +42,7 @@ type TournamentRegistrationPanelProps = {
   isLoggedIn: boolean;
   isGuildMember: boolean;
   availableTeams: AvailableTeam[];
+  unavailableTeams: UnavailableTeam[];
   activeRegistrations: ActiveRegistration[];
 };
 
@@ -140,6 +150,10 @@ function RegisterForm({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (pending) {
+      return;
+    }
+
     const form = formRef.current;
 
     if (!form) {
@@ -161,7 +175,7 @@ function RegisterForm({
       if (result.ok) {
         window.setTimeout(() => {
           router.refresh();
-        }, 450);
+        }, 300);
       }
     });
   }
@@ -215,6 +229,10 @@ function CancelRegistrationForm({
     useState<TournamentRegistrationActionResult | null>(null);
 
   function runAction() {
+    if (pending) {
+      return;
+    }
+
     const form = formRef.current;
 
     if (!form) {
@@ -237,7 +255,7 @@ function CancelRegistrationForm({
       if (result.ok) {
         window.setTimeout(() => {
           router.refresh();
-        }, 450);
+        }, 300);
       }
     });
   }
@@ -368,6 +386,40 @@ function NoticeLink({
   );
 }
 
+function UnavailableTeamsList({ teams }: { teams: UnavailableTeam[] }) {
+  if (teams.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+        Unavailable teams
+      </p>
+
+      <div className="mt-3 grid gap-2">
+        {teams.map((team) => (
+          <div
+            key={team.id}
+            className="grid gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto]"
+          >
+            <div>
+              <p className="font-black text-white">{team.name}</p>
+
+              <p className="mt-1 text-sm text-gray-400">
+                {team.game} · {team.memberCount} player
+                {team.memberCount === 1 ? "" : "s"}
+              </p>
+            </div>
+
+            <p className="text-sm font-bold text-yellow-300">{team.reason}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function RequirementsList({ teamSize }: { teamSize: number }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
@@ -376,13 +428,12 @@ function RequirementsList({ teamSize }: { teamSize: number }) {
       </p>
 
       <ul className="mt-3 grid gap-2 text-sm leading-6 text-gray-300">
-        <li>• The team game must match this tournament.</li>
+        <li>• Same tournament game.</li>
         <li>
-          • The team must have at least {teamSize} player
-          {teamSize === 1 ? "" : "s"}.
+          • At least {teamSize} player{teamSize === 1 ? "" : "s"}.
         </li>
-        <li>• Only the team leader can register the team.</li>
-        <li>• The tournament must still have open slots.</li>
+        <li>• No pending team invites.</li>
+        <li>• Only the team leader can register.</li>
       </ul>
     </div>
   );
@@ -394,8 +445,7 @@ function ApprovedRegistrationInfo() {
       <p className="font-black text-emerald-300">Approved by admin</p>
 
       <p className="mt-1 text-sm leading-6 text-gray-300">
-        This registration is already approved. Players cannot cancel approved
-        registrations. Contact an admin if changes are needed.
+        Contact an admin if changes are needed.
       </p>
     </div>
   );
@@ -410,6 +460,7 @@ function TournamentRegistrationPanel({
   isLoggedIn,
   isGuildMember,
   availableTeams,
+  unavailableTeams,
   activeRegistrations,
 }: TournamentRegistrationPanelProps) {
   const hasOpenRegistration = activeRegistrations.some((registration) =>
@@ -428,7 +479,7 @@ function TournamentRegistrationPanel({
     return (
       <PanelNotice
         title="Login required"
-        description="Login with Discord to register a team for this tournament."
+        description="Login with Discord to register a team."
       >
         <NoticeLink href="/login">Login with Discord</NoticeLink>
       </PanelNotice>
@@ -439,7 +490,7 @@ function TournamentRegistrationPanel({
     return (
       <PanelNotice
         title="Discord membership required"
-        description="Your account is logged in, but it is not recognized as a member of the Ascendra Discord server."
+        description="Join Ascendra Discord and refresh your login."
       >
         {discordInvite ? (
           <NoticeLink href={discordInvite} external>
@@ -474,10 +525,6 @@ function TournamentRegistrationPanel({
 
                   <p className="mt-2 font-black text-white">
                     {registration.teamName}
-                  </p>
-
-                  <p className="mt-1 text-sm text-gray-300">
-                    Current registration status
                   </p>
                 </div>
 
@@ -514,7 +561,7 @@ function TournamentRegistrationPanel({
       {registrationStatus !== "open" && (
         <PanelNotice
           title="Registration closed"
-          description="This tournament is not accepting registrations right now."
+          description="This tournament is not accepting registrations."
           variant="danger"
         />
       )}
@@ -522,7 +569,7 @@ function TournamentRegistrationPanel({
       {registrationStatus === "open" && slotsRemaining <= 0 && (
         <PanelNotice
           title="Tournament full"
-          description="There are no slots remaining for this tournament."
+          description="Approved slots are full."
           variant="danger"
         />
       )}
@@ -535,21 +582,24 @@ function TournamentRegistrationPanel({
               <div className="grid gap-4">
                 <PanelNotice
                   title="No eligible teams"
-                  description={`You do not currently have a team that matches this tournament and has at least ${teamSize} player${
-                    teamSize === 1 ? "" : "s"
-                  }.`}
+                  description="No team is ready for this tournament."
                   variant="neutral"
                 >
-                  <NoticeLink href="/profile">Create or manage team</NoticeLink>
+                  <NoticeLink href="/profile">Manage teams</NoticeLink>
                 </PanelNotice>
 
+                <UnavailableTeamsList teams={unavailableTeams} />
                 <RequirementsList teamSize={teamSize} />
               </div>
             ) : (
-              <RegisterForm
-                tournamentId={tournamentId}
-                availableTeams={availableTeams}
-              />
+              <div className="grid gap-4">
+                <RegisterForm
+                  tournamentId={tournamentId}
+                  availableTeams={availableTeams}
+                />
+
+                <UnavailableTeamsList teams={unavailableTeams} />
+              </div>
             )}
           </>
         )}

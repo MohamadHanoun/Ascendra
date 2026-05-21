@@ -130,6 +130,14 @@ async function registerTeamForTournament(
     },
     include: {
       members: true,
+      invites: {
+        where: {
+          status: "pending",
+        },
+        select: {
+          id: true,
+        },
+      },
     },
   });
 
@@ -147,10 +155,14 @@ async function registerTeamForTournament(
 
   if (team.members.length < tournament.teamSize) {
     return fail(
-      `This tournament requires at least ${tournament.teamSize} player${
+      `This tournament requires ${tournament.teamSize} player${
         tournament.teamSize === 1 ? "" : "s"
       }.`,
     );
+  }
+
+  if (team.invites.length > 0) {
+    return fail("Resolve pending team invites before registering.");
   }
 
   const existingRegistration = await prisma.tournamentRegistration.findUnique({
@@ -258,7 +270,9 @@ async function cancelTournamentRegistration(
     return fail("Registration cancellation is closed for this tournament.");
   }
 
-  if (["closed", "cancelled"].includes(registration.tournament.status)) {
+  if (
+    ["closed", "cancelled", "ended"].includes(registration.tournament.status)
+  ) {
     return fail("This tournament registration can no longer be cancelled.");
   }
 

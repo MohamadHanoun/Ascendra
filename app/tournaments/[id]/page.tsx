@@ -163,6 +163,36 @@ function ApplicationCounterBar({
   );
 }
 
+function getUnavailableTeamReason({
+  teamGame,
+  tournamentGame,
+  memberCount,
+  teamSize,
+  pendingInvites,
+}: {
+  teamGame: string;
+  tournamentGame: string;
+  memberCount: number;
+  teamSize: number;
+  pendingInvites: number;
+}) {
+  if (teamGame !== tournamentGame) {
+    return "Wrong game";
+  }
+
+  if (memberCount < teamSize) {
+    return `Needs ${teamSize - memberCount} more player${
+      teamSize - memberCount === 1 ? "" : "s"
+    }`;
+  }
+
+  if (pendingInvites > 0) {
+    return "Pending invites";
+  }
+
+  return "Not eligible";
+}
+
 export default async function TournamentDetailsPage({
   params,
   searchParams,
@@ -180,6 +210,14 @@ export default async function TournamentDetailsPage({
           ownedTeams: {
             include: {
               members: true,
+              invites: {
+                where: {
+                  status: "pending",
+                },
+                select: {
+                  id: true,
+                },
+              },
             },
             orderBy: {
               createdAt: "desc",
@@ -326,21 +364,49 @@ export default async function TournamentDetailsPage({
       .map((registration) => registration.teamId),
   );
 
-  const availableTeams =
-    currentUser?.ownedTeams
-      .filter((team) => {
-        const gameMatches = team.game === tournament.game;
-        const hasEnoughPlayers = team.members.length >= tournament.teamSize;
-        const isAlreadyOpen = openRegistrationTeamIds.has(team.id);
+  const registerableOwnedTeams =
+    currentUser?.ownedTeams.filter(
+      (team) => !openRegistrationTeamIds.has(team.id),
+    ) || [];
 
-        return gameMatches && hasEnoughPlayers && !isAlreadyOpen;
-      })
-      .map((team) => ({
-        id: team.id,
-        name: team.name,
-        game: team.game,
+  const availableTeams = registerableOwnedTeams
+    .filter((team) => {
+      const gameMatches = team.game === tournament.game;
+      const hasEnoughPlayers = team.members.length >= tournament.teamSize;
+      const hasNoPendingInvites = team.invites.length === 0;
+
+      return gameMatches && hasEnoughPlayers && hasNoPendingInvites;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((team) => ({
+      id: team.id,
+      name: team.name,
+      game: team.game,
+      memberCount: team.members.length,
+    }));
+
+  const unavailableTeams = registerableOwnedTeams
+    .filter((team) => {
+      const gameMatches = team.game === tournament.game;
+      const hasEnoughPlayers = team.members.length >= tournament.teamSize;
+      const hasNoPendingInvites = team.invites.length === 0;
+
+      return !gameMatches || !hasEnoughPlayers || !hasNoPendingInvites;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((team) => ({
+      id: team.id,
+      name: team.name,
+      game: team.game,
+      memberCount: team.members.length,
+      reason: getUnavailableTeamReason({
+        teamGame: team.game,
+        tournamentGame: tournament.game,
         memberCount: team.members.length,
-      })) || [];
+        teamSize: tournament.teamSize,
+        pendingInvites: team.invites.length,
+      }),
+    }));
 
   const activeRegistrations = userTournamentRegistrations
     .filter((registration) => registration.status !== "cancelled")
@@ -499,6 +565,7 @@ export default async function TournamentDetailsPage({
                   isLoggedIn={Boolean(currentUser)}
                   isGuildMember={Boolean(currentUser?.isGuildMember)}
                   availableTeams={availableTeams}
+                  unavailableTeams={unavailableTeams}
                   activeRegistrations={activeRegistrations}
                 />
               </div>
