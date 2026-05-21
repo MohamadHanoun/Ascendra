@@ -19,29 +19,24 @@ function inputClass() {
 
 export default function AdminAnnouncementForm() {
   return (
-    <section>
-      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/20">
-        <div className="mb-5">
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
-            Announcements
-          </p>
+    <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+      <div className="border-b border-white/10 px-5 py-4">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+          Announcements
+        </p>
 
-          <h2 className="mt-2 text-3xl font-black text-white">
-            Create announcement
-          </h2>
+        <h2 className="mt-1 text-xl font-black text-white">
+          Create announcement
+        </h2>
+      </div>
 
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
-            Add a new public announcement. You can publish or mark it as
-            important after creating it.
-          </p>
-        </div>
-
+      <div className="p-5">
         <InlineAdminAnnouncementForm
           action={createAnnouncementInline}
           buttonLabel="Create announcement"
           pendingLabel="Creating..."
           resetOnSuccess
-          className="grid gap-4"
+          className="grid gap-5"
         >
           <input type="hidden" name="published" value="false" />
           <input type="hidden" name="important" value="false" />
@@ -53,7 +48,7 @@ export default function AdminAnnouncementForm() {
               <input
                 name="title"
                 required
-                placeholder="Example: Ascendra Cup registration is open"
+                placeholder="Example: Tournament registration is open"
                 className={inputClass()}
               />
             </label>
@@ -87,7 +82,7 @@ export default function AdminAnnouncementForm() {
               name="description"
               required
               placeholder="Write the announcement details..."
-              className={`${inputClass()} min-h-24 resize-y`}
+              className={`${inputClass()} min-h-24 resize-y text-sm leading-6`}
             />
           </label>
         </InlineAdminAnnouncementForm>
