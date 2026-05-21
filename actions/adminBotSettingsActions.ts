@@ -62,12 +62,11 @@ function getCheckboxValue(formData: FormData, name: string) {
 
 function redirectBack(type: "success" | "error", message: string): never {
   const params = new URLSearchParams({
-    tab: "bot",
     type,
     message,
   });
 
-  redirect(`/admin?${params.toString()}`);
+  redirect(`/admin/bot?${params.toString()}`);
 }
 
 export async function saveAdminBotSettings(formData: FormData) {

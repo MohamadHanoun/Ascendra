@@ -53,9 +53,7 @@ function normalizeTypeFilter(value?: string) {
 }
 
 function buildBotFilterHref(status: string, botType: string) {
-  const params = new URLSearchParams({
-    tab: "bot",
-  });
+  const params = new URLSearchParams();
 
   if (status !== "all") {
     params.set("botStatus", status);
@@ -65,7 +63,9 @@ function buildBotFilterHref(status: string, botType: string) {
     params.set("botType", botType);
   }
 
-  return `/admin?${params.toString()}`;
+  const query = params.toString();
+
+  return query ? `/admin/bot?${query}` : "/admin/bot";
 }
 
 function formatDate(date: Date | null) {

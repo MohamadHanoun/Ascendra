@@ -87,6 +87,7 @@ export async function retryBotEventInline(
   });
 
   revalidatePath("/admin");
+  revalidatePath("/admin/bot");
 
   return success("Bot event queued again.");
 }

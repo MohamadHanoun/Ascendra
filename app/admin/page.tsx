@@ -22,8 +22,6 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { adminModules } from "@/data/admin";
 import { prisma } from "@/lib/prisma";
-import AdminBotEventsPanel from "@/components/AdminBotEventsPanel";
-import AdminBotSettingsPanel from "@/components/AdminBotSettingsPanel";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,8 +37,6 @@ type AdminPageProps = {
     message?: string;
     error?: string;
     type?: string;
-    botStatus?: string;
-    botType?: string;
   }>;
 };
 
@@ -52,7 +48,6 @@ type AdminOverviewItem = {
 
 const allowedTabs = [
   "overview",
-  "bot",
   "announcements",
   "tournaments",
   "registrations",
@@ -243,8 +238,6 @@ async function renderAdminTab(
   activeTab: string,
   message?: string,
   error?: string,
-  botStatus?: string,
-  botType?: string,
 ) {
   if (activeTab === "overview") {
     const overviewItems = await getAdminOverview();
@@ -252,18 +245,6 @@ async function renderAdminTab(
     return (
       <section className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
         <AdminOverview items={overviewItems} />
-      </section>
-    );
-  }
-  if (activeTab === "bot") {
-    return (
-      <section className="mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
-        <AdminBotSettingsPanel />
-
-        <AdminBotEventsPanel
-          statusFilter={botStatus}
-          eventTypeFilter={botType}
-        />
       </section>
     );
   }
@@ -424,8 +405,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     activeTab,
     params.message,
     params.error,
-    params.botStatus,
-    params.botType,
   );
 
   return (

@@ -11,7 +11,6 @@ type AdminTabNavigationProps = {
 
 const tabs: AdminTab[] = [
   { label: "Overview", value: "overview" },
-  { label: "Bot", value: "bot" },
   { label: "Announcements", value: "announcements" },
   { label: "Tournaments", value: "tournaments" },
   { label: "Registrations", value: "registrations" },
@@ -29,24 +28,33 @@ export default function AdminTabNavigation({
   return (
     <section className="pb-8">
       <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-2 shadow-2xl shadow-black/20">
-        <div className="flex gap-2 overflow-x-auto">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.value;
+        <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex gap-2 overflow-x-auto">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.value;
 
-            return (
-              <Link
-                key={tab.value}
-                href={`/admin?tab=${tab.value}`}
-                className={`whitespace-nowrap rounded-2xl border px-4 py-2.5 text-sm font-black transition ${
-                  isActive
-                    ? "border-violet-400/40 bg-violet-500/15 text-white shadow-lg shadow-violet-950/20"
-                    : "border-white/10 bg-black/25 text-gray-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
+              return (
+                <Link
+                  key={tab.value}
+                  href={`/admin?tab=${tab.value}`}
+                  className={`whitespace-nowrap rounded-2xl border px-4 py-2.5 text-sm font-black transition ${
+                    isActive
+                      ? "border-violet-400/40 bg-violet-500/15 text-white shadow-lg shadow-violet-950/20"
+                      : "border-white/10 bg-black/25 text-gray-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </div>
+
+          <Link
+            href="/admin/bot"
+            className="whitespace-nowrap rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-2.5 text-sm font-black text-emerald-200 transition hover:border-emerald-300/40 hover:bg-emerald-500/15 hover:text-white"
+          >
+            Bot Dashboard
+          </Link>
         </div>
       </div>
     </section>
