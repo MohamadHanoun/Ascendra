@@ -48,13 +48,6 @@ export default function AdminTabNavigation({
               );
             })}
           </div>
-
-          <Link
-            href="/admin/bot"
-            className="whitespace-nowrap rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-2.5 text-sm font-black text-emerald-200 transition hover:border-emerald-300/40 hover:bg-emerald-500/15 hover:text-white"
-          >
-            Bot Dashboard
-          </Link>
         </div>
       </div>
     </section>
