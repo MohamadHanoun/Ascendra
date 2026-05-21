@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { createRealtimeEvent } from "@/lib/realtime";
 import type { AdminTournamentActionResult } from "@/actions/adminTournamentInlineActions";
 
 function success(message: string): AdminTournamentActionResult {
@@ -65,6 +66,38 @@ function revalidateResultViews(tournamentId: string) {
   revalidatePath("/profile");
   revalidatePath(`/tournaments/${tournamentId}`);
   revalidatePath(`/admin/tournaments/${tournamentId}`);
+}
+
+async function publishResultRealtimeEvents(tournamentId: string) {
+  await Promise.all([
+    createRealtimeEvent({
+      type: "tournament.result.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: tournamentId,
+      payload: {
+        tournamentId,
+      },
+    }),
+    createRealtimeEvent({
+      type: "leaderboard.updated",
+      audience: "public",
+      entityType: "leaderboard",
+      entityId: "global",
+      payload: {
+        tournamentId,
+      },
+    }),
+    createRealtimeEvent({
+      type: "profile.updated",
+      audience: "public",
+      entityType: "profile",
+      entityId: "results",
+      payload: {
+        tournamentId,
+      },
+    }),
+  ]);
 }
 
 export async function saveTournamentResultInline(
@@ -163,6 +196,8 @@ export async function saveTournamentResultInline(
     },
   });
 
+  await publishResultRealtimeEvents(tournamentId);
+
   revalidateResultViews(tournamentId);
 
   return success(
@@ -205,7 +240,11 @@ export async function deleteTournamentResultInline(
     },
   });
 
-  revalidateResultViews(tournamentId || result.tournamentId);
+  const finalTournamentId = tournamentId || result.tournamentId;
+
+  await publishResultRealtimeEvents(finalTournamentId);
+
+  revalidateResultViews(finalTournamentId);
 
   return success(`${result.team.name} result deleted.`);
 }

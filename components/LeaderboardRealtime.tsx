@@ -4,13 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useRealtimeEvents } from "@/hooks/useRealtimeEvents";
 
-type TournamentDetailsRealtimeProps = {
-  tournamentId: string;
-};
-
-export default function TournamentDetailsRealtime({
-  tournamentId,
-}: TournamentDetailsRealtimeProps) {
+export default function LeaderboardRealtime() {
   const router = useRouter();
 
   const [isPending, startTransition] = useTransition();
@@ -27,20 +21,11 @@ export default function TournamentDetailsRealtime({
     audience: "public",
     intervalSeconds: 5,
     onEvents(events) {
-      const shouldRefresh = events.some((event) => {
-        return (
-          event.entityType === "tournament" &&
-          event.entityId === tournamentId &&
-          [
-            "tournament.updated",
-            "tournament.deleted",
-            "tournament.status.updated",
-            "tournament.registrationStatus.updated",
-            "tournament.registration.updated",
-            "tournament.result.updated",
-          ].includes(event.type)
-        );
-      });
+      const shouldRefresh = events.some((event) =>
+        ["leaderboard.updated", "tournament.result.updated"].includes(
+          event.type,
+        ),
+      );
 
       if (shouldRefresh) {
         refresh();
@@ -53,11 +38,11 @@ export default function TournamentDetailsRealtime({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-500">
-            Live tournament
+            Live leaderboard
           </p>
 
           <p className="mt-1 text-sm text-gray-400">
-            Updates when tournament data, registrations, or results change.
+            Updates when tournament results change.
           </p>
 
           {lastUpdateAt && (

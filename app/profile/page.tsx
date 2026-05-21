@@ -9,6 +9,7 @@ import Navbar from "@/components/Navbar";
 import ProfileIdentityActions from "@/components/ProfileIdentityActions";
 import ProfileNotice from "@/components/ProfileNotice";
 import { prisma } from "@/lib/prisma";
+import ProfileRealtime from "@/components/ProfileRealtime";
 
 export const dynamic = "force-dynamic";
 
@@ -198,6 +199,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
           <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-28 pt-14 lg:px-10">
             <ProfileNotice message={params.message} error={params.error} />
+            <ProfileRealtime />
 
             <section className="mt-4 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/30 backdrop-blur">
               <div className="grid gap-6 p-6 lg:grid-cols-[1fr_auto] lg:items-center">
@@ -342,7 +344,10 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 <PanelHeader label="Create team" title="Start a new team" />
 
                 {user.isGuildMember ? (
-                  <form action={createTeam} className="relative z-40 grid gap-5 p-6">
+                  <form
+                    action={createTeam}
+                    className="relative z-40 grid gap-5 p-6"
+                  >
                     <div className="relative z-50 grid gap-5 md:grid-cols-2">
                       <label className="grid gap-2">
                         <span className="font-bold text-gray-200">

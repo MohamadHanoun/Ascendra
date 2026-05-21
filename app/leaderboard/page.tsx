@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import TeamLeaderboardTable from "@/components/TeamLeaderboardTable";
 import type { LeaderboardTeam, LeaderboardUser } from "@/data/leaderboard";
 import { prisma } from "@/lib/prisma";
+import LeaderboardRealtime from "@/components/LeaderboardRealtime";
 
 export const metadata: Metadata = {
   title: "Leaderboard | Ascendra",
@@ -345,6 +346,7 @@ export default async function LeaderboardPage({
         </section>
 
         <section className="relative -mt-24 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
+          <LeaderboardRealtime />
           <section className="grid gap-5 rounded-[32px] border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/20 backdrop-blur">
             <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
               <div>

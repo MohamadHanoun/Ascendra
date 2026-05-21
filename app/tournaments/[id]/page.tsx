@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 import TournamentDetailsRealtime from "@/components/TournamentDetailsRealtime";
 
+
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
