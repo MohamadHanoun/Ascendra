@@ -220,12 +220,21 @@ export default function NavbarClient({
                     </Link>
 
                     {isAdmin && (
-                      <Link
-                        href="/admin"
-                        className="block rounded-xl px-4 py-3 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
-                      >
-                        Admin Panel
-                      </Link>
+                      <>
+                        <Link
+                          href="/admin"
+                          className="block rounded-xl px-4 py-3 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                        >
+                          Admin Panel
+                        </Link>
+
+                        <Link
+                          href="/admin/bot"
+                          className="block rounded-xl px-4 py-3 text-sm font-bold text-emerald-200 transition hover:bg-emerald-500/10 hover:text-white"
+                        >
+                          Bot Dashboard
+                        </Link>
+                      </>
                     )}
 
                     <div className="my-2 border-t border-white/10" />
@@ -313,13 +322,23 @@ export default function NavbarClient({
                     </Link>
 
                     {isAdmin && (
-                      <Link
-                        href="/admin"
-                        onClick={() => setIsMenuOpen(false)}
-                        className="rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
-                      >
-                        Admin Panel
-                      </Link>
+                      <>
+                        <Link
+                          href="/admin"
+                          onClick={() => setIsMenuOpen(false)}
+                          className="rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                        >
+                          Admin Panel
+                        </Link>
+
+                        <Link
+                          href="/admin/bot"
+                          onClick={() => setIsMenuOpen(false)}
+                          className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-3 text-center text-sm font-bold text-emerald-200 transition hover:border-emerald-300/40 hover:bg-emerald-500/15 hover:text-white"
+                        >
+                          Bot Dashboard
+                        </Link>
+                      </>
                     )}
 
                     <button
