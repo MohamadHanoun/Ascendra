@@ -451,7 +451,11 @@ export async function deleteTournamentInline(
   revalidatePath("/admin");
   revalidatePath("/tournaments");
 
-  return success("Tournament deleted successfully.");
+  return {
+    ok: true,
+    message: "Tournament deleted successfully.",
+    redirectTo: "/admin?tab=tournaments",
+  };
 }
 
 export async function openTournamentRegistrationInline(
