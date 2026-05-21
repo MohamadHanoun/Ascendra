@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
+
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
@@ -104,6 +106,12 @@ function needsDiscordAccessRemove(registration: {
   );
 }
 
+function revalidateRegistrationViews(tournamentId: string) {
+  revalidatePath("/admin");
+  revalidatePath(`/tournaments/${tournamentId}`);
+  revalidatePath("/profile");
+}
+
 export async function approveRegistrationInline(
   formData: FormData,
 ): Promise<AdminRegistrationActionResult> {
@@ -141,6 +149,24 @@ export async function approveRegistrationInline(
     return fail("Registration was not found.");
   }
 
+  if (registration.status === "approved") {
+    return success("Registration is already approved.");
+  }
+
+  const approvedRegistrationsCount = await prisma.tournamentRegistration.count({
+    where: {
+      tournamentId: registration.tournamentId,
+      status: "approved",
+      id: {
+        not: registration.id,
+      },
+    },
+  });
+
+  if (approvedRegistrationsCount >= registration.tournament.maxSlots) {
+    return fail("No approved slots are available for this tournament.");
+  }
+
   const roleName = buildRoleName(
     registration.tournament.game,
     registration.team.name,
@@ -153,54 +179,96 @@ export async function approveRegistrationInline(
 
   const memberDiscordIds = getMemberDiscordIds(registration.team.members);
 
-  await prisma.$transaction(async (tx) => {
-    await tx.tournamentRegistration.update({
-      where: {
-        id: registration.id,
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        const approvedCountInsideTransaction =
+          await tx.tournamentRegistration.count({
+            where: {
+              tournamentId: registration.tournamentId,
+              status: "approved",
+              id: {
+                not: registration.id,
+              },
+            },
+          });
+
+        if (
+          approvedCountInsideTransaction >= registration.tournament.maxSlots
+        ) {
+          throw new Error("NO_APPROVED_SLOTS_AVAILABLE");
+        }
+
+        await tx.tournamentRegistration.update({
+          where: {
+            id: registration.id,
+          },
+          data: {
+            status: "approved",
+            rejectionReason: null,
+            approvedAt: new Date(),
+            reviewedAt: new Date(),
+
+            discordRoleStatus: "pending_create",
+            discordRoleName: roleName,
+            discordRoleError: null,
+            discordRoleRequestedAt: new Date(),
+
+            discordChannelName: channelName,
+          },
+        });
+
+        await tx.botEvent.create({
+          data: {
+            type: "team_discord_access_create",
+            entityType: "registration",
+            entityId: registration.id,
+            payload: {
+              registrationId: registration.id,
+
+              tournamentId: registration.tournament.id,
+              tournamentTitle: registration.tournament.title,
+
+              game: registration.tournament.game,
+
+              teamId: registration.team.id,
+              teamName: registration.team.name,
+
+              roleName,
+              channelName,
+
+              guildId: process.env.DISCORD_GUILD_ID,
+
+              memberDiscordIds,
+
+              websiteUrl: `${getSiteUrl()}/tournaments/${registration.tournament.id}`,
+            },
+          },
+        });
       },
-      data: {
-        status: "approved",
-        rejectionReason: null,
-        approvedAt: new Date(),
-        reviewedAt: new Date(),
-
-        discordRoleStatus: "pending_create",
-        discordRoleName: roleName,
-        discordRoleError: null,
-        discordRoleRequestedAt: new Date(),
-
-        discordChannelName: channelName,
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
-    });
+    );
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "NO_APPROVED_SLOTS_AVAILABLE"
+    ) {
+      return fail("No approved slots are available for this tournament.");
+    }
 
-    await tx.botEvent.create({
-      data: {
-        type: "team_discord_access_create",
-        entityType: "registration",
-        entityId: registration.id,
-        payload: {
-          registrationId: registration.id,
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2034"
+    ) {
+      return fail(
+        "Another approval was processed at the same time. Please try again.",
+      );
+    }
 
-          tournamentId: registration.tournament.id,
-          tournamentTitle: registration.tournament.title,
-
-          game: registration.tournament.game,
-
-          teamId: registration.team.id,
-          teamName: registration.team.name,
-
-          roleName,
-          channelName,
-
-          guildId: process.env.DISCORD_GUILD_ID,
-
-          memberDiscordIds,
-
-          websiteUrl: `${getSiteUrl()}/tournaments/${registration.tournament.id}`,
-        },
-      },
-    });
-  });
+    throw error;
+  }
 
   await Promise.all([
     createRealtimeEvent({
@@ -226,9 +294,7 @@ export async function approveRegistrationInline(
     }),
   ]);
 
-  revalidatePath("/admin");
-  revalidatePath(`/tournaments/${registration.tournamentId}`);
-  revalidatePath("/profile");
+  revalidateRegistrationViews(registration.tournamentId);
 
   return success("Registration approved successfully.");
 }
@@ -349,9 +415,7 @@ export async function rejectRegistrationInline(
     }),
   ]);
 
-  revalidatePath("/admin");
-  revalidatePath(`/tournaments/${registration.tournamentId}`);
-  revalidatePath("/profile");
+  revalidateRegistrationViews(registration.tournamentId);
 
   return success("Registration rejected successfully.");
 }
@@ -465,9 +529,7 @@ export async function cancelRegistrationInline(
     }),
   ]);
 
-  revalidatePath("/admin");
-  revalidatePath(`/tournaments/${registration.tournamentId}`);
-  revalidatePath("/profile");
+  revalidateRegistrationViews(registration.tournamentId);
 
   return success("Registration cancelled successfully.");
 }

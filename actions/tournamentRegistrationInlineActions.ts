@@ -1,29 +1,32 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Prisma } from "@prisma/client";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
 
-export type AdminRegistrationActionResult = {
+export type TournamentRegistrationActionResult = {
   ok: boolean;
   message: string;
   redirectTo?: string;
 };
 
-function success(message: string): AdminRegistrationActionResult {
+function success(
+  message: string,
+  redirectTo?: string,
+): TournamentRegistrationActionResult {
   return {
     ok: true,
     message,
+    redirectTo,
   };
 }
 
 function fail(
   message: string,
   redirectTo?: string,
-): AdminRegistrationActionResult {
+): TournamentRegistrationActionResult {
   return {
     ok: false,
     message,
@@ -31,97 +34,193 @@ function fail(
   };
 }
 
-function getSiteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(
-    /\/$/,
-    "",
-  );
+function getValue(formData: FormData, name: string) {
+  return String(formData.get(name) || "").trim();
 }
 
-function buildRoleName(game: string, teamName: string) {
-  return `${game} | ${teamName}`.slice(0, 100);
-}
-
-function buildChannelName(game: string, teamName: string) {
-  const channelName = `${game}-${teamName}`
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
-
-  return (channelName || "team-room").slice(0, 90);
-}
-
-function getMemberDiscordIds(
-  members: Array<{
-    user: {
-      discordId: string;
-    };
-  }>,
-) {
-  return members
-    .map((member) => member.user.discordId)
-    .filter((discordId): discordId is string => Boolean(discordId));
-}
-
-async function requireAdmin(): Promise<AdminRegistrationActionResult | null> {
+async function getCurrentUser() {
   const session = await auth();
 
-  const sessionUser = session?.user as
-    | {
-        databaseId?: string;
-        isAdmin?: boolean;
-      }
-    | undefined;
+  if (!session?.user?.databaseId) {
+    return null;
+  }
 
-  if (!sessionUser?.databaseId) {
+  return prisma.user.findUnique({
+    where: {
+      id: session.user.databaseId,
+    },
+  });
+}
+
+function shouldRequestRoleRemoval(status: string) {
+  return !["not_needed", "removed"].includes(status);
+}
+
+function revalidateTournamentRegistrationViews(tournamentId: string) {
+  revalidatePath(`/tournaments/${tournamentId}`);
+  revalidatePath("/tournaments");
+  revalidatePath("/profile");
+  revalidatePath("/admin");
+}
+
+async function publishRegistrationRealtimeEvent(tournamentId: string) {
+  await createRealtimeEvent({
+    type: "tournament.registration.updated",
+    audience: "public",
+    entityType: "tournament",
+    entityId: tournamentId,
+    payload: {
+      tournamentId,
+    },
+  });
+}
+
+async function registerTeamForTournament(
+  formData: FormData,
+): Promise<TournamentRegistrationActionResult> {
+  const user = await getCurrentUser();
+
+  if (!user) {
     return fail("Please login first.", "/login");
   }
 
-  if (!sessionUser.isAdmin) {
-    return fail("Only Ascendra admins can manage tournament registrations.");
+  if (!user.isGuildMember) {
+    return fail("You must be an Ascendra Discord member to register.");
   }
 
-  return null;
+  const tournamentId = getValue(formData, "tournamentId");
+  const teamId = getValue(formData, "teamId");
+
+  if (!tournamentId || !teamId) {
+    return fail("Tournament and team are required.");
+  }
+
+  const tournament = await prisma.tournament.findUnique({
+    where: {
+      id: tournamentId,
+    },
+    include: {
+      registrations: {
+        where: {
+          status: "approved",
+        },
+      },
+    },
+  });
+
+  if (!tournament) {
+    return fail("Tournament was not found.");
+  }
+
+  if (tournament.registrationStatus !== "open") {
+    return fail("Registration is currently closed for this tournament.");
+  }
+
+  if (["closed", "cancelled"].includes(tournament.status)) {
+    return fail("This tournament is not available for registration.");
+  }
+
+  if (tournament.registrations.length >= tournament.maxSlots) {
+    return fail("All approved tournament slots are full.");
+  }
+
+  const team = await prisma.team.findUnique({
+    where: {
+      id: teamId,
+    },
+    include: {
+      members: true,
+    },
+  });
+
+  if (!team) {
+    return fail("Team was not found.");
+  }
+
+  if (team.leaderId !== user.id) {
+    return fail("Only the team leader can register this team.");
+  }
+
+  if (team.game !== tournament.game) {
+    return fail("This team does not match the tournament game.");
+  }
+
+  if (team.members.length < tournament.teamSize) {
+    return fail(
+      `This tournament requires at least ${tournament.teamSize} player${
+        tournament.teamSize === 1 ? "" : "s"
+      }.`,
+    );
+  }
+
+  const existingRegistration = await prisma.tournamentRegistration.findUnique({
+    where: {
+      tournamentId_teamId: {
+        tournamentId: tournament.id,
+        teamId: team.id,
+      },
+    },
+  });
+
+  if (
+    existingRegistration &&
+    ["registered", "approved"].includes(existingRegistration.status)
+  ) {
+    return fail("This team is already registered for this tournament.");
+  }
+
+  if (existingRegistration) {
+    await prisma.tournamentRegistration.update({
+      where: {
+        id: existingRegistration.id,
+      },
+      data: {
+        status: "registered",
+        registeredById: user.id,
+        rejectionReason: null,
+        approvedAt: null,
+        cancelledAt: null,
+        reviewedAt: null,
+
+        discordRoleStatus: "not_needed",
+        discordRoleName: null,
+        discordRoleId: null,
+        discordChannelName: null,
+        discordChannelId: null,
+        discordRoleError: null,
+        discordRoleRequestedAt: null,
+        discordRoleSyncedAt: null,
+      },
+    });
+  } else {
+    await prisma.tournamentRegistration.create({
+      data: {
+        tournamentId: tournament.id,
+        teamId: team.id,
+        registeredById: user.id,
+        status: "registered",
+        discordRoleStatus: "not_needed",
+      },
+    });
+  }
+
+  await publishRegistrationRealtimeEvent(tournament.id);
+
+  revalidateTournamentRegistrationViews(tournament.id);
+
+  return success("Team registered successfully. Waiting for admin review.");
 }
 
-function getRegistrationId(formData: FormData) {
-  return String(
-    formData.get("registrationId") || formData.get("id") || "",
-  ).trim();
-}
-
-function needsDiscordAccessRemove(registration: {
-  status: string;
-  discordRoleStatus: string;
-  discordRoleId: string | null;
-  discordChannelId: string | null;
-}) {
-  return (
-    registration.status === "approved" ||
-    registration.discordRoleStatus === "pending_create" ||
-    registration.discordRoleStatus === "active" ||
-    Boolean(registration.discordRoleId) ||
-    Boolean(registration.discordChannelId)
-  );
-}
-
-function revalidateRegistrationViews(tournamentId: string) {
-  revalidatePath("/admin");
-  revalidatePath(`/tournaments/${tournamentId}`);
-  revalidatePath("/profile");
-}
-
-export async function approveRegistrationInline(
+async function cancelTournamentRegistration(
   formData: FormData,
-): Promise<AdminRegistrationActionResult> {
-  const authError = await requireAdmin();
+): Promise<TournamentRegistrationActionResult> {
+  const user = await getCurrentUser();
 
-  if (authError) {
-    return authError;
+  if (!user) {
+    return fail("Please login first.", "/login");
   }
 
-  const registrationId = getRegistrationId(formData);
+  const registrationId = getValue(formData, "registrationId");
 
   if (!registrationId) {
     return fail("Registration ID is missing.");
@@ -132,404 +231,85 @@ export async function approveRegistrationInline(
       id: registrationId,
     },
     include: {
+      team: true,
       tournament: true,
-      team: {
-        include: {
-          members: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      },
     },
   });
 
   if (!registration) {
     return fail("Registration was not found.");
+  }
+
+  if (registration.team.leaderId !== user.id) {
+    return fail("Only the team leader can cancel this registration.");
+  }
+
+  if (registration.status === "cancelled") {
+    return fail("This registration is already cancelled.");
   }
 
   if (registration.status === "approved") {
-    return success("Registration is already approved.");
+    return fail(
+      "Approved registrations cannot be cancelled by players. Please contact an admin.",
+    );
   }
 
-  const approvedRegistrationsCount = await prisma.tournamentRegistration.count({
+  if (registration.tournament.registrationStatus !== "open") {
+    return fail("Registration cancellation is closed for this tournament.");
+  }
+
+  if (["closed", "cancelled"].includes(registration.tournament.status)) {
+    return fail("This tournament registration can no longer be cancelled.");
+  }
+
+  const needsRoleRemoval = shouldRequestRoleRemoval(
+    registration.discordRoleStatus,
+  );
+
+  await prisma.tournamentRegistration.update({
     where: {
-      tournamentId: registration.tournamentId,
-      status: "approved",
-      id: {
-        not: registration.id,
-      },
+      id: registration.id,
+    },
+    data: {
+      status: "cancelled",
+      approvedAt: null,
+      cancelledAt: new Date(),
+      reviewedAt: new Date(),
+
+      discordRoleStatus: needsRoleRemoval ? "pending_remove" : "not_needed",
+      discordRoleError: null,
+      discordRoleRequestedAt: needsRoleRemoval ? new Date() : null,
+      discordRoleSyncedAt: null,
     },
   });
 
-  if (approvedRegistrationsCount >= registration.tournament.maxSlots) {
-    return fail("No approved slots are available for this tournament.");
-  }
+  await publishRegistrationRealtimeEvent(registration.tournamentId);
 
-  const roleName = buildRoleName(
-    registration.tournament.game,
-    registration.team.name,
-  );
+  revalidateTournamentRegistrationViews(registration.tournamentId);
 
-  const channelName = buildChannelName(
-    registration.tournament.game,
-    registration.team.name,
-  );
-
-  const memberDiscordIds = getMemberDiscordIds(registration.team.members);
-
-  try {
-    await prisma.$transaction(
-      async (tx) => {
-        const approvedCountInsideTransaction =
-          await tx.tournamentRegistration.count({
-            where: {
-              tournamentId: registration.tournamentId,
-              status: "approved",
-              id: {
-                not: registration.id,
-              },
-            },
-          });
-
-        if (
-          approvedCountInsideTransaction >= registration.tournament.maxSlots
-        ) {
-          throw new Error("NO_APPROVED_SLOTS_AVAILABLE");
-        }
-
-        await tx.tournamentRegistration.update({
-          where: {
-            id: registration.id,
-          },
-          data: {
-            status: "approved",
-            rejectionReason: null,
-            approvedAt: new Date(),
-            reviewedAt: new Date(),
-
-            discordRoleStatus: "pending_create",
-            discordRoleName: roleName,
-            discordRoleError: null,
-            discordRoleRequestedAt: new Date(),
-
-            discordChannelName: channelName,
-          },
-        });
-
-        await tx.botEvent.create({
-          data: {
-            type: "team_discord_access_create",
-            entityType: "registration",
-            entityId: registration.id,
-            payload: {
-              registrationId: registration.id,
-
-              tournamentId: registration.tournament.id,
-              tournamentTitle: registration.tournament.title,
-
-              game: registration.tournament.game,
-
-              teamId: registration.team.id,
-              teamName: registration.team.name,
-
-              roleName,
-              channelName,
-
-              guildId: process.env.DISCORD_GUILD_ID,
-
-              memberDiscordIds,
-
-              websiteUrl: `${getSiteUrl()}/tournaments/${registration.tournament.id}`,
-            },
-          },
-        });
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-      },
-    );
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message === "NO_APPROVED_SLOTS_AVAILABLE"
-    ) {
-      return fail("No approved slots are available for this tournament.");
-    }
-
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2034"
-    ) {
-      return fail(
-        "Another approval was processed at the same time. Please try again.",
-      );
-    }
-
-    throw error;
-  }
-
-  await Promise.all([
-    createRealtimeEvent({
-      type: "registration.approved",
-      audience: "admin",
-      entityType: "registration",
-      entityId: registration.id,
-      payload: {
-        registrationId: registration.id,
-        tournamentId: registration.tournamentId,
-        teamId: registration.teamId,
-        teamName: registration.team.name,
-      },
-    }),
-    createRealtimeEvent({
-      type: "tournament.registration.updated",
-      audience: "public",
-      entityType: "tournament",
-      entityId: registration.tournamentId,
-      payload: {
-        tournamentId: registration.tournamentId,
-      },
-    }),
-  ]);
-
-  revalidateRegistrationViews(registration.tournamentId);
-
-  return success("Registration approved successfully.");
+  return success("Registration cancelled successfully.");
 }
 
-export async function rejectRegistrationInline(
+export async function registerRegistrationInline(
   formData: FormData,
-): Promise<AdminRegistrationActionResult> {
-  const authError = await requireAdmin();
-
-  if (authError) {
-    return authError;
-  }
-
-  const registrationId = getRegistrationId(formData);
-  const rejectionReason = String(formData.get("rejectionReason") || "").trim();
-
-  if (!registrationId) {
-    return fail("Registration ID is missing.");
-  }
-
-  if (!rejectionReason) {
-    return fail("Rejection reason is required.");
-  }
-
-  const registration = await prisma.tournamentRegistration.findUnique({
-    where: {
-      id: registrationId,
-    },
-    include: {
-      tournament: true,
-      team: {
-        include: {
-          members: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!registration) {
-    return fail("Registration was not found.");
-  }
-
-  const shouldRemoveAccess = needsDiscordAccessRemove(registration);
-  const memberDiscordIds = getMemberDiscordIds(registration.team.members);
-
-  await prisma.$transaction(async (tx) => {
-    await tx.tournamentRegistration.update({
-      where: {
-        id: registration.id,
-      },
-      data: {
-        status: "rejected",
-        rejectionReason,
-        reviewedAt: new Date(),
-
-        discordRoleStatus: shouldRemoveAccess ? "pending_remove" : "not_needed",
-        discordRoleRequestedAt: shouldRemoveAccess ? new Date() : undefined,
-      },
-    });
-
-    await tx.botEvent.create({
-      data: {
-        type: "team_discord_access_remove",
-        entityType: "registration",
-        entityId: registration.id,
-        payload: {
-          action: "rejected",
-          rejectionReason,
-
-          registrationId: registration.id,
-
-          tournamentId: registration.tournament.id,
-          tournamentTitle: registration.tournament.title,
-
-          teamId: registration.team.id,
-          teamName: registration.team.name,
-
-          roleId: registration.discordRoleId,
-          roleName: registration.discordRoleName,
-
-          channelId: registration.discordChannelId,
-          channelName: registration.discordChannelName,
-
-          guildId: process.env.DISCORD_GUILD_ID,
-
-          memberDiscordIds,
-        },
-      },
-    });
-  });
-
-  await Promise.all([
-    createRealtimeEvent({
-      type: "registration.rejected",
-      audience: "admin",
-      entityType: "registration",
-      entityId: registration.id,
-      payload: {
-        registrationId: registration.id,
-        tournamentId: registration.tournamentId,
-        teamId: registration.teamId,
-        teamName: registration.team.name,
-        rejectionReason,
-      },
-    }),
-    createRealtimeEvent({
-      type: "tournament.registration.updated",
-      audience: "public",
-      entityType: "tournament",
-      entityId: registration.tournamentId,
-      payload: {
-        tournamentId: registration.tournamentId,
-      },
-    }),
-  ]);
-
-  revalidateRegistrationViews(registration.tournamentId);
-
-  return success("Registration rejected successfully.");
+): Promise<TournamentRegistrationActionResult> {
+  return registerTeamForTournament(formData);
 }
 
 export async function cancelRegistrationInline(
   formData: FormData,
-): Promise<AdminRegistrationActionResult> {
-  const authError = await requireAdmin();
+): Promise<TournamentRegistrationActionResult> {
+  return cancelTournamentRegistration(formData);
+}
 
-  if (authError) {
-    return authError;
-  }
+export async function registerTeamForTournamentInline(
+  formData: FormData,
+): Promise<TournamentRegistrationActionResult> {
+  return registerTeamForTournament(formData);
+}
 
-  const registrationId = getRegistrationId(formData);
-
-  if (!registrationId) {
-    return fail("Registration ID is missing.");
-  }
-
-  const registration = await prisma.tournamentRegistration.findUnique({
-    where: {
-      id: registrationId,
-    },
-    include: {
-      tournament: true,
-      team: {
-        include: {
-          members: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!registration) {
-    return fail("Registration was not found.");
-  }
-
-  const shouldRemoveAccess = needsDiscordAccessRemove(registration);
-  const memberDiscordIds = getMemberDiscordIds(registration.team.members);
-
-  await prisma.$transaction(async (tx) => {
-    await tx.tournamentRegistration.update({
-      where: {
-        id: registration.id,
-      },
-      data: {
-        status: "cancelled",
-        reviewedAt: new Date(),
-        cancelledAt: new Date(),
-
-        discordRoleStatus: shouldRemoveAccess ? "pending_remove" : "not_needed",
-        discordRoleRequestedAt: shouldRemoveAccess ? new Date() : undefined,
-      },
-    });
-
-    await tx.botEvent.create({
-      data: {
-        type: "team_discord_access_remove",
-        entityType: "registration",
-        entityId: registration.id,
-        payload: {
-          action: "cancelled",
-
-          registrationId: registration.id,
-
-          tournamentId: registration.tournament.id,
-          tournamentTitle: registration.tournament.title,
-
-          teamId: registration.team.id,
-          teamName: registration.team.name,
-
-          roleId: registration.discordRoleId,
-          roleName: registration.discordRoleName,
-
-          channelId: registration.discordChannelId,
-          channelName: registration.discordChannelName,
-
-          guildId: process.env.DISCORD_GUILD_ID,
-
-          memberDiscordIds,
-        },
-      },
-    });
-  });
-
-  await Promise.all([
-    createRealtimeEvent({
-      type: "registration.cancelled",
-      audience: "admin",
-      entityType: "registration",
-      entityId: registration.id,
-      payload: {
-        registrationId: registration.id,
-        tournamentId: registration.tournamentId,
-        teamId: registration.teamId,
-        teamName: registration.team.name,
-      },
-    }),
-    createRealtimeEvent({
-      type: "tournament.registration.updated",
-      audience: "public",
-      entityType: "tournament",
-      entityId: registration.tournamentId,
-      payload: {
-        tournamentId: registration.tournamentId,
-      },
-    }),
-  ]);
-
-  revalidateRegistrationViews(registration.tournamentId);
-
-  return success("Registration cancelled successfully.");
+export async function cancelTournamentRegistrationInline(
+  formData: FormData,
+): Promise<TournamentRegistrationActionResult> {
+  return cancelTournamentRegistration(formData);
 }
