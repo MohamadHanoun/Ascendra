@@ -20,6 +20,7 @@ import Navbar from "@/components/Navbar";
 import ProfileNotice from "@/components/ProfileNotice";
 import { prisma } from "@/lib/prisma";
 import { getGameImageUrl } from "@/lib/tournamentImages";
+import ProfileRealtime from "@/components/ProfileRealtime";
 
 export const dynamic = "force-dynamic";
 
@@ -241,6 +242,7 @@ export default async function TeamDetailsPage({
               message={noticeParams.message}
               error={noticeParams.error}
             />
+            <ProfileRealtime />
 
             <Link
               href="/profile"

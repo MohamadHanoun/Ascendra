@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+
 import { useRealtimeEvents } from "@/hooks/useRealtimeEvents";
 
 export default function ProfileRealtime() {
@@ -16,7 +17,7 @@ export default function ProfileRealtime() {
 
   useRealtimeEvents({
     audience: "public",
-    intervalSeconds: 5,
+    intervalSeconds: 2,
     onEvents(events) {
       const shouldRefresh = events.some((event) =>
         [

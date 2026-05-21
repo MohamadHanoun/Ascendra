@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { createRealtimeEvent } from "@/lib/realtime";
 
 export type TeamInlineActionResult = {
   ok: boolean;
@@ -30,6 +32,46 @@ function fail(message: string, redirectTo?: string): TeamInlineActionResult {
 
 function getTeamId(formData: FormData) {
   return String(formData.get("teamId") || formData.get("id") || "").trim();
+}
+
+async function publishProfileUpdate(payload: {
+  type: string;
+  userId?: string;
+  teamId?: string;
+  inviteId?: string;
+}) {
+  await createRealtimeEvent({
+    type: "profile.updated",
+    audience: "public",
+    entityType: "profile",
+    entityId: payload.userId || "team",
+    payload,
+  });
+}
+
+async function publishTeamUpdate(payload: {
+  type: string;
+  teamId: string;
+  userIds?: string[];
+  inviteId?: string;
+}) {
+  await Promise.all([
+    createRealtimeEvent({
+      type: "profile.updated",
+      audience: "public",
+      entityType: "team",
+      entityId: payload.teamId,
+      payload,
+    }),
+    ...(payload.userIds || []).map((userId) =>
+      publishProfileUpdate({
+        type: payload.type,
+        userId,
+        teamId: payload.teamId,
+        inviteId: payload.inviteId,
+      }),
+    ),
+  ]);
 }
 
 async function getCurrentUser() {
@@ -114,6 +156,7 @@ async function getBlockingActiveRegistration({
     },
   });
 }
+
 async function getActiveTeamRegistration(teamId: string) {
   return prisma.tournamentRegistration.findFirst({
     where: {
@@ -179,6 +222,7 @@ export async function updateTeamInline(
   if (editableError) {
     return fail(editableError);
   }
+
   const activeRegistration = await getActiveTeamRegistration(team.id);
 
   if (activeRegistration && game !== team.game) {
@@ -198,6 +242,12 @@ export async function updateTeamInline(
       rejectedAt: null,
       rejectionReason: null,
     },
+  });
+
+  await publishTeamUpdate({
+    type: "team.updated",
+    teamId: updatedTeam.id,
+    userIds: team.members.map((member) => member.userId),
   });
 
   revalidatePath("/profile");
@@ -227,11 +277,12 @@ export async function invitePlayerToTeamInline(
   if (!team) {
     return fail(error || "Team was not found.");
   }
+
   const activeRegistration = await getActiveTeamRegistration(team.id);
 
   if (activeRegistration) {
     return fail(
-      `This team cannot be deleted because it has an active registration for "${activeRegistration.tournament.title}".`,
+      `This team is locked while registered for "${activeRegistration.tournament.title}".`,
     );
   }
 
@@ -295,28 +346,33 @@ export async function invitePlayerToTeamInline(
     return fail("This player already has a pending invitation.");
   }
 
-  if (existingInvite) {
-    await prisma.teamInvite.update({
-      where: {
-        id: existingInvite.id,
-      },
-      data: {
-        status: "pending",
-        invitedById: user.id,
-        respondedAt: null,
-        createdAt: new Date(),
-      },
-    });
-  } else {
-    await prisma.teamInvite.create({
-      data: {
-        teamId: team.id,
-        invitedUserId: invitedUser.id,
-        invitedById: user.id,
-        status: "pending",
-      },
-    });
-  }
+  const invite = existingInvite
+    ? await prisma.teamInvite.update({
+        where: {
+          id: existingInvite.id,
+        },
+        data: {
+          status: "pending",
+          invitedById: user.id,
+          respondedAt: null,
+          createdAt: new Date(),
+        },
+      })
+    : await prisma.teamInvite.create({
+        data: {
+          teamId: team.id,
+          invitedUserId: invitedUser.id,
+          invitedById: user.id,
+          status: "pending",
+        },
+      });
+
+  await publishTeamUpdate({
+    type: "team.invite.created",
+    teamId: team.id,
+    inviteId: invite.id,
+    userIds: [user.id, invitedUser.id],
+  });
 
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
@@ -386,6 +442,15 @@ export async function removeTeamMemberInline(
     where: {
       id: member.id,
     },
+  });
+
+  await publishTeamUpdate({
+    type: "team.member.removed",
+    teamId: team.id,
+    userIds: [
+      ...team.members.map((teamMember) => teamMember.userId),
+      member.userId,
+    ],
   });
 
   revalidatePath("/profile");
@@ -463,12 +528,19 @@ export async function leaveTeamInline(
     },
   });
 
+  await publishTeamUpdate({
+    type: "team.member.left",
+    teamId: team.id,
+    userIds: team.members.map((member) => member.userId),
+  });
+
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
-  const message = encodeURIComponent("You left the team.");
-
-  return success("You left the team.", `/profile?message=${message}`);
+  return success(
+    "You left the team.",
+    "/profile?message=You%20left%20the%20team.",
+  );
 }
 
 export async function transferTeamLeadershipInline(
@@ -540,6 +612,12 @@ export async function transferTeamLeadershipInline(
     }),
   ]);
 
+  await publishTeamUpdate({
+    type: "team.leader.transferred",
+    teamId: team.id,
+    userIds: team.members.map((member) => member.userId),
+  });
+
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
@@ -595,6 +673,13 @@ export async function cancelTeamInviteInline(
     },
   });
 
+  await publishTeamUpdate({
+    type: "team.invite.cancelled",
+    teamId: invite.teamId,
+    inviteId: invite.id,
+    userIds: [user.id, invite.invitedUserId],
+  });
+
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${invite.teamId}`);
 
@@ -638,6 +723,12 @@ export async function submitTeamForReviewInline(
     },
   });
 
+  await publishTeamUpdate({
+    type: "team.submitted",
+    teamId: team.id,
+    userIds: team.members.map((member) => member.userId),
+  });
+
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
@@ -673,15 +764,21 @@ export async function deleteTeamInline(
     );
   }
 
+  const memberUserIds = team.members.map((member) => member.userId);
+
   await prisma.team.delete({
     where: {
       id: team.id,
     },
   });
 
+  await publishTeamUpdate({
+    type: "team.deleted",
+    teamId: team.id,
+    userIds: memberUserIds,
+  });
+
   revalidatePath("/profile");
 
-  const message = encodeURIComponent("Team deleted.");
-
-  return success("Team deleted.", `/profile?message=${message}`);
+  return success("Team deleted.", "/profile?message=Team%20deleted.");
 }
