@@ -130,9 +130,7 @@ export default async function TournamentsPage({
       registrationStatus: true,
       registrations: {
         where: {
-          status: {
-            in: ["registered", "approved"],
-          },
+          status: "approved",
         },
         select: {
           id: true,
@@ -262,7 +260,10 @@ export default async function TournamentsPage({
                               label="Team"
                               value={`${tournament.teamSize}v${tournament.teamSize}`}
                             />
-                            <MiniInfo label="Left" value={remainingSlots} />
+                            <MiniInfo
+                              label="Approved left"
+                              value={remainingSlots}
+                            />
                           </div>
                         </div>
                       </div>
@@ -289,7 +290,7 @@ export default async function TournamentsPage({
                         />
 
                         <p className="text-xs font-bold text-gray-500">
-                          {remainingSlots} slots left
+                          {remainingSlots} approved slots left
                         </p>
                       </div>
 
