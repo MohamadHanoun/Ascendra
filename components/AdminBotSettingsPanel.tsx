@@ -103,10 +103,6 @@ export default async function AdminBotSettingsPanel() {
             and secrets must remain in environment variables only.
           </p>
         </div>
-
-        <div className="rounded-2xl border border-yellow-400/20 bg-yellow-500/10 px-4 py-3 text-sm leading-6 text-yellow-100">
-          Do not store bot tokens here.
-        </div>
       </div>
 
       <form action={saveAdminBotSettings} className="grid gap-5">
