@@ -24,17 +24,6 @@ const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
 
-const ANNOUNCEMENT_CHANNEL_ID = process.env.DISCORD_ANNOUNCEMENT_CHANNEL_ID;
-const TOURNAMENT_CATEGORY_ID = process.env.DISCORD_TOURNAMENT_CATEGORY_ID;
-
-const BOT_LOG_CHANNEL_ID = process.env.DISCORD_BOT_LOG_CHANNEL_ID;
-const TOURNAMENT_LOG_CHANNEL_ID = process.env.DISCORD_TOURNAMENT_LOG_CHANNEL_ID;
-
-const STAFF_ROLE_IDS =
-  process.env.DISCORD_TOURNAMENT_STAFF_ROLE_IDS?.split(",")
-    .map((id) => id.trim())
-    .filter(Boolean) || [];
-
 if (!BOT_API_TOKEN) {
   throw new Error("Missing BOT_API_TOKEN");
 }
@@ -47,6 +36,17 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
 
+type BotRuntimeConfig = {
+  announcementChannelId: string;
+  tournamentCategoryId: string;
+  tournamentStaffRoleIds: string[];
+  botLogChannelId: string;
+  tournamentLogChannelId: string;
+  inviteChannelId: string;
+  enableAnnouncements: boolean;
+  enableDiscordAccess: boolean;
+};
+
 type BotEvent = {
   id: string;
   type: string;
@@ -58,6 +58,124 @@ type LogField = {
   value: string;
   inline?: boolean;
 };
+
+const CONFIG_CACHE_MS = 30000;
+
+let botConfigCache: {
+  value: BotRuntimeConfig;
+  expiresAt: number;
+} | null = null;
+
+function parseRoleIds(value: string | undefined | null) {
+  return String(value || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+}
+
+function parseBoolean(value: unknown, fallback: boolean) {
+  if (value === true || value === "true") {
+    return true;
+  }
+
+  if (value === false || value === "false") {
+    return false;
+  }
+
+  return fallback;
+}
+
+function getEnvBotConfig(): BotRuntimeConfig {
+  return {
+    announcementChannelId: process.env.DISCORD_ANNOUNCEMENT_CHANNEL_ID || "",
+    tournamentCategoryId: process.env.DISCORD_TOURNAMENT_CATEGORY_ID || "",
+    tournamentStaffRoleIds: parseRoleIds(
+      process.env.DISCORD_TOURNAMENT_STAFF_ROLE_IDS,
+    ),
+    botLogChannelId: process.env.DISCORD_BOT_LOG_CHANNEL_ID || "",
+    tournamentLogChannelId: process.env.DISCORD_TOURNAMENT_LOG_CHANNEL_ID || "",
+    inviteChannelId:
+      process.env.DISCORD_INVITE_CHANNEL_ID ||
+      process.env.DISCORD_ANNOUNCEMENT_CHANNEL_ID ||
+      "",
+    enableAnnouncements: true,
+    enableDiscordAccess: true,
+  };
+}
+
+async function getBotConfig(force = false): Promise<BotRuntimeConfig> {
+  if (!force && botConfigCache && botConfigCache.expiresAt > Date.now()) {
+    return botConfigCache.value;
+  }
+
+  const fallback = getEnvBotConfig();
+
+  try {
+    const response = await fetch(`${SITE_URL}/api/bot/config`, {
+      headers: {
+        Authorization: `Bearer ${BOT_API_TOKEN}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch bot config: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const config = data.config || {};
+
+    const runtimeConfig: BotRuntimeConfig = {
+      announcementChannelId:
+        String(config.announcementChannelId || "") ||
+        fallback.announcementChannelId,
+
+      tournamentCategoryId:
+        String(config.tournamentCategoryId || "") ||
+        fallback.tournamentCategoryId,
+
+      tournamentStaffRoleIds:
+        parseRoleIds(config.tournamentStaffRoleIds).length > 0
+          ? parseRoleIds(config.tournamentStaffRoleIds)
+          : fallback.tournamentStaffRoleIds,
+
+      botLogChannelId:
+        String(config.botLogChannelId || "") || fallback.botLogChannelId,
+
+      tournamentLogChannelId:
+        String(config.tournamentLogChannelId || "") ||
+        fallback.tournamentLogChannelId,
+
+      inviteChannelId:
+        String(config.inviteChannelId || "") || fallback.inviteChannelId,
+
+      enableAnnouncements: parseBoolean(
+        config.enableAnnouncements,
+        fallback.enableAnnouncements,
+      ),
+
+      enableDiscordAccess: parseBoolean(
+        config.enableDiscordAccess,
+        fallback.enableDiscordAccess,
+      ),
+    };
+
+    botConfigCache = {
+      value: runtimeConfig,
+      expiresAt: Date.now() + CONFIG_CACHE_MS,
+    };
+
+    return runtimeConfig;
+  } catch (error) {
+    console.error("[BotConfig] Using env fallback:", error);
+
+    botConfigCache = {
+      value: fallback,
+      expiresAt: Date.now() + CONFIG_CACHE_MS,
+    };
+
+    return fallback;
+  }
+}
 
 function cleanLogValue(value: unknown) {
   if (value === null || value === undefined || value === "") {
@@ -112,8 +230,10 @@ async function sendBotLog(params: {
   description?: string;
   fields?: LogField[];
 }) {
+  const config = await getBotConfig();
+
   await sendDiscordLog({
-    channelId: BOT_LOG_CHANNEL_ID,
+    channelId: config.botLogChannelId,
     ...params,
   });
 }
@@ -123,8 +243,10 @@ async function sendTournamentLog(params: {
   description?: string;
   fields?: LogField[];
 }) {
+  const config = await getBotConfig();
+
   await sendDiscordLog({
-    channelId: TOURNAMENT_LOG_CHANNEL_ID || BOT_LOG_CHANNEL_ID,
+    channelId: config.tournamentLogChannelId || config.botLogChannelId,
     ...params,
   });
 }
@@ -192,11 +314,23 @@ async function updateEvent(
 }
 
 async function processTournamentAnnouncement(event: BotEvent) {
-  if (!ANNOUNCEMENT_CHANNEL_ID) {
-    throw new Error("Missing DISCORD_ANNOUNCEMENT_CHANNEL_ID");
+  const config = await getBotConfig();
+
+  if (!config.enableAnnouncements) {
+    await sendBotLog({
+      title: "Tournament announcement skipped",
+      description: "Announcements are disabled from admin bot settings.",
+      fields: [{ name: "Event ID", value: event.id, inline: false }],
+    });
+
+    return;
   }
 
-  const channel = await client.channels.fetch(ANNOUNCEMENT_CHANNEL_ID);
+  if (!config.announcementChannelId) {
+    throw new Error("Missing announcement channel ID");
+  }
+
+  const channel = await client.channels.fetch(config.announcementChannelId);
 
   if (!channel || !channel.isSendable()) {
     throw new Error("Announcement channel was not found or is not sendable.");
@@ -300,8 +434,10 @@ async function findOrCreateTeamChannel(params: {
   channelName: string;
   roleId: string;
 }) {
-  if (!TOURNAMENT_CATEGORY_ID) {
-    throw new Error("Missing DISCORD_TOURNAMENT_CATEGORY_ID");
+  const config = await getBotConfig();
+
+  if (!config.tournamentCategoryId) {
+    throw new Error("Missing tournament category ID");
   }
 
   const guild = await getGuild();
@@ -347,7 +483,7 @@ async function findOrCreateTeamChannel(params: {
     },
   ];
 
-  for (const roleId of STAFF_ROLE_IDS) {
+  for (const roleId of config.tournamentStaffRoleIds) {
     permissionOverwrites.push({
       id: roleId,
       allow: [
@@ -377,7 +513,7 @@ async function findOrCreateTeamChannel(params: {
   const channel = await guild.channels.create({
     name: params.channelName,
     type: ChannelType.GuildVoice,
-    parent: TOURNAMENT_CATEGORY_ID,
+    parent: config.tournamentCategoryId,
     permissionOverwrites,
     reason: "Tournament team voice channel",
   });
@@ -556,6 +692,13 @@ async function deleteTeamRole(params: {
 
 async function processTeamAccessCreate(event: BotEvent) {
   const payload = event.payload;
+  const config = await getBotConfig();
+
+  if (!config.enableDiscordAccess) {
+    throw new Error(
+      "Discord access automation is disabled from admin settings.",
+    );
+  }
 
   const roleResult = await findOrCreateRole(payload.roleName);
 
@@ -602,6 +745,13 @@ async function processTeamAccessCreate(event: BotEvent) {
 
 async function processTeamAccessRemove(event: BotEvent) {
   const payload = event.payload;
+  const config = await getBotConfig();
+
+  if (!config.enableDiscordAccess) {
+    throw new Error(
+      "Discord access automation is disabled from admin settings.",
+    );
+  }
 
   const roleRemoval = await removeRoleFromMembers({
     roleId: payload.roleId,
@@ -732,6 +882,8 @@ async function pollEvents() {
 
 client.once(Events.ClientReady, async () => {
   console.log(`Bot logged in as ${client.user?.tag}`);
+
+  await getBotConfig(true);
 
   await sendHeartbeat();
 
