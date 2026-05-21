@@ -189,6 +189,7 @@ function FilterPill({
   return (
     <Link
       href={href}
+      scroll={false}
       className={`rounded-xl border px-4 py-2 text-xs font-black uppercase tracking-[0.12em] transition ${
         active
           ? "border-violet-400/35 bg-violet-500/15 text-white"
