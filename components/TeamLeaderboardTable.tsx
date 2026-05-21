@@ -4,138 +4,43 @@ type TeamLeaderboardTableProps = {
   teams: LeaderboardTeam[];
 };
 
-function getRankLabel(rank: number) {
-  if (rank === 1) {
-    return "Champion team";
-  }
-
-  if (rank === 2) {
-    return "Runner-up team";
-  }
-
-  if (rank === 3) {
-    return "Third place team";
-  }
-
-  return "Ranked team";
-}
-
-function RankBadge({ rank }: { rank: number }) {
-  const topThree = rank <= 3;
+function Pill({
+  children,
+  tone = "gray",
+}: {
+  children: React.ReactNode;
+  tone?: "green" | "yellow" | "gray" | "violet";
+}) {
+  const styles = {
+    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    gray: "border-white/10 bg-white/5 text-gray-300",
+    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
+  };
 
   return (
     <span
-      className={`grid h-12 w-12 place-items-center rounded-2xl border text-lg font-black ${
-        topThree
-          ? "border-yellow-400/25 bg-yellow-500/10 text-yellow-300"
-          : "border-violet-400/25 bg-violet-500/10 text-violet-200"
-      }`}
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
     >
-      #{rank}
+      {children}
     </span>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  highlight = false,
-}: {
-  label: string;
-  value: string | number;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
-      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-gray-500">
-        {label}
-      </p>
-
-      <p
-        className={`mt-1 text-sm font-black ${
-          highlight ? "text-emerald-300" : "text-white"
-        }`}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function GameBadge({ game }: { game: string }) {
-  return (
-    <span className="inline-flex w-fit rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-xs font-black text-violet-200">
-      {game}
-    </span>
-  );
-}
-
-function PodiumCard({ team }: { team: LeaderboardTeam }) {
-  const isFirst = team.rank === 1;
-
-  return (
-    <article
-      className={`relative overflow-hidden rounded-3xl border p-6 shadow-2xl shadow-black/20 ${
-        isFirst
-          ? "border-yellow-400/25 bg-yellow-500/10"
-          : "border-white/10 bg-white/[0.045]"
-      }`}
-    >
-      <div className="absolute right-5 top-4 text-7xl font-black leading-none text-white/[0.035]">
-        #{team.rank}
-      </div>
-
-      <div className="relative z-10">
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <RankBadge rank={team.rank} />
-          <GameBadge game={team.game} />
-        </div>
-
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-          {getRankLabel(team.rank)}
-        </p>
-
-        <h3 className="mt-2 truncate text-2xl font-black text-white">
-          {team.name}
-        </h3>
-
-        <p className="mt-2 text-sm text-gray-400">
-          Led by{" "}
-          <span className="font-black text-white">{team.leaderName}</span>
-        </p>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <Metric
-            label="Points"
-            value={team.tournamentPoints.toLocaleString()}
-            highlight
-          />
-          <Metric label="Results" value={team.tournamentResults} />
-          <Metric
-            label="Best"
-            value={team.bestPlacement ? `#${team.bestPlacement}` : "-"}
-          />
-        </div>
-      </div>
-    </article>
   );
 }
 
 function RankingRow({ team }: { team: LeaderboardTeam }) {
   return (
-    <article className="grid gap-4 rounded-3xl border border-white/10 bg-black/25 p-4 transition hover:border-violet-400/25 hover:bg-white/[0.045] lg:grid-cols-[70px_minmax(0,1fr)_130px_150px_120px_120px_150px] lg:items-center">
-      <RankBadge rank={team.rank} />
+    <article className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.035] md:grid-cols-[80px_minmax(0,1fr)_130px_130px_100px_110px_120px] md:items-center">
+      <Pill tone={team.rank <= 3 ? "yellow" : "violet"}>#{team.rank}</Pill>
 
       <div className="min-w-0">
-        <p className="truncate text-lg font-black text-white">{team.name}</p>
+        <p className="truncate font-black text-white">{team.name}</p>
 
-        <p className="mt-1 text-sm text-gray-400">
-          {team.tournamentResults} result
-          {team.tournamentResults === 1 ? "" : "s"}
+        <p className="mt-1 text-sm text-gray-400 md:hidden">
+          {team.game} · led by {team.leaderName}
         </p>
       </div>
 
-      <GameBadge game={team.game} />
+      <Pill tone="violet">{team.game}</Pill>
 
       <p className="text-sm text-gray-300">{team.leaderName}</p>
 
@@ -144,13 +49,11 @@ function RankingRow({ team }: { team: LeaderboardTeam }) {
         member{team.membersCount === 1 ? "" : "s"}
       </p>
 
-      <p className="text-sm font-black text-yellow-300">
+      <Pill tone="yellow">
         {team.bestPlacement ? `#${team.bestPlacement}` : "-"}
-      </p>
+      </Pill>
 
-      <p className="text-sm font-black text-emerald-300">
-        {team.tournamentPoints.toLocaleString()} pts
-      </p>
+      <Pill tone="green">{team.tournamentPoints.toLocaleString()} pts</Pill>
     </article>
   );
 }
@@ -158,44 +61,78 @@ function RankingRow({ team }: { team: LeaderboardTeam }) {
 export default function TeamLeaderboardTable({
   teams,
 }: TeamLeaderboardTableProps) {
-  const podium = teams.slice(0, 3);
+  const topThree = teams.slice(0, 3);
   const remaining = teams.slice(3);
 
   return (
-    <section className="grid gap-6">
-      {podium.length > 0 && (
-        <section className="grid gap-4 lg:grid-cols-3">
-          {podium.map((team) => (
-            <PodiumCard key={team.id} team={team} />
+    <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
+      <div className="border-b border-white/10 px-5 py-4">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+          Team ranking
+        </p>
+
+        <h2 className="mt-1 text-xl font-black text-white">Standings</h2>
+      </div>
+
+      {topThree.length > 0 && (
+        <div className="grid gap-3 border-b border-white/10 p-5 lg:grid-cols-3">
+          {topThree.map((team) => (
+            <article
+              key={team.id}
+              className="rounded-2xl border border-white/10 bg-black/20 p-4"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <Pill tone={team.rank <= 3 ? "yellow" : "violet"}>
+                  #{team.rank}
+                </Pill>
+
+                <Pill tone="violet">{team.game}</Pill>
+              </div>
+
+              <p className="mt-4 truncate text-xl font-black text-white">
+                {team.name}
+              </p>
+
+              <p className="mt-1 text-sm text-gray-400">
+                Led by {team.leaderName}
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Pill tone="green">
+                  {team.tournamentPoints.toLocaleString()} pts
+                </Pill>
+                <Pill>{team.tournamentResults} results</Pill>
+                <Pill tone="yellow">
+                  Best {team.bestPlacement ? `#${team.bestPlacement}` : "-"}
+                </Pill>
+              </div>
+            </article>
           ))}
-        </section>
+        </div>
       )}
 
       {remaining.length > 0 && (
-        <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035] p-4 shadow-2xl shadow-black/20 backdrop-blur">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 px-1">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                Ranking list
-              </p>
-
-              <h2 className="mt-1 text-2xl font-black text-white">
-                Teams outside the podium
-              </h2>
-            </div>
-
-            <p className="text-sm font-bold text-gray-400">
-              {remaining.length} ranked team
-              {remaining.length === 1 ? "" : "s"}
-            </p>
+        <div>
+          <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 md:grid md:grid-cols-[80px_minmax(0,1fr)_130px_130px_100px_110px_120px]">
+            <span>Rank</span>
+            <span>Team</span>
+            <span>Game</span>
+            <span>Leader</span>
+            <span>Members</span>
+            <span>Best</span>
+            <span>Points</span>
           </div>
 
-          <div className="grid gap-3">
+          <div className="divide-y divide-white/10">
             {remaining.map((team) => (
               <RankingRow key={team.id} team={team} />
             ))}
           </div>
-        </section>
+        </div>
+      )}
+
+      {teams.length === 0 && (
+        <div className="p-5 text-sm text-gray-400">No ranked teams yet.</div>
       )}
     </section>
   );

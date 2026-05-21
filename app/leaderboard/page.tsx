@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+
 import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
+import LeaderboardRealtime from "@/components/LeaderboardRealtime";
 import LeaderboardTable from "@/components/LeaderboardTable";
 import Navbar from "@/components/Navbar";
 import TeamLeaderboardTable from "@/components/TeamLeaderboardTable";
 import type { LeaderboardTeam, LeaderboardUser } from "@/data/leaderboard";
 import { prisma } from "@/lib/prisma";
-import LeaderboardRealtime from "@/components/LeaderboardRealtime";
 
 export const metadata: Metadata = {
   title: "Leaderboard | Ascendra",
@@ -22,6 +23,11 @@ type LeaderboardPageProps = {
     game?: string;
     type?: string;
   }>;
+};
+
+type SnapshotMember = {
+  userId?: string;
+  username?: string;
 };
 
 const games = ["Overall", "Valorant", "League of Legends", "CS2", "Dota2"];
@@ -54,6 +60,7 @@ function FilterButton({
   return (
     <Link
       href={href}
+      scroll={false}
       className={`rounded-xl border px-4 py-2 text-sm font-black transition ${
         active
           ? "border-violet-400/35 bg-violet-500/15 text-white shadow-lg shadow-violet-950/20"
@@ -65,50 +72,58 @@ function FilterButton({
   );
 }
 
-function StatCard({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string | number;
-  hint: string;
-}) {
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/20 backdrop-blur">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+    <div>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
         {label}
       </p>
 
-      <p className="mt-2 truncate text-3xl font-black text-white">{value}</p>
-
-      <p className="mt-2 text-sm leading-6 text-gray-500">{hint}</p>
+      <p className="mt-1 truncate text-2xl font-black text-white">{value}</p>
     </div>
   );
+}
+
+function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
+  if (!Array.isArray(snapshotMembers)) {
+    return [];
+  }
+
+  return snapshotMembers
+    .filter((member): member is Record<string, unknown> => {
+      return Boolean(member) && typeof member === "object";
+    })
+    .map((member) => ({
+      userId: typeof member.userId === "string" ? member.userId : undefined,
+      username:
+        typeof member.username === "string" ? member.username : undefined,
+    }))
+    .filter((member) => Boolean(member.userId));
 }
 
 async function getPlayerLeaderboard(
   selectedGame: string,
 ): Promise<LeaderboardUser[]> {
-  const users = await prisma.user.findMany({
+  const results = await prisma.tournamentResult.findMany({
     select: {
       id: true,
-      username: true,
-      role: true,
-      teamMemberships: {
+      points: true,
+      placement: true,
+      snapshotMembers: true,
+      tournament: {
         select: {
-          team: {
+          game: true,
+        },
+      },
+      team: {
+        select: {
+          members: {
             select: {
-              results: {
+              user: {
                 select: {
                   id: true,
-                  points: true,
-                  placement: true,
-                  tournament: {
-                    select: {
-                      game: true,
-                    },
-                  },
+                  username: true,
+                  role: true,
                 },
               },
             },
@@ -118,39 +133,94 @@ async function getPlayerLeaderboard(
     },
   });
 
-  const leaderboardUsers = users
-    .map((user) => {
-      const userResults = user.teamMemberships.flatMap((membership) =>
-        membership.team.results.filter((result) => {
-          if (selectedGame === "Overall") {
-            return true;
-          }
+  const userIds = new Set<string>();
 
-          return result.tournament.game === selectedGame;
-        }),
-      );
+  for (const result of results) {
+    const snapshotMembers = parseSnapshotMembers(result.snapshotMembers);
 
-      const tournamentResults = userResults.length;
+    for (const member of snapshotMembers) {
+      if (member.userId) {
+        userIds.add(member.userId);
+      }
+    }
 
-      const tournamentPoints = userResults.reduce(
-        (total, result) => total + result.points,
-        0,
-      );
+    if (snapshotMembers.length === 0) {
+      for (const member of result.team.members) {
+        userIds.add(member.user.id);
+      }
+    }
+  }
 
-      const bestPlacement =
-        userResults.length > 0
-          ? Math.min(...userResults.map((result) => result.placement))
-          : null;
+  const users = await prisma.user.findMany({
+    where: {
+      id: {
+        in: [...userIds],
+      },
+    },
+    select: {
+      id: true,
+      username: true,
+      role: true,
+    },
+  });
 
-      return {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        tournamentResults,
-        tournamentPoints,
-        bestPlacement,
+  const usersById = new Map(users.map((user) => [user.id, user]));
+
+  const leaderboard = new Map<
+    string,
+    {
+      id: string;
+      username: string;
+      role: string;
+      tournamentPoints: number;
+      tournamentResults: number;
+      bestPlacement: number | null;
+    }
+  >();
+
+  for (const result of results) {
+    if (selectedGame !== "Overall" && result.tournament.game !== selectedGame) {
+      continue;
+    }
+
+    const snapshotMembers = parseSnapshotMembers(result.snapshotMembers);
+
+    const members =
+      snapshotMembers.length > 0
+        ? snapshotMembers
+        : result.team.members.map((member) => ({
+            userId: member.user.id,
+            username: member.user.username,
+          }));
+
+    for (const member of members) {
+      if (!member.userId) {
+        continue;
+      }
+
+      const currentUser = usersById.get(member.userId);
+
+      const existing = leaderboard.get(member.userId) || {
+        id: member.userId,
+        username: currentUser?.username || member.username || "Unknown player",
+        role: currentUser?.role || "member",
+        tournamentPoints: 0,
+        tournamentResults: 0,
+        bestPlacement: null,
       };
-    })
+
+      existing.tournamentPoints += result.points;
+      existing.tournamentResults += 1;
+      existing.bestPlacement =
+        existing.bestPlacement === null
+          ? result.placement
+          : Math.min(existing.bestPlacement, result.placement);
+
+      leaderboard.set(member.userId, existing);
+    }
+  }
+
+  return [...leaderboard.values()]
     .filter((user) => user.tournamentPoints > 0)
     .sort((a, b) => {
       if (b.tournamentPoints !== a.tournamentPoints) {
@@ -162,40 +232,43 @@ async function getPlayerLeaderboard(
       }
 
       return (a.bestPlacement || 999) - (b.bestPlacement || 999);
-    });
-
-  return leaderboardUsers.map((user, index) => ({
-    ...user,
-    rank: index + 1,
-  }));
+    })
+    .map((user, index) => ({
+      ...user,
+      rank: index + 1,
+    }));
 }
 
 async function getTeamLeaderboard(
   selectedGame: string,
 ): Promise<LeaderboardTeam[]> {
-  const teams = await prisma.team.findMany({
+  const results = await prisma.tournamentResult.findMany({
     select: {
       id: true,
-      name: true,
-      game: true,
-      leader: {
+      teamId: true,
+      points: true,
+      placement: true,
+      snapshotTeamName: true,
+      snapshotTeamGame: true,
+      snapshotMembers: true,
+      tournament: {
         select: {
-          username: true,
+          game: true,
         },
       },
-      members: {
+      team: {
         select: {
           id: true,
-        },
-      },
-      results: {
-        select: {
-          id: true,
-          points: true,
-          placement: true,
-          tournament: {
+          name: true,
+          game: true,
+          leader: {
             select: {
-              game: true,
+              username: true,
+            },
+          },
+          members: {
+            select: {
+              id: true,
             },
           },
         },
@@ -203,39 +276,51 @@ async function getTeamLeaderboard(
     },
   });
 
-  const leaderboardTeams = teams
-    .map((team) => {
-      const teamResults = team.results.filter((result) => {
-        if (selectedGame === "Overall") {
-          return true;
-        }
+  const leaderboard = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      game: string;
+      leaderName: string;
+      membersCount: number;
+      tournamentPoints: number;
+      tournamentResults: number;
+      bestPlacement: number | null;
+    }
+  >();
 
-        return result.tournament.game === selectedGame;
-      });
+  for (const result of results) {
+    if (selectedGame !== "Overall" && result.tournament.game !== selectedGame) {
+      continue;
+    }
 
-      const tournamentResults = teamResults.length;
+    const snapshotMembers = parseSnapshotMembers(result.snapshotMembers);
+    const existing = leaderboard.get(result.teamId) || {
+      id: result.teamId,
+      name: result.snapshotTeamName || result.team.name,
+      game: result.snapshotTeamGame || result.team.game,
+      leaderName: result.team.leader.username,
+      membersCount:
+        snapshotMembers.length > 0
+          ? snapshotMembers.length
+          : result.team.members.length,
+      tournamentPoints: 0,
+      tournamentResults: 0,
+      bestPlacement: null,
+    };
 
-      const tournamentPoints = teamResults.reduce(
-        (total, result) => total + result.points,
-        0,
-      );
+    existing.tournamentPoints += result.points;
+    existing.tournamentResults += 1;
+    existing.bestPlacement =
+      existing.bestPlacement === null
+        ? result.placement
+        : Math.min(existing.bestPlacement, result.placement);
 
-      const bestPlacement =
-        teamResults.length > 0
-          ? Math.min(...teamResults.map((result) => result.placement))
-          : null;
+    leaderboard.set(result.teamId, existing);
+  }
 
-      return {
-        id: team.id,
-        name: team.name,
-        game: team.game,
-        leaderName: team.leader.username,
-        membersCount: team.members.length,
-        tournamentResults,
-        tournamentPoints,
-        bestPlacement,
-      };
-    })
+  return [...leaderboard.values()]
     .filter((team) => team.tournamentPoints > 0)
     .sort((a, b) => {
       if (b.tournamentPoints !== a.tournamentPoints) {
@@ -247,12 +332,11 @@ async function getTeamLeaderboard(
       }
 
       return (a.bestPlacement || 999) - (b.bestPlacement || 999);
-    });
-
-  return leaderboardTeams.map((team, index) => ({
-    ...team,
-    rank: index + 1,
-  }));
+    })
+    .map((team, index) => ({
+      ...team,
+      rank: index + 1,
+    }));
 }
 
 export default async function LeaderboardPage({
@@ -290,9 +374,6 @@ export default async function LeaderboardPage({
       ? playerLeaderboard[0]?.username || "-"
       : teamLeaderboard[0]?.name || "-";
 
-  const leaderboardLabel =
-    selectedType === "players" ? "Player rankings" : "Team rankings";
-
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
@@ -300,7 +381,7 @@ export default async function LeaderboardPage({
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[520px] overflow-hidden">
+        <section className="relative min-h-[460px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -310,48 +391,45 @@ export default async function LeaderboardPage({
           />
 
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.64)_44%,rgba(7,8,17,0.80)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.22),transparent_34%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent via-[#070811]/80 to-[#070811]" />
+          <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent via-[#070811]/80 to-[#070811]" />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
-            <div className="max-w-4xl">
-              <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
-                Competitive standings
-              </p>
+            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
+              Competitive standings
+            </p>
 
-              <h1 className="text-5xl font-black uppercase tracking-tight text-white md:text-7xl">
-                Leaderboard
-              </h1>
+            <h1 className="text-5xl font-black uppercase tracking-tight text-white md:text-7xl">
+              Leaderboard
+            </h1>
 
-              <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-                Official rankings based on approved tournament results and
-                awarded points.
-              </p>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
+              Rankings based on saved tournament results and snapshot rosters.
+            </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                <FilterButton
-                  href={buildLeaderboardHref(selectedGame, "players")}
-                  label="Players"
-                  active={selectedType === "players"}
-                />
+            <div className="mt-8 flex flex-wrap gap-3">
+              <FilterButton
+                href={buildLeaderboardHref(selectedGame, "players")}
+                label="Players"
+                active={selectedType === "players"}
+              />
 
-                <FilterButton
-                  href={buildLeaderboardHref(selectedGame, "teams")}
-                  label="Teams"
-                  active={selectedType === "teams"}
-                />
-              </div>
+              <FilterButton
+                href={buildLeaderboardHref(selectedGame, "teams")}
+                label="Teams"
+                active={selectedType === "teams"}
+              />
             </div>
           </div>
         </section>
 
-        <section className="relative -mt-24 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
+        <section className="relative -mt-20 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
           <LeaderboardRealtime />
-          <section className="grid gap-5 rounded-[32px] border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/20 backdrop-blur">
-            <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+
+          <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/20 backdrop-blur">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                  {leaderboardLabel}
+                  {selectedType === "players" ? "Players" : "Teams"}
                 </p>
 
                 <h2 className="mt-2 text-3xl font-black text-white">
@@ -374,29 +452,16 @@ export default async function LeaderboardPage({
             </div>
           </section>
 
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard
+          <section className="grid gap-5 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 md:grid-cols-2 xl:grid-cols-4">
+            <Stat
               label={selectedType === "players" ? "Players" : "Teams"}
               value={activeLeaderboard.length}
-              hint="Ranked entries with tournament points."
             />
-
-            <StatCard
-              label="Total points"
-              value={totalPoints}
-              hint="Points awarded in the selected ranking."
-            />
-
-            <StatCard
-              label="Results"
-              value={totalResults}
-              hint="Saved tournament results included here."
-            />
-
-            <StatCard
+            <Stat label="Total points" value={totalPoints} />
+            <Stat label="Results" value={totalResults} />
+            <Stat
               label={selectedType === "players" ? "Top player" : "Top team"}
               value={topItem}
-              hint="Current highest ranked entry."
             />
           </section>
 
@@ -411,9 +476,7 @@ export default async function LeaderboardPage({
               title="No tournament points yet"
               description={
                 selectedGame === "Overall"
-                  ? selectedType === "players"
-                    ? "Player rankings will appear here when official results are added."
-                    : "Team rankings will appear here when official results are added."
+                  ? "Rankings will appear here when official results are added."
                   : `No points have been awarded for ${selectedGame} yet.`
               }
               actionLabel="View tournaments"
