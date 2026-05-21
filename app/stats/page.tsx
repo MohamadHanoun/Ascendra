@@ -53,10 +53,6 @@ async function getStatsData() {
     usersCount,
     teamsCount,
     tournamentsCount,
-    openTournamentsCount,
-    endedTournamentsCount,
-    publishedAnnouncementsCount,
-    approvedRegistrationsCount,
     tournamentResults,
     tournamentPoints,
     tournamentsByGame,
@@ -64,26 +60,6 @@ async function getStatsData() {
     prisma.user.count(),
     prisma.team.count(),
     prisma.tournament.count(),
-    prisma.tournament.count({
-      where: {
-        status: "open",
-      },
-    }),
-    prisma.tournament.count({
-      where: {
-        status: "ended",
-      },
-    }),
-    prisma.announcement.count({
-      where: {
-        published: true,
-      },
-    }),
-    prisma.tournamentRegistration.count({
-      where: {
-        status: "approved",
-      },
-    }),
     prisma.tournamentResult.findMany({
       select: {
         points: true,
@@ -109,16 +85,16 @@ async function getStatsData() {
 
   const totalPoints = tournamentPoints._sum.points || 0;
 
+  const activeGamesCount = games.filter((game) =>
+    tournamentsByGame.some((item) => item.game === game && item._count.id > 0),
+  ).length;
+
   const overviewStats = [
     { label: "Players", value: usersCount },
     { label: "Teams", value: teamsCount },
     { label: "Tournaments", value: tournamentsCount },
-    { label: "Open", value: openTournamentsCount },
-    { label: "Ended", value: endedTournamentsCount },
-    { label: "Results", value: tournamentResults.length },
     { label: "Points", value: totalPoints },
-    { label: "Approved", value: approvedRegistrationsCount },
-    { label: "News", value: publishedAnnouncementsCount },
+    { label: "Games", value: activeGamesCount },
   ];
 
   const gameStats = games.map((game) => {
@@ -179,7 +155,7 @@ export default async function StatsPage() {
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              Current platform numbers and tournament activity.
+              A quick overview of Ascendra activity.
             </p>
           </div>
         </section>
@@ -192,7 +168,7 @@ export default async function StatsPage() {
               </p>
 
               <h2 className="mt-1 text-xl font-black text-white">
-                Platform numbers
+                Main numbers
               </h2>
             </div>
 
@@ -224,7 +200,7 @@ export default async function StatsPage() {
                     <p className="font-black text-white">{item.game}</p>
 
                     <p className="mt-1 text-sm text-gray-400">
-                      Tournament activity and saved results.
+                      Tournament activity for this game.
                     </p>
                   </div>
 
