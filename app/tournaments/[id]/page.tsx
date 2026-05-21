@@ -9,6 +9,7 @@ import ProfileNotice from "@/components/ProfileNotice";
 import { TournamentRegistrationPanel } from "@/components/TournamentRegistrationPanel";
 import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
+import TournamentDetailsRealtime from "@/components/TournamentDetailsRealtime";
 
 export const dynamic = "force-dynamic";
 
@@ -383,6 +384,8 @@ export default async function TournamentDetailsPage({
             message={noticeParams.message}
             error={noticeParams.error}
           />
+
+          <TournamentDetailsRealtime tournamentId={tournament.id} />
 
           {tournament.results.length > 0 && (
             <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
