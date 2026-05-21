@@ -256,7 +256,7 @@ export default async function AdminBotEventsPanel() {
 
   return (
     <div className="grid gap-8">
-      <AdminBotAutoRefresh intervalSeconds={30} />
+      <AdminBotAutoRefresh />
       <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/20">
         <div className="flex flex-col justify-between gap-6 xl:flex-row xl:items-start">
           <div>
