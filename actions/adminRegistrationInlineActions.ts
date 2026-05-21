@@ -64,6 +64,30 @@ function getMemberDiscordIds(
     .filter((discordId): discordId is string => Boolean(discordId));
 }
 
+function buildSnapshotMembers(
+  members: Array<{
+    id: string;
+    role: string;
+    joinedAt: Date;
+    user: {
+      id: string;
+      discordId: string;
+      username: string;
+      avatar: string | null;
+    };
+  }>,
+) {
+  return members.map((member) => ({
+    memberId: member.id,
+    userId: member.user.id,
+    discordId: member.user.discordId,
+    username: member.user.username,
+    avatar: member.user.avatar,
+    role: member.role,
+    joinedAt: member.joinedAt.toISOString(),
+  }));
+}
+
 async function requireAdmin(): Promise<AdminRegistrationActionResult | null> {
   const session = await auth();
 
@@ -112,6 +136,41 @@ function revalidateRegistrationViews(tournamentId: string) {
   revalidatePath("/profile");
 }
 
+async function publishRegistrationUpdate(params: {
+  type: string;
+  registrationId: string;
+  tournamentId: string;
+  teamId: string;
+  teamName: string;
+  rejectionReason?: string;
+}) {
+  await Promise.all([
+    createRealtimeEvent({
+      type: params.type,
+      audience: "admin",
+      entityType: "registration",
+      entityId: params.registrationId,
+      payload: params,
+    }),
+    createRealtimeEvent({
+      type: "tournament.registration.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: params.tournamentId,
+      payload: {
+        tournamentId: params.tournamentId,
+      },
+    }),
+    createRealtimeEvent({
+      type: "profile.updated",
+      audience: "public",
+      entityType: "profile",
+      entityId: params.teamId,
+      payload: params,
+    }),
+  ]);
+}
+
 export async function approveRegistrationInline(
   formData: FormData,
 ): Promise<AdminRegistrationActionResult> {
@@ -135,9 +194,20 @@ export async function approveRegistrationInline(
       tournament: true,
       team: {
         include: {
+          invites: {
+            where: {
+              status: "pending",
+            },
+            select: {
+              id: true,
+            },
+          },
           members: {
             include: {
               user: true,
+            },
+            orderBy: {
+              joinedAt: "asc",
             },
           },
         },
@@ -151,6 +221,30 @@ export async function approveRegistrationInline(
 
   if (registration.status === "approved") {
     return success("Registration is already approved.");
+  }
+
+  if (registration.status !== "registered") {
+    return fail("Only registered teams can be approved.");
+  }
+
+  if (registration.tournament.status === "ended") {
+    return fail("Ended tournaments cannot approve new teams.");
+  }
+
+  if (registration.team.game !== registration.tournament.game) {
+    return fail("Team game no longer matches this tournament.");
+  }
+
+  if (registration.team.members.length < registration.tournament.teamSize) {
+    return fail(
+      `Team needs ${registration.tournament.teamSize} player${
+        registration.tournament.teamSize === 1 ? "" : "s"
+      } before approval.`,
+    );
+  }
+
+  if (registration.team.invites.length > 0) {
+    return fail("Resolve pending team invites before approval.");
   }
 
   const approvedRegistrationsCount = await prisma.tournamentRegistration.count({
@@ -178,36 +272,100 @@ export async function approveRegistrationInline(
   );
 
   const memberDiscordIds = getMemberDiscordIds(registration.team.members);
+  const snapshotMembers = buildSnapshotMembers(registration.team.members);
 
   try {
     await prisma.$transaction(
       async (tx) => {
+        const freshRegistration = await tx.tournamentRegistration.findUnique({
+          where: {
+            id: registration.id,
+          },
+          include: {
+            tournament: true,
+            team: {
+              include: {
+                invites: {
+                  where: {
+                    status: "pending",
+                  },
+                  select: {
+                    id: true,
+                  },
+                },
+                members: {
+                  include: {
+                    user: true,
+                  },
+                  orderBy: {
+                    joinedAt: "asc",
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        if (!freshRegistration) {
+          throw new Error("REGISTRATION_NOT_FOUND");
+        }
+
+        if (freshRegistration.status !== "registered") {
+          throw new Error("REGISTRATION_NOT_APPROVABLE");
+        }
+
+        if (freshRegistration.tournament.status === "ended") {
+          throw new Error("TOURNAMENT_ENDED");
+        }
+
+        if (freshRegistration.team.game !== freshRegistration.tournament.game) {
+          throw new Error("TEAM_GAME_MISMATCH");
+        }
+
+        if (
+          freshRegistration.team.members.length <
+          freshRegistration.tournament.teamSize
+        ) {
+          throw new Error("TEAM_SIZE_TOO_SMALL");
+        }
+
+        if (freshRegistration.team.invites.length > 0) {
+          throw new Error("TEAM_HAS_PENDING_INVITES");
+        }
+
         const approvedCountInsideTransaction =
           await tx.tournamentRegistration.count({
             where: {
-              tournamentId: registration.tournamentId,
+              tournamentId: freshRegistration.tournamentId,
               status: "approved",
               id: {
-                not: registration.id,
+                not: freshRegistration.id,
               },
             },
           });
 
         if (
-          approvedCountInsideTransaction >= registration.tournament.maxSlots
+          approvedCountInsideTransaction >=
+          freshRegistration.tournament.maxSlots
         ) {
           throw new Error("NO_APPROVED_SLOTS_AVAILABLE");
         }
 
         await tx.tournamentRegistration.update({
           where: {
-            id: registration.id,
+            id: freshRegistration.id,
           },
           data: {
             status: "approved",
             rejectionReason: null,
             approvedAt: new Date(),
             reviewedAt: new Date(),
+
+            snapshotTeamName: freshRegistration.team.name,
+            snapshotTeamGame: freshRegistration.team.game,
+            snapshotMembers: buildSnapshotMembers(
+              freshRegistration.team.members,
+            ),
 
             discordRoleStatus: "pending_create",
             discordRoleName: roleName,
@@ -222,17 +380,17 @@ export async function approveRegistrationInline(
           data: {
             type: "team_discord_access_create",
             entityType: "registration",
-            entityId: registration.id,
+            entityId: freshRegistration.id,
             payload: {
-              registrationId: registration.id,
+              registrationId: freshRegistration.id,
 
-              tournamentId: registration.tournament.id,
-              tournamentTitle: registration.tournament.title,
+              tournamentId: freshRegistration.tournament.id,
+              tournamentTitle: freshRegistration.tournament.title,
 
-              game: registration.tournament.game,
+              game: freshRegistration.tournament.game,
 
-              teamId: registration.team.id,
-              teamName: registration.team.name,
+              teamId: freshRegistration.team.id,
+              teamName: freshRegistration.team.name,
 
               roleName,
               channelName,
@@ -241,7 +399,7 @@ export async function approveRegistrationInline(
 
               memberDiscordIds,
 
-              websiteUrl: `${getSiteUrl()}/tournaments/${registration.tournament.id}`,
+              websiteUrl: `${getSiteUrl()}/tournaments/${freshRegistration.tournament.id}`,
             },
           },
         });
@@ -251,11 +409,34 @@ export async function approveRegistrationInline(
       },
     );
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message === "NO_APPROVED_SLOTS_AVAILABLE"
-    ) {
-      return fail("No approved slots are available for this tournament.");
+    if (error instanceof Error) {
+      if (error.message === "NO_APPROVED_SLOTS_AVAILABLE") {
+        return fail("No approved slots are available for this tournament.");
+      }
+
+      if (error.message === "REGISTRATION_NOT_APPROVABLE") {
+        return fail("Only registered teams can be approved.");
+      }
+
+      if (error.message === "TOURNAMENT_ENDED") {
+        return fail("Ended tournaments cannot approve new teams.");
+      }
+
+      if (error.message === "TEAM_GAME_MISMATCH") {
+        return fail("Team game no longer matches this tournament.");
+      }
+
+      if (error.message === "TEAM_SIZE_TOO_SMALL") {
+        return fail(
+          `Team needs ${registration.tournament.teamSize} player${
+            registration.tournament.teamSize === 1 ? "" : "s"
+          } before approval.`,
+        );
+      }
+
+      if (error.message === "TEAM_HAS_PENDING_INVITES") {
+        return fail("Resolve pending team invites before approval.");
+      }
     }
 
     if (
@@ -270,29 +451,13 @@ export async function approveRegistrationInline(
     throw error;
   }
 
-  await Promise.all([
-    createRealtimeEvent({
-      type: "registration.approved",
-      audience: "admin",
-      entityType: "registration",
-      entityId: registration.id,
-      payload: {
-        registrationId: registration.id,
-        tournamentId: registration.tournamentId,
-        teamId: registration.teamId,
-        teamName: registration.team.name,
-      },
-    }),
-    createRealtimeEvent({
-      type: "tournament.registration.updated",
-      audience: "public",
-      entityType: "tournament",
-      entityId: registration.tournamentId,
-      payload: {
-        tournamentId: registration.tournamentId,
-      },
-    }),
-  ]);
+  await publishRegistrationUpdate({
+    type: "registration.approved",
+    registrationId: registration.id,
+    tournamentId: registration.tournamentId,
+    teamId: registration.teamId,
+    teamName: registration.team.name,
+  });
 
   revalidateRegistrationViews(registration.tournamentId);
 
@@ -341,6 +506,10 @@ export async function rejectRegistrationInline(
     return fail("Registration was not found.");
   }
 
+  if (registration.status === "rejected") {
+    return success("Registration is already rejected.");
+  }
+
   const shouldRemoveAccess = needsDiscordAccessRemove(registration);
   const memberDiscordIds = getMemberDiscordIds(registration.team.members);
 
@@ -359,61 +528,47 @@ export async function rejectRegistrationInline(
       },
     });
 
-    await tx.botEvent.create({
-      data: {
-        type: "team_discord_access_remove",
-        entityType: "registration",
-        entityId: registration.id,
-        payload: {
-          action: "rejected",
-          rejectionReason,
+    if (shouldRemoveAccess) {
+      await tx.botEvent.create({
+        data: {
+          type: "team_discord_access_remove",
+          entityType: "registration",
+          entityId: registration.id,
+          payload: {
+            action: "rejected",
+            rejectionReason,
 
-          registrationId: registration.id,
+            registrationId: registration.id,
 
-          tournamentId: registration.tournament.id,
-          tournamentTitle: registration.tournament.title,
+            tournamentId: registration.tournament.id,
+            tournamentTitle: registration.tournament.title,
 
-          teamId: registration.team.id,
-          teamName: registration.team.name,
+            teamId: registration.team.id,
+            teamName: registration.team.name,
 
-          roleId: registration.discordRoleId,
-          roleName: registration.discordRoleName,
+            roleId: registration.discordRoleId,
+            roleName: registration.discordRoleName,
 
-          channelId: registration.discordChannelId,
-          channelName: registration.discordChannelName,
+            channelId: registration.discordChannelId,
+            channelName: registration.discordChannelName,
 
-          guildId: process.env.DISCORD_GUILD_ID,
+            guildId: process.env.DISCORD_GUILD_ID,
 
-          memberDiscordIds,
+            memberDiscordIds,
+          },
         },
-      },
-    });
+      });
+    }
   });
 
-  await Promise.all([
-    createRealtimeEvent({
-      type: "registration.rejected",
-      audience: "admin",
-      entityType: "registration",
-      entityId: registration.id,
-      payload: {
-        registrationId: registration.id,
-        tournamentId: registration.tournamentId,
-        teamId: registration.teamId,
-        teamName: registration.team.name,
-        rejectionReason,
-      },
-    }),
-    createRealtimeEvent({
-      type: "tournament.registration.updated",
-      audience: "public",
-      entityType: "tournament",
-      entityId: registration.tournamentId,
-      payload: {
-        tournamentId: registration.tournamentId,
-      },
-    }),
-  ]);
+  await publishRegistrationUpdate({
+    type: "registration.rejected",
+    registrationId: registration.id,
+    tournamentId: registration.tournamentId,
+    teamId: registration.teamId,
+    teamName: registration.team.name,
+    rejectionReason,
+  });
 
   revalidateRegistrationViews(registration.tournamentId);
 
@@ -457,6 +612,10 @@ export async function cancelRegistrationInline(
     return fail("Registration was not found.");
   }
 
+  if (registration.status === "cancelled") {
+    return success("Registration is already cancelled.");
+  }
+
   const shouldRemoveAccess = needsDiscordAccessRemove(registration);
   const memberDiscordIds = getMemberDiscordIds(registration.team.members);
 
@@ -475,59 +634,45 @@ export async function cancelRegistrationInline(
       },
     });
 
-    await tx.botEvent.create({
-      data: {
-        type: "team_discord_access_remove",
-        entityType: "registration",
-        entityId: registration.id,
-        payload: {
-          action: "cancelled",
+    if (shouldRemoveAccess) {
+      await tx.botEvent.create({
+        data: {
+          type: "team_discord_access_remove",
+          entityType: "registration",
+          entityId: registration.id,
+          payload: {
+            action: "cancelled",
 
-          registrationId: registration.id,
+            registrationId: registration.id,
 
-          tournamentId: registration.tournament.id,
-          tournamentTitle: registration.tournament.title,
+            tournamentId: registration.tournament.id,
+            tournamentTitle: registration.tournament.title,
 
-          teamId: registration.team.id,
-          teamName: registration.team.name,
+            teamId: registration.team.id,
+            teamName: registration.team.name,
 
-          roleId: registration.discordRoleId,
-          roleName: registration.discordRoleName,
+            roleId: registration.discordRoleId,
+            roleName: registration.discordRoleName,
 
-          channelId: registration.discordChannelId,
-          channelName: registration.discordChannelName,
+            channelId: registration.discordChannelId,
+            channelName: registration.discordChannelName,
 
-          guildId: process.env.DISCORD_GUILD_ID,
+            guildId: process.env.DISCORD_GUILD_ID,
 
-          memberDiscordIds,
+            memberDiscordIds,
+          },
         },
-      },
-    });
+      });
+    }
   });
 
-  await Promise.all([
-    createRealtimeEvent({
-      type: "registration.cancelled",
-      audience: "admin",
-      entityType: "registration",
-      entityId: registration.id,
-      payload: {
-        registrationId: registration.id,
-        tournamentId: registration.tournamentId,
-        teamId: registration.teamId,
-        teamName: registration.team.name,
-      },
-    }),
-    createRealtimeEvent({
-      type: "tournament.registration.updated",
-      audience: "public",
-      entityType: "tournament",
-      entityId: registration.tournamentId,
-      payload: {
-        tournamentId: registration.tournamentId,
-      },
-    }),
-  ]);
+  await publishRegistrationUpdate({
+    type: "registration.cancelled",
+    registrationId: registration.id,
+    tournamentId: registration.tournamentId,
+    teamId: registration.teamId,
+    teamName: registration.team.name,
+  });
 
   revalidateRegistrationViews(registration.tournamentId);
 
