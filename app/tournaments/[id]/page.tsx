@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
 import { auth } from "@/auth";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import ProfileNotice from "@/components/ProfileNotice";
+import TournamentDetailsRealtime from "@/components/TournamentDetailsRealtime";
 import { TournamentRegistrationPanel } from "@/components/TournamentRegistrationPanel";
 import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
-import TournamentDetailsRealtime from "@/components/TournamentDetailsRealtime";
-
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +40,7 @@ function StatusBadge({ status }: { status: string }) {
     pending: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
     closed: "border-red-400/25 bg-red-500/10 text-red-300",
     cancelled: "border-white/10 bg-white/5 text-gray-300",
+    ended: "border-blue-400/25 bg-blue-500/10 text-blue-300",
     rejected: "border-red-400/25 bg-red-500/10 text-red-300",
   };
 
@@ -85,6 +86,15 @@ function formatDate(date: Date) {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+function getSnapshotMemberCount(
+  snapshotMembers: unknown,
+  fallbackCount: number,
+) {
+  return Array.isArray(snapshotMembers)
+    ? snapshotMembers.length
+    : fallbackCount;
 }
 
 function PlacementBadge({ placement }: { placement: number }) {
@@ -201,6 +211,9 @@ export default async function TournamentDetailsPage({
           placement: true,
           points: true,
           note: true,
+          snapshotTeamName: true,
+          snapshotTeamGame: true,
+          snapshotMembers: true,
           team: {
             select: {
               id: true,
@@ -232,12 +245,14 @@ export default async function TournamentDetailsPage({
             in: ["registered", "approved", "rejected"],
           },
         },
-
         select: {
           id: true,
           status: true,
           teamId: true,
           createdAt: true,
+          snapshotTeamName: true,
+          snapshotTeamGame: true,
+          snapshotMembers: true,
           team: {
             select: {
               id: true,
@@ -426,39 +441,46 @@ export default async function TournamentDetailsPage({
               <SectionHeader label="Results" title="Final standings" />
 
               <div className="divide-y divide-white/10">
-                {tournament.results.map((result) => (
-                  <article
-                    key={result.id}
-                    className="grid gap-4 px-5 py-4 md:grid-cols-[70px_minmax(0,1fr)_130px_120px] md:items-center"
-                  >
-                    <PlacementBadge placement={result.placement} />
+                {tournament.results.map((result) => {
+                  const teamName = result.snapshotTeamName || result.team.name;
+                  const teamGame = result.snapshotTeamGame || result.team.game;
+                  const memberCount = getSnapshotMemberCount(
+                    result.snapshotMembers,
+                    result.team.members.length,
+                  );
 
-                    <div>
-                      <p className="font-black text-white">
-                        {result.team.name}
-                      </p>
+                  return (
+                    <article
+                      key={result.id}
+                      className="grid gap-4 px-5 py-4 md:grid-cols-[70px_minmax(0,1fr)_130px_120px] md:items-center"
+                    >
+                      <PlacementBadge placement={result.placement} />
 
-                      <p className="mt-1 text-sm text-gray-400">
-                        {result.team.game} · {result.team.members.length} player
-                        {result.team.members.length === 1 ? "" : "s"}
-                      </p>
+                      <div>
+                        <p className="font-black text-white">{teamName}</p>
 
-                      {result.note && (
-                        <p className="mt-2 text-sm text-gray-500">
-                          {result.note}
+                        <p className="mt-1 text-sm text-gray-400">
+                          {teamGame} · {memberCount} player
+                          {memberCount === 1 ? "" : "s"}
                         </p>
-                      )}
-                    </div>
 
-                    <p className="text-sm font-black text-emerald-300">
-                      {result.points} points
-                    </p>
+                        {result.note && (
+                          <p className="mt-2 text-sm text-gray-500">
+                            {result.note}
+                          </p>
+                        )}
+                      </div>
 
-                    <p className="text-sm font-bold text-gray-300">
-                      #{result.placement}
-                    </p>
-                  </article>
-                ))}
+                      <p className="text-sm font-black text-emerald-300">
+                        {result.points} points
+                      </p>
+
+                      <p className="text-sm font-bold text-gray-300">
+                        #{result.placement}
+                      </p>
+                    </article>
+                  );
+                })}
               </div>
             </section>
           )}
@@ -491,34 +513,42 @@ export default async function TournamentDetailsPage({
                 </div>
               ) : (
                 <div className="divide-y divide-white/10">
-                  {tournament.registrations.map((registration) => (
-                    <div
-                      key={registration.id}
-                      className="grid gap-4 px-5 py-4 md:grid-cols-[1fr_120px_160px_120px] md:items-center"
-                    >
-                      <div>
-                        <p className="font-black text-white">
-                          {registration.team.name}
+                  {tournament.registrations.map((registration) => {
+                    const teamName =
+                      registration.snapshotTeamName || registration.team.name;
+                    const teamGame =
+                      registration.snapshotTeamGame || registration.team.game;
+                    const memberCount = getSnapshotMemberCount(
+                      registration.snapshotMembers,
+                      registration.team.members.length,
+                    );
+
+                    return (
+                      <div
+                        key={registration.id}
+                        className="grid gap-4 px-5 py-4 md:grid-cols-[1fr_120px_160px_120px] md:items-center"
+                      >
+                        <div>
+                          <p className="font-black text-white">{teamName}</p>
+
+                          <p className="mt-1 text-sm text-gray-400">
+                            {teamGame} · {memberCount} player
+                            {memberCount === 1 ? "" : "s"}
+                          </p>
+                        </div>
+
+                        <StatusBadge status={registration.status} />
+
+                        <p className="text-sm text-gray-400">
+                          {formatDate(registration.createdAt)}
                         </p>
 
-                        <p className="mt-1 text-sm text-gray-400">
-                          {registration.team.game} ·{" "}
-                          {registration.team.members.length} players
+                        <p className="text-sm font-bold text-gray-300">
+                          {memberCount}/{tournament.teamSize} players
                         </p>
                       </div>
-
-                      <StatusBadge status={registration.status} />
-
-                      <p className="text-sm text-gray-400">
-                        {formatDate(registration.createdAt)}
-                      </p>
-
-                      <p className="text-sm font-bold text-gray-300">
-                        {registration.team.members.length}/{tournament.teamSize}{" "}
-                        players
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>

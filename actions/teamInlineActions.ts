@@ -95,6 +95,9 @@ async function getBlockingActiveRegistration({
         in: ["registered", "approved"],
       },
       tournament: {
+        status: {
+          notIn: ["ended", "cancelled"],
+        },
         teamSize: {
           gt: memberCountAfterChange,
         },
@@ -117,6 +120,11 @@ async function getActiveTeamRegistration(teamId: string) {
       teamId,
       status: {
         notIn: ["rejected", "cancelled", "canceled"],
+      },
+      tournament: {
+        status: {
+          notIn: ["ended", "cancelled"],
+        },
       },
     },
     select: {

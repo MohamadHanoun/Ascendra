@@ -116,7 +116,7 @@ async function registerTeamForTournament(
     return fail("Registration is currently closed for this tournament.");
   }
 
-  if (["closed", "cancelled"].includes(tournament.status)) {
+  if (["closed", "cancelled", "ended"].includes(tournament.status)) {
     return fail("This tournament is not available for registration.");
   }
 

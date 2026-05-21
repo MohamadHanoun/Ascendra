@@ -19,6 +19,7 @@ type TournamentResultItem = {
   placement: number;
   points: number;
   note: string | null;
+  snapshotTeamName: string | null;
   team: {
     name: string;
   };
@@ -245,46 +246,50 @@ export default function AdminTournamentResultsPanel({
             </div>
           ) : (
             <div className="grid gap-3 p-4">
-              {sortedResults.map((result) => (
-                <article
-                  key={result.id}
-                  className="grid gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 lg:grid-cols-[70px_minmax(0,1fr)_100px_140px] lg:items-center"
-                >
-                  <PlacementBadge placement={result.placement} />
+              {sortedResults.map((result) => {
+                const teamName = result.snapshotTeamName || result.team.name;
 
-                  <div>
-                    <p className="font-black text-white">{result.team.name}</p>
-
-                    {result.note && (
-                      <p className="mt-1 text-sm text-gray-400">
-                        {result.note}
-                      </p>
-                    )}
-                  </div>
-
-                  <p className="text-sm font-black text-emerald-300">
-                    {result.points} pts
-                  </p>
-
-                  <InlineAdminTournamentForm
-                    action={deleteTournamentResultInline}
-                    buttonLabel="Delete"
-                    pendingLabel="Deleting..."
-                    variant="danger"
-                    className="grid gap-2"
-                    confirmTitle="Delete tournament result?"
-                    confirmDescription={`Delete ${result.team.name}'s result from ${tournamentTitle}?`}
-                    confirmLabel="Delete result"
+                return (
+                  <article
+                    key={result.id}
+                    className="grid gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 lg:grid-cols-[70px_minmax(0,1fr)_100px_140px] lg:items-center"
                   >
-                    <input type="hidden" name="resultId" value={result.id} />
-                    <input
-                      type="hidden"
-                      name="tournamentId"
-                      value={tournamentId}
-                    />
-                  </InlineAdminTournamentForm>
-                </article>
-              ))}
+                    <PlacementBadge placement={result.placement} />
+
+                    <div>
+                      <p className="font-black text-white">{teamName}</p>
+
+                      {result.note && (
+                        <p className="mt-1 text-sm text-gray-400">
+                          {result.note}
+                        </p>
+                      )}
+                    </div>
+
+                    <p className="text-sm font-black text-emerald-300">
+                      {result.points} pts
+                    </p>
+
+                    <InlineAdminTournamentForm
+                      action={deleteTournamentResultInline}
+                      buttonLabel="Delete"
+                      pendingLabel="Deleting..."
+                      variant="danger"
+                      className="grid gap-2"
+                      confirmTitle="Delete tournament result?"
+                      confirmDescription={`Delete ${teamName}'s result from ${tournamentTitle}?`}
+                      confirmLabel="Delete result"
+                    >
+                      <input type="hidden" name="resultId" value={result.id} />
+                      <input
+                        type="hidden"
+                        name="tournamentId"
+                        value={tournamentId}
+                      />
+                    </InlineAdminTournamentForm>
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>

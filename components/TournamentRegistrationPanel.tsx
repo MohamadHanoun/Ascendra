@@ -416,6 +416,14 @@ function TournamentRegistrationPanel({
     ["registered", "approved"].includes(registration.status),
   );
 
+  if (tournamentStatus === "ended") {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm font-black text-gray-300">
+        Tournament ended.
+      </div>
+    );
+  }
+
   if (!isLoggedIn) {
     return (
       <PanelNotice
