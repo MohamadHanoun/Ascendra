@@ -9,11 +9,10 @@ import { useEffect, useRef, useState } from "react";
 const mainLinks = [
   { href: "/", label: "Home" },
   { href: "/tournaments", label: "Tournaments" },
-  { href: "/leaderboard", label: "Leaderboard" },
   { href: "/announcements", label: "News" },
 ];
 
-const footerOnlyLinks = [
+const mobileSecondaryLinks = [
   { href: "/about", label: "About" },
   { href: "/rules", label: "Rules" },
   { href: "/roles", label: "Roles" },
@@ -35,9 +34,9 @@ function AscendraMark({ small = false }: { small?: boolean }) {
     <Image
       src="/images/brand/ascendra-logo-mark.png"
       alt="Ascendra"
-      width={small ? 32 : 40}
-      height={small ? 32 : 40}
-      className={`${small ? "h-8 w-8" : "h-10 w-10"} object-contain`}
+      width={small ? 32 : 44}
+      height={small ? 32 : 44}
+      className={`${small ? "h-8 w-8" : "h-11 w-11"} object-contain`}
     />
   );
 }
@@ -57,13 +56,21 @@ function BrandLogo() {
       <Image
         src="/images/brand/ascendra-wordmark.png"
         alt="Ascendra"
-        width={170}
-        height={45}
+        width={165}
+        height={44}
         priority
-        className="h-10 w-auto object-contain"
+        className="hidden h-10 w-auto object-contain sm:block"
       />
     </Link>
   );
+}
+
+function isActivePath(pathname: string, href: string) {
+  if (href === "/") {
+    return pathname === "/";
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 function NavLink({
@@ -76,7 +83,7 @@ function NavLink({
   onClick?: () => void;
 }) {
   const pathname = usePathname();
-  const isActive = pathname === href;
+  const isActive = isActivePath(pathname, href);
 
   return (
     <Link
@@ -90,6 +97,40 @@ function NavLink({
     >
       {label}
     </Link>
+  );
+}
+
+function UserAvatar({
+  userName,
+  userImage,
+  small = false,
+}: {
+  userName: string | null;
+  userImage: string | null;
+  small?: boolean;
+}) {
+  const size = small ? 30 : 36;
+
+  if (userImage) {
+    return (
+      <Image
+        src={userImage}
+        alt={userName || "User"}
+        width={size}
+        height={size}
+        className="rounded-full"
+      />
+    );
+  }
+
+  return (
+    <span
+      className={`grid place-items-center rounded-full bg-violet-500/15 ${
+        small ? "h-8 w-8" : "h-9 w-9"
+      }`}
+    >
+      <AscendraMark small />
+    </span>
   );
 }
 
@@ -140,6 +181,7 @@ export default function NavbarClient({
   function confirmLogout() {
     setIsLogoutConfirmOpen(true);
     setIsProfileOpen(false);
+    setIsMenuOpen(false);
   }
 
   function handleLogout() {
@@ -168,19 +210,7 @@ export default function NavbarClient({
                   onClick={() => setIsProfileOpen((value) => !value)}
                   className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 transition hover:bg-white/10"
                 >
-                  {userImage ? (
-                    <Image
-                      src={userImage}
-                      alt={userName || "User"}
-                      width={30}
-                      height={30}
-                      className="rounded-full"
-                    />
-                  ) : (
-                    <span className="grid h-8 w-8 place-items-center rounded-full bg-violet-500/15">
-                      <AscendraMark small />
-                    </span>
-                  )}
+                  <UserAvatar userName={userName} userImage={userImage} small />
 
                   <span className="max-w-[120px] truncate text-sm font-bold text-white">
                     Profile
@@ -189,26 +219,14 @@ export default function NavbarClient({
 
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-white/10 bg-[#11121d] p-3 shadow-2xl shadow-black/40">
-                    <div className="mb-3 flex items-center gap-3 rounded-xl bg-white/[0.04] p-3">
-                      {userImage ? (
-                        <Image
-                          src={userImage}
-                          alt={userName || "User"}
-                          width={36}
-                          height={36}
-                          className="rounded-full"
-                        />
-                      ) : (
-                        <span className="grid h-9 w-9 place-items-center rounded-full bg-violet-500/15">
-                          <AscendraMark small />
-                        </span>
-                      )}
+                    <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/[0.04] p-3">
+                      <UserAvatar userName={userName} userImage={userImage} />
 
                       <div className="min-w-0">
                         <p className="truncate text-sm font-bold text-white">
                           {userName || "Ascendra Player"}
                         </p>
-                        <p className="text-xs text-gray-400">Player profile</p>
+                        <p className="text-xs text-gray-400">Signed in</p>
                       </div>
                     </div>
 
@@ -216,11 +234,13 @@ export default function NavbarClient({
                       href="/profile"
                       className="block rounded-xl px-4 py-3 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
                     >
-                      View Profile
+                      Profile
                     </Link>
 
                     {isAdmin && (
                       <>
+                        <div className="my-2 border-t border-white/10" />
+
                         <Link
                           href="/admin"
                           className="block rounded-xl px-4 py-3 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
@@ -258,7 +278,7 @@ export default function NavbarClient({
               </Link>
             )}
 
-            {discordInvite ? (
+            {discordInvite && (
               <a
                 href={discordInvite}
                 target="_blank"
@@ -267,10 +287,6 @@ export default function NavbarClient({
               >
                 Join Discord
               </a>
-            ) : (
-              <span className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-2 text-sm font-black text-gray-500">
-                Discord soon
-              </span>
             )}
           </div>
 
@@ -304,17 +320,11 @@ export default function NavbarClient({
                       onClick={() => setIsMenuOpen(false)}
                       className="flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-center"
                     >
-                      {userImage ? (
-                        <Image
-                          src={userImage}
-                          alt={userName || "User"}
-                          width={30}
-                          height={30}
-                          className="rounded-full"
-                        />
-                      ) : (
-                        <AscendraMark small />
-                      )}
+                      <UserAvatar
+                        userName={userName}
+                        userImage={userImage}
+                        small
+                      />
 
                       <span className="text-sm font-bold text-gray-200">
                         Profile
@@ -359,7 +369,7 @@ export default function NavbarClient({
                   </Link>
                 )}
 
-                {discordInvite ? (
+                {discordInvite && (
                   <a
                     href={discordInvite}
                     target="_blank"
@@ -368,19 +378,15 @@ export default function NavbarClient({
                   >
                     Join Discord
                   </a>
-                ) : (
-                  <span className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm font-black text-gray-500">
-                    Discord soon
-                  </span>
                 )}
 
                 <div className="mt-3 border-t border-white/10 pt-4">
                   <p className="mb-2 px-4 text-xs font-black uppercase tracking-[0.16em] text-gray-500">
-                    More pages
+                    More
                   </p>
 
                   <div className="grid gap-2">
-                    {footerOnlyLinks.map((link) => (
+                    {mobileSecondaryLinks.map((link) => (
                       <NavLink
                         key={link.href}
                         href={link.href}
@@ -404,7 +410,7 @@ export default function NavbarClient({
             </h2>
 
             <p className="mb-6 leading-7 text-gray-300">
-              Are you sure you want to log out of your Ascendra account?
+              Are you sure you want to log out?
             </p>
 
             <div className="grid gap-3 sm:flex sm:justify-end">
@@ -421,7 +427,7 @@ export default function NavbarClient({
                 onClick={handleLogout}
                 className="rounded-xl bg-red-500 px-5 py-3 font-bold text-white transition hover:bg-red-400"
               >
-                Yes, logout
+                Logout
               </button>
             </div>
           </div>
