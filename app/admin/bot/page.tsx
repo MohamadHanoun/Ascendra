@@ -49,32 +49,37 @@ export default async function AdminBotPage({
       <div className="relative z-10">
         <Navbar />
 
-        <section className="mx-auto max-w-[1440px] px-6 pb-10 pt-14 lg:px-10">
-          <div className="rounded-[32px] border border-white/10 bg-white/[0.045] p-6 shadow-2xl shadow-black/25 backdrop-blur">
-            <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-              <div>
-                <p className="text-sm font-black uppercase tracking-[0.2em] text-violet-300">
-                  Bot operations
-                </p>
+        <section className="relative min-h-[360px] overflow-hidden">
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: 'url("/images/backgrounds/admin-hero.webp")',
+            }}
+          />
 
-                <h1 className="mt-3 text-4xl font-black uppercase tracking-tight text-white md:text-5xl">
-                  Bot Dashboard
-                </h1>
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.94)_0%,rgba(7,8,17,0.70)_48%,rgba(7,8,17,0.86)_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
-                <p className="mt-4 max-w-3xl text-sm leading-7 text-gray-400">
-                  Manage Discord bot settings, monitor queue activity, review
-                  failed operations, and retry bot work from one focused admin
-                  dashboard.
-                </p>
-              </div>
+          <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
+            <Link
+              href="/admin"
+              className="mb-6 inline-flex rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
+            >
+              ← Back to Admin Panel
+            </Link>
 
-              <Link
-                href="/admin"
-                className="w-fit rounded-xl border border-white/10 bg-black/25 px-5 py-3 text-sm font-black text-gray-300 transition hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
-              >
-                Back to Admin Panel
-              </Link>
-            </div>
+            <p className="mb-4 text-sm font-black uppercase tracking-[0.22em] text-violet-300">
+              Bot operations
+            </p>
+
+            <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.04] tracking-tight text-white md:text-6xl">
+              Bot Dashboard
+            </h1>
+
+            <p className="mt-5 max-w-3xl text-base leading-7 text-gray-300">
+              Manage Discord bot settings, monitor queue activity, and review
+              bot operations.
+            </p>
           </div>
         </section>
 
@@ -82,7 +87,7 @@ export default async function AdminBotPage({
           <AdminToast message={params.message} type={toastType} />
         )}
 
-        <section className="mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
+        <section className="relative -mt-14 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
           <AdminBotSettingsPanel />
 
           <AdminBotEventsPanel

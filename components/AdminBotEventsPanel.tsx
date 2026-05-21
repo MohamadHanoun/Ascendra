@@ -10,18 +10,11 @@ import AdminBotAutoRefresh from "@/components/AdminBotAutoRefresh";
 import EmptyState from "@/components/EmptyState";
 import { prisma } from "@/lib/prisma";
 
-
 type BotEventStatus = "queued" | "processing" | "completed" | "failed";
 
 type AdminBotEventsPanelProps = {
   statusFilter?: string;
   eventTypeFilter?: string;
-};
-
-type LogField = {
-  name: string;
-  value: string;
-  inline?: boolean;
 };
 
 const allowedBotStatuses = [
@@ -35,11 +28,11 @@ const allowedBotStatuses = [
 type BotStatusFilter = (typeof allowedBotStatuses)[number] | "all";
 
 const statusStyles: Record<string, string> = {
-  queued: "border-yellow-400/30 bg-yellow-500/10 text-yellow-200",
-  processing: "border-blue-400/30 bg-blue-500/10 text-blue-200",
-  completed: "border-emerald-400/30 bg-emerald-500/10 text-emerald-200",
-  failed: "border-red-400/30 bg-red-500/10 text-red-200",
-  cancelled: "border-gray-400/30 bg-gray-500/10 text-gray-200",
+  queued: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+  processing: "border-blue-400/25 bg-blue-500/10 text-blue-300",
+  completed: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+  failed: "border-red-400/25 bg-red-500/10 text-red-300",
+  cancelled: "border-white/10 bg-white/5 text-gray-300",
 };
 
 function normalizeStatusFilter(value?: string): BotStatusFilter {
@@ -173,8 +166,8 @@ function getBotStatus(lastHeartbeatAt?: string) {
 function StatusBadge({ status }: { status: string }) {
   return (
     <span
-      className={`rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.12em] ${
-        statusStyles[status] || "border-white/10 bg-white/10 text-gray-200"
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize ${
+        statusStyles[status] || "border-white/10 bg-white/5 text-gray-300"
       }`}
     >
       {status}
@@ -195,10 +188,10 @@ function FilterPill({
     <Link
       href={href}
       scroll={false}
-      className={`rounded-xl border px-4 py-2 text-xs font-black uppercase tracking-[0.12em] transition ${
+      className={`rounded-xl border px-4 py-2 text-xs font-black transition ${
         active
           ? "border-violet-400/35 bg-violet-500/15 text-white"
-          : "border-white/10 bg-black/25 text-gray-400 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
+          : "border-white/10 bg-black/20 text-gray-400 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
       }`}
     >
       {label}
@@ -206,48 +199,14 @@ function FilterPill({
   );
 }
 
-function MiniMetric({
-  label,
-  value,
-  description,
-}: {
-  label: string;
-  value: string;
-  description: string;
-}) {
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-500">
+    <div>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
         {label}
       </p>
 
-      <p className="mt-2 truncate text-lg font-black text-white">{value}</p>
-
-      <p className="mt-1 text-xs leading-5 text-gray-500">{description}</p>
-    </div>
-  );
-}
-
-function EventCountCard({
-  label,
-  value,
-  status,
-}: {
-  label: string;
-  value: number;
-  status: BotEventStatus;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-500">
-          {label}
-        </p>
-
-        <StatusBadge status={status} />
-      </div>
-
-      <p className="mt-4 text-3xl font-black text-white">{value}</p>
+      <p className="mt-1 truncate text-2xl font-black text-white">{value}</p>
     </div>
   );
 }
@@ -257,6 +216,7 @@ async function retryBotEventFormAction(formData: FormData) {
 
   await retryBotEventInline(formData);
 }
+
 async function cancelBotEventFormAction(formData: FormData) {
   "use server";
 
@@ -280,7 +240,7 @@ function RetryButton({ eventId, status }: { eventId: string; status: string }) {
 
       <button
         type="submit"
-        className="rounded-xl border border-violet-400/35 bg-violet-500/15 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-violet-100 transition hover:border-violet-300 hover:bg-violet-500/25"
+        className="rounded-xl border border-violet-400/35 bg-violet-500/15 px-4 py-2 text-xs font-black text-violet-100 transition hover:bg-violet-500/25"
       >
         Retry
       </button>
@@ -305,7 +265,7 @@ function CancelButton({
 
       <button
         type="submit"
-        className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-red-200 transition hover:border-red-300/40 hover:bg-red-500/15"
+        className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-2 text-xs font-black text-red-200 transition hover:bg-red-500/15"
       >
         Cancel
       </button>
@@ -412,139 +372,64 @@ export default async function AdminBotEventsPanel({
   const botStatus = getBotStatus(lastHeartbeatAt);
 
   return (
-    <div className="grid gap-8">
+    <section className="grid gap-6">
       <AdminBotAutoRefresh />
 
-      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/20">
-        <div className="flex flex-col justify-between gap-6 xl:flex-row xl:items-start">
+      <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+        <div className="grid gap-5 border-b border-white/10 px-5 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
-              Bot control
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+              Bot events
             </p>
 
-            <h2 className="mt-2 text-3xl font-black text-white">Bot events</h2>
-
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
-              Track Discord operations, bot status, and failed work from one
-              admin view.
-            </p>
-          </div>
-
-          <div
-            className={`rounded-2xl border px-5 py-4 ${
-              botStatus.online
-                ? "border-emerald-400/25 bg-emerald-500/10"
-                : "border-red-400/25 bg-red-500/10"
-            }`}
-          >
-            <p
-              className={`text-xs font-black uppercase tracking-[0.16em] ${
-                botStatus.online ? "text-emerald-300" : "text-red-300"
-              }`}
-            >
-              Bot status
-            </p>
-
-            <p className="mt-2 text-2xl font-black text-white">
-              {botStatus.label}
-            </p>
-
-            <p className="mt-1 max-w-sm text-sm leading-6 text-gray-400">
-              {botStatus.description}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MiniMetric
-            label="Bot account"
-            value={botTag}
-            description={`Guild: ${guildId}`}
-          />
-
-          <MiniMetric
-            label="Last heartbeat"
-            value={formatDate(botStatus.date)}
-            description={`Process uptime: ${uptime}`}
-          />
-
-          <MiniMetric
-            label="Last processed"
-            value={lastProcessedEvent?.type || "-"}
-            description={
-              lastProcessedEvent?.processedAt
-                ? formatDate(lastProcessedEvent.processedAt)
-                : "No processed event yet."
-            }
-          />
-
-          <MiniMetric
-            label="Last event ID"
-            value={shortenId(lastProcessedEvent?.id)}
-            description="Most recent completed or failed operation."
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <EventCountCard label="Queued" value={queuedCount} status="queued" />
-        <EventCountCard
-          label="Processing"
-          value={processingCount}
-          status="processing"
-        />
-        <EventCountCard
-          label="Completed"
-          value={completedCount}
-          status="completed"
-        />
-        <EventCountCard label="Failed" value={failedCount} status="failed" />
-      </div>
-      <section className="grid gap-4 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
-        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-          <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
-              Maintenance
-            </p>
-
-            <h3 className="mt-2 text-2xl font-black text-white">
-              Bot event cleanup
-            </h3>
+            <h2 className="mt-1 text-xl font-black text-white">
+              Operations queue
+            </h2>
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
-              Remove old completed or cancelled bot events. Failed, queued, and
-              processing events are kept for safety.
+              Monitor Discord operations, failed work, and queue status.
             </p>
           </div>
 
-          <form
-            action={cleanupBotEventsFormAction}
-            className="flex flex-wrap gap-3"
-          >
-            <input type="hidden" name="days" value="30" />
-
-            <button
-              type="submit"
-              className="rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-gray-300 transition hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
-            >
-              Clean older than 30 days
-            </button>
-          </form>
+          <StatusBadge status={botStatus.label.toLowerCase()} />
         </div>
-      </section>
 
-      <section className="grid gap-4 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
-        <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
+        <div className="grid gap-5 border-b border-white/10 p-5 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat label="Queued" value={queuedCount} />
+          <Stat label="Processing" value={processingCount} />
+          <Stat label="Completed" value={completedCount} />
+          <Stat label="Failed" value={failedCount} />
+        </div>
+
+        <div className="grid gap-5 p-5 md:grid-cols-2 xl:grid-cols-4">
+          <Stat label="Bot account" value={botTag} />
+          <Stat label="Guild" value={shortenId(guildId)} />
+          <Stat label="Heartbeat" value={formatDate(botStatus.date)} />
+          <Stat label="Uptime" value={uptime} />
+        </div>
+
+        <div className="border-t border-white/10 px-5 py-4">
+          <p className="text-sm leading-6 text-gray-400">
+            Last processed:{" "}
+            <span className="font-black text-white">
+              {lastProcessedEvent?.type || "-"}
+            </span>{" "}
+            · {formatDate(lastProcessedEvent?.processedAt || null)} ·{" "}
+            {shortenId(lastProcessedEvent?.id)}
+          </p>
+        </div>
+      </div>
+
+      <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+        <div className="border-b border-white/10 px-5 py-4">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
             Filters
           </p>
 
-          <h3 className="mt-2 text-2xl font-black text-white">
-            Bot event filters
-          </h3>
+          <h3 className="mt-1 text-xl font-black text-white">Event filters</h3>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-4 p-5">
           <div className="flex flex-wrap gap-2">
             {["all", ...allowedBotStatuses].map((status) => (
               <FilterPill
@@ -575,6 +460,29 @@ export default async function AdminBotEventsPanel({
         </div>
       </section>
 
+      <section className="flex flex-col justify-between gap-4 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 lg:flex-row lg:items-center">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+            Cleanup
+          </p>
+
+          <p className="mt-1 text-sm leading-6 text-gray-400">
+            Remove completed or cancelled bot events older than 30 days.
+          </p>
+        </div>
+
+        <form action={cleanupBotEventsFormAction}>
+          <input type="hidden" name="days" value="30" />
+
+          <button
+            type="submit"
+            className="rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
+          >
+            Clean old events
+          </button>
+        </form>
+      </section>
+
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
@@ -587,100 +495,97 @@ export default async function AdminBotEventsPanel({
         </div>
 
         <p className="text-sm text-gray-500">
-          Showing latest {events.length} event{events.length === 1 ? "" : "s"}
+          Showing {events.length} event{events.length === 1 ? "" : "s"}
         </p>
       </div>
 
       {events.length === 0 ? (
         <EmptyState
-          title="No bot events found."
+          title="No bot events found"
           description="Change or clear the filters to see more bot events."
         />
       ) : (
-        <div className="grid gap-4">
-          {events.map((event) => (
-            <article
-              key={event.id}
-              className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20"
-            >
-              <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-start">
-                <div className="min-w-0">
-                  <div className="mb-3 flex flex-wrap items-center gap-3">
-                    <StatusBadge status={event.status} />
+        <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+          <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[160px_minmax(0,1fr)_120px_130px_160px] xl:gap-5">
+            <span>Status</span>
+            <span>Event</span>
+            <span>Attempts</span>
+            <span>Created</span>
+            <span>Actions</span>
+          </div>
 
-                    <span className="rounded-full border border-white/10 bg-black/25 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-gray-300">
+          <div className="divide-y divide-white/10">
+            {events.map((event) => (
+              <article
+                key={event.id}
+                className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.035]"
+              >
+                <div className="grid gap-4 xl:grid-cols-[160px_minmax(0,1fr)_120px_130px_160px] xl:items-center xl:gap-5">
+                  <StatusBadge status={event.status} />
+
+                  <div className="min-w-0">
+                    <p className="truncate font-black text-white">
                       {event.type}
-                    </span>
-                  </div>
-
-                  <h3 className="break-words text-xl font-black text-white">
-                    {event.entityType || "event"} · {shortenId(event.entityId)}
-                  </h3>
-
-                  <div className="mt-3 grid gap-2 text-sm text-gray-400 md:grid-cols-2 xl:grid-cols-4">
-                    <p>
-                      <span className="font-bold text-gray-300">Created:</span>{" "}
-                      {formatDate(event.createdAt)}
                     </p>
 
-                    <p>
-                      <span className="font-bold text-gray-300">Updated:</span>{" "}
-                      {formatDate(event.updatedAt)}
-                    </p>
-
-                    <p>
-                      <span className="font-bold text-gray-300">Attempts:</span>{" "}
-                      {event.attempts}/{event.maxAttempts}
-                    </p>
-
-                    <p>
-                      <span className="font-bold text-gray-300">
-                        Processed:
-                      </span>{" "}
-                      {formatDate(event.processedAt)}
+                    <p className="mt-1 text-sm text-gray-500">
+                      {event.entityType || "event"} ·{" "}
+                      {shortenId(event.entityId)}
                     </p>
                   </div>
 
-                  {event.error && (
-                    <div className="mt-4 rounded-2xl border border-red-400/25 bg-red-500/10 p-4 text-sm leading-6 text-red-100">
-                      {event.error}
-                    </div>
-                  )}
+                  <p className="text-sm text-gray-300">
+                    {event.attempts}/{event.maxAttempts}
+                  </p>
+
+                  <p className="text-sm text-gray-500">
+                    {formatDate(event.createdAt)}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2">
+                    <RetryButton eventId={event.id} status={event.status} />
+                    <CancelButton eventId={event.id} status={event.status} />
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <RetryButton eventId={event.id} status={event.status} />
-                  <CancelButton eventId={event.id} status={event.status} />
-                </div>
-              </div>
+                {event.error && (
+                  <p className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-200">
+                    {event.error}
+                  </p>
+                )}
 
-              <div className="mt-5 grid gap-3">
-                <details className="rounded-2xl border border-white/10 bg-black/25 p-4">
-                  <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.12em] text-gray-300">
-                    Payload
+                <details className="rounded-2xl border border-white/10 bg-black/20">
+                  <summary className="cursor-pointer px-4 py-3 text-sm font-black text-gray-300 transition hover:text-white">
+                    Payload and result
                   </summary>
 
-                  <pre className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-gray-300">
-                    {formatJsonPreview(event.payload)}
-                  </pre>
+                  <div className="grid gap-4 border-t border-white/10 p-4 lg:grid-cols-2">
+                    <div>
+                      <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                        Payload
+                      </p>
+
+                      <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-gray-300">
+                        {formatJsonPreview(event.payload)}
+                      </pre>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                        Result
+                      </p>
+
+                      <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-gray-300">
+                        {formatJsonPreview(event.result)}
+                      </pre>
+                    </div>
+                  </div>
                 </details>
-
-                {event.result && (
-                  <details className="rounded-2xl border border-white/10 bg-black/25 p-4">
-                    <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.12em] text-gray-300">
-                      Result
-                    </summary>
-
-                    <pre className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-gray-300">
-                      {formatJsonPreview(event.result)}
-                    </pre>
-                  </details>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        </section>
       )}
-    </div>
+    </section>
   );
 }
