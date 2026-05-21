@@ -1,86 +1,105 @@
+import type { ReactNode } from "react";
+
 import {
   approveRegistrationInline,
   cancelRegistrationInline,
   rejectRegistrationInline,
 } from "@/actions/adminRegistrationInlineActions";
-import InlineAdminRegistrationForm from "@/components/InlineAdminRegistrationForm";
-import ProfileNotice from "@/components/ProfileNotice";
-import { prisma } from "@/lib/prisma";
-import AdminRegistrationsRealtime from "@/components/AdminRegistrationsRealtime";
 import {
   forceRemoveRegistrationDiscordAccess,
   forceSyncRegistrationDiscordAccess,
 } from "@/actions/adminRegistrationDiscordSyncActions";
+import AdminRegistrationsRealtime from "@/components/AdminRegistrationsRealtime";
+import InlineAdminRegistrationForm from "@/components/InlineAdminRegistrationForm";
+import ProfileNotice from "@/components/ProfileNotice";
+import { prisma } from "@/lib/prisma";
 
 type AdminRegistrationListProps = {
   message?: string;
   error?: string;
 };
 
+type Tone = "green" | "yellow" | "red" | "gray" | "violet";
+
+function toneClass(tone: Tone) {
+  const styles: Record<Tone, string> = {
+    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    red: "border-red-400/25 bg-red-500/10 text-red-300",
+    gray: "border-white/10 bg-white/5 text-gray-300",
+    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
+  };
+
+  return styles[tone];
+}
+
+function Pill({
+  children,
+  tone = "gray",
+}: {
+  children: ReactNode;
+  tone?: Tone;
+}) {
+  return (
+    <span
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${toneClass(
+        tone,
+      )}`}
+    >
+      {children}
+    </span>
+  );
+}
+
 function StatusBadge({ status }: { status: string }) {
   const normalizedStatus = status.toLowerCase();
 
-  const styles: Record<string, string> = {
-    registered: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-    approved: "border-emerald-400/20 bg-emerald-500/[0.06] text-emerald-300/80",
-    rejected: "border-red-400/25 bg-red-500/10 text-red-300",
-    cancelled: "border-white/10 bg-white/5 text-gray-300",
+  const tones: Record<string, Tone> = {
+    registered: "violet",
+    approved: "green",
+    rejected: "red",
+    cancelled: "gray",
+  };
+
+  const labels: Record<string, string> = {
+    registered: "Waiting review",
+    approved: "Approved",
+    rejected: "Rejected",
+    cancelled: "Cancelled",
   };
 
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize ${
-        styles[normalizedStatus] || "border-white/10 bg-white/5 text-gray-300"
-      }`}
-    >
-      {status}
-    </span>
+    <Pill tone={tones[normalizedStatus] || "gray"}>
+      {labels[normalizedStatus] || status}
+    </Pill>
   );
 }
 
 function DiscordRoleBadge({ status }: { status: string }) {
   const normalizedStatus = status.toLowerCase();
 
-  const styles: Record<string, string> = {
-    not_needed: "border-white/10 bg-white/5 text-gray-400",
-    pending_create: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    active: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    pending_remove: "border-orange-400/25 bg-orange-500/10 text-orange-300",
-    removed: "border-white/10 bg-white/5 text-gray-400",
-    failed: "border-red-400/25 bg-red-500/10 text-red-300",
+  const tones: Record<string, Tone> = {
+    not_needed: "gray",
+    pending_create: "yellow",
+    active: "green",
+    pending_remove: "yellow",
+    removed: "gray",
+    failed: "red",
   };
 
   const labels: Record<string, string> = {
-    not_needed: "No role needed",
-    pending_create: "Role queued",
-    active: "Role active",
-    pending_remove: "Removal queued",
-    removed: "Role removed",
-    failed: "Bot failed",
+    not_needed: "No bot action",
+    pending_create: "Queued",
+    active: "Active",
+    pending_remove: "Remove queued",
+    removed: "Removed",
+    failed: "Failed",
   };
 
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${
-        styles[normalizedStatus] || "border-white/10 bg-white/5 text-gray-400"
-      }`}
-    >
+    <Pill tone={tones[normalizedStatus] || "gray"}>
       {labels[normalizedStatus] || status}
-    </span>
-  );
-}
-
-function RoleBadge({ leader }: { leader: boolean }) {
-  return (
-    <span
-      className={`w-fit rounded-full border px-3 py-1 text-xs font-black ${
-        leader
-          ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
-          : "border-violet-400/25 bg-violet-500/10 text-violet-200"
-      }`}
-    >
-      {leader ? "Leader" : "Member"}
-    </span>
+    </Pill>
   );
 }
 
@@ -96,26 +115,6 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-black/25 px-3 py-2">
-      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-500">
-        {label}
-      </p>
-
-      <p className="mt-1 text-sm font-black text-white">{value}</p>
-    </div>
-  );
-}
-
-function InfoLine({ label, value }: { label: string; value: string | number }) {
-  return (
-    <p className="text-sm text-gray-400">
-      {label}: <span className="font-black text-white">{value}</span>
-    </p>
-  );
-}
-
 function formatDate(date: Date | null) {
   if (!date) {
     return "Not reviewed";
@@ -127,96 +126,249 @@ function formatDate(date: Date | null) {
   });
 }
 
-function getDiscordRoleDescription(status: string) {
-  const normalizedStatus = status.toLowerCase();
+function getReadinessIssues({
+  teamGame,
+  tournamentGame,
+  teamMembersCount,
+  teamSize,
+  pendingInvitesCount,
+  tournamentStatus,
+  isApproved,
+  approvedCount,
+  maxSlots,
+}: {
+  teamGame: string;
+  tournamentGame: string;
+  teamMembersCount: number;
+  teamSize: number;
+  pendingInvitesCount: number;
+  tournamentStatus: string;
+  isApproved: boolean;
+  approvedCount: number;
+  maxSlots: number;
+}) {
+  const issues: string[] = [];
 
-  if (normalizedStatus === "pending_create") {
-    return "The registration is approved. A future Discord bot can create the role and assign it to the team members.";
+  if (["ended", "cancelled"].includes(tournamentStatus)) {
+    issues.push("Tournament not active");
   }
 
-  if (normalizedStatus === "active") {
-    return "The Discord role is marked as active.";
+  if (teamGame !== tournamentGame) {
+    issues.push("Wrong game");
   }
 
-  if (normalizedStatus === "pending_remove") {
-    return "The registration is no longer active. A future Discord bot can remove the role or remove it from the team members.";
+  if (teamMembersCount < teamSize) {
+    issues.push(
+      `Needs ${teamSize - teamMembersCount} more player${
+        teamSize - teamMembersCount === 1 ? "" : "s"
+      }`,
+    );
   }
 
-  if (normalizedStatus === "failed") {
-    return "The last bot operation failed. The bot can retry or update this status later.";
+  if (pendingInvitesCount > 0) {
+    issues.push("Pending invites");
   }
 
-  if (normalizedStatus === "removed") {
-    return "The Discord role was removed or no longer needs action.";
+  if (!isApproved && approvedCount >= maxSlots) {
+    issues.push("No slots left");
   }
 
-  return "No Discord role action is needed for this registration.";
+  return issues;
+}
+
+function ReadinessBadge({ issues }: { issues: string[] }) {
+  if (issues.length === 0) {
+    return <Pill tone="green">Ready</Pill>;
+  }
+
+  return <Pill tone="yellow">{issues[0]}</Pill>;
+}
+
+function PlayerLine({
+  username,
+  discordId,
+  isLeader,
+}: {
+  username: string;
+  discordId: string;
+  isLeader: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 py-2">
+      <div className="min-w-0">
+        <p className="truncate font-black text-white">{username}</p>
+        <p className="break-all text-xs text-gray-500">{discordId}</p>
+      </div>
+
+      <Pill tone={isLeader ? "green" : "violet"}>
+        {isLeader ? "Leader" : "Member"}
+      </Pill>
+    </div>
+  );
+}
+
+function DiscordInfo({
+  status,
+  roleName,
+  roleId,
+  channelName,
+  channelId,
+  error,
+  requestedAt,
+  syncedAt,
+}: {
+  status: string;
+  roleName: string | null;
+  roleId: string | null;
+  channelName: string | null;
+  channelId: string | null;
+  error: string | null;
+  requestedAt: Date | null;
+  syncedAt: Date | null;
+}) {
+  return (
+    <div className="grid gap-3 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="font-black text-white">Discord automation</p>
+        <DiscordRoleBadge status={status} />
+      </div>
+
+      <div className="grid gap-2 text-gray-400">
+        <p>
+          Role:{" "}
+          <span className="font-bold text-white">
+            {roleName || "Not prepared"}
+          </span>
+        </p>
+        <p>
+          Role ID:{" "}
+          <span className="font-bold text-white">{roleId || "Pending"}</span>
+        </p>
+        <p>
+          Channel:{" "}
+          <span className="font-bold text-white">
+            {channelName || "Not prepared"}
+          </span>
+        </p>
+        <p>
+          Channel ID:{" "}
+          <span className="font-bold text-white">{channelId || "Pending"}</span>
+        </p>
+        <p>
+          Requested:{" "}
+          <span className="font-bold text-white">
+            {formatDate(requestedAt)}
+          </span>
+        </p>
+        <p>
+          Synced:{" "}
+          <span className="font-bold text-white">{formatDate(syncedAt)}</span>
+        </p>
+      </div>
+
+      {error && (
+        <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-red-300">
+          {error}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export default async function AdminRegistrationList({
   message,
   error,
 }: AdminRegistrationListProps) {
-  const registrations = await prisma.tournamentRegistration.findMany({
-    select: {
-      id: true,
-      status: true,
-      rejectionReason: true,
-      createdAt: true,
-      reviewedAt: true,
-      discordRoleStatus: true,
-      discordRoleName: true,
-      discordRoleId: true,
-      discordRoleError: true,
-      discordRoleRequestedAt: true,
-      discordRoleSyncedAt: true,
-      discordChannelName: true,
-      discordChannelId: true,
-      tournament: {
-        select: {
-          title: true,
-          date: true,
-        },
-      },
-      registeredBy: {
-        select: {
-          username: true,
-        },
-      },
-      team: {
-        select: {
-          id: true,
-          name: true,
-          game: true,
-          leaderId: true,
-          leader: {
-            select: {
-              username: true,
-            },
+  const [registrations, approvedGroups] = await Promise.all([
+    prisma.tournamentRegistration.findMany({
+      select: {
+        id: true,
+        tournamentId: true,
+        status: true,
+        rejectionReason: true,
+        createdAt: true,
+        reviewedAt: true,
+        discordRoleStatus: true,
+        discordRoleName: true,
+        discordRoleId: true,
+        discordRoleError: true,
+        discordRoleRequestedAt: true,
+        discordRoleSyncedAt: true,
+        discordChannelName: true,
+        discordChannelId: true,
+        tournament: {
+          select: {
+            id: true,
+            title: true,
+            date: true,
+            game: true,
+            status: true,
+            teamSize: true,
+            maxSlots: true,
           },
-          members: {
-            select: {
-              id: true,
-              userId: true,
-              user: {
-                select: {
-                  username: true,
-                  discordId: true,
-                },
+        },
+        registeredBy: {
+          select: {
+            username: true,
+          },
+        },
+        team: {
+          select: {
+            id: true,
+            name: true,
+            game: true,
+            leaderId: true,
+            leader: {
+              select: {
+                username: true,
               },
             },
-            orderBy: {
-              joinedAt: "asc",
+            invites: {
+              where: {
+                status: "pending",
+              },
+              select: {
+                id: true,
+              },
+            },
+            members: {
+              select: {
+                id: true,
+                userId: true,
+                user: {
+                  select: {
+                    username: true,
+                    discordId: true,
+                  },
+                },
+              },
+              orderBy: {
+                joinedAt: "asc",
+              },
             },
           },
         },
       },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 100,
-  });
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 150,
+    }),
+
+    prisma.tournamentRegistration.groupBy({
+      by: ["tournamentId"],
+      where: {
+        status: "approved",
+      },
+      _count: {
+        _all: true,
+      },
+    }),
+  ]);
+
+  const approvedCountByTournament = new Map(
+    approvedGroups.map((group) => [group.tournamentId, group._count._all]),
+  );
 
   const priority: Record<string, number> = {
     registered: 0,
@@ -248,11 +400,7 @@ export default async function AdminRegistrationList({
     (registration) => registration.status === "rejected",
   ).length;
 
-  const cancelledCount = registrations.filter(
-    (registration) => registration.status === "cancelled",
-  ).length;
-
-  const queuedDiscordRolesCount = registrations.filter((registration) =>
+  const botQueueCount = registrations.filter((registration) =>
     ["pending_create", "pending_remove", "failed"].includes(
       registration.discordRoleStatus,
     ),
@@ -274,18 +422,17 @@ export default async function AdminRegistrationList({
           </h1>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
-            Review team entries, confirm approved registrations, and prepare
-            Discord role automation for future bot integration.
+            Review teams quickly. Details and Discord actions stay hidden until
+            needed.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <StatCard label="Total" value={registrations.length} />
           <StatCard label="Pending" value={pendingCount} />
           <StatCard label="Approved" value={approvedCount} />
           <StatCard label="Rejected" value={rejectedCount} />
-          <StatCard label="Cancelled" value={cancelledCount} />
-          <StatCard label="Bot queue" value={queuedDiscordRolesCount} />
+          <StatCard label="Bot queue" value={botQueueCount} />
         </div>
       </div>
 
@@ -295,44 +442,75 @@ export default async function AdminRegistrationList({
         </section>
       ) : (
         <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-          <div className="hidden border-b border-white/10 bg-black/25 px-5 py-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[minmax(0,1.1fr)_220px_150px_150px_130px] xl:gap-5">
+          <div className="hidden border-b border-white/10 bg-black/25 px-5 py-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_120px_120px_170px] xl:gap-5">
             <span>Team</span>
             <span>Tournament</span>
             <span>Status</span>
-            <span>Players</span>
+            <span>Ready</span>
             <span>Action</span>
           </div>
 
           <div className="divide-y divide-white/10">
             {sortedRegistrations.map((registration) => {
-              const canApprove = registration.status !== "approved";
-              const canReject = registration.status !== "rejected";
-              const canCancel = registration.status !== "cancelled";
+              const approvedTournamentCount =
+                approvedCountByTournament.get(registration.tournamentId) || 0;
+
+              const readinessIssues = getReadinessIssues({
+                teamGame: registration.team.game,
+                tournamentGame: registration.tournament.game,
+                teamMembersCount: registration.team.members.length,
+                teamSize: registration.tournament.teamSize,
+                pendingInvitesCount: registration.team.invites.length,
+                tournamentStatus: registration.tournament.status,
+                isApproved: registration.status === "approved",
+                approvedCount: approvedTournamentCount,
+                maxSlots: registration.tournament.maxSlots,
+              });
+
+              const isReady = readinessIssues.length === 0;
+              const canApprove =
+                ["registered", "rejected"].includes(registration.status) &&
+                isReady;
+
+              const canReject = ["registered", "approved"].includes(
+                registration.status,
+              );
+
+              const canCancel = ["registered", "approved", "rejected"].includes(
+                registration.status,
+              );
+
+              const shouldShowDiscordActions =
+                registration.status === "approved" ||
+                registration.discordRoleStatus !== "not_needed" ||
+                Boolean(registration.discordRoleId) ||
+                Boolean(registration.discordChannelId);
 
               return (
                 <article
                   key={registration.id}
                   className="grid gap-4 p-5 transition hover:bg-white/[0.035]"
                 >
-                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_220px_150px_150px_130px] xl:items-center xl:gap-5">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_120px_120px_170px] xl:items-center xl:gap-5">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="truncate text-xl font-black text-white">
                           {registration.team.name}
                         </h2>
 
-                        <span className="inline-flex rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-xs font-black text-violet-200">
-                          {registration.team.game}
-                        </span>
+                        <Pill tone="violet">{registration.team.game}</Pill>
                       </div>
 
                       <p className="mt-1 text-sm text-gray-400">
-                        Registered by {registration.registeredBy.username}
+                        {registration.team.members.length} player
+                        {registration.team.members.length === 1 ? "" : "s"} ·
+                        leader {registration.team.leader.username}
                       </p>
 
-                      {registration.rejectionReason && (
-                        <p className="mt-2 text-sm text-red-300">
-                          Rejected: {registration.rejectionReason}
+                      {registration.team.invites.length > 0 && (
+                        <p className="mt-1 text-sm font-bold text-yellow-300">
+                          {registration.team.invites.length} pending invite
+                          {registration.team.invites.length === 1 ? "" : "s"}
                         </p>
                       )}
                     </div>
@@ -343,19 +521,18 @@ export default async function AdminRegistrationList({
                       </p>
 
                       <p className="mt-1 text-sm text-gray-400">
-                        {registration.tournament.date}
+                        {registration.tournament.date} ·{" "}
+                        {approvedTournamentCount}/
+                        {registration.tournament.maxSlots} approved
                       </p>
                     </div>
 
                     <StatusBadge status={registration.status} />
 
-                    <MiniStat
-                      label="Players"
-                      value={registration.team.members.length}
-                    />
+                    <ReadinessBadge issues={readinessIssues} />
 
                     <div className="grid gap-2">
-                      {canApprove ? (
+                      {canApprove && (
                         <InlineAdminRegistrationForm
                           action={approveRegistrationInline}
                           buttonLabel="Approve"
@@ -368,84 +545,114 @@ export default async function AdminRegistrationList({
                             value={registration.id}
                           />
                         </InlineAdminRegistrationForm>
-                      ) : (
-                        <div className="inline-flex cursor-default items-center justify-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/[0.06] px-4 py-3 text-center text-sm font-black text-emerald-300/80">
-                          <span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-400/15 text-xs text-emerald-300">
-                            ✓
-                          </span>
-                          Already approved
+                      )}
+
+                      {!canApprove &&
+                        ["registered", "rejected"].includes(
+                          registration.status,
+                        ) && (
+                          <div className="rounded-xl border border-yellow-400/25 bg-yellow-500/10 px-4 py-2 text-sm font-black text-yellow-300">
+                            {readinessIssues[0] || "Not ready"}
+                          </div>
+                        )}
+
+                      {registration.status === "approved" && (
+                        <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/[0.06] px-4 py-2 text-center text-sm font-black text-emerald-300/80">
+                          Approved
+                        </div>
+                      )}
+
+                      {registration.status === "cancelled" && (
+                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-center text-sm font-black text-gray-400">
+                          Closed
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <details className="rounded-2xl border border-white/10 bg-black/25">
+                  {registration.rejectionReason && (
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-300">
+                      {registration.rejectionReason}
+                    </div>
+                  )}
+
+                  <details className="rounded-2xl border border-white/10 bg-black/20">
                     <summary className="cursor-pointer px-4 py-3 text-sm font-black text-gray-300 transition hover:text-white">
-                      Review details and actions
+                      More details
                     </summary>
 
-                    <div className="grid gap-5 border-t border-white/10 p-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)_230px] lg:items-start">
-                      <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                    <div className="grid gap-5 border-t border-white/10 p-4 lg:grid-cols-[1fr_1fr_220px]">
+                      <section>
                         <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-                          Registration info
+                          Players
                         </p>
 
-                        <div className="mt-4 grid gap-2">
-                          <InfoLine
-                            label="Registered at"
-                            value={formatDate(registration.createdAt)}
-                          />
-                          <InfoLine
-                            label="Reviewed at"
-                            value={formatDate(registration.reviewedAt)}
-                          />
-                          <InfoLine
-                            label="Tournament date"
-                            value={registration.tournament.date}
-                          />
-                          <InfoLine
-                            label="Team leader"
-                            value={registration.team.leader.username}
-                          />
+                        <div className="mt-3 divide-y divide-white/10">
+                          {registration.team.members.length === 0 ? (
+                            <p className="py-2 text-sm text-gray-400">
+                              No players in this team.
+                            </p>
+                          ) : (
+                            registration.team.members.map((member) => (
+                              <PlayerLine
+                                key={member.id}
+                                username={member.user.username}
+                                discordId={member.user.discordId}
+                                isLeader={
+                                  member.userId === registration.team.leaderId
+                                }
+                              />
+                            ))
+                          )}
                         </div>
                       </section>
 
-                      <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                      <section>
                         <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-                          Team players
+                          Review info
                         </p>
 
-                        <div className="mt-4 grid gap-2">
-                          {registration.team.members.length === 0 ? (
-                            <div className="rounded-xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-gray-400">
-                              No players in this team.
-                            </div>
-                          ) : (
-                            registration.team.members.map((member) => {
-                              const isLeader =
-                                member.userId === registration.team.leaderId;
-
-                              return (
-                                <div
-                                  key={member.id}
-                                  className="grid gap-3 rounded-xl border border-white/10 bg-black/25 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                                >
-                                  <div>
-                                    <p className="font-black text-white">
-                                      {member.user.username}
-                                    </p>
-
-                                    <p className="mt-1 break-all text-xs text-gray-500">
-                                      {member.user.discordId}
-                                    </p>
-                                  </div>
-
-                                  <RoleBadge leader={isLeader} />
-                                </div>
-                              );
-                            })
-                          )}
+                        <div className="mt-3 grid gap-2 text-sm text-gray-400">
+                          <p>
+                            Registered by:{" "}
+                            <span className="font-bold text-white">
+                              {registration.registeredBy.username}
+                            </span>
+                          </p>
+                          <p>
+                            Registered:{" "}
+                            <span className="font-bold text-white">
+                              {formatDate(registration.createdAt)}
+                            </span>
+                          </p>
+                          <p>
+                            Reviewed:{" "}
+                            <span className="font-bold text-white">
+                              {formatDate(registration.reviewedAt)}
+                            </span>
+                          </p>
+                          <p>
+                            Required players:{" "}
+                            <span className="font-bold text-white">
+                              {registration.tournament.teamSize}
+                            </span>
+                          </p>
                         </div>
+
+                        {shouldShowDiscordActions && (
+                          <div className="mt-5">
+                            <DiscordInfo
+                              status={registration.discordRoleStatus}
+                              roleName={registration.discordRoleName}
+                              roleId={registration.discordRoleId}
+                              channelName={registration.discordChannelName}
+                              channelId={registration.discordChannelId}
+                              error={registration.discordRoleError}
+                              requestedAt={registration.discordRoleRequestedAt}
+                              syncedAt={registration.discordRoleSyncedAt}
+                            />
+                          </div>
+                        )}
                       </section>
 
                       <aside className="grid content-start gap-3">
@@ -460,11 +667,11 @@ export default async function AdminRegistrationList({
                             pendingLabel="Rejecting..."
                             variant="danger"
                             confirmTitle="Reject registration?"
-                            confirmDescription={`Write a clear reason for rejecting ${registration.team.name} from ${registration.tournament.title}. The player will see this reason.`}
-                            confirmLabel="Reject registration"
+                            confirmDescription={`Write a clear reason for rejecting ${registration.team.name}.`}
+                            confirmLabel="Reject"
                             textareaName="rejectionReason"
-                            textareaLabel="Rejection reason"
-                            textareaPlaceholder="Example: Team does not meet requirements, wrong roster, missing players..."
+                            textareaLabel="Reason"
+                            textareaPlaceholder="Example: Missing players or wrong roster..."
                             textareaRequired
                           >
                             <input
@@ -478,11 +685,11 @@ export default async function AdminRegistrationList({
                         {canCancel && (
                           <InlineAdminRegistrationForm
                             action={cancelRegistrationInline}
-                            buttonLabel="Cancel registration"
+                            buttonLabel="Cancel"
                             pendingLabel="Cancelling..."
                             variant="secondary"
                             confirmTitle="Cancel registration?"
-                            confirmDescription={`Cancel ${registration.team.name}'s registration for ${registration.tournament.title}?`}
+                            confirmDescription={`Cancel ${registration.team.name}'s registration?`}
                             confirmLabel="Cancel registration"
                           >
                             <input
@@ -492,103 +699,47 @@ export default async function AdminRegistrationList({
                             />
                           </InlineAdminRegistrationForm>
                         )}
-                      </aside>
-                    </div>
 
-                    <div className="border-t border-white/10 p-4">
-                      <section className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                          <div>
-                            <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-                              Discord role automation
-                            </p>
-
-                            <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
-                              {getDiscordRoleDescription(
-                                registration.discordRoleStatus,
-                              )}
-                            </p>
-                          </div>
-
-                          <DiscordRoleBadge
-                            status={registration.discordRoleStatus}
-                          />
-                        </div>
-
-                        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                          <MiniStat
-                            label="Role name"
-                            value={
-                              registration.discordRoleName || "Not prepared"
-                            }
-                          />
-
-                          <MiniStat
-                            label="Role ID"
-                            value={registration.discordRoleId || "Pending bot"}
-                          />
-
-                          <MiniStat
-                            label="Requested"
-                            value={formatDate(
-                              registration.discordRoleRequestedAt,
-                            )}
-                          />
-
-                          <MiniStat
-                            label="Synced"
-                            value={formatDate(registration.discordRoleSyncedAt)}
-                          />
-                        </div>
-
-                        {registration.discordRoleError && (
-                          <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-300">
-                            {registration.discordRoleError}
-                          </div>
+                        {registration.status === "approved" && (
+                          <InlineAdminRegistrationForm
+                            action={forceSyncRegistrationDiscordAccess}
+                            buttonLabel="Sync Discord"
+                            pendingLabel="Queueing..."
+                            variant="success"
+                            confirmTitle="Sync Discord access?"
+                            confirmDescription={`Queue Discord role and voice room sync for ${registration.team.name}.`}
+                            confirmLabel="Queue sync"
+                          >
+                            <input
+                              type="hidden"
+                              name="registrationId"
+                              value={registration.id}
+                            />
+                          </InlineAdminRegistrationForm>
                         )}
-                        <div className="mt-4 flex flex-wrap gap-3 border-t border-white/10 pt-4">
-                          {registration.status === "approved" && (
-                            <InlineAdminRegistrationForm
-                              action={forceSyncRegistrationDiscordAccess}
-                              buttonLabel="Force sync Discord access"
-                              pendingLabel="Queueing..."
-                              variant="success"
-                              confirmTitle="Force sync Discord access?"
-                              confirmDescription={`Queue Discord role and voice room sync for ${registration.team.name}.`}
-                              confirmLabel="Queue sync"
-                            >
-                              <input
-                                type="hidden"
-                                name="registrationId"
-                                value={registration.id}
-                              />
-                            </InlineAdminRegistrationForm>
-                          )}
 
-                          {(registration.discordRoleStatus === "active" ||
-                            registration.discordRoleStatus ===
-                              "pending_create" ||
-                            registration.discordRoleStatus === "failed" ||
-                            Boolean(registration.discordRoleId) ||
-                            Boolean(registration.discordChannelId)) && (
-                            <InlineAdminRegistrationForm
-                              action={forceRemoveRegistrationDiscordAccess}
-                              buttonLabel="Remove Discord access"
-                              pendingLabel="Queueing..."
-                              variant="danger"
-                              confirmTitle="Remove Discord access?"
-                              confirmDescription={`Queue removal of Discord role and voice room for ${registration.team.name}.`}
-                              confirmLabel="Queue removal"
-                            >
-                              <input
-                                type="hidden"
-                                name="registrationId"
-                                value={registration.id}
-                              />
-                            </InlineAdminRegistrationForm>
-                          )}
-                        </div>
-                      </section>
+                        {(registration.discordRoleStatus === "active" ||
+                          registration.discordRoleStatus === "pending_create" ||
+                          registration.discordRoleStatus === "failed" ||
+                          Boolean(registration.discordRoleId) ||
+                          Boolean(registration.discordChannelId)) && (
+                          <InlineAdminRegistrationForm
+                            action={forceRemoveRegistrationDiscordAccess}
+                            buttonLabel="Remove Discord"
+                            pendingLabel="Queueing..."
+                            variant="danger"
+                            confirmTitle="Remove Discord access?"
+                            confirmDescription={`Queue removal of Discord access for ${registration.team.name}.`}
+                            confirmLabel="Queue removal"
+                          >
+                            <input
+                              type="hidden"
+                              name="registrationId"
+                              value={registration.id}
+                            />
+                          </InlineAdminRegistrationForm>
+                        )}
+                      </aside>
                     </div>
                   </details>
                 </article>
