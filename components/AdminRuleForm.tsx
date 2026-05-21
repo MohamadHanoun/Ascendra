@@ -7,29 +7,22 @@ function inputClass() {
 
 export default function AdminRuleForm() {
   return (
-    <section>
-      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/20">
-        <div className="mb-5 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-          <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
-              Rules
-            </p>
+    <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+      <div className="border-b border-white/10 px-5 py-4">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+          Rules
+        </p>
 
-            <h2 className="mt-2 text-3xl font-black text-white">Create rule</h2>
+        <h2 className="mt-1 text-xl font-black text-white">Create rule</h2>
+      </div>
 
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
-              Add a new community rule. It will be placed at the end of the
-              rules list automatically.
-            </p>
-          </div>
-        </div>
-
+      <div className="p-5">
         <InlineAdminRuleForm
           action={createRuleInline}
           buttonLabel="Create rule"
           pendingLabel="Creating..."
           resetOnSuccess
-          className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-start"
+          className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_160px] lg:items-start"
         >
           <label className="grid gap-2">
             <span className="text-sm font-bold text-gray-200">Rule text</span>
@@ -38,7 +31,7 @@ export default function AdminRuleForm() {
               name="text"
               required
               placeholder="Write the rule text..."
-              className={`${inputClass()} min-h-24 resize-y`}
+              className={`${inputClass()} min-h-24 resize-y text-sm leading-6`}
             />
           </label>
         </InlineAdminRuleForm>

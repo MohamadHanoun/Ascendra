@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+
 import {
   activateRuleInline,
   deactivateRuleInline,
@@ -28,8 +29,26 @@ function StatusBadge({ active }: { active: boolean }) {
           : "border-white/10 bg-white/5 text-gray-300"
       }`}
     >
-      {active ? "Active" : "Inactive"}
+      {active ? "Active" : "Hidden"}
     </span>
+  );
+}
+
+function Notice({ notice }: { notice: AdminRuleActionResult | null }) {
+  if (!notice) {
+    return null;
+  }
+
+  return (
+    <div
+      className={`rounded-xl border px-4 py-3 text-sm font-bold ${
+        notice.ok
+          ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
+          : "border-red-400/25 bg-red-500/10 text-red-300"
+      }`}
+    >
+      {notice.message}
+    </div>
   );
 }
 
@@ -59,6 +78,7 @@ export default function AdminRuleDragList({
   initialRules: RuleItem[];
 }) {
   const router = useRouter();
+
   const [rules, setRules] = useState(initialRules);
   const [draggedRuleId, setDraggedRuleId] = useState<string | null>(null);
   const [dragOverRuleId, setDragOverRuleId] = useState<string | null>(null);
@@ -89,7 +109,7 @@ export default function AdminRuleDragList({
 
       window.setTimeout(() => {
         router.refresh();
-      }, 450);
+      }, 300);
     });
   }
 
@@ -145,37 +165,30 @@ export default function AdminRuleDragList({
 
   return (
     <div className="grid gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/10 bg-white/[0.04] px-5 py-4 shadow-2xl shadow-black/20">
+      <div className="flex flex-col justify-between gap-3 rounded-3xl border border-white/10 bg-white/[0.04] px-5 py-4 shadow-2xl shadow-black/20 lg:flex-row lg:items-center">
         <div>
-          <p className="text-sm font-black text-white">Drag to reorder</p>
+          <p className="font-black text-white">Drag to reorder</p>
           <p className="mt-1 text-sm text-gray-400">
-            Hold the handle and drop the rule in its new position.
+            Use the handle and drop the rule in a new position.
           </p>
         </div>
 
-        {notice && (
-          <div
-            className={`rounded-2xl border px-4 py-3 text-sm font-bold ${
-              notice.ok
-                ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
-                : "border-red-400/25 bg-red-500/10 text-red-300"
-            }`}
-          >
-            {notice.message}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-3">
+          {pending && (
+            <div className="rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-3 text-sm font-bold text-violet-200">
+              Saving order...
+            </div>
+          )}
 
-        {pending && (
-          <div className="rounded-2xl border border-violet-400/25 bg-violet-500/10 px-4 py-3 text-sm font-bold text-violet-200">
-            Saving order...
-          </div>
-        )}
+          <Notice notice={notice} />
+        </div>
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-        <div className="hidden border-b border-white/10 bg-white/[0.03] px-5 py-4 text-xs font-black uppercase tracking-[0.12em] text-gray-500 lg:grid lg:grid-cols-[96px_minmax(0,1fr)_220px] lg:gap-5">
+      <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+        <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 lg:grid lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:gap-5">
           <span>Order</span>
-          <span>Rule text</span>
+          <span>Rule</span>
+          <span>Status</span>
           <span>Actions</span>
         </div>
 
@@ -196,33 +209,21 @@ export default function AdminRuleDragList({
                 }}
                 onDrop={() => handleDrop(rule.id)}
                 onDragEnd={handleDragEnd}
-                className={`grid gap-5 p-5 transition lg:grid-cols-[96px_minmax(0,1fr)_220px] lg:items-start ${
+                className={`grid gap-4 px-5 py-4 transition lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:items-start lg:gap-5 ${
                   isDragging ? "opacity-50" : ""
                 } ${
-                  isDragTarget ? "bg-violet-500/10" : "hover:bg-white/[0.03]"
+                  isDragTarget ? "bg-violet-500/10" : "hover:bg-white/[0.035]"
                 }`}
               >
-                <div className="flex items-center justify-between gap-4 lg:grid lg:gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="grid h-10 w-10 place-items-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-lg font-black text-violet-200">
-                      {position}
-                    </span>
-
-                    <div className="lg:hidden">
-                      <p className="text-sm font-black text-white">
-                        Rule #{position}
-                      </p>
-
-                      <div className="mt-1">
-                        <StatusBadge active={rule.isActive} />
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between gap-3 lg:justify-start">
+                  <span className="grid h-10 w-10 place-items-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-sm font-black text-violet-200">
+                    {String(position).padStart(2, "0")}
+                  </span>
 
                   <button
                     type="button"
                     aria-label="Drag rule"
-                    className="grid h-10 w-10 cursor-grab place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition hover:border-violet-400/40 hover:text-violet-200 active:cursor-grabbing"
+                    className="grid h-10 w-10 cursor-grab place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition hover:border-violet-400/40 hover:text-violet-200 active:cursor-grabbing lg:hidden"
                   >
                     ≡
                   </button>
@@ -232,7 +233,7 @@ export default function AdminRuleDragList({
                   action={updateRuleInline}
                   buttonLabel="Save"
                   pendingLabel="Saving..."
-                  className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_96px] xl:items-start"
+                  className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_90px] xl:items-start"
                 >
                   <input type="hidden" name="ruleId" value={rule.id} />
                   <input type="hidden" name="order" value={position} />
@@ -249,53 +250,59 @@ export default function AdminRuleDragList({
                   </label>
                 </InlineAdminRuleForm>
 
-                <div className="grid gap-3">
-                  <div className="hidden lg:block">
-                    <StatusBadge active={rule.isActive} />
-                  </div>
+                <div className="flex items-center justify-between gap-3 lg:block">
+                  <StatusBadge active={rule.isActive} />
 
-                  <div className="grid grid-cols-2 gap-2">
-                    {rule.isActive ? (
-                      <InlineAdminRuleForm
-                        action={deactivateRuleInline}
-                        buttonLabel="Hide"
-                        pendingLabel="Hiding..."
-                        variant="danger"
-                        className="grid gap-2"
-                      >
-                        <input type="hidden" name="ruleId" value={rule.id} />
-                      </InlineAdminRuleForm>
-                    ) : (
-                      <InlineAdminRuleForm
-                        action={activateRuleInline}
-                        buttonLabel="Show"
-                        pendingLabel="Showing..."
-                        variant="success"
-                        className="grid gap-2"
-                      >
-                        <input type="hidden" name="ruleId" value={rule.id} />
-                      </InlineAdminRuleForm>
-                    )}
+                  <button
+                    type="button"
+                    aria-label="Drag rule"
+                    className="hidden h-10 w-10 cursor-grab place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition hover:border-violet-400/40 hover:text-violet-200 active:cursor-grabbing lg:grid"
+                  >
+                    ≡
+                  </button>
+                </div>
 
+                <div className="grid grid-cols-2 gap-2">
+                  {rule.isActive ? (
                     <InlineAdminRuleForm
-                      action={deleteRuleInline}
-                      buttonLabel="Delete"
-                      pendingLabel="Deleting..."
-                      variant="danger"
+                      action={deactivateRuleInline}
+                      buttonLabel="Hide"
+                      pendingLabel="Hiding..."
+                      variant="secondary"
                       className="grid gap-2"
-                      confirmTitle="Delete rule?"
-                      confirmDescription={`Are you sure you want to delete rule #${position}? This cannot be undone.`}
-                      confirmLabel="Delete permanently"
                     >
                       <input type="hidden" name="ruleId" value={rule.id} />
                     </InlineAdminRuleForm>
-                  </div>
+                  ) : (
+                    <InlineAdminRuleForm
+                      action={activateRuleInline}
+                      buttonLabel="Show"
+                      pendingLabel="Showing..."
+                      variant="success"
+                      className="grid gap-2"
+                    >
+                      <input type="hidden" name="ruleId" value={rule.id} />
+                    </InlineAdminRuleForm>
+                  )}
+
+                  <InlineAdminRuleForm
+                    action={deleteRuleInline}
+                    buttonLabel="Delete"
+                    pendingLabel="Deleting..."
+                    variant="danger"
+                    className="grid gap-2"
+                    confirmTitle="Delete rule?"
+                    confirmDescription={`Delete rule #${position}? This cannot be undone.`}
+                    confirmLabel="Delete permanently"
+                  >
+                    <input type="hidden" name="ruleId" value={rule.id} />
+                  </InlineAdminRuleForm>
                 </div>
               </article>
             );
           })}
         </div>
-      </div>
+      </section>
     </div>
   );
 }
