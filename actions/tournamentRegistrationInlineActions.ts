@@ -88,9 +88,7 @@ async function registerTeamForTournament(
     include: {
       registrations: {
         where: {
-          status: {
-            in: ["registered", "approved"],
-          },
+          status: "approved",
         },
       },
     },
@@ -109,7 +107,7 @@ async function registerTeamForTournament(
   }
 
   if (tournament.registrations.length >= tournament.maxSlots) {
-    return fail("This tournament is full.");
+    return fail("All approved tournament slots are full.");
   }
 
   const team = await prisma.team.findUnique({
