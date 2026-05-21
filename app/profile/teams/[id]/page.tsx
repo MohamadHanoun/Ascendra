@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -18,9 +17,9 @@ import Footer from "@/components/Footer";
 import InlineTeamActionForm from "@/components/InlineTeamActionForm";
 import Navbar from "@/components/Navbar";
 import ProfileNotice from "@/components/ProfileNotice";
+import ProfileRealtime from "@/components/ProfileRealtime";
 import { prisma } from "@/lib/prisma";
 import { getGameImageUrl } from "@/lib/tournamentImages";
-import ProfileRealtime from "@/components/ProfileRealtime";
 
 export const dynamic = "force-dynamic";
 
@@ -41,65 +40,80 @@ type TeamDetailsPageProps = {
 
 const games = ["Valorant", "League of Legends", "CS2", "Dota2"];
 
-function StatusBadge({ status }: { status: string }) {
-  const normalizedStatus = status.toLowerCase();
-
-  const styles: Record<string, string> = {
-    approved: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    leader: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    member: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-    draft: "border-white/10 bg-white/5 text-gray-300",
-    pending: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    invited: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    rejected: "border-red-400/25 bg-red-500/10 text-red-300",
-    locked: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+function Pill({
+  label,
+  tone = "violet",
+}: {
+  label: string;
+  tone?: "green" | "yellow" | "red" | "gray" | "violet";
+}) {
+  const styles = {
+    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    red: "border-red-400/25 bg-red-500/10 text-red-300",
+    gray: "border-white/10 bg-white/5 text-gray-300",
+    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
   };
 
   return (
     <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize tracking-[0.08em] ${
-        styles[normalizedStatus] || "border-white/10 bg-white/5 text-gray-300"
-      }`}
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
     >
-      {normalizedStatus === "approved" ? "Active" : status}
+      {label}
     </span>
   );
 }
 
-function SmallLabel({ children }: { children: ReactNode }) {
-  return (
-    <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-      {children}
-    </p>
-  );
+function StatusBadge({ status }: { status: string }) {
+  const normalizedStatus = status.toLowerCase();
+
+  if (normalizedStatus === "approved") {
+    return <Pill label="Active" tone="green" />;
+  }
+
+  if (normalizedStatus === "leader") {
+    return <Pill label="Leader" tone="green" />;
+  }
+
+  if (normalizedStatus === "member") {
+    return <Pill label="Member" tone="violet" />;
+  }
+
+  if (normalizedStatus === "pending" || normalizedStatus === "invited") {
+    return <Pill label={status} tone="yellow" />;
+  }
+
+  if (normalizedStatus === "locked") {
+    return <Pill label="Locked" tone="yellow" />;
+  }
+
+  if (normalizedStatus === "rejected") {
+    return <Pill label="Rejected" tone="red" />;
+  }
+
+  return <Pill label={status} tone="gray" />;
 }
 
-function TeamStatCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number;
-}) {
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+    <div>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
         {label}
       </p>
 
-      <p className="mt-1 text-lg font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
     </div>
   );
 }
 
-function PanelHeader({ label, title }: { label: string; title: string }) {
+function PanelTitle({ label, title }: { label: string; title: string }) {
   return (
-    <div className="bg-white/[0.03] px-6 py-5">
-      <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
+    <div className="border-b border-white/10 px-5 py-4">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
         {label}
       </p>
 
-      <h2 className="mt-2 text-2xl font-black text-white">{title}</h2>
+      <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
     </div>
   );
 }
@@ -197,8 +211,6 @@ export default async function TeamDetailsPage({
 
   const isLeader = team.leaderId === session.user.databaseId;
   const canManage = Boolean(currentMembership);
-  const canEdit = isLeader;
-  const canDelete = isLeader;
   const activeRegistration = team.registrations[0] || null;
   const isTeamLocked = Boolean(activeRegistration);
 
@@ -225,7 +237,7 @@ export default async function TeamDetailsPage({
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[560px] overflow-hidden">
+        <section className="relative min-h-[500px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -233,11 +245,10 @@ export default async function TeamDetailsPage({
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.90)_0%,rgba(7,8,17,0.58)_44%,rgba(7,8,17,0.76)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.22),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(34,211,238,0.08),transparent_30%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.62)_48%,rgba(7,8,17,0.82)_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
-          <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-32 pt-16 lg:px-10">
+          <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-28 pt-16 lg:px-10">
             <ProfileNotice
               message={noticeParams.message}
               error={noticeParams.error}
@@ -251,10 +262,12 @@ export default async function TeamDetailsPage({
               ← Back to profile
             </Link>
 
-            <section className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/30 backdrop-blur">
-              <div className="grid gap-6 p-6 lg:grid-cols-[1fr_auto] lg:items-center">
+            <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.045] p-6 shadow-2xl shadow-black/30 backdrop-blur">
+              <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
                 <div>
-                  <SmallLabel>Team management</SmallLabel>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-300">
+                    Team management
+                  </p>
 
                   <h1 className="mt-2 text-4xl font-black uppercase tracking-tight text-white md:text-6xl">
                     {team.name}
@@ -262,210 +275,115 @@ export default async function TeamDetailsPage({
 
                   <div className="mt-4 flex flex-wrap gap-2">
                     <StatusBadge status={team.status} />
-
-                    <span className="inline-flex rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-xs font-black text-violet-200">
-                      {team.game}
-                    </span>
-
-                    <span className="inline-flex rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-xs font-black text-violet-200">
-                      {team.members.length} member
-                      {team.members.length === 1 ? "" : "s"}
-                    </span>
-
-                    <span className="inline-flex rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1 text-xs font-black text-emerald-300">
-                      {totalTeamPoints} points
-                    </span>
-
+                    <Pill label={team.game} />
+                    <Pill
+                      label={`${team.members.length} member${
+                        team.members.length === 1 ? "" : "s"
+                      }`}
+                    />
+                    <Pill label={`${totalTeamPoints} points`} tone="green" />
                     {isTeamLocked && <StatusBadge status="Locked" />}
-
                     {team.invites.length > 0 && (
-                      <span className="inline-flex rounded-full border border-yellow-400/25 bg-yellow-500/10 px-3 py-1 text-xs font-black text-yellow-300">
-                        {team.invites.length} pending invite
-                        {team.invites.length === 1 ? "" : "s"}
-                      </span>
+                      <Pill
+                        label={`${team.invites.length} pending invite${
+                          team.invites.length === 1 ? "" : "s"
+                        }`}
+                        tone="yellow"
+                      />
                     )}
                   </div>
 
-                  {team.rejectionReason && (
-                    <div className="mt-5 rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
-                      <p className="font-black text-red-300">Team rejected</p>
-
-                      <p className="mt-2 leading-7 text-gray-300">
-                        Reason: {team.rejectionReason}
-                      </p>
-                    </div>
+                  {activeRegistration && (
+                    <p className="mt-4 max-w-2xl text-sm leading-6 text-yellow-300">
+                      Locked while registered for{" "}
+                      <Link
+                        href={`/tournaments/${activeRegistration.tournament.id}`}
+                        className="font-black text-white transition hover:text-violet-300"
+                      >
+                        {activeRegistration.tournament.title}
+                      </Link>
+                      .
+                    </p>
                   )}
 
-                  {activeRegistration && (
-                    <div className="mt-5 rounded-2xl border border-yellow-400/20 bg-yellow-500/10 p-4">
-                      <p className="font-black text-yellow-300">Team locked</p>
-
-                      <p className="mt-2 text-sm leading-6 text-gray-300">
-                        This team is registered for{" "}
-                        <Link
-                          href={`/tournaments/${activeRegistration.tournament.id}`}
-                          className="font-black text-white transition hover:text-violet-300"
-                        >
-                          {activeRegistration.tournament.title}
-                        </Link>
-                        .
-                      </p>
-                    </div>
+                  {team.rejectionReason && (
+                    <p className="mt-4 max-w-2xl text-sm leading-6 text-red-300">
+                      {team.rejectionReason}
+                    </p>
                   )}
                 </div>
 
-                <div className="grid gap-2 text-sm text-gray-300 lg:text-right">
-                  <p>
-                    Leader:{" "}
-                    <span className="font-black text-white">
-                      {team.leader.username}
-                    </span>
-                  </p>
-
-                  <p>
-                    Created:{" "}
-                    <span className="font-black text-white">
-                      {team.createdAt.toLocaleDateString("en")}
-                    </span>
-                  </p>
+                <div className="grid grid-cols-3 gap-5 lg:text-right">
+                  <Stat label="Leader" value={team.leader.username} />
+                  <Stat label="Results" value={team.results.length} />
+                  <Stat
+                    label="Best"
+                    value={bestPlacement ? `#${bestPlacement}` : "-"}
+                  />
                 </div>
               </div>
             </section>
           </div>
         </section>
 
-        <section className="relative -mt-20 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
-          <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-            <PanelHeader label="Tournament history" title="Team results" />
+        <section className="relative -mt-16 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:grid-cols-[minmax(0,1fr)_380px] lg:px-10">
+          <div className="grid gap-8">
+            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+              <PanelTitle label="Settings" title="Team setup" />
 
-            <div className="grid gap-4 p-6 md:grid-cols-3">
-              <TeamStatCard label="Total points" value={totalTeamPoints} />
-              <TeamStatCard label="Results" value={team.results.length} />
-              <TeamStatCard
-                label="Best placement"
-                value={bestPlacement ? `#${bestPlacement}` : "-"}
-              />
-            </div>
+              <div className="grid gap-6 p-5">
+                {isLeader && !isTeamLocked ? (
+                  <InlineTeamActionForm
+                    action={updateTeamInline}
+                    buttonLabel="Save changes"
+                    pendingLabel="Saving..."
+                  >
+                    <input type="hidden" name="teamId" value={team.id} />
 
-            {team.results.length === 0 ? (
-              <div className="px-6 pb-6 text-sm text-gray-400">
-                No tournament results yet.
-              </div>
-            ) : (
-              <div>
-                <div className="hidden bg-white/[0.03] px-6 py-4 text-xs font-black uppercase tracking-[0.12em] text-gray-500 lg:grid lg:grid-cols-[minmax(0,1fr)_160px_130px_130px]">
-                  <span>Tournament</span>
-                  <span>Game</span>
-                  <span>Placement</span>
-                  <span>Points</span>
-                </div>
+                    <div className="grid gap-5 md:grid-cols-2">
+                      <label className="grid gap-2">
+                        <span className="text-sm font-bold text-gray-200">
+                          Team name
+                        </span>
 
-                <div className="divide-y divide-white/10">
-                  {team.results.map((result) => (
-                    <article
-                      key={result.id}
-                      className="grid gap-4 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_160px_130px_130px] lg:items-center"
-                    >
-                      <div>
-                        <Link
-                          href={`/tournaments/${result.tournament.id}`}
-                          className="font-black text-white transition hover:text-violet-300"
-                        >
-                          {result.tournament.title}
-                        </Link>
+                        <input
+                          name="name"
+                          required
+                          defaultValue={team.name}
+                          className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400"
+                        />
+                      </label>
 
-                        <p className="mt-1 text-sm text-gray-400">
-                          {result.tournament.date}
-                        </p>
+                      <label className="grid gap-2">
+                        <span className="text-sm font-bold text-gray-200">
+                          Game
+                        </span>
 
-                        {result.note && (
-                          <p className="mt-2 text-sm text-gray-500">
-                            {result.note}
-                          </p>
-                        )}
-                      </div>
-
-                      <p className="text-sm font-bold text-gray-300">
-                        {result.tournament.game}
-                      </p>
-
-                      <p className="text-sm font-black text-yellow-300">
-                        #{result.placement}
-                      </p>
-
-                      <p className="text-sm font-black text-emerald-300">
-                        {result.points} pts
-                      </p>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
-
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-              <PanelHeader label="Team controls" title="Setup and actions" />
-
-              <div className="grid gap-8 p-6">
-                <section>
-                  <p className="mb-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-                    Basic settings
-                  </p>
-
-                  {canEdit && !isTeamLocked ? (
-                    <InlineTeamActionForm
-                      action={updateTeamInline}
-                      buttonLabel="Save changes"
-                      pendingLabel="Saving..."
-                    >
-                      <input type="hidden" name="teamId" value={team.id} />
-
-                      <div className="grid gap-5 md:grid-cols-2">
-                        <label className="grid gap-2">
-                          <span className="text-sm font-bold text-gray-200">
-                            Team Name
-                          </span>
-
-                          <input
-                            name="name"
-                            required
-                            defaultValue={team.name}
-                            className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400"
-                          />
-                        </label>
-
-                        <label className="grid gap-2">
-                          <span className="text-sm font-bold text-gray-200">
-                            Game
-                          </span>
-
-                          <CustomSelect
-                            name="game"
-                            required
-                            placeholder="Select game"
-                            defaultValue={team.game}
-                            options={games.map((game) => ({
-                              value: game,
-                              label: game,
-                              description: "Team game",
-                            }))}
-                          />
-                        </label>
-                      </div>
-                    </InlineTeamActionForm>
-                  ) : (
-                    <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-sm text-gray-300">
-                      {isTeamLocked
-                        ? "Team settings are locked while registered in a tournament."
-                        : "Only the team leader can edit this team."}
+                        <CustomSelect
+                          name="game"
+                          required
+                          placeholder="Select game"
+                          defaultValue={team.game}
+                          options={games.map((game) => ({
+                            value: game,
+                            label: game,
+                            description: "Team game",
+                          }))}
+                        />
+                      </label>
                     </div>
-                  )}
-                </section>
+                  </InlineTeamActionForm>
+                ) : (
+                  <p className="text-sm leading-6 text-gray-400">
+                    {isTeamLocked
+                      ? "Settings are locked while this team is registered in an active tournament."
+                      : "Only the team leader can edit settings."}
+                  </p>
+                )}
 
                 {isLeader && !isTeamLocked && (
-                  <section className="pt-2">
-                    <p className="mb-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                  <div className="border-t border-white/10 pt-5">
+                    <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500">
                       Invite player
                     </p>
 
@@ -489,205 +407,216 @@ export default async function TeamDetailsPage({
                         />
                       </label>
                     </InlineTeamActionForm>
-                  </section>
+                  </div>
                 )}
 
                 {!isLeader && !isTeamLocked && (
-                  <section className="pt-2">
-                    <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-red-300">
-                      Leave team
-                    </p>
-
-                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
-                      <div>
-                        <p className="font-black text-white">Leave this team</p>
-
-                        <p className="mt-1 max-w-xl text-sm leading-6 text-gray-400">
-                          You will be removed from this team. You can only join
-                          again if the team leader sends you a new invitation.
-                        </p>
-                      </div>
-
-                      <InlineTeamActionForm
-                        action={leaveTeamInline}
-                        buttonLabel="Leave team"
-                        pendingLabel="Leaving..."
-                        variant="danger"
-                        confirmTitle="Leave team?"
-                        confirmDescription={`Are you sure you want to leave ${team.name}?`}
-                        confirmLabel="Leave team"
-                      >
-                        <input type="hidden" name="teamId" value={team.id} />
-                      </InlineTeamActionForm>
-                    </div>
-                  </section>
+                  <div className="border-t border-white/10 pt-5">
+                    <InlineTeamActionForm
+                      action={leaveTeamInline}
+                      buttonLabel="Leave team"
+                      pendingLabel="Leaving..."
+                      variant="danger"
+                      confirmTitle="Leave team?"
+                      confirmDescription={`Are you sure you want to leave ${team.name}?`}
+                      confirmLabel="Leave team"
+                    >
+                      <input type="hidden" name="teamId" value={team.id} />
+                    </InlineTeamActionForm>
+                  </div>
                 )}
 
-                {isLeader && canDelete && !isTeamLocked && (
-                  <section className="pt-2">
-                    <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-red-300">
-                      Danger zone
-                    </p>
-
-                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
-                      <div>
-                        <p className="font-black text-white">Delete team</p>
-
-                        <p className="mt-1 max-w-xl text-sm leading-6 text-gray-400">
-                          This removes the team, members, and pending invites.
-                        </p>
-                      </div>
-
-                      <InlineTeamActionForm
-                        action={deleteTeamInline}
-                        buttonLabel="Delete team"
-                        pendingLabel="Deleting..."
-                        variant="danger"
-                        confirmTitle="Delete team?"
-                        confirmDescription={`Are you sure you want to delete ${team.name}? This cannot be undone.`}
-                        confirmLabel="Delete permanently"
-                      >
-                        <input type="hidden" name="teamId" value={team.id} />
-                      </InlineTeamActionForm>
-                    </div>
-                  </section>
+                {isLeader && !isTeamLocked && (
+                  <div className="border-t border-red-500/20 pt-5">
+                    <InlineTeamActionForm
+                      action={deleteTeamInline}
+                      buttonLabel="Delete team"
+                      pendingLabel="Deleting..."
+                      variant="danger"
+                      confirmTitle="Delete team?"
+                      confirmDescription={`Are you sure you want to delete ${team.name}? This cannot be undone.`}
+                      confirmLabel="Delete permanently"
+                    >
+                      <input type="hidden" name="teamId" value={team.id} />
+                    </InlineTeamActionForm>
+                  </div>
                 )}
               </div>
             </section>
 
-            <aside className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-              <div className="bg-white/[0.03] px-5 py-4">
-                <SmallLabel>Players</SmallLabel>
+            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+              <PanelTitle label="History" title="Tournament results" />
 
-                <h2 className="mt-2 text-xl font-black text-white">
-                  Players and invites
-                </h2>
+              <div className="grid grid-cols-3 gap-5 border-b border-white/10 p-5">
+                <Stat label="Points" value={totalTeamPoints} />
+                <Stat label="Results" value={team.results.length} />
+                <Stat
+                  label="Best"
+                  value={bestPlacement ? `#${bestPlacement}` : "-"}
+                />
               </div>
 
-              <div className="divide-y divide-white/10">
-                {team.members.map((member) => {
-                  const isMemberLeader = member.userId === team.leaderId;
-
-                  return (
-                    <div key={member.id} className="grid gap-3 p-5">
+              {team.results.length === 0 ? (
+                <div className="p-5 text-sm text-gray-400">
+                  No tournament results yet.
+                </div>
+              ) : (
+                <div className="divide-y divide-white/10">
+                  {team.results.map((result) => (
+                    <article
+                      key={result.id}
+                      className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_100px_100px] md:items-center"
+                    >
                       <div>
-                        <p className="font-black text-white">
-                          {member.user.username}
+                        <Link
+                          href={`/tournaments/${result.tournament.id}`}
+                          className="font-black text-white transition hover:text-violet-300"
+                        >
+                          {result.tournament.title}
+                        </Link>
+
+                        <p className="mt-1 text-sm text-gray-400">
+                          {result.tournament.game} · {result.tournament.date}
                         </p>
 
-                        <p className="mt-1 break-all text-sm text-gray-400">
-                          {member.user.discordId}
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <StatusBadge
-                          status={isMemberLeader ? "Leader" : "Member"}
-                        />
-
-                        {isLeader && !isMemberLeader && !isTeamLocked ? (
-                          <div className="flex flex-wrap gap-2">
-                            <InlineTeamActionForm
-                              action={transferTeamLeadershipInline}
-                              buttonLabel="Transfer leader"
-                              pendingLabel="Transferring..."
-                              variant="secondary"
-                              confirmTitle="Transfer leadership?"
-                              confirmDescription={`Are you sure you want to make ${member.user.username} the new team leader? You will become a regular member.`}
-                              confirmLabel="Transfer leadership"
-                            >
-                              <input
-                                type="hidden"
-                                name="teamId"
-                                value={team.id}
-                              />
-                              <input
-                                type="hidden"
-                                name="memberId"
-                                value={member.id}
-                              />
-                            </InlineTeamActionForm>
-
-                            <InlineTeamActionForm
-                              action={removeTeamMemberInline}
-                              buttonLabel="Remove"
-                              pendingLabel="Removing..."
-                              variant="danger"
-                              confirmTitle="Remove player?"
-                              confirmDescription={`Are you sure you want to remove ${member.user.username} from this team?`}
-                              confirmLabel="Remove player"
-                            >
-                              <input
-                                type="hidden"
-                                name="teamId"
-                                value={team.id}
-                              />
-                              <input
-                                type="hidden"
-                                name="memberId"
-                                value={member.id}
-                              />
-                            </InlineTeamActionForm>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-500">—</span>
+                        {result.note && (
+                          <p className="mt-2 text-sm text-gray-500">
+                            {result.note}
+                          </p>
                         )}
                       </div>
-                    </div>
-                  );
-                })}
 
-                {team.invites.map((invite) => (
-                  <div key={invite.id} className="grid gap-3 p-5">
+                      <Pill label={`#${result.placement}`} tone="yellow" />
+                      <Pill label={`${result.points} pts`} tone="green" />
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+
+          <aside className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 lg:sticky lg:top-24 lg:self-start">
+            <PanelTitle label="Roster" title="Players and invites" />
+
+            <div className="divide-y divide-white/10">
+              {team.members.map((member) => {
+                const isMemberLeader = member.userId === team.leaderId;
+
+                return (
+                  <div key={member.id} className="grid gap-3 px-5 py-4">
                     <div>
                       <p className="font-black text-white">
-                        {invite.invitedUser.username}
+                        {member.user.username}
                       </p>
 
-                      <p className="mt-1 break-all text-sm text-gray-400">
-                        {invite.invitedUser.discordId}
+                      <p className="mt-1 break-all text-xs text-gray-500">
+                        {member.user.discordId}
                       </p>
                     </div>
 
-                    <p className="text-sm text-gray-400">
-                      Waiting for player response
-                    </p>
-
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <StatusBadge status="Invited" />
+                      <StatusBadge
+                        status={isMemberLeader ? "Leader" : "Member"}
+                      />
 
-                      {isLeader && !isTeamLocked ? (
-                        <InlineTeamActionForm
-                          action={cancelTeamInviteInline}
-                          buttonLabel="Cancel"
-                          pendingLabel="Cancelling..."
-                          variant="secondary"
-                          confirmTitle="Cancel invitation?"
-                          confirmDescription={`Cancel the invitation sent to ${invite.invitedUser.username}?`}
-                          confirmLabel="Cancel invite"
-                        >
-                          <input type="hidden" name="teamId" value={team.id} />
-                          <input
-                            type="hidden"
-                            name="inviteId"
-                            value={invite.id}
-                          />
-                        </InlineTeamActionForm>
+                      {isLeader && !isMemberLeader && !isTeamLocked ? (
+                        <div className="flex flex-wrap gap-2">
+                          <InlineTeamActionForm
+                            action={transferTeamLeadershipInline}
+                            buttonLabel="Make leader"
+                            pendingLabel="Transferring..."
+                            variant="secondary"
+                            confirmTitle="Transfer leadership?"
+                            confirmDescription={`Make ${member.user.username} the new team leader?`}
+                            confirmLabel="Transfer"
+                          >
+                            <input
+                              type="hidden"
+                              name="teamId"
+                              value={team.id}
+                            />
+                            <input
+                              type="hidden"
+                              name="memberId"
+                              value={member.id}
+                            />
+                          </InlineTeamActionForm>
+
+                          <InlineTeamActionForm
+                            action={removeTeamMemberInline}
+                            buttonLabel="Remove"
+                            pendingLabel="Removing..."
+                            variant="danger"
+                            confirmTitle="Remove player?"
+                            confirmDescription={`Remove ${member.user.username} from this team?`}
+                            confirmLabel="Remove"
+                          >
+                            <input
+                              type="hidden"
+                              name="teamId"
+                              value={team.id}
+                            />
+                            <input
+                              type="hidden"
+                              name="memberId"
+                              value={member.id}
+                            />
+                          </InlineTeamActionForm>
+                        </div>
                       ) : (
                         <span className="text-sm text-gray-500">—</span>
                       )}
                     </div>
                   </div>
-                ))}
+                );
+              })}
 
-                {team.members.length === 0 && team.invites.length === 0 && (
-                  <div className="p-5 text-gray-300">
-                    No players in this team yet.
+              {team.invites.map((invite) => (
+                <div key={invite.id} className="grid gap-3 px-5 py-4">
+                  <div>
+                    <p className="font-black text-white">
+                      {invite.invitedUser.username}
+                    </p>
+
+                    <p className="mt-1 break-all text-xs text-gray-500">
+                      {invite.invitedUser.discordId}
+                    </p>
                   </div>
-                )}
-              </div>
-            </aside>
-          </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <StatusBadge status="Invited" />
+
+                    {isLeader && !isTeamLocked ? (
+                      <InlineTeamActionForm
+                        action={cancelTeamInviteInline}
+                        buttonLabel="Cancel"
+                        pendingLabel="Cancelling..."
+                        variant="secondary"
+                        confirmTitle="Cancel invitation?"
+                        confirmDescription={`Cancel the invitation sent to ${invite.invitedUser.username}?`}
+                        confirmLabel="Cancel invite"
+                      >
+                        <input type="hidden" name="teamId" value={team.id} />
+                        <input
+                          type="hidden"
+                          name="inviteId"
+                          value={invite.id}
+                        />
+                      </InlineTeamActionForm>
+                    ) : (
+                      <span className="text-sm text-gray-500">—</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {team.members.length === 0 && team.invites.length === 0 && (
+                <div className="p-5 text-gray-300">
+                  No players in this team yet.
+                </div>
+              )}
+            </div>
+          </aside>
         </section>
 
         <Footer />
