@@ -117,7 +117,7 @@ function ProgressBar({
     <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
       <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-500">
         <span>
-          {usedSlots}/{maxSlots} teams
+          {usedSlots}/{maxSlots} approved teams
         </span>
 
         <span>{Math.round(progress)}%</span>
@@ -130,6 +130,28 @@ function ProgressBar({
             width: `${progress}%`,
           }}
         />
+      </div>
+    </div>
+  );
+}
+
+function ApplicationCounterBar({
+  totalApplications,
+}: {
+  totalApplications: number;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+      <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-500">
+        <span>Total applications</span>
+
+        <span>
+          {totalApplications} team{totalApplications === 1 ? "" : "s"} applied
+        </span>
+      </div>
+
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full w-full rounded-full bg-white/10" />
       </div>
     </div>
   );
@@ -211,9 +233,10 @@ export default async function TournamentDetailsPage({
       registrations: {
         where: {
           status: {
-            in: ["registered", "approved"],
+            in: ["registered", "approved", "rejected"],
           },
         },
+
         select: {
           id: true,
           status: true,
@@ -271,7 +294,17 @@ export default async function TournamentDetailsPage({
         })
       : [];
 
-  const usedSlots = tournament.registrations.length;
+  const approvedRegistrations = tournament.registrations.filter(
+    (registration) => registration.status === "approved",
+  );
+
+  const submittedRegistrations = tournament.registrations.filter(
+    (registration) =>
+      ["registered", "approved", "rejected"].includes(registration.status),
+  );
+
+  const usedSlots = approvedRegistrations.length;
+  const totalApplications = submittedRegistrations.length;
   const remainingSlots = Math.max(tournament.maxSlots - usedSlots, 0);
 
   const openRegistrationTeamIds = new Set(
@@ -366,13 +399,17 @@ export default async function TournamentDetailsPage({
                     label="Team size"
                     value={`${tournament.teamSize}v${tournament.teamSize}`}
                   />
-                  <InfoBox label="Slots left" value={remainingSlots} />
+                  <InfoBox label="Approved slots left" value={remainingSlots} />
                 </div>
 
-                <div className="px-4 pb-4">
+                <div className="grid gap-3 px-4 pb-4">
                   <ProgressBar
                     usedSlots={usedSlots}
                     maxSlots={tournament.maxSlots}
+                  />
+
+                  <ApplicationCounterBar
+                    totalApplications={totalApplications}
                   />
                 </div>
               </section>
@@ -450,7 +487,7 @@ export default async function TournamentDetailsPage({
             </section>
 
             <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-              <SectionHeader label="Teams" title="Registered teams" />
+              <SectionHeader label="Teams" title="Team applications" />
 
               {tournament.registrations.length === 0 ? (
                 <div className="p-5 text-gray-300">
