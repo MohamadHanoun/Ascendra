@@ -7,27 +7,22 @@ function inputClass() {
 
 export default function AdminRoleForm() {
   return (
-    <section>
-      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/20">
-        <div className="mb-5">
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
-            Roles
-          </p>
+    <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+      <div className="border-b border-white/10 px-5 py-4">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+          Roles
+        </p>
 
-          <h2 className="mt-2 text-3xl font-black text-white">Create role</h2>
+        <h2 className="mt-1 text-xl font-black text-white">Create role</h2>
+      </div>
 
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
-            Add a new community role. It will be placed at the end of the roles
-            list automatically.
-          </p>
-        </div>
-
+      <div className="p-5">
         <InlineAdminRoleForm
           action={createRoleInline}
           buttonLabel="Create role"
           pendingLabel="Creating..."
           resetOnSuccess
-          className="grid gap-4"
+          className="grid gap-5"
         >
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px]">
             <label className="grid gap-2">
@@ -61,7 +56,7 @@ export default function AdminRoleForm() {
               name="description"
               required
               placeholder="Describe what this role means..."
-              className={`${inputClass()} min-h-24 resize-y`}
+              className={`${inputClass()} min-h-24 resize-y text-sm leading-6`}
             />
           </label>
         </InlineAdminRoleForm>
