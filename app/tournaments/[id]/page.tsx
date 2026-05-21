@@ -29,54 +29,70 @@ type TournamentDetailsPageProps = {
   }>;
 };
 
-function StatusBadge({ status }: { status: string }) {
-  const normalizedStatus = status.toLowerCase().replace("registration ", "");
-
-  const styles: Record<string, string> = {
-    open: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    approved: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    registered: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-    upcoming: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    pending: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    closed: "border-red-400/25 bg-red-500/10 text-red-300",
-    cancelled: "border-white/10 bg-white/5 text-gray-300",
-    ended: "border-blue-400/25 bg-blue-500/10 text-blue-300",
-    rejected: "border-red-400/25 bg-red-500/10 text-red-300",
+function Pill({
+  children,
+  tone = "gray",
+}: {
+  children: ReactNode;
+  tone?: "green" | "yellow" | "red" | "blue" | "gray" | "violet";
+}) {
+  const styles = {
+    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    red: "border-red-400/25 bg-red-500/10 text-red-300",
+    blue: "border-blue-400/25 bg-blue-500/10 text-blue-300",
+    gray: "border-white/10 bg-white/5 text-gray-300",
+    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
   };
 
   return (
     <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize ${
-        styles[normalizedStatus] || "border-white/10 bg-white/5 text-gray-300"
-      }`}
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize ${styles[tone]}`}
     >
-      {status}
+      {children}
     </span>
   );
 }
 
-function InfoBox({ label, value }: { label: string; value: ReactNode }) {
+function StatusBadge({ status }: { status: string }) {
+  const normalizedStatus = status.toLowerCase().replace("registration ", "");
+
+  const tone =
+    normalizedStatus === "open" || normalizedStatus === "approved"
+      ? "green"
+      : normalizedStatus === "upcoming" ||
+          normalizedStatus === "pending" ||
+          normalizedStatus === "registered"
+        ? "yellow"
+        : normalizedStatus === "closed" || normalizedStatus === "rejected"
+          ? "red"
+          : normalizedStatus === "ended"
+            ? "blue"
+            : "gray";
+
+  return <Pill tone={tone}>{status}</Pill>;
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+    <div>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
         {label}
       </p>
 
-      <p className="mt-1 break-words text-base font-black text-white">
-        {value}
-      </p>
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
     </div>
   );
 }
 
-function SectionHeader({ label, title }: { label: string; title: string }) {
+function SectionTitle({ label, title }: { label: string; title: string }) {
   return (
-    <div className="bg-white/[0.03] px-5 py-4">
+    <div className="border-b border-white/10 px-5 py-4">
       <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
         {label}
       </p>
 
-      <h2 className="mt-2 text-2xl font-black text-white">{title}</h2>
+      <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
     </div>
   );
 }
@@ -98,66 +114,38 @@ function getSnapshotMemberCount(
 }
 
 function PlacementBadge({ placement }: { placement: number }) {
-  const isTopThree = placement <= 3;
+  const tone = placement <= 3 ? "yellow" : "violet";
 
-  return (
-    <span
-      className={`grid h-11 w-11 place-items-center rounded-2xl border text-lg font-black ${
-        isTopThree
-          ? "border-yellow-400/25 bg-yellow-500/10 text-yellow-300"
-          : "border-violet-400/25 bg-violet-500/10 text-violet-200"
-      }`}
-    >
-      #{placement}
-    </span>
-  );
+  return <Pill tone={tone}>#{placement}</Pill>;
 }
 
 function ProgressBar({
-  usedSlots,
+  approvedSlots,
   maxSlots,
 }: {
-  usedSlots: number;
+  approvedSlots: number;
   maxSlots: number;
 }) {
   const progress =
-    maxSlots > 0 ? Math.min((usedSlots / maxSlots) * 100, 100) : 0;
+    maxSlots > 0 ? Math.min((approvedSlots / maxSlots) * 100, 100) : 0;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+    <div className="grid gap-2">
       <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-500">
         <span>
-          {usedSlots}/{maxSlots} approved teams
+          {approvedSlots}/{maxSlots} approved
         </span>
 
         <span>{Math.round(progress)}%</span>
       </div>
 
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+      <div className="h-2 overflow-hidden rounded-full bg-white/10">
         <div
           className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25"
           style={{
             width: `${progress}%`,
           }}
         />
-      </div>
-    </div>
-  );
-}
-
-function ApplicationCounterBar({
-  totalApplications,
-}: {
-  totalApplications: number;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-      <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-500">
-        <span>Applications</span>
-
-        <span>
-          {totalApplications} team{totalApplications === 1 ? "" : "s"} submitted
-        </span>
       </div>
     </div>
   );
@@ -352,9 +340,9 @@ export default async function TournamentDetailsPage({
       ["registered", "approved", "rejected"].includes(registration.status),
   );
 
-  const usedSlots = approvedRegistrations.length;
+  const approvedSlots = approvedRegistrations.length;
   const totalApplications = submittedRegistrations.length;
-  const remainingSlots = Math.max(tournament.maxSlots - usedSlots, 0);
+  const remainingSlots = Math.max(tournament.maxSlots - approvedSlots, 0);
 
   const openRegistrationTeamIds = new Set(
     userTournamentRegistrations
@@ -424,7 +412,7 @@ export default async function TournamentDetailsPage({
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[620px] overflow-hidden">
+        <section className="relative min-h-[560px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -432,11 +420,10 @@ export default async function TournamentDetailsPage({
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.90)_0%,rgba(7,8,17,0.58)_44%,rgba(7,8,17,0.76)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.22),transparent_34%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.62)_48%,rgba(7,8,17,0.82)_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
-          <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-32 pt-20 lg:px-10 2xl:px-14">
+          <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
             <Link
               href="/tournaments"
               className="mb-8 inline-flex rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
@@ -444,57 +431,55 @@ export default async function TournamentDetailsPage({
               ← Back to tournaments
             </Link>
 
-            <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
-              <div>
-                <div className="mb-5 flex flex-wrap gap-2">
-                  <StatusBadge status={tournament.status} />
-                  <StatusBadge
-                    status={`Registration ${tournament.registrationStatus}`}
-                  />
+            <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-6 shadow-2xl shadow-black/30 backdrop-blur">
+              <div className="grid gap-8 lg:grid-cols-[1fr_420px] lg:items-end">
+                <div>
+                  <div className="flex flex-wrap gap-2">
+                    <StatusBadge status={tournament.status} />
+                    <StatusBadge
+                      status={`Registration ${tournament.registrationStatus}`}
+                    />
+                    <Pill tone="violet">{tournament.game}</Pill>
+                  </div>
 
-                  <span className="inline-flex rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-xs font-black text-violet-200">
-                    {tournament.game}
-                  </span>
+                  <h1 className="mt-5 max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
+                    {tournament.title}
+                  </h1>
+
+                  {tournament.description && (
+                    <p className="mt-5 max-w-3xl text-base leading-7 text-gray-300">
+                      {tournament.description}
+                    </p>
+                  )}
                 </div>
 
-                <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
-                  {tournament.title}
-                </h1>
+                <div className="grid gap-5">
+                  <div className="grid grid-cols-2 gap-5">
+                    <Stat label="Date" value={tournament.date} />
+                    <Stat label="Prize" value={tournament.prize} />
+                    <Stat
+                      label="Team"
+                      value={`${tournament.teamSize}v${tournament.teamSize}`}
+                    />
+                    <Stat label="Slots left" value={remainingSlots} />
+                  </div>
 
-                {tournament.description && (
-                  <p className="mt-6 max-w-3xl text-lg leading-8 text-gray-300">
-                    {tournament.description}
-                  </p>
-                )}
-              </div>
-
-              <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/20 backdrop-blur">
-                <div className="grid gap-3 p-4 sm:grid-cols-2">
-                  <InfoBox label="Date" value={tournament.date} />
-                  <InfoBox label="Prize" value={tournament.prize} />
-                  <InfoBox
-                    label="Team size"
-                    value={`${tournament.teamSize}v${tournament.teamSize}`}
-                  />
-                  <InfoBox label="Approved slots left" value={remainingSlots} />
-                </div>
-
-                <div className="grid gap-3 px-4 pb-4">
                   <ProgressBar
-                    usedSlots={usedSlots}
+                    approvedSlots={approvedSlots}
                     maxSlots={tournament.maxSlots}
                   />
 
-                  <ApplicationCounterBar
-                    totalApplications={totalApplications}
-                  />
+                  <p className="text-sm text-gray-500">
+                    {totalApplications} application
+                    {totalApplications === 1 ? "" : "s"} submitted.
+                  </p>
                 </div>
-              </section>
-            </div>
+              </div>
+            </section>
           </div>
         </section>
 
-        <section className="relative -mt-20 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
+        <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
           <ProfileNotice
             message={noticeParams.message}
             error={noticeParams.error}
@@ -502,58 +487,9 @@ export default async function TournamentDetailsPage({
 
           <TournamentDetailsRealtime tournamentId={tournament.id} />
 
-          {tournament.results.length > 0 && (
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-              <SectionHeader label="Results" title="Final standings" />
-
-              <div className="divide-y divide-white/10">
-                {tournament.results.map((result) => {
-                  const teamName = result.snapshotTeamName || result.team.name;
-                  const teamGame = result.snapshotTeamGame || result.team.game;
-                  const memberCount = getSnapshotMemberCount(
-                    result.snapshotMembers,
-                    result.team.members.length,
-                  );
-
-                  return (
-                    <article
-                      key={result.id}
-                      className="grid gap-4 px-5 py-4 md:grid-cols-[70px_minmax(0,1fr)_130px_120px] md:items-center"
-                    >
-                      <PlacementBadge placement={result.placement} />
-
-                      <div>
-                        <p className="font-black text-white">{teamName}</p>
-
-                        <p className="mt-1 text-sm text-gray-400">
-                          {teamGame} · {memberCount} player
-                          {memberCount === 1 ? "" : "s"}
-                        </p>
-
-                        {result.note && (
-                          <p className="mt-2 text-sm text-gray-500">
-                            {result.note}
-                          </p>
-                        )}
-                      </div>
-
-                      <p className="text-sm font-black text-emerald-300">
-                        {result.points} points
-                      </p>
-
-                      <p className="text-sm font-bold text-gray-300">
-                        #{result.placement}
-                      </p>
-                    </article>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
           <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-              <SectionHeader label="Registration" title="Register your team" />
+            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+              <SectionTitle label="Registration" title="Register your team" />
 
               <div className="p-5">
                 <TournamentRegistrationPanel
@@ -571,8 +507,8 @@ export default async function TournamentDetailsPage({
               </div>
             </section>
 
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-              <SectionHeader label="Teams" title="Team applications" />
+            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+              <SectionTitle label="Teams" title="Applications" />
 
               {tournament.registrations.length === 0 ? (
                 <div className="p-5 text-gray-300">
@@ -593,25 +529,21 @@ export default async function TournamentDetailsPage({
                     return (
                       <div
                         key={registration.id}
-                        className="grid gap-4 px-5 py-4 md:grid-cols-[1fr_120px_160px_120px] md:items-center"
+                        className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_110px_110px] md:items-center"
                       >
                         <div>
                           <p className="font-black text-white">{teamName}</p>
 
                           <p className="mt-1 text-sm text-gray-400">
-                            {teamGame} · {memberCount} player
-                            {memberCount === 1 ? "" : "s"}
+                            {teamGame} · {memberCount}/{tournament.teamSize}{" "}
+                            players
                           </p>
                         </div>
 
                         <StatusBadge status={registration.status} />
 
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-gray-500">
                           {formatDate(registration.createdAt)}
-                        </p>
-
-                        <p className="text-sm font-bold text-gray-300">
-                          {memberCount}/{tournament.teamSize} players
                         </p>
                       </div>
                     );
@@ -620,6 +552,49 @@ export default async function TournamentDetailsPage({
               )}
             </section>
           </div>
+
+          {tournament.results.length > 0 && (
+            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+              <SectionTitle label="Results" title="Final standings" />
+
+              <div className="divide-y divide-white/10">
+                {tournament.results.map((result) => {
+                  const teamName = result.snapshotTeamName || result.team.name;
+                  const teamGame = result.snapshotTeamGame || result.team.game;
+                  const memberCount = getSnapshotMemberCount(
+                    result.snapshotMembers,
+                    result.team.members.length,
+                  );
+
+                  return (
+                    <article
+                      key={result.id}
+                      className="grid gap-4 px-5 py-4 md:grid-cols-[100px_minmax(0,1fr)_120px] md:items-center"
+                    >
+                      <PlacementBadge placement={result.placement} />
+
+                      <div>
+                        <p className="font-black text-white">{teamName}</p>
+
+                        <p className="mt-1 text-sm text-gray-400">
+                          {teamGame} · {memberCount} player
+                          {memberCount === 1 ? "" : "s"}
+                        </p>
+
+                        {result.note && (
+                          <p className="mt-2 text-sm text-gray-500">
+                            {result.note}
+                          </p>
+                        )}
+                      </div>
+
+                      <Pill tone="green">{result.points} points</Pill>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          )}
         </section>
 
         <Footer />

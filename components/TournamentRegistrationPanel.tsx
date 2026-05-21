@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useRef, useState, useTransition } from "react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -48,15 +54,41 @@ type TournamentRegistrationPanelProps = {
 
 const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "";
 
+function Pill({
+  children,
+  tone = "gray",
+}: {
+  children: ReactNode;
+  tone?: "green" | "yellow" | "red" | "gray" | "violet";
+}) {
+  const styles = {
+    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    red: "border-red-400/25 bg-red-500/10 text-red-300",
+    gray: "border-white/10 bg-white/5 text-gray-300",
+    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
+  };
+
+  return (
+    <span
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
+    >
+      {children}
+    </span>
+  );
+}
+
 function StatusBadge({ status }: { status: string }) {
   const normalizedStatus = status.toLowerCase();
 
-  const styles: Record<string, string> = {
-    registered: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-    approved: "border-emerald-400/20 bg-emerald-500/[0.06] text-emerald-300/85",
-    rejected: "border-red-400/25 bg-red-500/10 text-red-300",
-    cancelled: "border-white/10 bg-white/5 text-gray-300",
-  };
+  const tone =
+    normalizedStatus === "approved"
+      ? "green"
+      : normalizedStatus === "registered"
+        ? "violet"
+        : normalizedStatus === "rejected"
+          ? "red"
+          : "gray";
 
   const labels: Record<string, string> = {
     registered: "Waiting review",
@@ -65,51 +97,7 @@ function StatusBadge({ status }: { status: string }) {
     cancelled: "Cancelled",
   };
 
-  return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${
-        styles[normalizedStatus] || "border-white/10 bg-white/5 text-gray-300"
-      }`}
-    >
-      {labels[normalizedStatus] || status}
-    </span>
-  );
-}
-
-function getRegistrationCardStyle(status: string) {
-  const normalizedStatus = status.toLowerCase();
-
-  if (normalizedStatus === "rejected") {
-    return "border-red-400/25 bg-red-500/10";
-  }
-
-  if (normalizedStatus === "approved") {
-    return "border-emerald-400/20 bg-emerald-500/[0.06]";
-  }
-
-  if (normalizedStatus === "cancelled") {
-    return "border-white/10 bg-black/20";
-  }
-
-  return "border-violet-400/25 bg-violet-500/10";
-}
-
-function getRegistrationTitle(status: string) {
-  const normalizedStatus = status.toLowerCase();
-
-  if (normalizedStatus === "rejected") {
-    return "Registration rejected";
-  }
-
-  if (normalizedStatus === "approved") {
-    return "Registration approved";
-  }
-
-  if (normalizedStatus === "cancelled") {
-    return "Registration cancelled";
-  }
-
-  return "Registration submitted";
+  return <Pill tone={tone}>{labels[normalizedStatus] || status}</Pill>;
 }
 
 function ActionNotice({
@@ -123,7 +111,7 @@ function ActionNotice({
 
   return (
     <div
-      className={`rounded-2xl border px-4 py-3 text-sm font-bold ${
+      className={`rounded-xl border px-4 py-3 text-sm font-bold ${
         result.ok
           ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
           : "border-red-400/25 bg-red-500/10 text-red-300"
@@ -131,6 +119,61 @@ function ActionNotice({
     >
       {result.message}
     </div>
+  );
+}
+
+function PanelNotice({
+  title,
+  description,
+  tone = "yellow",
+  children,
+}: {
+  title: string;
+  description: string;
+  tone?: "yellow" | "red" | "gray" | "green";
+  children?: ReactNode;
+}) {
+  const styles = {
+    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    red: "border-red-400/25 bg-red-500/10 text-red-300",
+    gray: "border-white/10 bg-black/20 text-white",
+    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+  };
+
+  return (
+    <div className={`rounded-2xl border p-4 ${styles[tone]}`}>
+      <p className="font-black">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-gray-300">{description}</p>
+
+      {children && <div className="mt-4 flex flex-wrap gap-3">{children}</div>}
+    </div>
+  );
+}
+
+function NoticeLink({
+  href,
+  children,
+  external = false,
+}: {
+  href: string;
+  children: ReactNode;
+  external?: boolean;
+}) {
+  const className =
+    "rounded-xl bg-violet-600 px-4 py-2 text-sm font-black text-white transition hover:bg-violet-500";
+
+  if (external) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className={className}>
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
   );
 }
 
@@ -325,64 +368,43 @@ function CancelRegistrationForm({
   );
 }
 
-function PanelNotice({
-  title,
-  description,
-  variant = "warning",
-  children,
+function ActiveRegistrationCard({
+  registration,
 }: {
-  title: string;
-  description: string;
-  variant?: "warning" | "danger" | "neutral" | "success";
-  children?: React.ReactNode;
+  registration: ActiveRegistration;
 }) {
-  const styles = {
-    warning: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    danger: "border-red-400/25 bg-red-500/10 text-red-300",
-    neutral: "border-white/10 bg-black/20 text-white",
-    success: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-  };
-
   return (
-    <div className={`rounded-2xl border p-5 ${styles[variant]}`}>
-      <p className="font-black">{title}</p>
+    <div className="grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-black text-white">{registration.teamName}</p>
+          <p className="mt-1 text-sm text-gray-400">
+            Current registration status
+          </p>
+        </div>
 
-      <p className="mt-2 text-sm leading-6 text-gray-300">{description}</p>
+        <StatusBadge status={registration.status} />
+      </div>
 
-      {children && <div className="mt-4 flex flex-wrap gap-3">{children}</div>}
+      {registration.rejectionReason && (
+        <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-300">
+          {registration.rejectionReason}
+        </p>
+      )}
+
+      {registration.status === "registered" && (
+        <CancelRegistrationForm
+          registrationId={registration.id}
+          teamName={registration.teamName}
+        />
+      )}
+
+      {registration.status === "approved" && (
+        <p className="text-sm leading-6 text-emerald-300">
+          Approved by admin. Contact an admin if changes are needed.
+        </p>
+      )}
     </div>
-  );
-}
-
-function NoticeLink({
-  href,
-  children,
-  external = false,
-}: {
-  href: string;
-  children: React.ReactNode;
-  external?: boolean;
-}) {
-  if (external) {
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-        className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-black text-white transition hover:bg-violet-500"
-      >
-        {children}
-      </a>
-    );
-  }
-
-  return (
-    <Link
-      href={href}
-      className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-black text-white transition hover:bg-violet-500"
-    >
-      {children}
-    </Link>
   );
 }
 
@@ -392,31 +414,30 @@ function UnavailableTeamsList({ teams }: { teams: UnavailableTeam[] }) {
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-        Unavailable teams
-      </p>
+    <details className="rounded-2xl border border-white/10 bg-black/20">
+      <summary className="cursor-pointer px-4 py-3 text-sm font-black text-gray-300 transition hover:text-white">
+        Unavailable teams ({teams.length})
+      </summary>
 
-      <div className="mt-3 grid gap-2">
+      <div className="divide-y divide-white/10 border-t border-white/10">
         {teams.map((team) => (
           <div
             key={team.id}
-            className="grid gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto]"
+            className="grid gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
           >
             <div>
               <p className="font-black text-white">{team.name}</p>
-
               <p className="mt-1 text-sm text-gray-400">
                 {team.game} · {team.memberCount} player
                 {team.memberCount === 1 ? "" : "s"}
               </p>
             </div>
 
-            <p className="text-sm font-bold text-yellow-300">{team.reason}</p>
+            <Pill tone="yellow">{team.reason}</Pill>
           </div>
         ))}
       </div>
-    </div>
+    </details>
   );
 }
 
@@ -424,29 +445,16 @@ function RequirementsList({ teamSize }: { teamSize: number }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
       <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-        Team requirements
+        Requirements
       </p>
 
-      <ul className="mt-3 grid gap-2 text-sm leading-6 text-gray-300">
-        <li>• Same tournament game.</li>
-        <li>
-          • At least {teamSize} player{teamSize === 1 ? "" : "s"}.
-        </li>
-        <li>• No pending team invites.</li>
-        <li>• Only the team leader can register.</li>
-      </ul>
-    </div>
-  );
-}
-
-function ApprovedRegistrationInfo() {
-  return (
-    <div className="mt-4 rounded-xl border border-emerald-400/20 bg-black/20 px-4 py-3">
-      <p className="font-black text-emerald-300">Approved by admin</p>
-
-      <p className="mt-1 text-sm leading-6 text-gray-300">
-        Contact an admin if changes are needed.
-      </p>
+      <div className="mt-3 grid gap-2 text-sm leading-6 text-gray-300">
+        <p>Same game as the tournament.</p>
+        <p>
+          At least {teamSize} player{teamSize === 1 ? "" : "s"}.
+        </p>
+        <p>No pending team invites.</p>
+      </div>
     </div>
   );
 }
@@ -469,9 +477,11 @@ function TournamentRegistrationPanel({
 
   if (tournamentStatus === "ended") {
     return (
-      <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm font-black text-gray-300">
-        Tournament ended.
-      </div>
+      <PanelNotice
+        title="Tournament ended"
+        description="Registration is closed for this tournament."
+        tone="gray"
+      />
     );
   }
 
@@ -501,6 +511,7 @@ function TournamentRegistrationPanel({
             Discord invite not configured
           </span>
         )}
+
         <NoticeLink href="/login">Refresh login</NoticeLink>
       </PanelNotice>
     );
@@ -511,49 +522,10 @@ function TournamentRegistrationPanel({
       {activeRegistrations.length > 0 && (
         <section className="grid gap-3">
           {activeRegistrations.map((registration) => (
-            <div
+            <ActiveRegistrationCard
               key={registration.id}
-              className={`rounded-2xl border p-4 ${getRegistrationCardStyle(
-                registration.status,
-              )}`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="font-black text-white">
-                    {getRegistrationTitle(registration.status)}
-                  </p>
-
-                  <p className="mt-2 font-black text-white">
-                    {registration.teamName}
-                  </p>
-                </div>
-
-                <StatusBadge status={registration.status} />
-              </div>
-
-              {registration.rejectionReason && (
-                <div className="mt-4 rounded-xl border border-red-500/20 bg-black/20 px-4 py-3">
-                  <p className="font-black text-red-300">Rejection reason</p>
-
-                  <p className="mt-1 text-sm leading-6 text-gray-300">
-                    {registration.rejectionReason}
-                  </p>
-                </div>
-              )}
-
-              {registration.status === "registered" && (
-                <div className="mt-4">
-                  <CancelRegistrationForm
-                    registrationId={registration.id}
-                    teamName={registration.teamName}
-                  />
-                </div>
-              )}
-
-              {registration.status === "approved" && (
-                <ApprovedRegistrationInfo />
-              )}
-            </div>
+              registration={registration}
+            />
           ))}
         </section>
       )}
@@ -562,7 +534,7 @@ function TournamentRegistrationPanel({
         <PanelNotice
           title="Registration closed"
           description="This tournament is not accepting registrations."
-          variant="danger"
+          tone="red"
         />
       )}
 
@@ -570,44 +542,38 @@ function TournamentRegistrationPanel({
         <PanelNotice
           title="Tournament full"
           description="Approved slots are full."
-          variant="danger"
+          tone="red"
         />
       )}
 
       {registrationStatus === "open" &&
         slotsRemaining > 0 &&
         !hasOpenRegistration && (
-          <>
-            {availableTeams.length === 0 ? (
-              <div className="grid gap-4">
-                <PanelNotice
-                  title="No eligible teams"
-                  description="No team is ready for this tournament."
-                  variant="neutral"
-                >
-                  <NoticeLink href="/profile">Manage teams</NoticeLink>
-                </PanelNotice>
-
-                <UnavailableTeamsList teams={unavailableTeams} />
-                <RequirementsList teamSize={teamSize} />
-              </div>
+          <section className="grid gap-4">
+            {availableTeams.length > 0 ? (
+              <RegisterForm
+                tournamentId={tournamentId}
+                availableTeams={availableTeams}
+              />
             ) : (
-              <div className="grid gap-4">
-                <RegisterForm
-                  tournamentId={tournamentId}
-                  availableTeams={availableTeams}
-                />
-
-                <UnavailableTeamsList teams={unavailableTeams} />
-              </div>
+              <PanelNotice
+                title="No eligible teams"
+                description="No team is ready for this tournament."
+                tone="gray"
+              >
+                <NoticeLink href="/profile">Manage teams</NoticeLink>
+              </PanelNotice>
             )}
-          </>
+
+            <UnavailableTeamsList teams={unavailableTeams} />
+            <RequirementsList teamSize={teamSize} />
+          </section>
         )}
 
-      <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm leading-6 text-gray-400">
+      <p className="text-sm text-gray-500">
         Tournament status:{" "}
-        <span className="font-bold text-white">{tournamentStatus}</span>
-      </div>
+        <span className="font-black text-white">{tournamentStatus}</span>
+      </p>
     </div>
   );
 }
