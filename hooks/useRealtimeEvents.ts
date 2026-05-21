@@ -2,10 +2,20 @@
 
 import { useEffect, useRef } from "react";
 
+type RealtimeEvent = {
+  id: string;
+  type: string;
+  audience: string;
+  entityType?: string | null;
+  entityId?: string | null;
+  payload?: unknown;
+  createdAt: string;
+};
+
 type UseRealtimeEventsOptions = {
   audience?: "public" | "admin";
   intervalSeconds?: number;
-  onEvents: (events: unknown[]) => void;
+  onEvents: (events: RealtimeEvent[]) => void;
 };
 
 export function useRealtimeEvents({
@@ -34,7 +44,13 @@ export function useRealtimeEvents({
         params.set("after", cursorRef.current);
       }
 
-      const response = await fetch(`/api/realtime/events?${params.toString()}`);
+      const response = await fetch(
+        `/api/realtime/events?${params.toString()}`,
+        {
+          cache: "no-store",
+          credentials: "same-origin",
+        },
+      );
 
       if (!response.ok) {
         return;
