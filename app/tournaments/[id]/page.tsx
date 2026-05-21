@@ -141,17 +141,13 @@ function ApplicationCounterBar({
   totalApplications: number;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
       <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-500">
-        <span>Total applications</span>
+        <span>Applications</span>
 
         <span>
-          {totalApplications} team{totalApplications === 1 ? "" : "s"} applied
+          {totalApplications} team{totalApplications === 1 ? "" : "s"} submitted
         </span>
-      </div>
-
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-        <div className="h-full w-full rounded-full bg-white/10" />
       </div>
     </div>
   );
@@ -331,14 +327,14 @@ export default async function TournamentDetailsPage({
         memberCount: team.members.length,
       })) || [];
 
-  const activeRegistrations = userTournamentRegistrations.map(
-    (registration) => ({
+  const activeRegistrations = userTournamentRegistrations
+    .filter((registration) => registration.status !== "cancelled")
+    .map((registration) => ({
       id: registration.id,
       status: registration.status,
       teamName: registration.team.name,
       rejectionReason: registration.rejectionReason,
-    }),
-  );
+    }));
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">

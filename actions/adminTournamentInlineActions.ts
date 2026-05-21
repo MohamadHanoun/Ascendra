@@ -264,6 +264,16 @@ export async function updateTournamentInline(
   if (!tournament) {
     return fail("Tournament was not found.");
   }
+  const approvedRegistrationsCount = await prisma.tournamentRegistration.count({
+    where: {
+      tournamentId: tournament.id,
+      status: "approved",
+    },
+  });
+
+  if (validation.data.maxSlots < approvedRegistrationsCount) {
+    return fail("Max slots cannot be lower than approved teams.");
+  }
 
   await prisma.tournament.update({
     where: {
