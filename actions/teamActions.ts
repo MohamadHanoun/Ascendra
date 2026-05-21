@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { createRealtimeEvent } from "@/lib/realtime";
 
 const allowedGames = ["Valorant", "League of Legends", "CS2", "Dota2"];
 
@@ -18,6 +19,21 @@ function profileError(message: string): never {
 
 function teamRedirect(teamId: string, message: string): never {
   redirect(`/profile/teams/${teamId}?message=${encodeURIComponent(message)}`);
+}
+
+async function publishProfileUpdate(payload: {
+  userId?: string;
+  teamId?: string;
+  inviteId?: string;
+  type: string;
+}) {
+  await createRealtimeEvent({
+    type: "profile.updated",
+    audience: "public",
+    entityType: "profile",
+    entityId: payload.userId || "team",
+    payload,
+  });
 }
 
 async function requireUser() {
@@ -176,6 +192,12 @@ export async function createTeam(formData: FormData) {
     return createdTeam;
   });
 
+  await publishProfileUpdate({
+    type: "team.created",
+    userId: user.id,
+    teamId: team.id,
+  });
+
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
@@ -214,6 +236,12 @@ export async function updateTeam(formData: FormData) {
       rejectedAt: null,
       rejectionReason: null,
     },
+  });
+
+  await publishProfileUpdate({
+    type: "team.updated",
+    userId: user.id,
+    teamId: team.id,
   });
 
   revalidatePath("/profile");
@@ -291,28 +319,41 @@ export async function invitePlayerToTeam(formData: FormData) {
     profileError("This player already has a pending invitation.");
   }
 
-  if (existingInvite) {
-    await prisma.teamInvite.update({
-      where: {
-        id: existingInvite.id,
-      },
-      data: {
-        status: "pending",
-        invitedById: user.id,
-        respondedAt: null,
-        createdAt: new Date(),
-      },
-    });
-  } else {
-    await prisma.teamInvite.create({
-      data: {
-        teamId: team.id,
-        invitedUserId: invitedUser.id,
-        invitedById: user.id,
-        status: "pending",
-      },
-    });
-  }
+  const invite = existingInvite
+    ? await prisma.teamInvite.update({
+        where: {
+          id: existingInvite.id,
+        },
+        data: {
+          status: "pending",
+          invitedById: user.id,
+          respondedAt: null,
+          createdAt: new Date(),
+        },
+      })
+    : await prisma.teamInvite.create({
+        data: {
+          teamId: team.id,
+          invitedUserId: invitedUser.id,
+          invitedById: user.id,
+          status: "pending",
+        },
+      });
+
+  await Promise.all([
+    publishProfileUpdate({
+      type: "team.invite.created",
+      userId: invitedUser.id,
+      teamId: team.id,
+      inviteId: invite.id,
+    }),
+    publishProfileUpdate({
+      type: "team.invite.created",
+      userId: user.id,
+      teamId: team.id,
+      inviteId: invite.id,
+    }),
+  ]);
 
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
@@ -353,6 +394,21 @@ export async function cancelTeamInvite(formData: FormData) {
       id: invite.id,
     },
   });
+
+  await Promise.all([
+    publishProfileUpdate({
+      type: "team.invite.cancelled",
+      userId: invite.invitedUserId,
+      teamId: invite.teamId,
+      inviteId: invite.id,
+    }),
+    publishProfileUpdate({
+      type: "team.invite.cancelled",
+      userId: user.id,
+      teamId: invite.teamId,
+      inviteId: invite.id,
+    }),
+  ]);
 
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${invite.teamId}`);
@@ -422,6 +478,21 @@ export async function respondToTeamInvite(formData: FormData) {
       });
     });
 
+    await Promise.all([
+      publishProfileUpdate({
+        type: "team.invite.accepted",
+        userId: user.id,
+        teamId: invite.teamId,
+        inviteId: invite.id,
+      }),
+      publishProfileUpdate({
+        type: "team.member.added",
+        userId: invite.team.leaderId,
+        teamId: invite.teamId,
+        inviteId: invite.id,
+      }),
+    ]);
+
     revalidatePath("/profile");
     revalidatePath(`/profile/teams/${invite.teamId}`);
 
@@ -437,6 +508,21 @@ export async function respondToTeamInvite(formData: FormData) {
       respondedAt: new Date(),
     },
   });
+
+  await Promise.all([
+    publishProfileUpdate({
+      type: "team.invite.rejected",
+      userId: user.id,
+      teamId: invite.teamId,
+      inviteId: invite.id,
+    }),
+    publishProfileUpdate({
+      type: "team.invite.rejected",
+      userId: invite.team.leaderId,
+      teamId: invite.teamId,
+      inviteId: invite.id,
+    }),
+  ]);
 
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${invite.teamId}`);
@@ -478,6 +564,19 @@ export async function removeTeamMember(formData: FormData) {
     },
   });
 
+  await Promise.all([
+    publishProfileUpdate({
+      type: "team.member.removed",
+      userId: member.userId,
+      teamId: team.id,
+    }),
+    publishProfileUpdate({
+      type: "team.member.removed",
+      userId: user.id,
+      teamId: team.id,
+    }),
+  ]);
+
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
@@ -508,6 +607,12 @@ export async function submitTeamForReview(formData: FormData) {
     },
   });
 
+  await publishProfileUpdate({
+    type: "team.active",
+    userId: user.id,
+    teamId: team.id,
+  });
+
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
@@ -530,6 +635,8 @@ export async function deleteTeam(formData: FormData) {
   await requireTeamNotInActiveRegistration(team.id);
   await requireTeamWithoutTournamentHistory(team.id);
 
+  const memberUserIds = team.members.map((member) => member.userId);
+
   await prisma.$transaction(async (tx) => {
     await tx.teamInvite.deleteMany({
       where: {
@@ -549,6 +656,16 @@ export async function deleteTeam(formData: FormData) {
       },
     });
   });
+
+  await Promise.all(
+    memberUserIds.map((memberUserId) =>
+      publishProfileUpdate({
+        type: "team.deleted",
+        userId: memberUserId,
+        teamId: team.id,
+      }),
+    ),
+  );
 
   revalidatePath("/profile");
 
