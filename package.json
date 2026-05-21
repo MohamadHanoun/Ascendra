@@ -10,6 +10,7 @@
     "lint": "eslint",
     "bot:dev": "tsx bot/index.ts",
     "bot:start": "tsx bot/index.ts",
+    "bot:create-invite": "tsx bot/create-invite.ts",
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
