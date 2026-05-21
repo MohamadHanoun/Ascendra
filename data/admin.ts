@@ -2,61 +2,61 @@ export const adminModules = [
   {
     title: "Announcements",
     description:
-      "Create, edit, publish, unpublish, highlight, and delete community announcements.",
+      "Create, edit, publish, highlight, hide, and delete community announcements.",
     status: "Ready",
   },
   {
     title: "Tournaments",
     description:
-      "Create tournaments, update details, control registration status, manage images, and add tournament results.",
+      "Create tournaments, update details, control registration status, manage images, and save final results.",
     status: "Ready",
   },
   {
-    title: "Registration Review",
+    title: "Registrations",
     description:
-      "Review team tournament registrations, approve valid entries, and reject entries with a visible reason.",
+      "Review team applications, approve valid teams, reject invalid entries, and manage Discord access.",
     status: "Ready",
   },
   {
-    title: "Team Directory",
+    title: "Teams",
     description:
-      "View teams, leaders, members, registrations, tournament results, and points.",
+      "View team leaders, members, tournament registrations, results, and total points.",
     status: "Ready",
   },
   {
     title: "Players",
     description:
-      "View players, Discord membership status, teams, registrations, tournament results, and points.",
+      "View Discord accounts, membership status, teams, registrations, results, and points.",
     status: "Ready",
   },
   {
     title: "Leaderboard",
     description:
-      "View player rankings by overall tournament points or by specific game.",
+      "View player and team rankings by overall tournament points or by selected game.",
     status: "Ready",
   },
   {
     title: "Stats",
     description:
-      "View RTN statistics, game breakdowns, tournament results, and awarded points.",
+      "View Ascendra platform numbers, game activity, tournament results, and awarded points.",
     status: "Ready",
   },
   {
     title: "Rules",
     description:
-      "Create, edit, activate, hide, reorder, and delete community rules from the admin panel.",
+      "Create, edit, reorder, show, hide, and delete public community rules.",
     status: "Ready",
   },
   {
     title: "Roles",
     description:
-      "Manage role names, colors, descriptions, order, and visibility on the website.",
+      "Manage role names, colors, descriptions, order, and public visibility.",
     status: "Ready",
   },
   {
     title: "Staff",
     description:
-      "Manage staff members, roles, status labels, order, and visibility on the website.",
+      "Manage staff members, roles, status labels, order, and public visibility.",
     status: "Ready",
   },
 ];

@@ -22,26 +22,18 @@ export default function AdminModuleCard({
   status,
 }: AdminModuleCardProps) {
   return (
-    <article className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 transition hover:-translate-y-1 hover:border-violet-400/30 hover:bg-white/[0.06]">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-        <div>
-          <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-            Admin module
-          </p>
+    <article className="grid gap-3 px-5 py-4 transition hover:bg-white/[0.035] md:grid-cols-[220px_minmax(0,1fr)_120px] md:items-center">
+      <h3 className="font-black text-white">{title}</h3>
 
-          <h2 className="text-xl font-black text-white">{title}</h2>
+      <p className="text-sm leading-6 text-gray-400">{description}</p>
 
-          <p className="mt-2 text-sm leading-6 text-gray-400">{description}</p>
-        </div>
-
-        <span
-          className={`inline-flex w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-black ${getStatusClasses(
-            status,
-          )}`}
-        >
-          {status}
-        </span>
-      </div>
+      <span
+        className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${getStatusClasses(
+          status,
+        )}`}
+      >
+        {status}
+      </span>
     </article>
   );
 }

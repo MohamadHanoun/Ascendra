@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
+
 import { auth } from "@/auth";
 import AdminAnnouncementForm from "@/components/AdminAnnouncementForm";
 import AdminAnnouncementList from "@/components/AdminAnnouncementList";
@@ -22,7 +25,6 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { adminModules } from "@/data/admin";
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -64,17 +66,36 @@ const allowedTabs = [
 
 async function getAdminOverview(): Promise<AdminOverviewItem[]> {
   const [
-    rulesCount,
-    rolesCount,
-    staffCount,
     tournamentsCount,
-    announcementsCount,
     usersCount,
     teamsCount,
     pendingRegistrationsCount,
     tournamentResultsCount,
     tournamentPoints,
+    announcementsCount,
+    rulesCount,
+    rolesCount,
+    staffCount,
   ] = await Promise.all([
+    prisma.tournament.count(),
+    prisma.user.count(),
+    prisma.team.count(),
+    prisma.tournamentRegistration.count({
+      where: {
+        status: "registered",
+      },
+    }),
+    prisma.tournamentResult.count(),
+    prisma.tournamentResult.aggregate({
+      _sum: {
+        points: true,
+      },
+    }),
+    prisma.announcement.count({
+      where: {
+        published: true,
+      },
+    }),
     prisma.rule.count({
       where: {
         isActive: true,
@@ -90,90 +111,59 @@ async function getAdminOverview(): Promise<AdminOverviewItem[]> {
         isActive: true,
       },
     }),
-    prisma.tournament.count(),
-    prisma.announcement.count({
-      where: {
-        published: true,
-      },
-    }),
-    prisma.user.count(),
-    prisma.team.count(),
-    prisma.tournamentRegistration.count({
-      where: {
-        status: "registered",
-      },
-    }),
-    prisma.tournamentResult.count(),
-    prisma.tournamentResult.aggregate({
-      _sum: {
-        points: true,
-      },
-    }),
   ]);
 
   const totalTournamentPoints = tournamentPoints._sum.points || 0;
+  const activeContentCount =
+    announcementsCount + rulesCount + rolesCount + staffCount;
 
   return [
     {
-      label: "Website Content",
-      value: `${rulesCount + rolesCount + staffCount + announcementsCount}`,
-      description:
-        "Rules, roles, staff members, and announcements currently active on the website.",
+      label: "Pending Registrations",
+      value: String(pendingRegistrationsCount),
+      description: "Tournament applications waiting for admin review.",
     },
     {
       label: "Tournaments",
       value: String(tournamentsCount),
-      description:
-        "Tournament records prepared for Ascendra events and team registrations.",
+      description: "Tournament records created on Ascendra.",
     },
     {
       label: "Players",
       value: String(usersCount),
-      description:
-        "Players who logged in to Ascendra using Discord and have a profile record.",
+      description: "Players who logged in with Discord.",
     },
     {
       label: "Teams",
       value: String(teamsCount),
-      description:
-        "Teams created by players for tournament registration and team play.",
+      description: "Teams created by players.",
     },
     {
       label: "Tournament Results",
       value: String(tournamentResultsCount),
-      description:
-        "Final tournament results saved by admins and used for standings.",
+      description: "Official saved tournament results.",
     },
     {
       label: "Tournament Points",
       value: String(totalTournamentPoints),
-      description:
-        "Total points awarded from official Ascendra tournament results.",
+      description: "Total points awarded from official results.",
     },
     {
-      label: "Pending Registrations",
-      value: String(pendingRegistrationsCount),
-      description: `${pendingRegistrationsCount} tournament registration${
-        pendingRegistrationsCount === 1 ? "" : "s"
-      } waiting for review.`,
+      label: "Website Content",
+      value: String(activeContentCount),
+      description: "Published announcements, active rules, roles, and staff.",
     },
   ];
 }
 
-function ModuleStatCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number;
-}) {
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+    <div>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
         {label}
       </p>
 
-      <p className="mt-1 text-lg font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
     </div>
   );
 }
@@ -189,7 +179,7 @@ function AdminAccessShell({
   label: string;
   title: string;
   description: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const labelColor = tone === "red" ? "text-red-300" : "text-violet-300";
 
@@ -200,7 +190,7 @@ function AdminAccessShell({
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[620px] overflow-hidden">
+        <section className="relative min-h-[520px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -208,26 +198,25 @@ function AdminAccessShell({
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.90)_0%,rgba(7,8,17,0.62)_44%,rgba(7,8,17,0.78)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.22),transparent_34%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.70)_48%,rgba(7,8,17,0.86)_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
-          <div className="relative z-10 mx-auto flex min-h-[620px] max-w-[900px] flex-col items-center justify-center px-6 pb-28 pt-20 text-center lg:px-10">
+          <div className="relative z-10 mx-auto flex min-h-[520px] max-w-[820px] flex-col items-center justify-center px-6 pb-24 pt-20 text-center lg:px-10">
             <p
-              className={`mb-4 text-sm font-black uppercase tracking-[0.3em] ${labelColor}`}
+              className={`mb-4 text-sm font-black uppercase tracking-[0.24em] ${labelColor}`}
             >
               {label}
             </p>
 
-            <h1 className="mb-6 text-5xl font-black uppercase leading-[1.02] tracking-tight md:text-7xl">
+            <h1 className="text-5xl font-black uppercase leading-[1.04] tracking-tight md:text-6xl">
               {title}
             </h1>
 
-            <p className="mb-8 max-w-xl leading-8 text-gray-300">
+            <p className="mt-5 max-w-xl leading-7 text-gray-300">
               {description}
             </p>
 
-            {children}
+            <div className="mt-8">{children}</div>
           </div>
         </section>
 
@@ -331,7 +320,7 @@ async function renderAdminTab(
 
   return (
     <section className="mx-auto grid max-w-[1440px] gap-6 px-6 pb-16 lg:px-10">
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+      <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
           <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
             Modules
@@ -340,28 +329,29 @@ async function renderAdminTab(
           <h2 className="mt-2 text-3xl font-black text-white">Admin modules</h2>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
-            View available Ascendra admin tools currently connected to the
-            platform.
+            Connected admin tools currently available in Ascendra.
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <ModuleStatCard label="Total" value={adminModules.length} />
-          <ModuleStatCard label="Ready" value={readyModules} />
-          <ModuleStatCard label="Important" value={importantModules} />
+        <div className="grid grid-cols-3 gap-5">
+          <Stat label="Total" value={adminModules.length} />
+          <Stat label="Ready" value={readyModules} />
+          <Stat label="Important" value={importantModules} />
         </div>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {adminModules.map((module) => (
-          <AdminModuleCard
-            key={module.title}
-            title={module.title}
-            description={module.description}
-            status={module.status}
-          />
-        ))}
-      </div>
+      <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+        <div className="divide-y divide-white/10">
+          {adminModules.map((module) => (
+            <AdminModuleCard
+              key={module.title}
+              title={module.title}
+              description={module.description}
+              status={module.status}
+            />
+          ))}
+        </div>
+      </section>
     </section>
   );
 }
@@ -369,6 +359,7 @@ async function renderAdminTab(
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   const session = await auth();
   const params = await searchParams;
+
   if (params.tab === "bot") {
     const botParams = new URLSearchParams();
 
@@ -394,9 +385,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     return (
       <AdminAccessShell
         tone="violet"
-        label="Ascendra admin login"
+        label="Ascendra admin"
         title="Admin access required."
-        description="This page is protected. Login with Discord to continue to the Ascendra admin panel."
+        description="Login with Discord to continue to the protected admin panel."
       >
         <DiscordLoginButton />
       </AdminAccessShell>
@@ -409,7 +400,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         tone="red"
         label="Access denied"
         title="You are not an Ascendra admin."
-        description={`You are logged in as ${session.user.name}, but this Discord account does not have admin access to the Ascendra admin panel.`}
+        description={`You are logged in as ${session.user.name}, but this account does not have admin access.`}
       >
         <LogoutButton />
       </AdminAccessShell>
@@ -432,7 +423,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[520px] overflow-hidden">
+        <section className="relative min-h-[430px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -440,56 +431,38 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.90)_0%,rgba(7,8,17,0.62)_44%,rgba(7,8,17,0.78)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.22),transparent_34%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.66)_44%,rgba(7,8,17,0.82)_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
-          <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-28 pt-20 lg:px-10">
-            <p className="mb-5 text-sm font-black uppercase tracking-[0.22em] text-violet-300">
+          <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
+            <p className="mb-4 text-sm font-black uppercase tracking-[0.22em] text-violet-300">
               Ascendra admin panel
             </p>
 
-            <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
-              Manage the community from one place.
+            <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.04] tracking-tight text-white md:text-6xl">
+              Manage Ascendra.
             </h1>
 
-            <p className="mt-6 max-w-3xl text-lg leading-8 text-gray-300">
-              A protected dashboard for managing announcements, tournaments,
-              registrations, teams, players, rules, roles, staff, and Ascendra
-              community tools.
+            <p className="mt-5 max-w-3xl text-base leading-7 text-gray-300">
+              Control tournaments, registrations, teams, players, content, and
+              community tools from one protected dashboard.
             </p>
-          </div>
-        </section>
 
-        <section className="relative -mt-16 mx-auto max-w-[1440px] px-6 pb-8 lg:px-10">
-          <div className="rounded-3xl border border-emerald-400/25 bg-emerald-500/10 px-5 py-4 shadow-2xl shadow-black/20 backdrop-blur">
-            <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">
-                  Admin session
-                </p>
+            <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
+              <span className="rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1 font-black text-emerald-300">
+                Admin
+              </span>
 
-                <h2 className="mt-1 text-xl font-black text-white">
-                  Logged in as Ascendra Admin
-                </h2>
-              </div>
-
-              <div className="rounded-2xl border border-emerald-400/25 bg-black/25 px-4 py-3">
-                <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-                  Current admin
-                </p>
-
-                <p className="mt-1 text-sm font-black text-white">
-                  {session.user.name}
-                </p>
-              </div>
+              <span className="rounded-full border border-white/10 bg-black/25 px-3 py-1 font-bold text-gray-300">
+                {session.user.name}
+              </span>
             </div>
           </div>
         </section>
 
-        <div className="mx-auto max-w-[1440px] px-6 pb-8 lg:px-10">
+        <section className="relative -mt-12 mx-auto max-w-[1440px] px-6 pb-8 lg:px-10">
           <AdminTabNavigation activeTab={activeTab} />
-        </div>
+        </section>
 
         {shouldShowGlobalToast && (
           <AdminToast message={params.message} type={toastType} />
