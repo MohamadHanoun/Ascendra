@@ -38,6 +38,8 @@ type AdminPageProps = {
     message?: string;
     error?: string;
     type?: string;
+    botStatus?: string;
+    botType?: string;
   }>;
 };
 
@@ -240,6 +242,8 @@ async function renderAdminTab(
   activeTab: string,
   message?: string,
   error?: string,
+  botStatus?: string,
+  botType?: string,
 ) {
   if (activeTab === "overview") {
     const overviewItems = await getAdminOverview();
@@ -250,13 +254,16 @@ async function renderAdminTab(
       </section>
     );
   }
-    if (activeTab === "bot") {
-      return (
-        <section className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
-          <AdminBotEventsPanel />
-        </section>
-      );
-    }
+  if (activeTab === "bot") {
+    return (
+      <section className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
+        <AdminBotEventsPanel
+          statusFilter={botStatus}
+          eventTypeFilter={botType}
+        />
+      </section>
+    );
+  }
 
   if (activeTab === "announcements") {
     return (
@@ -414,6 +421,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     activeTab,
     params.message,
     params.error,
+    params.botStatus,
+    params.botType,
   );
 
   return (

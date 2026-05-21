@@ -1,9 +1,33 @@
-import EmptyState from "@/components/EmptyState";
+import Link from "next/link";
+import type { Prisma } from "@prisma/client";
+
 import { retryBotEventInline } from "@/actions/adminBotEventInlineActions";
-import { prisma } from "@/lib/prisma";
 import AdminBotAutoRefresh from "@/components/AdminBotAutoRefresh";
+import EmptyState from "@/components/EmptyState";
+import { prisma } from "@/lib/prisma";
 
 type BotEventStatus = "queued" | "processing" | "completed" | "failed";
+
+type AdminBotEventsPanelProps = {
+  statusFilter?: string;
+  eventTypeFilter?: string;
+};
+
+type LogField = {
+  name: string;
+  value: string;
+  inline?: boolean;
+};
+
+const allowedBotStatuses = [
+  "queued",
+  "processing",
+  "completed",
+  "failed",
+  "cancelled",
+] as const;
+
+type BotStatusFilter = (typeof allowedBotStatuses)[number] | "all";
 
 const statusStyles: Record<string, string> = {
   queued: "border-yellow-400/30 bg-yellow-500/10 text-yellow-200",
@@ -12,6 +36,37 @@ const statusStyles: Record<string, string> = {
   failed: "border-red-400/30 bg-red-500/10 text-red-200",
   cancelled: "border-gray-400/30 bg-gray-500/10 text-gray-200",
 };
+
+function normalizeStatusFilter(value?: string): BotStatusFilter {
+  if (
+    value &&
+    allowedBotStatuses.includes(value as (typeof allowedBotStatuses)[number])
+  ) {
+    return value as BotStatusFilter;
+  }
+
+  return "all";
+}
+
+function normalizeTypeFilter(value?: string) {
+  return value && value !== "all" ? value : "all";
+}
+
+function buildBotFilterHref(status: string, botType: string) {
+  const params = new URLSearchParams({
+    tab: "bot",
+  });
+
+  if (status !== "all") {
+    params.set("botStatus", status);
+  }
+
+  if (botType !== "all") {
+    params.set("botType", botType);
+  }
+
+  return `/admin?${params.toString()}`;
+}
 
 function formatDate(date: Date | null) {
   if (!date) {
@@ -122,6 +177,29 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function FilterPill({
+  href,
+  label,
+  active,
+}: {
+  href: string;
+  label: string;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`rounded-xl border px-4 py-2 text-xs font-black uppercase tracking-[0.12em] transition ${
+        active
+          ? "border-violet-400/35 bg-violet-500/15 text-white"
+          : "border-white/10 bg-black/25 text-gray-400 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
+
 function MiniMetric({
   label,
   value,
@@ -193,7 +271,29 @@ function RetryButton({ eventId, status }: { eventId: string; status: string }) {
   );
 }
 
-export default async function AdminBotEventsPanel() {
+export default async function AdminBotEventsPanel({
+  statusFilter,
+  eventTypeFilter,
+}: AdminBotEventsPanelProps) {
+  const activeStatusFilter = normalizeStatusFilter(statusFilter);
+  const activeTypeFilter = normalizeTypeFilter(eventTypeFilter);
+
+  const typeWhere: Prisma.BotEventWhereInput =
+    activeTypeFilter !== "all"
+      ? {
+          type: activeTypeFilter,
+        }
+      : {};
+
+  const eventWhere: Prisma.BotEventWhereInput = {
+    ...typeWhere,
+    ...(activeStatusFilter !== "all"
+      ? {
+          status: activeStatusFilter,
+        }
+      : {}),
+  };
+
   const [
     queuedCount,
     processingCount,
@@ -202,28 +302,34 @@ export default async function AdminBotEventsPanel() {
     events,
     settings,
     lastProcessedEvent,
+    eventTypes,
   ] = await Promise.all([
     prisma.botEvent.count({
       where: {
+        ...typeWhere,
         status: "queued",
       },
     }),
     prisma.botEvent.count({
       where: {
+        ...typeWhere,
         status: "processing",
       },
     }),
     prisma.botEvent.count({
       where: {
+        ...typeWhere,
         status: "completed",
       },
     }),
     prisma.botEvent.count({
       where: {
+        ...typeWhere,
         status: "failed",
       },
     }),
     prisma.botEvent.findMany({
+      where: eventWhere,
       orderBy: {
         createdAt: "desc",
       },
@@ -246,6 +352,15 @@ export default async function AdminBotEventsPanel() {
         processedAt: "desc",
       },
     }),
+    prisma.botEvent.findMany({
+      select: {
+        type: true,
+      },
+      distinct: ["type"],
+      orderBy: {
+        type: "asc",
+      },
+    }),
   ]);
 
   const botTag = getSettingValue(settings, "bot.tag") || "Unknown";
@@ -257,6 +372,7 @@ export default async function AdminBotEventsPanel() {
   return (
     <div className="grid gap-8">
       <AdminBotAutoRefresh />
+
       <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/20">
         <div className="flex flex-col justify-between gap-6 xl:flex-row xl:items-start">
           <div>
@@ -343,6 +459,48 @@ export default async function AdminBotEventsPanel() {
         <EventCountCard label="Failed" value={failedCount} status="failed" />
       </div>
 
+      <section className="grid gap-4 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
+        <div>
+          <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
+            Filters
+          </p>
+
+          <h3 className="mt-2 text-2xl font-black text-white">
+            Bot event filters
+          </h3>
+        </div>
+
+        <div className="grid gap-4">
+          <div className="flex flex-wrap gap-2">
+            {["all", ...allowedBotStatuses].map((status) => (
+              <FilterPill
+                key={status}
+                href={buildBotFilterHref(status, activeTypeFilter)}
+                label={status}
+                active={activeStatusFilter === status}
+              />
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <FilterPill
+              href={buildBotFilterHref(activeStatusFilter, "all")}
+              label="All types"
+              active={activeTypeFilter === "all"}
+            />
+
+            {eventTypes.map((eventType) => (
+              <FilterPill
+                key={eventType.type}
+                href={buildBotFilterHref(activeStatusFilter, eventType.type)}
+                label={eventType.type}
+                active={activeTypeFilter === eventType.type}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
@@ -354,13 +512,15 @@ export default async function AdminBotEventsPanel() {
           </h3>
         </div>
 
-        <p className="text-sm text-gray-500">Showing latest 30 events</p>
+        <p className="text-sm text-gray-500">
+          Showing latest {events.length} event{events.length === 1 ? "" : "s"}
+        </p>
       </div>
 
       {events.length === 0 ? (
         <EmptyState
-          title="No bot events yet."
-          description="Bot events will appear here when tournaments, registrations, announcements, and Discord operations are created."
+          title="No bot events found."
+          description="Change or clear the filters to see more bot events."
         />
       ) : (
         <div className="grid gap-4">
