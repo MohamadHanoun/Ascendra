@@ -164,3 +164,47 @@ export async function cancelBotEventInline(
 
   return success("Bot event cancelled.");
 }
+export async function cleanupCompletedBotEventsInline(
+  formData: FormData,
+): Promise<AdminBotEventActionResult> {
+  const authError = await requireAdmin();
+
+  if (authError) {
+    return authError;
+  }
+
+  const days = Number(formData.get("days") || 30);
+
+  if (!Number.isFinite(days) || days < 1) {
+    return fail("Cleanup days must be at least 1.");
+  }
+
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - days);
+
+  const result = await prisma.botEvent.deleteMany({
+    where: {
+      status: {
+        in: ["completed", "cancelled"],
+      },
+      updatedAt: {
+        lt: cutoffDate,
+      },
+    },
+  });
+
+  await createRealtimeEvent({
+    type: "bot.events.cleaned",
+    audience: "admin",
+    entityType: "botEvent",
+    entityId: "cleanup",
+    payload: {
+      deletedCount: result.count,
+      olderThanDays: days,
+    },
+  });
+
+  revalidateBotViews();
+
+  return success(`Cleaned ${result.count} old bot event(s).`);
+}

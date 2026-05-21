@@ -3,11 +3,13 @@ import type { Prisma } from "@prisma/client";
 
 import {
   cancelBotEventInline,
+  cleanupCompletedBotEventsInline,
   retryBotEventInline,
 } from "@/actions/adminBotEventInlineActions";
 import AdminBotAutoRefresh from "@/components/AdminBotAutoRefresh";
 import EmptyState from "@/components/EmptyState";
 import { prisma } from "@/lib/prisma";
+
 
 type BotEventStatus = "queued" | "processing" | "completed" | "failed";
 
@@ -261,6 +263,12 @@ async function cancelBotEventFormAction(formData: FormData) {
   await cancelBotEventInline(formData);
 }
 
+async function cleanupBotEventsFormAction(formData: FormData) {
+  "use server";
+
+  await cleanupCompletedBotEventsInline(formData);
+}
+
 function RetryButton({ eventId, status }: { eventId: string; status: string }) {
   if (status !== "failed") {
     return null;
@@ -492,6 +500,38 @@ export default async function AdminBotEventsPanel({
         />
         <EventCountCard label="Failed" value={failedCount} status="failed" />
       </div>
+      <section className="grid gap-4 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
+              Maintenance
+            </p>
+
+            <h3 className="mt-2 text-2xl font-black text-white">
+              Bot event cleanup
+            </h3>
+
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
+              Remove old completed or cancelled bot events. Failed, queued, and
+              processing events are kept for safety.
+            </p>
+          </div>
+
+          <form
+            action={cleanupBotEventsFormAction}
+            className="flex flex-wrap gap-3"
+          >
+            <input type="hidden" name="days" value="30" />
+
+            <button
+              type="submit"
+              className="rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-gray-300 transition hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
+            >
+              Clean older than 30 days
+            </button>
+          </form>
+        </div>
+      </section>
 
       <section className="grid gap-4 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
         <div>
