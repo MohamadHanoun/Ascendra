@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+
 import {
   activateStaffInline,
   deactivateStaffInline,
@@ -57,6 +58,24 @@ function StatusBadge({ active, status }: { active: boolean; status: string }) {
   );
 }
 
+function Notice({ notice }: { notice: AdminStaffActionResult | null }) {
+  if (!notice) {
+    return null;
+  }
+
+  return (
+    <div
+      className={`rounded-xl border px-4 py-3 text-sm font-bold ${
+        notice.ok
+          ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
+          : "border-red-400/25 bg-red-500/10 text-red-300"
+      }`}
+    >
+      {notice.message}
+    </div>
+  );
+}
+
 function inputClass() {
   return "rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400";
 }
@@ -83,6 +102,7 @@ export default function AdminStaffDragList({
   initialStaffMembers: StaffItem[];
 }) {
   const router = useRouter();
+
   const [staffMembers, setStaffMembers] = useState(initialStaffMembers);
   const [draggedStaffId, setDraggedStaffId] = useState<string | null>(null);
   const [dragOverStaffId, setDragOverStaffId] = useState<string | null>(null);
@@ -113,7 +133,7 @@ export default function AdminStaffDragList({
 
       window.setTimeout(() => {
         router.refresh();
-      }, 450);
+      }, 300);
     });
   }
 
@@ -140,6 +160,7 @@ export default function AdminStaffDragList({
     const fromIndex = staffMembers.findIndex(
       (staffMember) => staffMember.id === draggedStaffId,
     );
+
     const toIndex = staffMembers.findIndex(
       (staffMember) => staffMember.id === targetStaffId,
     );
@@ -173,79 +194,65 @@ export default function AdminStaffDragList({
 
   return (
     <div className="grid gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/10 bg-white/[0.04] px-5 py-4 shadow-2xl shadow-black/20">
+      <div className="flex flex-col justify-between gap-3 rounded-3xl border border-white/10 bg-white/[0.04] px-5 py-4 shadow-2xl shadow-black/20 lg:flex-row lg:items-center">
         <div>
-          <p className="text-sm font-black text-white">Drag to reorder</p>
+          <p className="font-black text-white">Drag to reorder</p>
           <p className="mt-1 text-sm text-gray-400">
-            Hold the handle and drop the staff member in a new position.
+            Use the handle and drop the staff member in a new position.
           </p>
         </div>
 
-        {notice && (
-          <div
-            className={`rounded-2xl border px-4 py-3 text-sm font-bold ${
-              notice.ok
-                ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
-                : "border-red-400/25 bg-red-500/10 text-red-300"
-            }`}
-          >
-            {notice.message}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-3">
+          {pending && (
+            <div className="rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-3 text-sm font-bold text-violet-200">
+              Saving order...
+            </div>
+          )}
 
-        {pending && (
-          <div className="rounded-2xl border border-violet-400/25 bg-violet-500/10 px-4 py-3 text-sm font-bold text-violet-200">
-            Saving order...
-          </div>
-        )}
+          <Notice notice={notice} />
+        </div>
       </div>
 
-      <div className="grid gap-4">
-        {staffMembers.map((staffMember, index) => {
-          const position = index + 1;
-          const isDragging = draggedStaffId === staffMember.id;
-          const isDragTarget = dragOverStaffId === staffMember.id;
+      <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+        <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 lg:grid lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:gap-5">
+          <span>Order</span>
+          <span>Staff member</span>
+          <span>Status</span>
+          <span>Actions</span>
+        </div>
 
-          return (
-            <article
-              key={staffMember.id}
-              draggable
-              onDragStart={() => handleDragStart(staffMember.id)}
-              onDragOver={(event) => {
-                event.preventDefault();
-                handleDragOver(staffMember.id);
-              }}
-              onDrop={() => handleDrop(staffMember.id)}
-              onDragEnd={handleDragEnd}
-              className={`rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 transition ${
-                isDragging ? "opacity-50" : ""
-              } ${isDragTarget ? "bg-violet-500/10" : "hover:bg-white/[0.06]"}`}
-            >
-              <div className="grid gap-5 xl:grid-cols-[72px_minmax(0,1fr)_210px] xl:items-start">
-                <div className="flex items-center justify-between gap-3 xl:grid xl:gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="grid h-10 w-10 place-items-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-lg font-black text-violet-200">
-                      {position}
-                    </span>
+        <div className="divide-y divide-white/10">
+          {staffMembers.map((staffMember, index) => {
+            const position = index + 1;
+            const isDragging = draggedStaffId === staffMember.id;
+            const isDragTarget = dragOverStaffId === staffMember.id;
 
-                    <div className="xl:hidden">
-                      <p className="text-sm font-black text-white">
-                        {staffMember.name}
-                      </p>
-
-                      <div className="mt-1">
-                        <StatusBadge
-                          active={staffMember.isActive}
-                          status={staffMember.status}
-                        />
-                      </div>
-                    </div>
-                  </div>
+            return (
+              <article
+                key={staffMember.id}
+                draggable
+                onDragStart={() => handleDragStart(staffMember.id)}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  handleDragOver(staffMember.id);
+                }}
+                onDrop={() => handleDrop(staffMember.id)}
+                onDragEnd={handleDragEnd}
+                className={`grid gap-4 px-5 py-4 transition lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:items-start lg:gap-5 ${
+                  isDragging ? "opacity-50" : ""
+                } ${
+                  isDragTarget ? "bg-violet-500/10" : "hover:bg-white/[0.035]"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3 lg:justify-start">
+                  <span className="grid h-10 w-10 place-items-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-sm font-black text-violet-200">
+                    {String(position).padStart(2, "0")}
+                  </span>
 
                   <button
                     type="button"
                     aria-label="Drag staff member"
-                    className="grid h-10 w-10 cursor-grab place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition hover:border-violet-400/40 hover:text-violet-200 active:cursor-grabbing"
+                    className="grid h-10 w-10 cursor-grab place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition hover:border-violet-400/40 hover:text-violet-200 active:cursor-grabbing lg:hidden"
                   >
                     ≡
                   </button>
@@ -253,7 +260,7 @@ export default function AdminStaffDragList({
 
                 <InlineAdminStaffForm
                   action={updateStaffInline}
-                  buttonLabel="Save changes"
+                  buttonLabel="Save"
                   pendingLabel="Saving..."
                   className="grid gap-4"
                 >
@@ -308,58 +315,29 @@ export default function AdminStaffDragList({
                   </div>
                 </InlineAdminStaffForm>
 
-                <div className="grid content-start gap-3 rounded-2xl border border-white/10 bg-black/25 p-4">
-                  <div>
-                    <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-                      Visibility
-                    </p>
+                <div className="flex items-center justify-between gap-3 lg:block">
+                  <StatusBadge
+                    active={staffMember.isActive}
+                    status={staffMember.status}
+                  />
 
-                    <StatusBadge
-                      active={staffMember.isActive}
-                      status={staffMember.status}
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    aria-label="Drag staff member"
+                    className="hidden h-10 w-10 cursor-grab place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition hover:border-violet-400/40 hover:text-violet-200 active:cursor-grabbing lg:mt-4 lg:grid"
+                  >
+                    ≡
+                  </button>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-2 xl:grid-cols-1">
-                    {staffMember.isActive ? (
-                      <InlineAdminStaffForm
-                        action={deactivateStaffInline}
-                        buttonLabel="Hide"
-                        pendingLabel="Hiding..."
-                        variant="danger"
-                        className="grid gap-2"
-                      >
-                        <input
-                          type="hidden"
-                          name="staffId"
-                          value={staffMember.id}
-                        />
-                      </InlineAdminStaffForm>
-                    ) : (
-                      <InlineAdminStaffForm
-                        action={activateStaffInline}
-                        buttonLabel="Show"
-                        pendingLabel="Showing..."
-                        variant="success"
-                        className="grid gap-2"
-                      >
-                        <input
-                          type="hidden"
-                          name="staffId"
-                          value={staffMember.id}
-                        />
-                      </InlineAdminStaffForm>
-                    )}
-
+                <div className="grid grid-cols-2 gap-2">
+                  {staffMember.isActive ? (
                     <InlineAdminStaffForm
-                      action={deleteStaffInline}
-                      buttonLabel="Delete"
-                      pendingLabel="Deleting..."
-                      variant="danger"
+                      action={deactivateStaffInline}
+                      buttonLabel="Hide"
+                      pendingLabel="Hiding..."
+                      variant="secondary"
                       className="grid gap-2"
-                      confirmTitle="Delete staff member?"
-                      confirmDescription={`Are you sure you want to delete ${staffMember.name}? This cannot be undone.`}
-                      confirmLabel="Delete permanently"
                     >
                       <input
                         type="hidden"
@@ -367,13 +345,44 @@ export default function AdminStaffDragList({
                         value={staffMember.id}
                       />
                     </InlineAdminStaffForm>
-                  </div>
+                  ) : (
+                    <InlineAdminStaffForm
+                      action={activateStaffInline}
+                      buttonLabel="Show"
+                      pendingLabel="Showing..."
+                      variant="success"
+                      className="grid gap-2"
+                    >
+                      <input
+                        type="hidden"
+                        name="staffId"
+                        value={staffMember.id}
+                      />
+                    </InlineAdminStaffForm>
+                  )}
+
+                  <InlineAdminStaffForm
+                    action={deleteStaffInline}
+                    buttonLabel="Delete"
+                    pendingLabel="Deleting..."
+                    variant="danger"
+                    className="grid gap-2"
+                    confirmTitle="Delete staff member?"
+                    confirmDescription={`Delete ${staffMember.name}? This cannot be undone.`}
+                    confirmLabel="Delete permanently"
+                  >
+                    <input
+                      type="hidden"
+                      name="staffId"
+                      value={staffMember.id}
+                    />
+                  </InlineAdminStaffForm>
                 </div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }
