@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+
+import type { AdminTournamentActionResult } from "@/actions/adminTournamentInlineActions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
-import type { AdminTournamentActionResult } from "@/actions/adminTournamentInlineActions";
 
 function success(message: string): AdminTournamentActionResult {
   return {
@@ -100,6 +101,30 @@ async function publishResultRealtimeEvents(tournamentId: string) {
   ]);
 }
 
+function buildSnapshotMembers(
+  members: Array<{
+    id: string;
+    role: string;
+    joinedAt: Date;
+    user: {
+      id: string;
+      discordId: string;
+      username: string;
+      avatar: string | null;
+    };
+  }>,
+) {
+  return members.map((member) => ({
+    memberId: member.id,
+    userId: member.user.id,
+    discordId: member.user.discordId,
+    username: member.user.username,
+    avatar: member.user.avatar,
+    role: member.role,
+    joinedAt: member.joinedAt.toISOString(),
+  }));
+}
+
 export async function saveTournamentResultInline(
   formData: FormData,
 ): Promise<AdminTournamentActionResult> {
@@ -140,7 +165,18 @@ export async function saveTournamentResultInline(
     },
     include: {
       tournament: true,
-      team: true,
+      team: {
+        include: {
+          members: {
+            include: {
+              user: true,
+            },
+            orderBy: {
+              joinedAt: "asc",
+            },
+          },
+        },
+      },
     },
   });
 
@@ -175,6 +211,14 @@ export async function saveTournamentResultInline(
     );
   }
 
+  const snapshotTeamName =
+    registration.snapshotTeamName || registration.team.name;
+  const snapshotTeamGame =
+    registration.snapshotTeamGame || registration.team.game;
+  const snapshotMembers =
+    registration.snapshotMembers ||
+    buildSnapshotMembers(registration.team.members);
+
   await prisma.tournamentResult.upsert({
     where: {
       tournamentId_teamId: {
@@ -188,11 +232,17 @@ export async function saveTournamentResultInline(
       placement,
       points,
       note,
+      snapshotTeamName,
+      snapshotTeamGame,
+      snapshotMembers,
     },
     update: {
       placement,
       points,
       note,
+      snapshotTeamName,
+      snapshotTeamGame,
+      snapshotMembers,
     },
   });
 
@@ -201,7 +251,7 @@ export async function saveTournamentResultInline(
   revalidateResultViews(tournamentId);
 
   return success(
-    `${registration.team.name} saved as #${placement} with ${points} tournament points.`,
+    `${snapshotTeamName} saved as #${placement} with ${points} tournament points.`,
   );
 }
 
@@ -246,5 +296,7 @@ export async function deleteTournamentResultInline(
 
   revalidateResultViews(finalTournamentId);
 
-  return success(`${result.team.name} result deleted.`);
+  return success(
+    `${result.snapshotTeamName || result.team.name} result deleted.`,
+  );
 }

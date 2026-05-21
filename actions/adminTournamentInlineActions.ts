@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
@@ -174,6 +175,106 @@ function validateTournamentForm(formData: FormData) {
   };
 }
 
+function buildSnapshotMembers(
+  members: Array<{
+    id: string;
+    role: string;
+    joinedAt: Date;
+    user: {
+      id: string;
+      discordId: string;
+      username: string;
+      avatar: string | null;
+    };
+  }>,
+) {
+  return members.map((member) => ({
+    memberId: member.id,
+    userId: member.user.id,
+    discordId: member.user.discordId,
+    username: member.user.username,
+    avatar: member.user.avatar,
+    role: member.role,
+    joinedAt: member.joinedAt.toISOString(),
+  }));
+}
+
+async function snapshotTournament(tx: typeof prisma, tournamentId: string) {
+  const registrations = await tx.tournamentRegistration.findMany({
+    where: {
+      tournamentId,
+    },
+    include: {
+      team: {
+        include: {
+          members: {
+            include: {
+              user: true,
+            },
+            orderBy: {
+              joinedAt: "asc",
+            },
+          },
+        },
+      },
+    },
+  });
+
+  for (const registration of registrations) {
+    if (registration.snapshotTeamName) {
+      continue;
+    }
+
+    await tx.tournamentRegistration.update({
+      where: {
+        id: registration.id,
+      },
+      data: {
+        snapshotTeamName: registration.team.name,
+        snapshotTeamGame: registration.team.game,
+        snapshotMembers: buildSnapshotMembers(registration.team.members),
+      },
+    });
+  }
+
+  const results = await tx.tournamentResult.findMany({
+    where: {
+      tournamentId,
+    },
+    include: {
+      team: {
+        include: {
+          members: {
+            include: {
+              user: true,
+            },
+            orderBy: {
+              joinedAt: "asc",
+            },
+          },
+        },
+      },
+    },
+  });
+
+  for (const result of results) {
+    if (result.snapshotTeamName) {
+      continue;
+    }
+
+    await tx.tournamentResult.update({
+      where: {
+        id: result.id,
+      },
+      data: {
+        snapshotTeamName: result.team.name,
+        snapshotTeamGame: result.team.game,
+        snapshotMembers: buildSnapshotMembers(result.team.members),
+      },
+    });
+  }
+}
+
 export async function createTournamentInline(
   formData: FormData,
 ): Promise<AdminTournamentActionResult> {
@@ -264,6 +365,7 @@ export async function updateTournamentInline(
   if (!tournament) {
     return fail("Tournament was not found.");
   }
+
   const approvedRegistrationsCount = await prisma.tournamentRegistration.count({
     where: {
       tournamentId: tournament.id,
@@ -442,9 +544,15 @@ export async function setTournamentCancelledInline(
   return setTournamentStatus(formData, "cancelled");
 }
 
+export async function setTournamentEndedInline(
+  formData: FormData,
+): Promise<AdminTournamentActionResult> {
+  return setTournamentStatus(formData, "ended");
+}
+
 async function setTournamentStatus(
   formData: FormData,
-  status: "upcoming" | "open" | "closed" | "cancelled",
+  status: "upcoming" | "open" | "closed" | "cancelled" | "ended",
 ): Promise<AdminTournamentActionResult> {
   const authError = await requireAdmin();
 
@@ -469,13 +577,22 @@ async function setTournamentStatus(
     return fail("Tournament was not found.");
   }
 
-  await prisma.tournament.update({
-    where: {
-      id: tournament.id,
-    },
-    data: {
-      status,
-    },
+  await prisma.$transaction(async (tx) => {
+    if (status === "ended") {
+      await snapshotTournament(tx as typeof prisma, tournament.id);
+    }
+
+    await tx.tournament.update({
+      where: {
+        id: tournament.id,
+      },
+      data: {
+        status,
+        registrationStatus:
+          status === "ended" ? "closed" : tournament.registrationStatus,
+        endedAt: status === "ended" ? tournament.endedAt || new Date() : null,
+      },
+    });
   });
 
   await createRealtimeEvent({

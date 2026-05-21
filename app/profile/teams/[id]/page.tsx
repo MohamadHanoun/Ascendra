@@ -161,6 +161,11 @@ export default async function TeamDetailsPage({
           status: {
             in: ["registered", "approved"],
           },
+          tournament: {
+            status: {
+              notIn: ["ended", "cancelled"],
+            },
+          },
         },
         include: {
           tournament: {
