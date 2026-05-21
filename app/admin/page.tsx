@@ -23,6 +23,7 @@ import Navbar from "@/components/Navbar";
 import { adminModules } from "@/data/admin";
 import { prisma } from "@/lib/prisma";
 import AdminBotEventsPanel from "@/components/AdminBotEventsPanel";
+import AdminBotSettingsPanel from "@/components/AdminBotSettingsPanel";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -256,7 +257,9 @@ async function renderAdminTab(
   }
   if (activeTab === "bot") {
     return (
-      <section className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
+      <section className="mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
+        <AdminBotSettingsPanel />
+
         <AdminBotEventsPanel
           statusFilter={botStatus}
           eventTypeFilter={botType}
