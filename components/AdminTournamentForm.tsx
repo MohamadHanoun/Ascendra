@@ -28,29 +28,24 @@ function inputClass() {
 
 export default function AdminTournamentForm() {
   return (
-    <section>
-      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/20">
-        <div className="mb-5">
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
-            Tournaments
-          </p>
+    <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+      <div className="border-b border-white/10 px-5 py-4">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+          Tournaments
+        </p>
 
-          <h2 className="mt-2 text-3xl font-black text-white">
-            Create tournament
-          </h2>
+        <h2 className="mt-1 text-xl font-black text-white">
+          Create tournament
+        </h2>
+      </div>
 
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
-            Create a new tournament, choose a game, and optionally add a custom
-            image URL.
-          </p>
-        </div>
-
+      <div className="p-5">
         <InlineAdminTournamentForm
           action={createTournamentInline}
           buttonLabel="Create tournament"
           pendingLabel="Creating..."
           resetOnSuccess
-          className="grid gap-4"
+          className="grid gap-5"
         >
           <label className="grid gap-2">
             <FieldLabel>Title</FieldLabel>
@@ -72,7 +67,7 @@ export default function AdminTournamentForm() {
               name="description"
               required
               placeholder="Write a clear tournament description..."
-              className={`${inputClass()} min-h-24 resize-y`}
+              className={`${inputClass()} min-h-24 resize-y text-sm leading-6`}
             />
           </label>
 
@@ -126,7 +121,7 @@ export default function AdminTournamentForm() {
             </label>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             <label className="grid gap-2">
               <FieldLabel>Tournament status</FieldLabel>
 

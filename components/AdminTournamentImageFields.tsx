@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
 type AdminTournamentImageFieldsProps = {
@@ -14,7 +15,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 
 function inputClass() {
-  return "rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-cyan-400";
+  return "rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400";
 }
 
 function isValidImageUrl(imageUrl: string) {
@@ -38,6 +39,7 @@ export default function AdminTournamentImageFields({
   const [imageUrl, setImageUrl] = useState(defaultImageUrl || "");
 
   const trimmedImageUrl = imageUrl.trim();
+
   const hasInvalidImageUrl =
     Boolean(trimmedImageUrl) && !isValidImageUrl(trimmedImageUrl);
 
@@ -87,28 +89,28 @@ export default function AdminTournamentImageFields({
         </label>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+      <div className="grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 lg:grid-cols-[180px_minmax(0,1fr)] lg:items-center">
         <div
-          className="flex min-h-56 items-end bg-cover bg-center"
+          className="h-28 rounded-xl border border-white/10 bg-cover bg-center"
           style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(11,15,26,0.05), rgba(11,15,26,0.82)), url("${previewImageUrl}")`,
+            backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.08), rgba(7,8,17,0.62)), url("${previewImageUrl}")`,
           }}
-        >
-          <div className="w-full p-5">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan-300">
-              Image preview
-            </p>
+        />
 
-            <p className="mt-2 text-lg font-black text-white">
-              {game || "Select a game"}
-            </p>
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-violet-300">
+            Image preview
+          </p>
 
-            <p className="mt-1 text-sm text-gray-400">
-              {trimmedImageUrl && !hasInvalidImageUrl
-                ? "Using custom tournament image."
-                : "Using automatic game image."}
-            </p>
-          </div>
+          <p className="mt-1 font-black text-white">
+            {game || "Select a game"}
+          </p>
+
+          <p className="mt-1 text-sm leading-6 text-gray-400">
+            {trimmedImageUrl && !hasInvalidImageUrl
+              ? "Custom tournament image selected."
+              : "Automatic game image will be used."}
+          </p>
         </div>
       </div>
 
