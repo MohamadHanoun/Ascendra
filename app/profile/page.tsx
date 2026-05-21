@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+
 import { createTeam, respondToTeamInvite } from "@/actions/teamActions";
+import { auth } from "@/auth";
 import CustomSelect from "@/components/CustomSelect";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import ProfileIdentityActions from "@/components/ProfileIdentityActions";
 import ProfileNotice from "@/components/ProfileNotice";
-import { prisma } from "@/lib/prisma";
 import ProfileRealtime from "@/components/ProfileRealtime";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -132,7 +133,11 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         status: "pending",
       },
       include: {
-        team: true,
+        team: {
+          include: {
+            members: true,
+          },
+        },
         invitedBy: true,
       },
       orderBy: {
@@ -288,12 +293,14 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                           </p>
 
                           <p className="mt-1 text-sm text-gray-400">
-                            {invite.team.game} · invited by{" "}
-                            {invite.invitedBy.username}
+                            {invite.team.game} · {invite.team.members.length}{" "}
+                            member
+                            {invite.team.members.length === 1 ? "" : "s"} ·{" "}
+                            invited by {invite.invitedBy.username}
                           </p>
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <form action={respondToTeamInvite}>
                             <input
                               type="hidden"
@@ -330,7 +337,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                               type="submit"
                               className="rounded-xl border border-red-500/20 px-4 py-2 text-sm font-black text-red-300 transition hover:bg-red-500/10"
                             >
-                              Reject
+                              Decline
                             </button>
                           </form>
                         </div>
@@ -509,31 +516,36 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 </div>
               ) : (
                 <div className="grid gap-3 p-5">
-                  {tournamentResults.slice(0, 6).map((result) => (
-                    <Link
-                      key={result.id}
-                      href={`/tournaments/${result.tournament.id}`}
-                      className="block rounded-2xl border border-white/10 bg-black/25 p-4 transition hover:border-violet-400/30 hover:bg-white/[0.05]"
-                    >
-                      <p className="truncate font-black text-white">
-                        {result.tournament.title}
-                      </p>
+                  {tournamentResults.slice(0, 6).map((result) => {
+                    const teamName =
+                      result.snapshotTeamName || result.team.name;
 
-                      <p className="mt-1 text-xs text-gray-400">
-                        {result.team.name} · {result.tournament.game}
-                      </p>
+                    return (
+                      <Link
+                        key={result.id}
+                        href={`/tournaments/${result.tournament.id}`}
+                        className="block rounded-2xl border border-white/10 bg-black/25 p-4 transition hover:border-violet-400/30 hover:bg-white/[0.05]"
+                      >
+                        <p className="truncate font-black text-white">
+                          {result.tournament.title}
+                        </p>
 
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <span className="inline-flex rounded-full border border-yellow-400/25 bg-yellow-500/10 px-2 py-1 text-xs font-black text-yellow-300">
-                          #{result.placement}
-                        </span>
+                        <p className="mt-1 text-xs text-gray-400">
+                          {teamName} · {result.tournament.game}
+                        </p>
 
-                        <span className="inline-flex rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2 py-1 text-xs font-black text-emerald-300">
-                          {result.points} pts
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <span className="inline-flex rounded-full border border-yellow-400/25 bg-yellow-500/10 px-2 py-1 text-xs font-black text-yellow-300">
+                            #{result.placement}
+                          </span>
+
+                          <span className="inline-flex rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2 py-1 text-xs font-black text-emerald-300">
+                            {result.points} pts
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
 
                   {tournamentResults.length > 6 && (
                     <p className="text-sm text-gray-500">

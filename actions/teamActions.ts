@@ -1,9 +1,10 @@
 "use server";
 
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 
 const allowedGames = ["Valorant", "League of Legends", "CS2", "Dota2"];
 
@@ -13,6 +14,10 @@ function profileRedirect(message: string): never {
 
 function profileError(message: string): never {
   redirect(`/profile?error=${encodeURIComponent(message)}`);
+}
+
+function teamRedirect(teamId: string, message: string): never {
+  redirect(`/profile/teams/${teamId}?message=${encodeURIComponent(message)}`);
 }
 
 async function requireUser() {
@@ -66,12 +71,18 @@ async function requireTeamLeader(teamId: string, userId: string) {
 function requireEditableTeam(_status: string) {
   return;
 }
+
 async function hasActiveTournamentRegistration(teamId: string) {
   const count = await prisma.tournamentRegistration.count({
     where: {
       teamId,
       status: {
         in: ["registered", "approved"],
+      },
+      tournament: {
+        status: {
+          notIn: ["ended", "cancelled"],
+        },
       },
     },
   });
@@ -84,6 +95,31 @@ async function requireTeamNotInActiveRegistration(teamId: string) {
 
   if (hasActiveRegistration) {
     profileError("Team is locked while registered in a tournament.");
+  }
+}
+
+async function hasTournamentHistory(teamId: string) {
+  const [registrationsCount, resultsCount] = await Promise.all([
+    prisma.tournamentRegistration.count({
+      where: {
+        teamId,
+      },
+    }),
+    prisma.tournamentResult.count({
+      where: {
+        teamId,
+      },
+    }),
+  ]);
+
+  return registrationsCount > 0 || resultsCount > 0;
+}
+
+async function requireTeamWithoutTournamentHistory(teamId: string) {
+  const hasHistory = await hasTournamentHistory(teamId);
+
+  if (hasHistory) {
+    profileError("Team cannot be deleted because it has tournament history.");
   }
 }
 
@@ -116,8 +152,8 @@ export async function createTeam(formData: FormData) {
     profileError("You already have a team with this name.");
   }
 
-  await prisma.$transaction(async (tx) => {
-    const team = await tx.team.create({
+  const team = await prisma.$transaction(async (tx) => {
+    const createdTeam = await tx.team.create({
       data: {
         name,
         game,
@@ -131,15 +167,19 @@ export async function createTeam(formData: FormData) {
 
     await tx.teamMember.create({
       data: {
-        teamId: team.id,
+        teamId: createdTeam.id,
         userId: user.id,
         role: "leader",
       },
     });
+
+    return createdTeam;
   });
 
   revalidatePath("/profile");
-  profileRedirect("Team created successfully.");
+  revalidatePath(`/profile/teams/${team.id}`);
+
+  teamRedirect(team.id, "Team created successfully.");
 }
 
 export async function updateTeam(formData: FormData) {
@@ -157,11 +197,9 @@ export async function updateTeam(formData: FormData) {
   if (!allowedGames.includes(game)) {
     profileError("Invalid game selected.");
   }
-  
 
   const team = await requireTeamLeader(teamId, user.id);
   requireEditableTeam(team.status);
-
   await requireTeamNotInActiveRegistration(team.id);
 
   await prisma.team.update({
@@ -180,7 +218,8 @@ export async function updateTeam(formData: FormData) {
 
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
-  profileRedirect("Team updated successfully.");
+
+  teamRedirect(team.id, "Team updated successfully.");
 }
 
 export async function invitePlayerToTeam(formData: FormData) {
@@ -277,7 +316,8 @@ export async function invitePlayerToTeam(formData: FormData) {
 
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
-  profileRedirect("Invitation sent successfully.");
+
+  teamRedirect(team.id, "Invitation sent successfully.");
 }
 
 export async function cancelTeamInvite(formData: FormData) {
@@ -306,6 +346,8 @@ export async function cancelTeamInvite(formData: FormData) {
     profileError("Only the team leader can cancel invitations.");
   }
 
+  await requireTeamNotInActiveRegistration(invite.teamId);
+
   await prisma.teamInvite.delete({
     where: {
       id: invite.id,
@@ -314,7 +356,8 @@ export async function cancelTeamInvite(formData: FormData) {
 
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${invite.teamId}`);
-  profileRedirect("Invitation cancelled.");
+
+  teamRedirect(invite.teamId, "Invitation cancelled.");
 }
 
 export async function respondToTeamInvite(formData: FormData) {
@@ -350,19 +393,9 @@ export async function respondToTeamInvite(formData: FormData) {
   }
 
   if (response === "accepted") {
-    await prisma.$transaction(async (tx) => {
-      const activeRegistration = await prisma.tournamentRegistration.findFirst({
-        where: {
-          teamId: invite.teamId,
-          status: {
-            in: ["registered", "approved"],
-          },
-        },
-      });
+    await requireTeamNotInActiveRegistration(invite.teamId);
 
-      if (activeRegistration) {
-        profileError("Team is locked while registered in a tournament.");
-      }
+    await prisma.$transaction(async (tx) => {
       await tx.teamMember.upsert({
         where: {
           teamId_userId: {
@@ -391,7 +424,8 @@ export async function respondToTeamInvite(formData: FormData) {
 
     revalidatePath("/profile");
     revalidatePath(`/profile/teams/${invite.teamId}`);
-    profileRedirect("Invitation accepted.");
+
+    teamRedirect(invite.teamId, "Invitation accepted.");
   }
 
   await prisma.teamInvite.update({
@@ -406,7 +440,8 @@ export async function respondToTeamInvite(formData: FormData) {
 
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${invite.teamId}`);
-  profileRedirect("Invitation rejected.");
+
+  profileRedirect("Invitation declined.");
 }
 
 export async function removeTeamMember(formData: FormData) {
@@ -445,7 +480,8 @@ export async function removeTeamMember(formData: FormData) {
 
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
-  profileRedirect("Team member removed.");
+
+  teamRedirect(team.id, "Team member removed.");
 }
 
 export async function submitTeamForReview(formData: FormData) {
@@ -474,7 +510,8 @@ export async function submitTeamForReview(formData: FormData) {
 
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
-  profileRedirect("Team is active.");
+
+  teamRedirect(team.id, "Team is active.");
 }
 
 export async function deleteTeam(formData: FormData) {
@@ -490,13 +527,10 @@ export async function deleteTeam(formData: FormData) {
 
   const team = await requireTeamLeader(teamId, user.id);
 
-  await prisma.$transaction(async (tx) => {
-    await tx.tournamentRegistration.deleteMany({
-      where: {
-        teamId: team.id,
-      },
-    });
+  await requireTeamNotInActiveRegistration(team.id);
+  await requireTeamWithoutTournamentHistory(team.id);
 
+  await prisma.$transaction(async (tx) => {
     await tx.teamInvite.deleteMany({
       where: {
         teamId: team.id,
@@ -517,5 +551,6 @@ export async function deleteTeam(formData: FormData) {
   });
 
   revalidatePath("/profile");
+
   profileRedirect("Team deleted.");
 }
