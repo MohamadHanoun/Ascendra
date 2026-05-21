@@ -5,6 +5,7 @@ export function DiscordLoginButton() {
     <form
       action={async () => {
         "use server";
+
         await signIn("discord", {
           redirectTo: "/admin",
         });
@@ -12,7 +13,7 @@ export function DiscordLoginButton() {
     >
       <button
         type="submit"
-        className="rounded-xl bg-indigo-500 px-6 py-3 font-bold text-white transition hover:bg-indigo-400"
+        className="rounded-xl bg-violet-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
       >
         Login with Discord
       </button>
@@ -25,6 +26,7 @@ export function LogoutButton() {
     <form
       action={async () => {
         "use server";
+
         await signOut({
           redirectTo: "/admin",
         });
@@ -32,7 +34,7 @@ export function LogoutButton() {
     >
       <button
         type="submit"
-        className="rounded-xl border border-white/10 px-6 py-3 font-bold text-gray-300 transition hover:bg-white/10"
+        className="rounded-xl border border-white/10 bg-black/25 px-6 py-3 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
       >
         Logout
       </button>

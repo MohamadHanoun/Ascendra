@@ -13,7 +13,7 @@ export default function LoginWithDiscordButton() {
     >
       <button
         type="submit"
-        className="rounded-xl bg-indigo-500 px-7 py-4 font-bold text-white transition hover:-translate-y-1 hover:bg-indigo-400"
+        className="w-full rounded-xl bg-violet-600 px-6 py-4 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
       >
         Login with Discord
       </button>
