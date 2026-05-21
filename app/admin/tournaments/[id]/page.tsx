@@ -38,79 +38,118 @@ type ManageTournamentPageProps = {
   }>;
 };
 
-const games = ["Valorant", "League of Legends", "CS2", "Dota2"];
-
 type TournamentAction = (formData: FormData) => Promise<{
   ok: boolean;
   message: string;
   redirectTo?: string;
 }>;
 
-function FieldLabel({ children }: { children: ReactNode }) {
-  return <span className="text-sm font-bold text-gray-200">{children}</span>;
-}
+const games = ["Valorant", "League of Legends", "CS2", "Dota2"];
 
 function inputClass() {
   return "rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400";
 }
 
-function StatusBadge({ label, status }: { label: string; status: string }) {
-  const normalizedStatus = status.toLowerCase();
+function FieldLabel({ children }: { children: ReactNode }) {
+  return <span className="text-sm font-bold text-gray-200">{children}</span>;
+}
 
-  const styles: Record<string, string> = {
-    open: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    upcoming: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    closed: "border-red-400/25 bg-red-500/10 text-red-300",
-    cancelled: "border-white/10 bg-white/5 text-gray-300",
-    ended: "border-blue-400/25 bg-blue-500/10 text-blue-300",
-    registered: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-    approved: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    rejected: "border-red-400/25 bg-red-500/10 text-red-300",
+function Pill({
+  children,
+  tone = "gray",
+}: {
+  children: ReactNode;
+  tone?: "green" | "yellow" | "red" | "blue" | "gray" | "violet";
+}) {
+  const styles = {
+    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    red: "border-red-400/25 bg-red-500/10 text-red-300",
+    blue: "border-blue-400/25 bg-blue-500/10 text-blue-300",
+    gray: "border-white/10 bg-white/5 text-gray-300",
+    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
   };
 
   return (
     <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize tracking-[0.08em] ${
-        styles[normalizedStatus] || "border-white/10 bg-white/5 text-gray-300"
-      }`}
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize ${styles[tone]}`}
     >
-      {label}: {status}
+      {children}
     </span>
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
+function StatusBadge({ status }: { status: string }) {
+  const normalizedStatus = status.toLowerCase();
+
+  const tone =
+    normalizedStatus === "open" || normalizedStatus === "approved"
+      ? "green"
+      : normalizedStatus === "upcoming" ||
+          normalizedStatus === "pending" ||
+          normalizedStatus === "registered"
+        ? "yellow"
+        : normalizedStatus === "closed" || normalizedStatus === "rejected"
+          ? "red"
+          : normalizedStatus === "ended"
+            ? "blue"
+            : "gray";
+
+  return <Pill tone={tone}>{status}</Pill>;
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+    <div>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
         {label}
       </p>
 
-      <p className="mt-1 text-lg font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
     </div>
   );
 }
 
-function SectionHeader({
-  label,
-  title,
-  description,
-}: {
-  label: string;
-  title: string;
-  description: string;
-}) {
+function SectionTitle({ label, title }: { label: string; title: string }) {
   return (
-    <div className="bg-white/[0.03] px-5 py-4">
+    <div className="border-b border-white/10 px-5 py-4">
       <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
         {label}
       </p>
 
-      <h2 className="mt-2 text-2xl font-black text-white">{title}</h2>
+      <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
+    </div>
+  );
+}
 
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
-        {description}
-      </p>
+function ProgressBar({
+  approvedSlots,
+  maxSlots,
+}: {
+  approvedSlots: number;
+  maxSlots: number;
+}) {
+  const progress =
+    maxSlots > 0 ? Math.min((approvedSlots / maxSlots) * 100, 100) : 0;
+
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-500">
+        <span>
+          {approvedSlots}/{maxSlots} approved
+        </span>
+
+        <span>{Math.round(progress)}%</span>
+      </div>
+
+      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25"
+          style={{
+            width: `${progress}%`,
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -138,38 +177,6 @@ function SmallAction({
     >
       <input type="hidden" name="tournamentId" value={tournamentId} />
     </InlineAdminTournamentForm>
-  );
-}
-
-function ProgressBar({
-  usedSlots,
-  maxSlots,
-}: {
-  usedSlots: number;
-  maxSlots: number;
-}) {
-  const progress =
-    maxSlots > 0 ? Math.min((usedSlots / maxSlots) * 100, 100) : 0;
-
-  return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-      <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-400">
-        <span>
-          {usedSlots}/{maxSlots} approved slots
-        </span>
-
-        <span>{Math.round(progress)}%</span>
-      </div>
-
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25"
-          style={{
-            width: `${progress}%`,
-          }}
-        />
-      </div>
-    </div>
   );
 }
 
@@ -231,8 +238,16 @@ export default async function ManageTournamentPage({
     (registration) => registration.status === "approved",
   );
 
-  const usedSlots = approvedRegistrations.length;
-  const remainingSlots = Math.max(tournament.maxSlots - usedSlots, 0);
+  const pendingRegistrations = tournament.registrations.filter(
+    (registration) => registration.status === "registered",
+  );
+
+  const rejectedRegistrations = tournament.registrations.filter(
+    (registration) => registration.status === "rejected",
+  );
+
+  const approvedSlots = approvedRegistrations.length;
+  const remainingSlots = Math.max(tournament.maxSlots - approvedSlots, 0);
 
   const tournamentPoints = tournament.results.reduce(
     (total, result) => total + result.points,
@@ -254,7 +269,7 @@ export default async function ManageTournamentPage({
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[620px] overflow-hidden">
+        <section className="relative min-h-[540px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -262,11 +277,10 @@ export default async function ManageTournamentPage({
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.90)_0%,rgba(7,8,17,0.58)_44%,rgba(7,8,17,0.76)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.22),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(34,211,238,0.08),transparent_30%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.62)_48%,rgba(7,8,17,0.82)_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
-          <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-32 pt-20 lg:px-10">
+          <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-28 pt-20 lg:px-10">
             <Link
               href="/admin?tab=tournaments"
               className="mb-8 inline-flex rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
@@ -274,376 +288,332 @@ export default async function ManageTournamentPage({
               ← Back to tournament list
             </Link>
 
-            <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
-              <div>
-                <p className="mb-5 text-sm font-black uppercase tracking-[0.22em] text-violet-300">
-                  Manage tournament
-                </p>
+            <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-6 shadow-2xl shadow-black/30 backdrop-blur">
+              <div className="grid gap-8 lg:grid-cols-[1fr_420px] lg:items-end">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-300">
+                    Manage tournament
+                  </p>
 
-                <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
-                  {tournament.title}
-                </h1>
+                  <h1 className="mt-3 max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
+                    {tournament.title}
+                  </h1>
 
-                <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-300">
-                  Edit tournament details, manage registrations, add results,
-                  and award tournament points.
-                </p>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <StatusBadge status={tournament.status} />
+                    <StatusBadge status={tournament.registrationStatus} />
+                    <Pill tone="violet">{tournament.game}</Pill>
+                  </div>
+                </div>
 
-                <div className="mt-6 flex flex-wrap gap-2">
-                  <StatusBadge label="Tournament" status={tournament.status} />
-                  <StatusBadge
-                    label="Registration"
-                    status={tournament.registrationStatus}
-                  />
-                  <StatusBadge label="Game" status={tournament.game} />
+                <div className="grid grid-cols-3 gap-5">
+                  <Stat label="Approved" value={approvedSlots} />
+                  <Stat label="Left" value={remainingSlots} />
+                  <Stat label="Pending" value={pendingRegistrations.length} />
+                  <Stat label="Rejected" value={rejectedRegistrations.length} />
+                  <Stat label="Results" value={tournament.results.length} />
+                  <Stat label="Points" value={tournamentPoints} />
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <StatCard label="Slots" value={tournament.maxSlots} />
-                <StatCard label="Approved" value={usedSlots} />
-                <StatCard label="Left" value={remainingSlots} />
-                <StatCard label="Results" value={tournament.results.length} />
-                <StatCard label="Points" value={tournamentPoints} />
-              </div>
-            </div>
+            </section>
           </div>
         </section>
 
-        <section className="relative -mt-20 mx-auto max-w-[1440px] px-6 pb-8 lg:px-10">
+        <section className="relative -mt-16 mx-auto max-w-[1440px] px-6 pb-8 lg:px-10">
           <AdminTabNavigation activeTab="tournaments" />
         </section>
 
-        <section className="mx-auto grid max-w-[1440px] gap-6 px-6 pb-16 lg:px-10">
-          <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-            <div
-              className="relative min-h-72 bg-cover bg-center"
-              style={{
-                backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.05), rgba(7,8,17,0.88)), url("${tournamentImage}")`,
-              }}
-            >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.28)_0%,transparent_34%),radial-gradient(circle_at_bottom_left,rgba(34,211,238,0.10)_0%,transparent_30%)]" />
+        <section className="mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-10">
+          <div className="grid gap-8">
+            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+              <SectionTitle label="Details" title="Tournament setup" />
 
-              <div className="relative z-10 flex min-h-72 flex-col justify-end p-6">
-                <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
-                  Overview
-                </p>
-
-                <h2 className="mt-2 max-w-4xl text-4xl font-black text-white">
-                  {tournament.title}
-                </h2>
-
-                <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-300">
-                  {tournament.game} · {tournament.date}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-6 p-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
-              <div className="grid gap-6">
-                <section className="overflow-hidden rounded-3xl border border-white/10 bg-black/25">
-                  <SectionHeader
-                    label="Details"
-                    title="Edit main information"
-                    description="Update the title, game, image, description, date, prize, slots, and team size."
+              <div className="p-5">
+                <InlineAdminTournamentForm
+                  action={updateTournamentInline}
+                  buttonLabel="Save changes"
+                  pendingLabel="Saving..."
+                  className="grid gap-5"
+                >
+                  <input
+                    type="hidden"
+                    name="tournamentId"
+                    value={tournament.id}
+                  />
+                  <input
+                    type="hidden"
+                    name="status"
+                    value={tournament.status}
+                  />
+                  <input
+                    type="hidden"
+                    name="registrationStatus"
+                    value={tournament.registrationStatus}
                   />
 
-                  <div className="p-5">
-                    <InlineAdminTournamentForm
-                      action={updateTournamentInline}
-                      buttonLabel="Save changes"
-                      pendingLabel="Saving..."
-                      className="grid gap-4"
-                    >
+                  <label className="grid gap-2">
+                    <FieldLabel>Title</FieldLabel>
+
+                    <input
+                      name="title"
+                      required
+                      defaultValue={tournament.title}
+                      className={inputClass()}
+                    />
+                  </label>
+
+                  <AdminTournamentImageFields
+                    games={games}
+                    defaultGame={tournament.game}
+                    defaultImageUrl={tournament.imageUrl}
+                  />
+
+                  <label className="grid gap-2">
+                    <FieldLabel>Description</FieldLabel>
+
+                    <textarea
+                      name="description"
+                      required
+                      defaultValue={tournament.description}
+                      className={`${inputClass()} min-h-28 resize-y text-sm leading-6`}
+                    />
+                  </label>
+
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <label className="grid gap-2">
+                      <FieldLabel>Date</FieldLabel>
+
                       <input
-                        type="hidden"
-                        name="tournamentId"
-                        value={tournament.id}
+                        name="date"
+                        required
+                        defaultValue={tournament.date}
+                        className={inputClass()}
                       />
+                    </label>
+
+                    <label className="grid gap-2">
+                      <FieldLabel>Prize</FieldLabel>
+
                       <input
-                        type="hidden"
-                        name="status"
-                        value={tournament.status}
+                        name="prize"
+                        required
+                        defaultValue={tournament.prize}
+                        className={inputClass()}
                       />
+                    </label>
+
+                    <label className="grid gap-2">
+                      <FieldLabel>Max slots</FieldLabel>
+
                       <input
-                        type="hidden"
-                        name="registrationStatus"
-                        value={tournament.registrationStatus}
+                        name="maxSlots"
+                        type="number"
+                        min="1"
+                        required
+                        defaultValue={tournament.maxSlots}
+                        className={inputClass()}
                       />
+                    </label>
 
-                      <label className="grid gap-2">
-                        <FieldLabel>Title</FieldLabel>
+                    <label className="grid gap-2">
+                      <FieldLabel>Team size</FieldLabel>
 
-                        <input
-                          name="title"
-                          required
-                          defaultValue={tournament.title}
-                          className={inputClass()}
-                        />
-                      </label>
-
-                      <AdminTournamentImageFields
-                        games={games}
-                        defaultGame={tournament.game}
-                        defaultImageUrl={tournament.imageUrl}
+                      <input
+                        name="teamSize"
+                        type="number"
+                        min="1"
+                        required
+                        defaultValue={tournament.teamSize}
+                        className={inputClass()}
                       />
-
-                      <label className="grid gap-2">
-                        <FieldLabel>Description</FieldLabel>
-
-                        <textarea
-                          name="description"
-                          required
-                          defaultValue={tournament.description}
-                          className={`${inputClass()} min-h-28 resize-y text-sm leading-6`}
-                        />
-                      </label>
-
-                      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                        <label className="grid gap-2">
-                          <FieldLabel>Date</FieldLabel>
-
-                          <input
-                            name="date"
-                            required
-                            defaultValue={tournament.date}
-                            className={inputClass()}
-                          />
-                        </label>
-
-                        <label className="grid gap-2">
-                          <FieldLabel>Prize</FieldLabel>
-
-                          <input
-                            name="prize"
-                            required
-                            defaultValue={tournament.prize}
-                            className={inputClass()}
-                          />
-                        </label>
-
-                        <label className="grid gap-2">
-                          <FieldLabel>Max slots</FieldLabel>
-
-                          <input
-                            name="maxSlots"
-                            type="number"
-                            min="1"
-                            required
-                            defaultValue={tournament.maxSlots}
-                            className={inputClass()}
-                          />
-                        </label>
-
-                        <label className="grid gap-2">
-                          <FieldLabel>Team size</FieldLabel>
-
-                          <input
-                            name="teamSize"
-                            type="number"
-                            min="1"
-                            required
-                            defaultValue={tournament.teamSize}
-                            className={inputClass()}
-                          />
-                        </label>
-                      </div>
-                    </InlineAdminTournamentForm>
+                    </label>
                   </div>
-                </section>
+                </InlineAdminTournamentForm>
+              </div>
+            </section>
 
-                <section className="overflow-hidden rounded-3xl border border-white/10 bg-black/25">
-                  <SectionHeader
-                    label="Registrations"
-                    title="Registered teams"
-                    description="View every registration connected to this tournament."
-                  />
+            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+              <SectionTitle label="Registrations" title="Applications" />
 
-                  {tournament.registrations.length === 0 ? (
-                    <div className="p-5 text-sm text-gray-400">
-                      No registrations yet.
-                    </div>
-                  ) : (
-                    <div className="grid gap-3 p-5">
-                      {tournament.registrations.map((registration) => (
-                        <article
-                          key={registration.id}
-                          className="grid gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 lg:grid-cols-[minmax(0,1fr)_130px_170px] lg:items-center"
-                        >
-                          <div>
-                            <p className="font-black text-white">
-                              {registration.snapshotTeamName ||
-                                registration.team.name}
-                            </p>
+              {tournament.registrations.length === 0 ? (
+                <div className="p-5 text-sm text-gray-400">
+                  No registrations yet.
+                </div>
+              ) : (
+                <div className="divide-y divide-white/10">
+                  {tournament.registrations.map((registration) => (
+                    <article
+                      key={registration.id}
+                      className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_120px_140px] md:items-center"
+                    >
+                      <div>
+                        <p className="font-black text-white">
+                          {registration.snapshotTeamName ||
+                            registration.team.name}
+                        </p>
 
-                            <p className="mt-1 text-sm text-gray-400">
-                              {registration.snapshotTeamGame ||
-                                registration.team.game}{" "}
-                              · Team ID: {registration.team.id}
-                            </p>
+                        <p className="mt-1 text-sm text-gray-400">
+                          {registration.snapshotTeamGame ||
+                            registration.team.game}
+                        </p>
 
-                            {registration.rejectionReason && (
-                              <p className="mt-2 text-sm text-red-300">
-                                Rejection reason: {registration.rejectionReason}
-                              </p>
-                            )}
-                          </div>
-
-                          <StatusBadge
-                            label="Status"
-                            status={registration.status}
-                          />
-
-                          <p className="text-sm text-gray-400">
-                            {formatDate(registration.createdAt)}
+                        {registration.rejectionReason && (
+                          <p className="mt-2 text-sm text-red-300">
+                            {registration.rejectionReason}
                           </p>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </section>
+                        )}
+                      </div>
 
-                <AdminTournamentResultsPanel
-                  tournamentId={tournament.id}
-                  tournamentTitle={tournament.title}
-                  registrations={tournament.registrations}
-                  results={tournament.results}
+                      <StatusBadge status={registration.status} />
+
+                      <p className="text-sm text-gray-500">
+                        {formatDate(registration.createdAt)}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <AdminTournamentResultsPanel
+              tournamentId={tournament.id}
+              tournamentTitle={tournament.title}
+              registrations={tournament.registrations}
+              results={tournament.results}
+            />
+          </div>
+
+          <aside className="grid content-start gap-5 lg:sticky lg:top-24">
+            <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                Slots
+              </p>
+
+              <div className="mt-4">
+                <ProgressBar
+                  approvedSlots={approvedSlots}
+                  maxSlots={tournament.maxSlots}
                 />
               </div>
 
-              <aside className="grid content-start gap-4 xl:sticky xl:top-24">
-                <section className="rounded-3xl border border-white/10 bg-black/25 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-                    Slots
-                  </p>
+              <p className="mt-3 text-sm text-gray-500">
+                {tournament.registrations.length} application
+                {tournament.registrations.length === 1 ? "" : "s"} total.
+              </p>
+            </section>
 
-                  <div className="mt-3">
-                    <ProgressBar
-                      usedSlots={usedSlots}
-                      maxSlots={tournament.maxSlots}
-                    />
+            <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                Registration
+              </p>
+
+              <div className="mt-4 grid gap-2">
+                {isEnded || isCancelled ? (
+                  <div className="rounded-xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-black text-gray-400">
+                    Registration closed.
                   </div>
-                </section>
+                ) : tournament.registrationStatus === "open" ? (
+                  <SmallAction
+                    action={closeTournamentRegistrationInline}
+                    tournamentId={tournament.id}
+                    label="Close registration"
+                    pendingLabel="Closing..."
+                    variant="danger"
+                  />
+                ) : (
+                  <SmallAction
+                    action={openTournamentRegistrationInline}
+                    tournamentId={tournament.id}
+                    label="Open registration"
+                    pendingLabel="Opening..."
+                    variant="success"
+                  />
+                )}
+              </div>
+            </section>
 
-                <section className="rounded-3xl border border-white/10 bg-black/25 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-                    Registration controls
-                  </p>
+            <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                Tournament status
+              </p>
 
-                  <div className="mt-3 grid gap-2">
-                    {isEnded || isCancelled ? (
-                      <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-black text-gray-400">
-                        Registration closed.
-                      </div>
-                    ) : tournament.registrationStatus === "open" ? (
-                      <SmallAction
-                        action={closeTournamentRegistrationInline}
-                        tournamentId={tournament.id}
-                        label="Close registration"
-                        pendingLabel="Closing..."
-                        variant="danger"
-                      />
-                    ) : (
-                      <SmallAction
-                        action={openTournamentRegistrationInline}
-                        tournamentId={tournament.id}
-                        label="Open registration"
-                        pendingLabel="Opening..."
-                        variant="success"
-                      />
-                    )}
-                  </div>
-                </section>
+              <div className="mt-4 grid gap-2">
+                {tournament.status !== "upcoming" && (
+                  <SmallAction
+                    action={setTournamentUpcomingInline}
+                    tournamentId={tournament.id}
+                    label="Set upcoming"
+                    pendingLabel="Updating..."
+                  />
+                )}
 
-                <section className="rounded-3xl border border-white/10 bg-black/25 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-                    Tournament status
-                  </p>
+                {tournament.status !== "open" && (
+                  <SmallAction
+                    action={setTournamentOpenInline}
+                    tournamentId={tournament.id}
+                    label="Set open"
+                    pendingLabel="Updating..."
+                    variant="success"
+                  />
+                )}
 
-                  <div className="mt-3 grid gap-2">
-                    {tournament.status !== "upcoming" && (
-                      <SmallAction
-                        action={setTournamentUpcomingInline}
-                        tournamentId={tournament.id}
-                        label="Set upcoming"
-                        pendingLabel="Updating..."
-                      />
-                    )}
+                {tournament.status !== "closed" && (
+                  <SmallAction
+                    action={setTournamentClosedInline}
+                    tournamentId={tournament.id}
+                    label="Set closed"
+                    pendingLabel="Updating..."
+                    variant="danger"
+                  />
+                )}
 
-                    {tournament.status !== "open" && (
-                      <SmallAction
-                        action={setTournamentOpenInline}
-                        tournamentId={tournament.id}
-                        label="Set open"
-                        pendingLabel="Updating..."
-                        variant="success"
-                      />
-                    )}
+                {tournament.status !== "ended" && (
+                  <SmallAction
+                    action={setTournamentEndedInline}
+                    tournamentId={tournament.id}
+                    label="Set ended"
+                    pendingLabel="Updating..."
+                    variant="secondary"
+                  />
+                )}
 
-                    {tournament.status !== "closed" && (
-                      <SmallAction
-                        action={setTournamentClosedInline}
-                        tournamentId={tournament.id}
-                        label="Set closed"
-                        pendingLabel="Updating..."
-                        variant="danger"
-                      />
-                    )}
+                {tournament.status !== "cancelled" && (
+                  <SmallAction
+                    action={setTournamentCancelledInline}
+                    tournamentId={tournament.id}
+                    label="Set cancelled"
+                    pendingLabel="Updating..."
+                    variant="danger"
+                  />
+                )}
+              </div>
+            </section>
 
-                    {tournament.status !== "ended" && (
-                      <SmallAction
-                        action={setTournamentEndedInline}
-                        tournamentId={tournament.id}
-                        label="Set ended"
-                        pendingLabel="Updating..."
-                        variant="secondary"
-                      />
-                    )}
+            <section className="rounded-3xl border border-red-500/20 bg-red-500/5 p-5">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-red-300">
+                Danger zone
+              </p>
 
-                    {tournament.status !== "cancelled" && (
-                      <SmallAction
-                        action={setTournamentCancelledInline}
-                        tournamentId={tournament.id}
-                        label="Set cancelled"
-                        pendingLabel="Updating..."
-                        variant="danger"
-                      />
-                    )}
-                  </div>
-                </section>
-
-                <section className="rounded-3xl border border-red-500/20 bg-red-500/5 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-red-300">
-                    Danger zone
-                  </p>
-
-                  <p className="mt-2 text-sm leading-6 text-gray-400">
-                    Delete this tournament and its connected registrations,
-                    results, and points.
-                  </p>
-
-                  <div className="mt-3">
-                    <InlineAdminTournamentForm
-                      action={deleteTournamentInline}
-                      buttonLabel="Delete tournament"
-                      pendingLabel="Deleting..."
-                      variant="danger"
-                      className="grid gap-2"
-                      confirmTitle="Delete tournament?"
-                      confirmDescription={`Are you sure you want to delete ${tournament.title}? This will also remove registrations and tournament results connected to it.`}
-                      confirmLabel="Delete permanently"
-                    >
-                      <input
-                        type="hidden"
-                        name="tournamentId"
-                        value={tournament.id}
-                      />
-                    </InlineAdminTournamentForm>
-                  </div>
-                </section>
-              </aside>
-            </div>
-          </section>
+              <div className="mt-4">
+                <InlineAdminTournamentForm
+                  action={deleteTournamentInline}
+                  buttonLabel="Delete tournament"
+                  pendingLabel="Deleting..."
+                  variant="danger"
+                  className="grid gap-2"
+                  confirmTitle="Delete tournament?"
+                  confirmDescription={`Are you sure you want to delete ${tournament.title}? This removes registrations and results connected to it.`}
+                  confirmLabel="Delete permanently"
+                >
+                  <input
+                    type="hidden"
+                    name="tournamentId"
+                    value={tournament.id}
+                  />
+                </InlineAdminTournamentForm>
+              </div>
+            </section>
+          </aside>
         </section>
 
         <Footer />

@@ -6,6 +6,8 @@ type TournamentRegistrationItem = {
   id: string;
   status: string;
   teamId: string;
+  snapshotTeamName: string | null;
+  snapshotTeamGame: string | null;
   team: {
     id: string;
     name: string;
@@ -32,103 +34,82 @@ type AdminTournamentResultsPanelProps = {
   results: TournamentResultItem[];
 };
 
-function SummaryCard({
-  label,
-  value,
+function Pill({
+  children,
+  tone = "gray",
 }: {
-  label: string;
-  value: string | number;
+  children: React.ReactNode;
+  tone?: "green" | "yellow" | "red" | "gray" | "violet";
 }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-        {label}
-      </p>
-
-      <p className="mt-1 text-lg font-black text-white">{value}</p>
-    </div>
-  );
-}
-
-function PointsPresetCard({
-  label,
-  value,
-  highlight = false,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border px-4 py-3 ${
-        highlight
-          ? "border-emerald-400/25 bg-emerald-500/10"
-          : "border-white/10 bg-black/25"
-      }`}
-    >
-      <p
-        className={`text-xs font-black uppercase tracking-[0.14em] ${
-          highlight ? "text-emerald-300" : "text-gray-500"
-        }`}
-      >
-        {label}
-      </p>
-
-      <p className="mt-1 text-lg font-black text-white">{value}</p>
-    </div>
-  );
-}
-
-function PlacementBadge({ placement }: { placement: number }) {
-  const isTopThree = placement <= 3;
+  const styles = {
+    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    red: "border-red-400/25 bg-red-500/10 text-red-300",
+    gray: "border-white/10 bg-white/5 text-gray-300",
+    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
+  };
 
   return (
     <span
-      className={`grid h-11 w-11 place-items-center rounded-2xl border text-lg font-black ${
-        isTopThree
-          ? "border-yellow-400/25 bg-yellow-500/10 text-yellow-300"
-          : "border-violet-400/25 bg-violet-500/10 text-violet-200"
-      }`}
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
     >
-      #{placement}
+      {children}
     </span>
   );
 }
 
-function ResultStatusBox({
-  approvedTeams,
-  resultsCount,
-}: {
-  approvedTeams: number;
-  resultsCount: number;
-}) {
-  const remainingResults = Math.max(approvedTeams - resultsCount, 0);
-
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-        Result progress
+    <div>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+        {label}
       </p>
 
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+    </div>
+  );
+}
+
+function SectionTitle({ label, title }: { label: string; title: string }) {
+  return (
+    <div className="border-b border-white/10 px-5 py-4">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+        {label}
+      </p>
+
+      <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
+    </div>
+  );
+}
+
+function ProgressBar({
+  resultsCount,
+  approvedTeams,
+}: {
+  resultsCount: number;
+  approvedTeams: number;
+}) {
+  const progress =
+    approvedTeams > 0 ? Math.min((resultsCount / approvedTeams) * 100, 100) : 0;
+
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-500">
+        <span>
+          {resultsCount}/{approvedTeams} results
+        </span>
+
+        <span>{Math.round(progress)}%</span>
+      </div>
+
+      <div className="h-2 overflow-hidden rounded-full bg-white/10">
         <div
           className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25"
           style={{
-            width:
-              approvedTeams > 0
-                ? `${Math.min((resultsCount / approvedTeams) * 100, 100)}%`
-                : "0%",
+            width: `${progress}%`,
           }}
         />
       </div>
-
-      <p className="mt-3 text-sm leading-6 text-gray-400">
-        {resultsCount}/{approvedTeams} approved teams have saved results.
-        {remainingResults > 0
-          ? ` ${remainingResults} result${remainingResults === 1 ? "" : "s"} remaining.`
-          : " Results are complete."}
-      </p>
     </div>
   );
 }
@@ -156,74 +137,39 @@ export default function AdminTournamentResultsPanel({
     0,
   );
 
-  const bestPlacement =
-    results.length > 0
-      ? Math.min(...results.map((result) => result.placement))
-      : null;
+  const remainingResults = Math.max(
+    approvedRegistrations.length - results.length,
+    0,
+  );
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-white/10 bg-black/25">
-      <div className="border-b border-white/10 bg-white/[0.03] px-5 py-5">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-          Results
-        </p>
+    <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+      <SectionTitle label="Results" title="Tournament standings" />
 
-        <h2 className="mt-2 text-2xl font-black text-white">
-          Tournament standings
-        </h2>
-
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
-          Add final placements for approved teams. Each saved result updates the
-          tournament page, profiles, stats, and leaderboard.
-        </p>
-      </div>
-
-      <div className="grid gap-5 p-5">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <SummaryCard
-            label="Approved teams"
-            value={approvedRegistrations.length}
-          />
-          <SummaryCard label="Saved results" value={results.length} />
-          <SummaryCard label="Awarded points" value={totalPoints} />
+      <div className="grid gap-6 p-5">
+        <div className="grid grid-cols-3 gap-5">
+          <Stat label="Approved" value={approvedRegistrations.length} />
+          <Stat label="Saved" value={results.length} />
+          <Stat label="Points" value={totalPoints} />
         </div>
 
-        <ResultStatusBox
-          approvedTeams={approvedRegistrations.length}
+        <ProgressBar
           resultsCount={results.length}
+          approvedTeams={approvedRegistrations.length}
         />
 
-        <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
-          <div className="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-                Suggested points
-              </p>
+        {remainingResults > 0 && (
+          <p className="text-sm text-yellow-300">
+            {remainingResults} approved team
+            {remainingResults === 1 ? "" : "s"} still missing results.
+          </p>
+        )}
 
-              <p className="mt-1 text-sm text-gray-500">
-                Presets keep scoring fast while still allowing manual edits.
-              </p>
-            </div>
-
-            <p className="text-sm font-black text-yellow-300">
-              Best: {bestPlacement ? `#${bestPlacement}` : "-"}
-            </p>
-          </div>
-
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-            <PointsPresetCard label="Champion" value="10 pts" highlight />
-            <PointsPresetCard label="Runner-up" value="7 pts" />
-            <PointsPresetCard label="Third place" value="5 pts" />
-            <PointsPresetCard label="Participation" value="1 pt" />
-          </div>
-        </section>
-
-        <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
+        <section className="rounded-2xl border border-white/10 bg-black/20 p-4">
           {approvedRegistrations.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-gray-400">
-              No approved teams yet. Approve tournament registrations before
-              adding official results.
-            </div>
+            <p className="text-sm text-gray-400">
+              Approve teams before adding results.
+            </p>
           ) : (
             <AdminTournamentResultForm
               tournamentId={tournamentId}
@@ -233,7 +179,7 @@ export default function AdminTournamentResultsPanel({
           )}
         </section>
 
-        <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]">
+        <section className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
           <div className="border-b border-white/10 px-4 py-3">
             <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
               Saved standings
@@ -242,19 +188,21 @@ export default function AdminTournamentResultsPanel({
 
           {sortedResults.length === 0 ? (
             <div className="p-4 text-sm text-gray-400">
-              No tournament results saved yet.
+              No results saved yet.
             </div>
           ) : (
-            <div className="grid gap-3 p-4">
+            <div className="divide-y divide-white/10">
               {sortedResults.map((result) => {
                 const teamName = result.snapshotTeamName || result.team.name;
 
                 return (
                   <article
                     key={result.id}
-                    className="grid gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 lg:grid-cols-[70px_minmax(0,1fr)_100px_140px] lg:items-center"
+                    className="grid gap-4 px-4 py-4 md:grid-cols-[90px_minmax(0,1fr)_90px_110px] md:items-center"
                   >
-                    <PlacementBadge placement={result.placement} />
+                    <Pill tone={result.placement <= 3 ? "yellow" : "violet"}>
+                      #{result.placement}
+                    </Pill>
 
                     <div>
                       <p className="font-black text-white">{teamName}</p>
@@ -266,9 +214,7 @@ export default function AdminTournamentResultsPanel({
                       )}
                     </div>
 
-                    <p className="text-sm font-black text-emerald-300">
-                      {result.points} pts
-                    </p>
+                    <Pill tone="green">{result.points} pts</Pill>
 
                     <InlineAdminTournamentForm
                       action={deleteTournamentResultInline}
@@ -276,7 +222,7 @@ export default function AdminTournamentResultsPanel({
                       pendingLabel="Deleting..."
                       variant="danger"
                       className="grid gap-2"
-                      confirmTitle="Delete tournament result?"
+                      confirmTitle="Delete result?"
                       confirmDescription={`Delete ${teamName}'s result from ${tournamentTitle}?`}
                       confirmLabel="Delete result"
                     >

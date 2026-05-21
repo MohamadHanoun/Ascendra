@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import { saveTournamentResultInline } from "@/actions/adminTournamentResultActions";
 import CustomSelect from "@/components/CustomSelect";
 import InlineAdminTournamentForm from "@/components/InlineAdminTournamentForm";
@@ -9,6 +10,8 @@ type TournamentRegistrationItem = {
   id: string;
   status: string;
   teamId: string;
+  snapshotTeamName?: string | null;
+  snapshotTeamGame?: string | null;
   team: {
     id: string;
     name: string;
@@ -125,13 +128,13 @@ export default function AdminTournamentResultForm({
 
   const options = registrations.map((registration) => {
     const alreadyHasResult = existingResultTeamIds.has(registration.teamId);
+    const teamName = registration.snapshotTeamName || registration.team.name;
+    const teamGame = registration.snapshotTeamGame || registration.team.game;
 
     return {
       value: registration.teamId,
-      label: alreadyHasResult
-        ? `${registration.team.name} · update result`
-        : registration.team.name,
-      description: `${registration.team.game} · ${registration.status}${
+      label: alreadyHasResult ? `${teamName} · update result` : teamName,
+      description: `${teamGame} · approved${
         alreadyHasResult ? " · result saved" : ""
       }`,
     };
@@ -161,7 +164,7 @@ export default function AdminTournamentResultForm({
     <InlineAdminTournamentForm
       action={saveTournamentResultInline}
       buttonLabel="Save result"
-      pendingLabel="Saving result..."
+      pendingLabel="Saving..."
       variant="success"
       className="grid gap-5"
     >
@@ -179,7 +182,7 @@ export default function AdminTournamentResultForm({
       </label>
 
       <div className="grid gap-2">
-        <FieldLabel>Quick result presets</FieldLabel>
+        <FieldLabel>Quick presets</FieldLabel>
 
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           {presets.map((preset) => {
@@ -191,7 +194,7 @@ export default function AdminTournamentResultForm({
                 key={preset.label}
                 type="button"
                 onClick={() => applyPreset(preset)}
-                className={`rounded-2xl border px-4 py-3 text-left transition ${
+                className={`rounded-xl border px-4 py-3 text-left transition ${
                   isActive
                     ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
                     : "border-white/10 bg-black/25 text-gray-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
@@ -213,7 +216,7 @@ export default function AdminTournamentResultForm({
         onClick={applyNextAvailablePlacement}
         className="w-fit rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-2 text-sm font-black text-violet-200 transition hover:bg-violet-500/20"
       >
-        Use next available placement
+        Use next placement
       </button>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -255,7 +258,7 @@ export default function AdminTournamentResultForm({
           name="note"
           value={note}
           onChange={(event) => setNote(event.target.value)}
-          placeholder="Optional note, example: Champion, runner-up, participation..."
+          placeholder="Optional note"
           className={inputClass()}
         />
       </label>
