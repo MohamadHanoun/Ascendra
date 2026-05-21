@@ -1,0 +1,33 @@
+﻿name: Deploy Discord Bot
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "bot/**"
+      - "Dockerfile.bot"
+      - "docker-compose.bot.yml"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy-bot.yml"
+
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-discord-bot
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy bot to Hetzner
+    runs-on:
+      - self-hosted
+      - ascendra-bot
+      - production
+
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy Discord bot
+        run: /opt/ascendra/update-bot.sh
