@@ -22,6 +22,7 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { adminModules } from "@/data/admin";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,6 +38,8 @@ type AdminPageProps = {
     message?: string;
     error?: string;
     type?: string;
+    botStatus?: string;
+    botType?: string;
   }>;
 };
 
@@ -366,6 +369,21 @@ async function renderAdminTab(
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   const session = await auth();
   const params = await searchParams;
+  if (params.tab === "bot") {
+    const botParams = new URLSearchParams();
+
+    if (params.botStatus) {
+      botParams.set("botStatus", params.botStatus);
+    }
+
+    if (params.botType) {
+      botParams.set("botType", params.botType);
+    }
+
+    const query = botParams.toString();
+
+    redirect(query ? `/admin/bot?${query}` : "/admin/bot");
+  }
 
   const activeTab =
     params.tab && allowedTabs.includes(params.tab) ? params.tab : "overview";
