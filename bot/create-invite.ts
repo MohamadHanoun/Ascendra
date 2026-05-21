@@ -1,5 +1,5 @@
 import { loadEnvConfig } from "@next/env";
-import { Client, GatewayIntentBits } from "discord.js";
+import { ChannelType, Client, GatewayIntentBits } from "discord.js";
 
 loadEnvConfig(process.cwd());
 
@@ -33,12 +33,15 @@ client.once("ready", async () => {
     const guild = await client.guilds.fetch(GUILD_ID);
     const channel = await guild.channels.fetch(INVITE_CHANNEL_ID);
 
+    if (!channel) {
+      throw new Error("Invite channel was not found.");
+    }
+
     if (
-      !channel ||
-      !("createInvite" in channel) ||
-      typeof channel.createInvite !== "function"
+      channel.type !== ChannelType.GuildText &&
+      channel.type !== ChannelType.GuildAnnouncement
     ) {
-      throw new Error("Selected channel cannot create invites.");
+      throw new Error("Invite channel must be a text or announcement channel.");
     }
 
     const invite = await channel.createInvite({
