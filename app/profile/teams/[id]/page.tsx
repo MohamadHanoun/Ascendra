@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { auth } from "@/auth";
+
 import {
   cancelTeamInviteInline,
   deleteTeamInline,
@@ -11,6 +11,7 @@ import {
   transferTeamLeadershipInline,
   updateTeamInline,
 } from "@/actions/teamInlineActions";
+import { auth } from "@/auth";
 import CustomSelect from "@/components/CustomSelect";
 import Footer from "@/components/Footer";
 import InlineTeamActionForm from "@/components/InlineTeamActionForm";
@@ -155,6 +156,26 @@ export default async function TeamDetailsPage({
           },
         ],
       },
+      registrations: {
+        where: {
+          status: {
+            in: ["registered", "approved"],
+          },
+        },
+        include: {
+          tournament: {
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              registrationStatus: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
     },
   });
 
@@ -170,6 +191,8 @@ export default async function TeamDetailsPage({
   const canManage = Boolean(currentMembership);
   const canEdit = isLeader;
   const canDelete = isLeader;
+  const activeRegistration = team.registrations[0] || null;
+  const isTeamLocked = Boolean(activeRegistration);
 
   if (!canManage) {
     redirect("/profile");
@@ -244,6 +267,12 @@ export default async function TeamDetailsPage({
                       {totalTeamPoints} points
                     </span>
 
+                    {isTeamLocked && (
+                      <span className="inline-flex rounded-full border border-yellow-400/25 bg-yellow-500/10 px-3 py-1 text-xs font-black text-yellow-300">
+                        Locked
+                      </span>
+                    )}
+
                     {team.invites.length > 0 && (
                       <span className="inline-flex rounded-full border border-yellow-400/25 bg-yellow-500/10 px-3 py-1 text-xs font-black text-yellow-300">
                         {team.invites.length} pending invite
@@ -258,6 +287,23 @@ export default async function TeamDetailsPage({
 
                       <p className="mt-2 leading-7 text-gray-300">
                         Reason: {team.rejectionReason}
+                      </p>
+                    </div>
+                  )}
+
+                  {activeRegistration && (
+                    <div className="mt-5 rounded-2xl border border-yellow-400/20 bg-yellow-500/10 p-4">
+                      <p className="font-black text-yellow-300">Team locked</p>
+
+                      <p className="mt-2 text-sm leading-6 text-gray-300">
+                        This team is registered for{" "}
+                        <Link
+                          href={`/tournaments/${activeRegistration.tournament.id}`}
+                          className="font-black text-white transition hover:text-violet-300"
+                        >
+                          {activeRegistration.tournament.title}
+                        </Link>
+                        .
                       </p>
                     </div>
                   )}
@@ -362,7 +408,7 @@ export default async function TeamDetailsPage({
                     Basic settings
                   </p>
 
-                  {canEdit ? (
+                  {canEdit && !isTeamLocked ? (
                     <InlineTeamActionForm
                       action={updateTeamInline}
                       buttonLabel="Save changes"
@@ -405,12 +451,14 @@ export default async function TeamDetailsPage({
                     </InlineTeamActionForm>
                   ) : (
                     <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-sm text-gray-300">
-                      Only the team leader can edit this team.
+                      {isTeamLocked
+                        ? "Team settings are locked while registered in a tournament."
+                        : "Only the team leader can edit this team."}
                     </div>
                   )}
                 </section>
 
-                {isLeader && (
+                {isLeader && !isTeamLocked && (
                   <section className="pt-2">
                     <p className="mb-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500">
                       Invite player
@@ -438,8 +486,8 @@ export default async function TeamDetailsPage({
                     </InlineTeamActionForm>
                   </section>
                 )}
-                
-                {!isLeader && (
+
+                {!isLeader && !isTeamLocked && (
                   <section className="pt-2">
                     <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-red-300">
                       Leave team
@@ -470,7 +518,7 @@ export default async function TeamDetailsPage({
                   </section>
                 )}
 
-                {isLeader && canDelete && (
+                {isLeader && canDelete && !isTeamLocked && (
                   <section className="pt-2">
                     <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-red-300">
                       Danger zone
@@ -532,7 +580,7 @@ export default async function TeamDetailsPage({
                           status={isMemberLeader ? "Leader" : "Member"}
                         />
 
-                        {isLeader && !isMemberLeader ? (
+                        {isLeader && !isMemberLeader && !isTeamLocked ? (
                           <div className="flex flex-wrap gap-2">
                             <InlineTeamActionForm
                               action={transferTeamLeadershipInline}
@@ -603,7 +651,7 @@ export default async function TeamDetailsPage({
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <StatusBadge status="Invited" />
 
-                      {isLeader ? (
+                      {isLeader && !isTeamLocked ? (
                         <InlineTeamActionForm
                           action={cancelTeamInviteInline}
                           buttonLabel="Cancel"
