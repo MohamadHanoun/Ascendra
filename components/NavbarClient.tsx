@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 const mainLinks = [
   { href: "/", label: "Home" },
   { href: "/tournaments", label: "Tournaments" },
+  { href: "/leaderboard", label: "Leaderboard" },
   { href: "/announcements", label: "News" },
 ];
 

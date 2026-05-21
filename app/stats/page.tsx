@@ -1,92 +1,84 @@
+import type { Metadata } from "next";
+
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
-import StatsDetailCard from "@/components/StatsDetailCard";
 import { prisma } from "@/lib/prisma";
+
+export const metadata: Metadata = {
+  title: "Stats | Ascendra",
+  description: "Ascendra platform and tournament statistics.",
+};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const games = ["Valorant", "League of Legends", "CS2", "Dota2"];
 
-function GameStatRow({
-  label,
-  value,
-  variant = "default",
-}: {
-  label: string;
-  value: number;
-  variant?: "default" | "points";
-}) {
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div
-      className={`flex items-center justify-between gap-4 rounded-xl border px-4 py-3 ${
-        variant === "points"
-          ? "border-emerald-400/25 bg-emerald-500/10"
-          : "border-white/10 bg-black/25"
-      }`}
-    >
-      <p
-        className={`text-xs font-black uppercase tracking-[0.14em] ${
-          variant === "points" ? "text-emerald-300" : "text-gray-500"
-        }`}
-      >
+    <div>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
         {label}
       </p>
 
-      <p className="text-lg font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
     </div>
   );
 }
 
-function GameStatsCard({
-  game,
-  tournaments,
-  results,
-  points,
+function Pill({
+  children,
+  tone = "violet",
 }: {
-  game: string;
-  tournaments: number;
-  results: number;
-  points: number;
+  children: React.ReactNode;
+  tone?: "green" | "violet" | "gray";
 }) {
+  const styles = {
+    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
+    gray: "border-white/10 bg-white/5 text-gray-300",
+  };
+
   return (
-    <article className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/20 backdrop-blur transition hover:-translate-y-1 hover:border-violet-400/30 hover:bg-white/[0.06]">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-        Game
-      </p>
-
-      <h2 className="mt-2 text-2xl font-black text-white">{game}</h2>
-
-      <div className="mt-5 grid gap-2">
-        <GameStatRow label="Tournaments" value={tournaments} />
-        <GameStatRow label="Results" value={results} />
-        <GameStatRow label="Points" value={points} variant="points" />
-      </div>
-    </article>
+    <span
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
+    >
+      {children}
+    </span>
   );
 }
 
 async function getStatsData() {
   const [
-    rulesCount,
-    rolesCount,
-    staffCount,
-    tournamentsCount,
-    announcementsCount,
     usersCount,
     teamsCount,
+    tournamentsCount,
+    openTournamentsCount,
+    endedTournamentsCount,
+    publishedAnnouncementsCount,
     approvedRegistrationsCount,
     tournamentResults,
     tournamentPoints,
     tournamentsByGame,
   ] = await Promise.all([
-    prisma.rule.count({ where: { isActive: true } }),
-    prisma.role.count({ where: { isActive: true } }),
-    prisma.staffMember.count({ where: { isActive: true } }),
-    prisma.tournament.count(),
-    prisma.announcement.count({ where: { published: true } }),
     prisma.user.count(),
     prisma.team.count(),
+    prisma.tournament.count(),
+    prisma.tournament.count({
+      where: {
+        status: "open",
+      },
+    }),
+    prisma.tournament.count({
+      where: {
+        status: "ended",
+      },
+    }),
+    prisma.announcement.count({
+      where: {
+        published: true,
+      },
+    }),
     prisma.tournamentRegistration.count({
       where: {
         status: "approved",
@@ -115,42 +107,40 @@ async function getStatsData() {
     }),
   ]);
 
+  const totalPoints = tournamentPoints._sum.points || 0;
+
+  const overviewStats = [
+    { label: "Players", value: usersCount },
+    { label: "Teams", value: teamsCount },
+    { label: "Tournaments", value: tournamentsCount },
+    { label: "Open", value: openTournamentsCount },
+    { label: "Ended", value: endedTournamentsCount },
+    { label: "Results", value: tournamentResults.length },
+    { label: "Points", value: totalPoints },
+    { label: "Approved", value: approvedRegistrationsCount },
+    { label: "News", value: publishedAnnouncementsCount },
+  ];
+
   const gameStats = games.map((game) => {
     const gameResults = tournamentResults.filter(
       (result) => result.tournament.game === game,
     );
 
-    const gamePoints = gameResults.reduce(
+    const points = gameResults.reduce(
       (total, result) => total + result.points,
       0,
     );
 
-    const gameTournamentCount =
+    const tournaments =
       tournamentsByGame.find((item) => item.game === game)?._count.id || 0;
 
     return {
       game,
-      tournaments: gameTournamentCount,
+      tournaments,
       results: gameResults.length,
-      points: gamePoints,
+      points,
     };
   });
-
-  const overviewStats = [
-    { title: "Players", value: String(usersCount) },
-    { title: "Teams", value: String(teamsCount) },
-    { title: "Tournaments", value: String(tournamentsCount) },
-    { title: "Results", value: String(tournamentResults.length) },
-    { title: "Points", value: String(tournamentPoints._sum.points || 0) },
-    {
-      title: "Approved registrations",
-      value: String(approvedRegistrationsCount),
-    },
-    { title: "News", value: String(announcementsCount) },
-    { title: "Rules", value: String(rulesCount) },
-    { title: "Roles", value: String(rolesCount) },
-    { title: "Staff", value: String(staffCount) },
-  ];
 
   return {
     overviewStats,
@@ -176,8 +166,7 @@ export default async function StatsPage() {
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.90)_0%,rgba(7,8,17,0.62)_44%,rgba(7,8,17,0.78)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.22),transparent_34%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.62)_44%,rgba(7,8,17,0.80)_100%)]" />
           <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
@@ -190,49 +179,59 @@ export default async function StatsPage() {
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              Current platform numbers and game activity.
+              Current platform numbers and tournament activity.
             </p>
           </div>
         </section>
 
-        <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-10 px-6 pb-16 lg:px-10 2xl:px-14">
-          <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-            <div className="hidden bg-white/[0.03] px-5 py-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500 md:grid md:grid-cols-[minmax(0,1fr)_120px]">
-              <span>Metric</span>
-              <span>Value</span>
+        <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
+          <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
+            <div className="border-b border-white/10 pb-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+                Overview
+              </p>
+
+              <h2 className="mt-1 text-xl font-black text-white">
+                Platform numbers
+              </h2>
             </div>
 
-            <div className="divide-y divide-white/10">
+            <div className="grid gap-5 pt-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               {overviewStats.map((item) => (
-                <StatsDetailCard
-                  key={item.title}
-                  title={item.title}
-                  value={item.value}
-                />
+                <Stat key={item.label} label={item.label} value={item.value} />
               ))}
             </div>
           </section>
 
-          <section className="grid gap-5">
-            <div>
-              <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
-                Game breakdown
+          <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+            <div className="border-b border-white/10 px-5 py-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+                Games
               </p>
 
-              <h2 className="mt-2 text-3xl font-black text-white">
-                Stats by game
+              <h2 className="mt-1 text-xl font-black text-white">
+                Game activity
               </h2>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <div className="divide-y divide-white/10">
               {gameStats.map((item) => (
-                <GameStatsCard
+                <article
                   key={item.game}
-                  game={item.game}
-                  tournaments={item.tournaments}
-                  results={item.results}
-                  points={item.points}
-                />
+                  className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.035] md:grid-cols-[minmax(0,1fr)_120px_120px_120px] md:items-center"
+                >
+                  <div>
+                    <p className="font-black text-white">{item.game}</p>
+
+                    <p className="mt-1 text-sm text-gray-400">
+                      Tournament activity and saved results.
+                    </p>
+                  </div>
+
+                  <Pill>{item.tournaments} tournaments</Pill>
+                  <Pill tone="gray">{item.results} results</Pill>
+                  <Pill tone="green">{item.points} pts</Pill>
+                </article>
               ))}
             </div>
           </section>
