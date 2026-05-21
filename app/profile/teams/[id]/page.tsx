@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -50,6 +51,7 @@ function StatusBadge({ status }: { status: string }) {
     pending: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
     invited: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
     rejected: "border-red-400/25 bg-red-500/10 text-red-300",
+    locked: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
   };
 
   return (
@@ -63,7 +65,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function SmallLabel({ children }: { children: React.ReactNode }) {
+function SmallLabel({ children }: { children: ReactNode }) {
   return (
     <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
       {children}
@@ -272,11 +274,7 @@ export default async function TeamDetailsPage({
                       {totalTeamPoints} points
                     </span>
 
-                    {isTeamLocked && (
-                      <span className="inline-flex rounded-full border border-yellow-400/25 bg-yellow-500/10 px-3 py-1 text-xs font-black text-yellow-300">
-                        Locked
-                      </span>
-                    )}
+                    {isTeamLocked && <StatusBadge status="Locked" />}
 
                     {team.invites.length > 0 && (
                       <span className="inline-flex rounded-full border border-yellow-400/25 bg-yellow-500/10 px-3 py-1 text-xs font-black text-yellow-300">

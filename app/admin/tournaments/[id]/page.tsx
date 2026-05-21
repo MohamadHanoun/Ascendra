@@ -2,17 +2,19 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { auth } from "@/auth";
+
 import {
   closeTournamentRegistrationInline,
   deleteTournamentInline,
   openTournamentRegistrationInline,
   setTournamentCancelledInline,
   setTournamentClosedInline,
+  setTournamentEndedInline,
   setTournamentOpenInline,
   setTournamentUpcomingInline,
   updateTournamentInline,
 } from "@/actions/adminTournamentInlineActions";
+import { auth } from "@/auth";
 import AdminTabNavigation from "@/components/AdminTabNavigation";
 import AdminTournamentImageFields from "@/components/AdminTournamentImageFields";
 import AdminTournamentResultsPanel from "@/components/AdminTournamentResultsPanel";
@@ -60,6 +62,7 @@ function StatusBadge({ label, status }: { label: string; status: string }) {
     upcoming: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
     closed: "border-red-400/25 bg-red-500/10 text-red-300",
     cancelled: "border-white/10 bg-white/5 text-gray-300",
+    ended: "border-blue-400/25 bg-blue-500/10 text-blue-300",
     registered: "border-violet-400/25 bg-violet-500/10 text-violet-200",
     approved: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
     rejected: "border-red-400/25 bg-red-500/10 text-red-300",
@@ -152,7 +155,7 @@ function ProgressBar({
     <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
       <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-400">
         <span>
-          {usedSlots}/{maxSlots} slots used
+          {usedSlots}/{maxSlots} approved slots
         </span>
 
         <span>{Math.round(progress)}%</span>
@@ -224,11 +227,11 @@ export default async function ManageTournamentPage({
     notFound();
   }
 
-  const activeRegistrations = tournament.registrations.filter((registration) =>
-    ["registered", "approved"].includes(registration.status),
+  const approvedRegistrations = tournament.registrations.filter(
+    (registration) => registration.status === "approved",
   );
 
-  const usedSlots = activeRegistrations.length;
+  const usedSlots = approvedRegistrations.length;
   const remainingSlots = Math.max(tournament.maxSlots - usedSlots, 0);
 
   const tournamentPoints = tournament.results.reduce(
@@ -240,6 +243,9 @@ export default async function ManageTournamentPage({
     tournament.game,
     tournament.imageUrl,
   );
+
+  const isEnded = tournament.status === "ended";
+  const isCancelled = tournament.status === "cancelled";
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
@@ -295,7 +301,7 @@ export default async function ManageTournamentPage({
 
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <StatCard label="Slots" value={tournament.maxSlots} />
-                <StatCard label="Used" value={usedSlots} />
+                <StatCard label="Approved" value={usedSlots} />
                 <StatCard label="Left" value={remainingSlots} />
                 <StatCard label="Results" value={tournament.results.length} />
                 <StatCard label="Points" value={tournamentPoints} />
@@ -466,12 +472,14 @@ export default async function ManageTournamentPage({
                         >
                           <div>
                             <p className="font-black text-white">
-                              {registration.team.name}
+                              {registration.snapshotTeamName ||
+                                registration.team.name}
                             </p>
 
                             <p className="mt-1 text-sm text-gray-400">
-                              {registration.team.game} · Team ID:{" "}
-                              {registration.team.id}
+                              {registration.snapshotTeamGame ||
+                                registration.team.game}{" "}
+                              · Team ID: {registration.team.id}
                             </p>
 
                             {registration.rejectionReason && (
@@ -523,7 +531,11 @@ export default async function ManageTournamentPage({
                   </p>
 
                   <div className="mt-3 grid gap-2">
-                    {tournament.registrationStatus === "open" ? (
+                    {isEnded || isCancelled ? (
+                      <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-black text-gray-400">
+                        Registration closed.
+                      </div>
+                    ) : tournament.registrationStatus === "open" ? (
                       <SmallAction
                         action={closeTournamentRegistrationInline}
                         tournamentId={tournament.id}
@@ -575,6 +587,16 @@ export default async function ManageTournamentPage({
                         label="Set closed"
                         pendingLabel="Updating..."
                         variant="danger"
+                      />
+                    )}
+
+                    {tournament.status !== "ended" && (
+                      <SmallAction
+                        action={setTournamentEndedInline}
+                        tournamentId={tournament.id}
+                        label="Set ended"
+                        pendingLabel="Updating..."
+                        variant="secondary"
                       />
                     )}
 

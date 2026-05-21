@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { Prisma } from "@prisma/client";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -199,7 +200,10 @@ function buildSnapshotMembers(
   }));
 }
 
-async function snapshotTournament(tx: typeof prisma, tournamentId: string) {
+async function snapshotTournament(
+  tx: Prisma.TransactionClient,
+  tournamentId: string,
+) {
   const registrations = await tx.tournamentRegistration.findMany({
     where: {
       tournamentId,
@@ -489,6 +493,10 @@ async function setTournamentRegistrationStatus(
     return fail("Tournament was not found.");
   }
 
+  if (tournament.status === "ended") {
+    return fail("Ended tournaments cannot reopen registration.");
+  }
+
   await prisma.tournament.update({
     where: {
       id: tournament.id,
@@ -579,7 +587,7 @@ async function setTournamentStatus(
 
   await prisma.$transaction(async (tx) => {
     if (status === "ended") {
-      await snapshotTournament(tx as typeof prisma, tournament.id);
+      await snapshotTournament(tx, tournament.id);
     }
 
     await tx.tournament.update({
