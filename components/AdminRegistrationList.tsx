@@ -7,6 +7,10 @@ import InlineAdminRegistrationForm from "@/components/InlineAdminRegistrationFor
 import ProfileNotice from "@/components/ProfileNotice";
 import { prisma } from "@/lib/prisma";
 import AdminRegistrationsRealtime from "@/components/AdminRegistrationsRealtime";
+import {
+  forceRemoveRegistrationDiscordAccess,
+  forceSyncRegistrationDiscordAccess,
+} from "@/actions/adminRegistrationDiscordSyncActions";
 
 type AdminRegistrationListProps = {
   message?: string;
@@ -166,6 +170,8 @@ export default async function AdminRegistrationList({
       discordRoleError: true,
       discordRoleRequestedAt: true,
       discordRoleSyncedAt: true,
+      discordChannelName: true,
+      discordChannelId: true,
       tournament: {
         select: {
           title: true,
@@ -540,6 +546,48 @@ export default async function AdminRegistrationList({
                             {registration.discordRoleError}
                           </div>
                         )}
+                        <div className="mt-4 flex flex-wrap gap-3 border-t border-white/10 pt-4">
+                          {registration.status === "approved" && (
+                            <InlineAdminRegistrationForm
+                              action={forceSyncRegistrationDiscordAccess}
+                              buttonLabel="Force sync Discord access"
+                              pendingLabel="Queueing..."
+                              variant="success"
+                              confirmTitle="Force sync Discord access?"
+                              confirmDescription={`Queue Discord role and voice room sync for ${registration.team.name}.`}
+                              confirmLabel="Queue sync"
+                            >
+                              <input
+                                type="hidden"
+                                name="registrationId"
+                                value={registration.id}
+                              />
+                            </InlineAdminRegistrationForm>
+                          )}
+
+                          {(registration.discordRoleStatus === "active" ||
+                            registration.discordRoleStatus ===
+                              "pending_create" ||
+                            registration.discordRoleStatus === "failed" ||
+                            Boolean(registration.discordRoleId) ||
+                            Boolean(registration.discordChannelId)) && (
+                            <InlineAdminRegistrationForm
+                              action={forceRemoveRegistrationDiscordAccess}
+                              buttonLabel="Remove Discord access"
+                              pendingLabel="Queueing..."
+                              variant="danger"
+                              confirmTitle="Remove Discord access?"
+                              confirmDescription={`Queue removal of Discord role and voice room for ${registration.team.name}.`}
+                              confirmLabel="Queue removal"
+                            >
+                              <input
+                                type="hidden"
+                                name="registrationId"
+                                value={registration.id}
+                              />
+                            </InlineAdminRegistrationForm>
+                          )}
+                        </div>
                       </section>
                     </div>
                   </details>
