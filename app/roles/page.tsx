@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
+
 import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
-import RoleCard from "@/components/RoleCard";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
@@ -24,6 +24,33 @@ async function getRoles() {
   });
 }
 
+function RoleRow({
+  name,
+  color,
+  description,
+}: {
+  name: string;
+  color: string;
+  description: string;
+}) {
+  return (
+    <article className="grid gap-3 border-b border-white/10 px-5 py-4 last:border-b-0 md:grid-cols-[220px_minmax(0,1fr)] md:items-center">
+      <div className="flex min-w-0 items-center gap-3">
+        <span
+          className="h-3 w-3 shrink-0 rounded-full"
+          style={{
+            backgroundColor: color,
+          }}
+        />
+
+        <p className="truncate font-black text-white">{name}</p>
+      </div>
+
+      <p className="text-sm leading-6 text-gray-400">{description}</p>
+    </article>
+  );
+}
+
 export default async function RolesPage() {
   const roles = await getRoles();
 
@@ -42,8 +69,7 @@ export default async function RolesPage() {
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.90)_0%,rgba(7,8,17,0.62)_44%,rgba(7,8,17,0.78)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.22),transparent_34%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.62)_44%,rgba(7,8,17,0.82)_100%)]" />
           <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
@@ -56,12 +82,36 @@ export default async function RolesPage() {
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              Public community roles and responsibilities.
+              Public roles and responsibilities inside the community.
             </p>
           </div>
         </section>
 
         <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
+          <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
+            <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_160px] md:items-end">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+                  Community roles
+                </p>
+
+                <h2 className="mt-1 text-xl font-black text-white">
+                  Active roles
+                </h2>
+              </div>
+
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+                  Total
+                </p>
+
+                <p className="mt-1 text-2xl font-black text-white">
+                  {roles.length}
+                </p>
+              </div>
+            </div>
+          </section>
+
           {roles.length === 0 ? (
             <EmptyState
               title="No active roles yet"
@@ -69,15 +119,9 @@ export default async function RolesPage() {
             />
           ) : (
             <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-              <div className="hidden bg-white/[0.03] px-5 py-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500 md:grid md:grid-cols-[90px_minmax(0,1fr)_minmax(0,1.4fr)]">
-                <span>Color</span>
-                <span>Role</span>
-                <span>Description</span>
-              </div>
-
-              <div className="divide-y divide-white/10">
+              <div>
                 {roles.map((role) => (
-                  <RoleCard
+                  <RoleRow
                     key={role.id}
                     name={role.name}
                     color={role.color}

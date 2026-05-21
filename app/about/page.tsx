@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
-import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About | Ascendra",
@@ -10,19 +12,19 @@ export const metadata: Metadata = {
 const values = [
   {
     title: "Teams",
-    description: "Create teams, invite players, and prepare for events.",
+    description: "Create teams, invite players, and prepare for tournaments.",
   },
   {
     title: "Tournaments",
-    description: "Join community events and follow tournament progress.",
+    description: "Register for events, follow applications, and track results.",
   },
   {
-    title: "Results",
-    description: "Track placements, points, and leaderboard progress.",
+    title: "Leaderboard",
+    description: "Official points and rankings based on saved results.",
   },
   {
     title: "Community",
-    description: "Keep competition organized, fair, and easy to follow.",
+    description: "A cleaner place for organized competitive play.",
   },
 ];
 
@@ -34,11 +36,23 @@ function ValueRow({
   description: string;
 }) {
   return (
-    <article className="grid gap-3 p-5 transition hover:bg-white/[0.035] md:grid-cols-[220px_minmax(0,1fr)] md:items-start">
-      <h3 className="text-xl font-black text-white">{title}</h3>
+    <article className="grid gap-2 border-b border-white/10 px-5 py-4 last:border-b-0 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+      <h3 className="font-black text-white">{title}</h3>
 
       <p className="text-sm leading-6 text-gray-400">{description}</p>
     </article>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+        {label}
+      </p>
+
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+    </div>
   );
 }
 
@@ -58,8 +72,7 @@ export default function AboutPage() {
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.90)_0%,rgba(7,8,17,0.62)_44%,rgba(7,8,17,0.78)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.22),transparent_34%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.62)_44%,rgba(7,8,17,0.82)_100%)]" />
           <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
@@ -72,55 +85,49 @@ export default function AboutPage() {
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              Ascendra is a community platform for teams, tournaments, and
-              competitive progress.
+              Ascendra is built for teams, tournaments, rankings, and organized
+              competitive play.
             </p>
           </div>
         </section>
 
         <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
-          <section className="grid gap-8 lg:grid-cols-[1fr_420px]">
-            <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-8 shadow-2xl shadow-black/20 backdrop-blur">
-              <p className="mb-4 text-sm font-black uppercase tracking-[0.18em] text-violet-300">
-                Purpose
-              </p>
-
-              <h2 className="mb-5 text-3xl font-black text-white">
-                Organized competitive play.
-              </h2>
-
-              <div className="grid gap-5 leading-8 text-gray-300">
-                <p>
-                  Ascendra helps players create teams, join tournaments, follow
-                  results, and build a more organized competitive community.
+          <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/20 backdrop-blur">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+                  Purpose
                 </p>
 
-                <p>
-                  The platform is designed to stay simple: players manage teams
-                  and registrations, while admins manage events, approvals, and
-                  results.
+                <h2 className="mt-2 text-3xl font-black text-white">
+                  Organized competitive play.
+                </h2>
+
+                <p className="mt-4 max-w-3xl text-sm leading-7 text-gray-400">
+                  The platform helps players manage teams, join tournaments,
+                  follow official results, and compete through a cleaner system.
                 </p>
               </div>
-            </div>
 
-            <div className="rounded-3xl border border-violet-400/25 bg-violet-500/10 p-8 shadow-2xl shadow-violet-950/20 backdrop-blur">
-              <p className="mb-4 text-sm font-black uppercase tracking-[0.18em] text-violet-300">
-                Motto
-              </p>
-
-              <h2 className="text-4xl font-black uppercase leading-tight text-white">
-                Rise Beyond Limits
-              </h2>
+              <div className="grid grid-cols-2 gap-5">
+                <Stat label="Focus" value="Teams" />
+                <Stat label="System" value="Tournaments" />
+                <Stat label="Tracking" value="Results" />
+                <Stat label="Motto" value="Rise" />
+              </div>
             </div>
           </section>
 
           <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-            <div className="hidden bg-white/[0.03] px-5 py-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500 md:grid md:grid-cols-[220px_minmax(0,1fr)]">
-              <span>Area</span>
-              <span>Description</span>
+            <div className="border-b border-white/10 px-5 py-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+                What Ascendra does
+              </p>
+
+              <h2 className="mt-1 text-xl font-black text-white">Core areas</h2>
             </div>
 
-            <div className="divide-y divide-white/10">
+            <div>
               {values.map((item) => (
                 <ValueRow
                   key={item.title}
@@ -129,6 +136,25 @@ export default function AboutPage() {
                 />
               ))}
             </div>
+          </section>
+
+          <section className="flex flex-col justify-between gap-4 rounded-3xl border border-violet-400/20 bg-violet-500/[0.06] p-6 shadow-2xl shadow-black/20 md:flex-row md:items-center">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+                Start
+              </p>
+
+              <h2 className="mt-1 text-2xl font-black text-white">
+                Join the next tournament.
+              </h2>
+            </div>
+
+            <Link
+              href="/tournaments"
+              className="w-fit rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white transition hover:bg-violet-500"
+            >
+              View tournaments
+            </Link>
           </section>
         </section>
 
