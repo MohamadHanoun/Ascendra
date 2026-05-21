@@ -11,8 +11,8 @@ const textSettings = [
   },
   {
     key: "bot.config.tournamentCategoryId",
-    name: "tournamentCategoryId",
-    label: "Tournament category ID",
+    name: "TEAMROOMSCategoryId",
+    label: "Team Rooms Category ID",
     placeholder: "Example: 1506789194914332722",
     hint: "Voice rooms for teams are created inside this category.",
   },
