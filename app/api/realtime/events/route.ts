@@ -20,10 +20,18 @@ function parseDate(value: string | null) {
   return date;
 }
 
+function normalizeAudience(value: string | null) {
+  if (value === "admin") {
+    return "admin";
+  }
+
+  return "public";
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
-  const audience = searchParams.get("audience") || "public";
+  const audience = normalizeAudience(searchParams.get("audience"));
   const after = parseDate(searchParams.get("after"));
 
   if (audience === "admin") {
@@ -65,7 +73,9 @@ export async function GET(request: Request) {
     ok: true,
     count: events.length,
     cursor:
-      latestEvent?.createdAt.toISOString() || after?.toISOString() || null,
+      latestEvent?.createdAt.toISOString() ||
+      after?.toISOString() ||
+      new Date().toISOString(),
     events,
   });
 }
