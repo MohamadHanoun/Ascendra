@@ -7,7 +7,7 @@ const steps = [
   {
     number: "2",
     title: "Invite",
-    description: "Invite registered RTN players.",
+    description: "Invite registered Ascendra players.",
   },
   {
     number: "3",
@@ -32,7 +32,7 @@ export default function TeamFlowGuide() {
 
       <p className="mt-4 leading-7 text-gray-300">
         Create a draft team, invite your players, then submit it for admin
-        review. After approval, your team becomes official inside RTN.
+        review. After approval, your team becomes official inside Ascendra.
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">

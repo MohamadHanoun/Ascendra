@@ -47,7 +47,7 @@ export async function registerTeamForTournament(formData: FormData) {
 
   if (!user.isGuildMember) {
     tournamentError(
-      "You must be a member of the RTN Discord server to register.",
+      "You must be a member of the Ascendra Discord server to register.",
     );
   }
 

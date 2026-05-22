@@ -51,7 +51,7 @@ async function requireAdmin(): Promise<AdminAnnouncementActionResult | null> {
   }
 
   if (!sessionUser.isAdmin) {
-    return fail("Only RTN admins can manage announcements.");
+    return fail("Only Ascendra admins can manage announcements.");
   }
 
   return null;

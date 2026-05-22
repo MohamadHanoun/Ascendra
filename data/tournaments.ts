@@ -14,18 +14,18 @@ export type Tournament = {
 export const tournaments: Tournament[] = [
   {
     id: 1,
-    title: "RTN Community Cup",
+    title: "Ascendra Community Cup",
     game: "Multi-Game",
     date: "Coming soon",
     prize: "To be announced",
     teams: "Open slots",
     status: "open",
     description:
-      "A future RTN tournament designed for players from different electronic games. Registration will later require Discord login.",
+      "A future Ascendra tournament designed for players from different electronic games. Registration will later require Discord login.",
   },
   {
     id: 2,
-    title: "RTN Ranked Night",
+    title: "Ascendra Ranked Night",
     game: "Competitive Games",
     date: "Coming soon",
     prize: "Community rewards",
@@ -36,7 +36,7 @@ export const tournaments: Tournament[] = [
   },
   {
     id: 3,
-    title: "RTN Casual Event",
+    title: "Ascendra Casual Event",
     game: "Community Games",
     date: "Coming soon",
     prize: "Fun rewards",
@@ -47,7 +47,7 @@ export const tournaments: Tournament[] = [
   },
   {
     id: 4,
-    title: "RTN Test Bracket",
+    title: "Ascendra Test Bracket",
     game: "Tournament System",
     date: "Future update",
     prize: "Testing phase",

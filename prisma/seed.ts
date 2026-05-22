@@ -28,7 +28,7 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  console.log("Start seeding RTN database...");
+  console.log("Start seeding Ascendra database...");
 
   await prisma.tournamentRegistration.deleteMany();
   await prisma.teamInvite.deleteMany();
@@ -133,12 +133,12 @@ async function main() {
     data: [
       {
         key: "site_name",
-        value: "The Noobs of Temple & Rift",
+        value: "Ascendra",
         description: "Main website and Discord community name.",
       },
       {
         key: "site_short_name",
-        value: "RTN",
+        value: "Ascendra",
         description: "Short name used for branding.",
       },
       {
@@ -149,7 +149,7 @@ async function main() {
     ],
   });
 
-  console.log("RTN database seeded successfully.");
+  console.log("Ascendra database seeded successfully.");
 }
 
 main()

@@ -44,7 +44,7 @@ async function requireAdmin(): Promise<AdminTeamActionResult | null> {
   }
 
   if (!sessionUser.isAdmin) {
-    return fail("Only RTN admins can manage team reviews.");
+    return fail("Only Ascendra admins can manage team reviews.");
   }
 
   return null;

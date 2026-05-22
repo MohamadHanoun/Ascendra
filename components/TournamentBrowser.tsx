@@ -97,7 +97,7 @@ export default function TournamentBrowser({
       {filteredTournaments.length === 0 ? (
         <EmptyState
             title="No tournaments found"
-            description="Try changing the search text or status filter to find matching RTN tournaments."
+            description="Try changing the search text or status filter to find matching Ascendra tournaments."
         />
         
       ) : (

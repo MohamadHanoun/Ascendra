@@ -98,12 +98,12 @@ export async function GET() {
           {
             title: "Teams",
             value: String(teamsCount),
-            description: "Teams created by RTN players.",
+            description: "Teams created by Ascendra players.",
           },
           {
             title: "Tournaments",
             value: String(tournamentsCount),
-            description: "Tournament records available on RTN.",
+            description: "Tournament records available on Ascendra.",
           },
           {
             title: "Tournament Results",

@@ -3,7 +3,7 @@ export const statDetails = [
     title: "Discord Members",
     value: "Coming soon",
     description:
-      "This will later show the real member count from the RTN Discord server.",
+      "This will later show the real member count from the Ascendra Discord server.",
   },
   {
     title: "Online Members",
@@ -27,6 +27,6 @@ export const statDetails = [
     title: "Bot Connection",
     value: "Not active yet",
     description:
-      "The RTN bot structure is ready, but it is not connected to Discord yet.",
+      "The Ascendra bot structure is ready, but it is not connected to Discord yet.",
   },
 ];

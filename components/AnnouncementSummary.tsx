@@ -19,7 +19,7 @@ export default function AnnouncementSummary({
           </p>
           <h2 className="mb-3 text-xl font-bold">Total Updates</h2>
           <p className="leading-7 text-gray-300">
-            Current announcements loaded from the RTN database.
+            Current announcements loaded from the Ascendra database.
           </p>
         </article>
 

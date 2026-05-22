@@ -98,7 +98,7 @@ export default function AdminRoleListClient({
           <h2 className="mb-3 text-3xl font-black">Manage Roles</h2>
 
           <p className="max-w-2xl leading-7 text-gray-300">
-            Edit, show, hide, delete, or reorder RTN roles. Drag roles from the
+            Edit, show, hide, delete, or reorder Ascendra roles. Drag roles from the
             handle icon to change their order.
           </p>
 

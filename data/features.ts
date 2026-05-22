@@ -1,7 +1,7 @@
 export const serverFeatures = [
   {
     title: "Multi-Game Community",
-    text: "RTN brings players together from different video games, whether they play casually, competitively, or just want a place to hang out.",
+    text: "Ascendra brings players together from different video games, whether they play casually, competitively, or just want a place to hang out.",
   },
   {
     title: "Tournaments & Events",

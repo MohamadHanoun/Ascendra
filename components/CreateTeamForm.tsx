@@ -14,11 +14,11 @@ export default function CreateTeamForm({ canCreateTeam }: CreateTeamFormProps) {
           Team Access Locked
         </p>
 
-        <h2 className="mb-4 text-3xl font-black">Join RTN Discord first</h2>
+        <h2 className="mb-4 text-3xl font-black">Join Ascendra Discord first</h2>
 
         <p className="max-w-2xl leading-7 text-gray-300">
           You can login with Discord, but team creation is only available for
-          members of the RTN Discord server.
+          members of the Ascendra Discord server.
         </p>
       </section>
     );
@@ -49,7 +49,7 @@ export default function CreateTeamForm({ canCreateTeam }: CreateTeamFormProps) {
               required
               minLength={2}
               maxLength={40}
-              placeholder="Example: RTN Wolves"
+              placeholder="Example: Ascendra Wolves"
               className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-cyan-400"
             />
           </label>

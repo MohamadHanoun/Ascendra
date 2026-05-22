@@ -8,7 +8,7 @@ export default function Hero() {
       <div className="mx-auto max-w-7xl">
         <div className="max-w-4xl">
           <p className="mb-5 text-sm font-semibold uppercase tracking-[0.35em] text-indigo-300">
-            The Noobs of Temple & Rift
+            Ascendra
           </p>
 
           <h1 className="text-5xl font-black leading-tight md:text-7xl">
@@ -17,7 +17,7 @@ export default function Hero() {
           </h1>
 
           <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-300">
-            RTN brings players together through games, events, friendly
+            Ascendra brings players together through games, events, friendly
             competition, and a community built for people who enjoy playing,
             improving, and having fun together.
           </p>

@@ -2,12 +2,12 @@ export const aboutItems = [
   {
     title: "Who We Are",
     description:
-      "The Noobs of Temple & Rift is a gaming community built for players who enjoy electronic games, tournaments, voice chats, and community events.",
+      "Ascendra is a gaming community built for players who enjoy electronic games, tournaments, voice chats, and community events.",
   },
   {
     title: "Our Focus",
     description:
-      "RTN focuses on creating a friendly space for different types of players, from casual members to competitive tournament players.",
+      "Ascendra focuses on creating a friendly space for different types of players, from casual members to competitive tournament players.",
   },
   {
     title: "Future Plans",

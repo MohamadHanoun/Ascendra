@@ -71,7 +71,7 @@ function statusLabel(status: string) {
 
 function statusDescription(status: string) {
   if (status === "approved") {
-    return "This team is approved and ready for future RTN tournaments.";
+    return "This team is approved and ready for future Ascendra tournaments.";
   }
 
   if (status === "pending") {
@@ -221,7 +221,7 @@ export default function TeamManagementCard({ team }: TeamManagementCardProps) {
                 </button>
               ) : (
                 <p className="rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm leading-6 text-green-200">
-                  Approved teams are locked for players. Contact RTN staff if
+                  Approved teams are locked for players. Contact Ascendra staff if
                   this team needs changes.
                 </p>
               )}
@@ -232,7 +232,7 @@ export default function TeamManagementCard({ team }: TeamManagementCardProps) {
             <div className="mb-5">
               <h4 className="text-xl font-black">Invite Player</h4>
               <p className="mt-1 text-sm text-gray-400">
-                Search for registered RTN players and send them a team
+                Search for registered Ascendra players and send them a team
                 invitation.
               </p>
             </div>

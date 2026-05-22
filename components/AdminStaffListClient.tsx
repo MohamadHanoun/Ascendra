@@ -99,7 +99,7 @@ export default function AdminStaffListClient({
           <h2 className="mb-3 text-3xl font-black">Manage Staff</h2>
 
           <p className="max-w-2xl leading-7 text-gray-300">
-            Edit, show, hide, delete, or reorder RTN staff members. Drag staff
+            Edit, show, hide, delete, or reorder Ascendra staff members. Drag staff
             members from the handle icon to change their order.
           </p>
 

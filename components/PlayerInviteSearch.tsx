@@ -103,7 +103,7 @@ export default function PlayerInviteSearch({
                     />
                   ) : (
                     <span className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500/20 text-xs font-black text-indigo-300">
-                      RTN
+                      Ascendra
                     </span>
                   )}
 
@@ -137,7 +137,7 @@ export default function PlayerInviteSearch({
         </button>
 
         <p className="self-center text-sm text-gray-400">
-          The player must be registered and connected to RTN Discord.
+          The player must be registered and connected to Ascendra Discord.
         </p>
       </form>
     </div>

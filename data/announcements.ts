@@ -10,11 +10,11 @@ export type Announcement = {
 export const announcements: Announcement[] = [
   {
     id: 1,
-    title: "RTN Website Foundation",
+    title: "Ascendra Website Foundation",
     category: "Update",
     date: "Coming soon",
     description:
-      "The RTN website is being prepared with pages for rules, roles, staff, tournaments, announcements, stats, leaderboard, and future Discord integration.",
+      "The Ascendra website is being prepared with pages for rules, roles, staff, tournaments, announcements, stats, leaderboard, and future Discord integration.",
     important: true,
   },
   {
@@ -23,7 +23,7 @@ export const announcements: Announcement[] = [
     category: "Bot",
     date: "Future update",
     description:
-      "A custom RTN Discord bot will later track activity, XP, levels, and leaderboards for active community members.",
+      "A custom Ascendra Discord bot will later track activity, XP, levels, and leaderboards for active community members.",
     important: false,
   },
 ];

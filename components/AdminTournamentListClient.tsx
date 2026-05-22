@@ -82,7 +82,7 @@ export default function AdminTournamentListClient({
           <h2 className="text-3xl font-black">Manage Tournaments</h2>
 
           <p className="mt-3 max-w-2xl leading-7 text-gray-300">
-            Search, filter, edit, or delete tournaments from the RTN database.
+            Search, filter, edit, or delete tournaments from the Ascendra database.
           </p>
         </div>
 

@@ -4,7 +4,7 @@ const xpItems = [
   {
     title: "XP From Activity",
     description:
-      "The RTN bot will later track member activity and reward XP for useful participation inside the Discord server.",
+      "The Ascendra bot will later track member activity and reward XP for useful participation inside the Discord server.",
   },
   {
     title: "Level Progression",
@@ -21,7 +21,7 @@ const xpItems = [
 export default function XpSystemPreview() {
   return (
     <section className="mx-auto max-w-7xl px-6 pb-24">
-      <h2 className="mb-10 text-4xl font-black">Future RTN XP System</h2>
+      <h2 className="mb-10 text-4xl font-black">Future Ascendra XP System</h2>
 
       <div className="grid gap-6 md:grid-cols-3">
         {xpItems.map((item) => (

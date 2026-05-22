@@ -10,16 +10,16 @@ export default function HomeCTA() {
 
         <div className="relative">
           <p className="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-indigo-300">
-            Join RTN
+            Join Ascendra
           </p>
 
           <h2 className="mx-auto mb-6 max-w-3xl text-4xl font-black leading-tight md:text-6xl">
-            Ready to enter The Noobs of Temple & Rift?
+            Ready to enter Ascendra?
           </h2>
 
           <p className="mx-auto mb-8 max-w-2xl leading-8 text-gray-300">
             Join the community, meet other players, follow future tournaments,
-            and be part of the RTN journey from the beginning.
+            and be part of the Ascendra journey from the beginning.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4">

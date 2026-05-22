@@ -59,7 +59,7 @@ async function requireAdmin(): Promise<AdminRoleActionResult | null> {
   }
 
   if (!sessionUser.isAdmin) {
-    return fail("Only RTN admins can manage roles.");
+    return fail("Only Ascendra admins can manage roles.");
   }
 
   return null;

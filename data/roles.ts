@@ -3,13 +3,13 @@ export const serverRoles = [
     name: "Founder",
     color: "text-red-300",
     description:
-      "Responsible for the main direction of RTN, long-term planning, and community management.",
+      "Responsible for the main direction of Ascendra, long-term planning, and community management.",
   },
   {
     name: "Developer",
     color: "text-cyan-300",
     description:
-      "Works on the RTN website, future Discord bot features, XP system, database tools, and technical improvements.",
+      "Works on the Ascendra website, future Discord bot features, XP system, database tools, and technical improvements.",
   },
   {
     name: "Admin",
@@ -33,6 +33,6 @@ export const serverRoles = [
     name: "Member",
     color: "text-green-300",
     description:
-      "A regular RTN community member with access to public channels, events, and future XP features.",
+      "A regular Ascendra community member with access to public channels, events, and future XP features.",
   },
 ];

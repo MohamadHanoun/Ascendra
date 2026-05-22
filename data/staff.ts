@@ -2,7 +2,7 @@ export const staffMembers = [
   {
     name: "نعيم الشيخ",
     role: "Founder",
-    status: "RTN Founder",
+    status: "Ascendra Founder",
   },
   {
     name: "Developer Team",
