@@ -70,8 +70,41 @@ function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
     .filter((member) => Boolean(member.userId));
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const normalized = status.toLowerCase();
+function getTournamentStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    open: "Tournament open",
+    upcoming: "Upcoming",
+    closed: "Tournament closed",
+    ended: "Ended",
+    cancelled: "Cancelled",
+  };
+
+  return labels[status.toLowerCase()] || status;
+}
+
+function getRegistrationStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    open: "Registration open",
+    closed: "Registration closed",
+  };
+
+  return labels[status.toLowerCase()] || status;
+}
+
+function getTournamentSortPriority(status: string) {
+  const priorities: Record<string, number> = {
+    open: 0,
+    upcoming: 1,
+    closed: 2,
+    ended: 3,
+    cancelled: 4,
+  };
+
+  return priorities[status.toLowerCase()] ?? 10;
+}
+
+function StatusBadge({ status, label }: { status: string; label?: string }) {
+  const normalized = status.toLowerCase().replace("registration ", "");
 
   const tone =
     normalized === "open" || normalized === "approved"
@@ -86,9 +119,9 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize ${tone}`}
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${tone}`}
     >
-      {status}
+      {label || status}
     </span>
   );
 }
@@ -234,8 +267,15 @@ function TournamentMiniCard({
 
       <div className="grid gap-4 p-5">
         <div className="flex flex-wrap gap-2">
-          <StatusBadge status={tournament.status} />
-          <StatusBadge status={tournament.registrationStatus} />
+          <StatusBadge
+            status={tournament.status}
+            label={getTournamentStatusLabel(tournament.status)}
+          />
+
+          <StatusBadge
+            status={tournament.registrationStatus}
+            label={getRegistrationStatusLabel(tournament.registrationStatus)}
+          />
         </div>
 
         <div>
@@ -464,12 +504,12 @@ async function getPlayerHubStats(): Promise<PlayerHubStats> {
 }
 
 export default async function HomePage() {
-  const [tournaments, playerHubStats] = await Promise.all([
+  const [rawTournaments, playerHubStats] = await Promise.all([
     prisma.tournament.findMany({
       orderBy: {
         createdAt: "desc",
       },
-      take: 3,
+      take: 8,
       select: {
         id: true,
         title: true,
@@ -480,6 +520,7 @@ export default async function HomePage() {
         teamSize: true,
         status: true,
         registrationStatus: true,
+        createdAt: true,
         registrations: {
           where: {
             status: {
@@ -496,6 +537,19 @@ export default async function HomePage() {
 
     getPlayerHubStats(),
   ]);
+
+  const tournaments = [...rawTournaments]
+    .sort((a, b) => {
+      const priorityA = getTournamentSortPriority(a.status);
+      const priorityB = getTournamentSortPriority(b.status);
+
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    })
+    .slice(0, 3);
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">

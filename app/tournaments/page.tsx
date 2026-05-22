@@ -23,7 +23,28 @@ type TournamentsPageProps = {
   }>;
 };
 
-function StatusBadge({ status }: { status: string }) {
+function getTournamentStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    open: "Tournament open",
+    upcoming: "Upcoming",
+    closed: "Tournament closed",
+    ended: "Ended",
+    cancelled: "Cancelled",
+  };
+
+  return labels[status.toLowerCase()] || status;
+}
+
+function getRegistrationStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    open: "Registration open",
+    closed: "Registration closed",
+  };
+
+  return labels[status.toLowerCase()] || status;
+}
+
+function StatusBadge({ status, label }: { status: string; label?: string }) {
   const normalizedStatus = status.toLowerCase().replace("registration ", "");
 
   const styles: Record<string, string> = {
@@ -40,11 +61,11 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize ${
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${
         styles[normalizedStatus] || "border-white/10 bg-white/5 text-gray-300"
       }`}
     >
-      {status}
+      {label || status}
     </span>
   );
 }
@@ -254,6 +275,11 @@ export default async function TournamentsPage({
               tournament.imageUrl,
             );
 
+            const shouldShowRegistrationStatus = ![
+              "ended",
+              "cancelled",
+            ].includes(tournament.status);
+
             return (
               <article
                 key={tournament.id}
@@ -272,12 +298,19 @@ export default async function TournamentsPage({
                       {tournament.title}
                     </h3>
 
-                    <StatusBadge status={tournament.status} />
+                    <StatusBadge
+                      status={tournament.status}
+                      label={getTournamentStatusLabel(tournament.status)}
+                    />
 
-                    {tournament.registrationStatus === "open" &&
-                      !["ended", "cancelled"].includes(tournament.status) && (
-                        <StatusBadge status="Registration open" />
-                      )}
+                    {shouldShowRegistrationStatus && (
+                      <StatusBadge
+                        status={tournament.registrationStatus}
+                        label={getRegistrationStatusLabel(
+                          tournament.registrationStatus,
+                        )}
+                      />
+                    )}
                   </div>
 
                   <div className="mt-3 grid gap-1">
