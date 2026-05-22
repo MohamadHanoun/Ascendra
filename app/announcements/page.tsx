@@ -173,7 +173,7 @@ export default async function AnnouncementsPage() {
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage: 'url("/images/backgrounds/community-hero.webp")',
+              backgroundImage: 'url("/images/backgrounds/news-hero.webp")',
             }}
           />
 
