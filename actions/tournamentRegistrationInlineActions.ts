@@ -52,6 +52,30 @@ async function getCurrentUser() {
   });
 }
 
+function buildSnapshotMembers(
+  members: Array<{
+    id: string;
+    role: string;
+    joinedAt: Date;
+    user: {
+      id: string;
+      discordId: string;
+      username: string;
+      avatar: string | null;
+    };
+  }>,
+) {
+  return members.map((member) => ({
+    memberId: member.id,
+    userId: member.user.id,
+    discordId: member.user.discordId,
+    username: member.user.username,
+    avatar: member.user.avatar,
+    role: member.role,
+    joinedAt: member.joinedAt.toISOString(),
+  }));
+}
+
 function shouldRequestRoleRemoval(status: string) {
   return !["not_needed", "removed"].includes(status);
 }
@@ -63,16 +87,31 @@ function revalidateTournamentRegistrationViews(tournamentId: string) {
   revalidatePath("/admin");
 }
 
-async function publishRegistrationRealtimeEvent(tournamentId: string) {
-  await createRealtimeEvent({
-    type: "tournament.registration.updated",
-    audience: "public",
-    entityType: "tournament",
-    entityId: tournamentId,
-    payload: {
-      tournamentId,
-    },
-  });
+async function publishRegistrationRealtimeEvent(params: {
+  tournamentId: string;
+  teamId: string;
+  type: "registered" | "cancelled";
+}) {
+  await Promise.all([
+    createRealtimeEvent({
+      type: "tournament.registration.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: params.tournamentId,
+      payload: params,
+    }),
+
+    createRealtimeEvent({
+      type:
+        params.type === "registered"
+          ? "registration.registered"
+          : "registration.cancelled",
+      audience: "public",
+      entityType: "team",
+      entityId: params.teamId,
+      payload: params,
+    }),
+  ]);
 }
 
 async function registerTeamForTournament(
@@ -129,7 +168,14 @@ async function registerTeamForTournament(
       id: teamId,
     },
     include: {
-      members: true,
+      members: {
+        include: {
+          user: true,
+        },
+        orderBy: {
+          joinedAt: "asc",
+        },
+      },
       invites: {
         where: {
           status: "pending",
@@ -181,6 +227,8 @@ async function registerTeamForTournament(
     return fail("This team is already registered for this tournament.");
   }
 
+  const snapshotMembers = buildSnapshotMembers(team.members);
+
   if (existingRegistration) {
     await prisma.tournamentRegistration.update({
       where: {
@@ -193,6 +241,10 @@ async function registerTeamForTournament(
         approvedAt: null,
         cancelledAt: null,
         reviewedAt: null,
+
+        snapshotTeamName: team.name,
+        snapshotTeamGame: team.game,
+        snapshotMembers,
 
         discordRoleStatus: "not_needed",
         discordRoleName: null,
@@ -211,12 +263,21 @@ async function registerTeamForTournament(
         teamId: team.id,
         registeredById: user.id,
         status: "registered",
+
+        snapshotTeamName: team.name,
+        snapshotTeamGame: team.game,
+        snapshotMembers,
+
         discordRoleStatus: "not_needed",
       },
     });
   }
 
-  await publishRegistrationRealtimeEvent(tournament.id);
+  await publishRegistrationRealtimeEvent({
+    tournamentId: tournament.id,
+    teamId: team.id,
+    type: "registered",
+  });
 
   revalidateTournamentRegistrationViews(tournament.id);
 
@@ -297,7 +358,11 @@ async function cancelTournamentRegistration(
     },
   });
 
-  await publishRegistrationRealtimeEvent(registration.tournamentId);
+  await publishRegistrationRealtimeEvent({
+    tournamentId: registration.tournamentId,
+    teamId: registration.teamId,
+    type: "cancelled",
+  });
 
   revalidateTournamentRegistrationViews(registration.tournamentId);
 

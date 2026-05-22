@@ -133,7 +133,10 @@ function needsDiscordAccessRemove(registration: {
 function revalidateRegistrationViews(tournamentId: string) {
   revalidatePath("/admin");
   revalidatePath(`/tournaments/${tournamentId}`);
+  revalidatePath("/tournaments");
   revalidatePath("/profile");
+  revalidatePath("/leaderboard");
+  revalidatePath("/stats");
 }
 
 async function publishRegistrationUpdate(params: {
@@ -152,23 +155,55 @@ async function publishRegistrationUpdate(params: {
       entityId: params.registrationId,
       payload: params,
     }),
+
     createRealtimeEvent({
       type: "tournament.registration.updated",
       audience: "public",
       entityType: "tournament",
       entityId: params.tournamentId,
-      payload: {
-        tournamentId: params.tournamentId,
-      },
+      payload: params,
     }),
+
     createRealtimeEvent({
       type: "profile.updated",
       audience: "public",
-      entityType: "profile",
+      entityType: "team",
       entityId: params.teamId,
       payload: params,
     }),
   ]);
+}
+
+function getApprovalErrorMessage(error: Error, teamSize: number) {
+  if (error.message === "NO_APPROVED_SLOTS_AVAILABLE") {
+    return "No approved slots are available for this tournament.";
+  }
+
+  if (error.message === "REGISTRATION_NOT_APPROVABLE") {
+    return "Only registered teams can be approved.";
+  }
+
+  if (error.message === "TOURNAMENT_NOT_ACTIVE") {
+    return "This tournament cannot approve new teams.";
+  }
+
+  if (error.message === "TEAM_GAME_MISMATCH") {
+    return "Team game no longer matches this tournament.";
+  }
+
+  if (error.message === "TEAM_SIZE_TOO_SMALL") {
+    return `Team needs ${teamSize} player${teamSize === 1 ? "" : "s"} before approval.`;
+  }
+
+  if (error.message === "TEAM_HAS_PENDING_INVITES") {
+    return "Resolve pending team invites before approval.";
+  }
+
+  if (error.message === "REGISTRATION_NOT_FOUND") {
+    return "Registration was not found.";
+  }
+
+  return error.message;
 }
 
 export async function approveRegistrationInline(
@@ -227,8 +262,10 @@ export async function approveRegistrationInline(
     return fail("Only registered teams can be approved.");
   }
 
-  if (registration.tournament.status === "ended") {
-    return fail("Ended tournaments cannot approve new teams.");
+  if (
+    ["closed", "cancelled", "ended"].includes(registration.tournament.status)
+  ) {
+    return fail("This tournament cannot approve new teams.");
   }
 
   if (registration.team.game !== registration.tournament.game) {
@@ -260,19 +297,6 @@ export async function approveRegistrationInline(
   if (approvedRegistrationsCount >= registration.tournament.maxSlots) {
     return fail("No approved slots are available for this tournament.");
   }
-
-  const roleName = buildRoleName(
-    registration.tournament.game,
-    registration.team.name,
-  );
-
-  const channelName = buildChannelName(
-    registration.tournament.game,
-    registration.team.name,
-  );
-
-  const memberDiscordIds = getMemberDiscordIds(registration.team.members);
-  const snapshotMembers = buildSnapshotMembers(registration.team.members);
 
   try {
     await prisma.$transaction(
@@ -314,8 +338,12 @@ export async function approveRegistrationInline(
           throw new Error("REGISTRATION_NOT_APPROVABLE");
         }
 
-        if (freshRegistration.tournament.status === "ended") {
-          throw new Error("TOURNAMENT_ENDED");
+        if (
+          ["closed", "cancelled", "ended"].includes(
+            freshRegistration.tournament.status,
+          )
+        ) {
+          throw new Error("TOURNAMENT_NOT_ACTIVE");
         }
 
         if (freshRegistration.team.game !== freshRegistration.tournament.game) {
@@ -350,6 +378,20 @@ export async function approveRegistrationInline(
         ) {
           throw new Error("NO_APPROVED_SLOTS_AVAILABLE");
         }
+
+        const roleName = buildRoleName(
+          freshRegistration.tournament.game,
+          freshRegistration.team.name,
+        );
+
+        const channelName = buildChannelName(
+          freshRegistration.tournament.game,
+          freshRegistration.team.name,
+        );
+
+        const memberDiscordIds = getMemberDiscordIds(
+          freshRegistration.team.members,
+        );
 
         await tx.tournamentRegistration.update({
           where: {
@@ -410,33 +452,9 @@ export async function approveRegistrationInline(
     );
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message === "NO_APPROVED_SLOTS_AVAILABLE") {
-        return fail("No approved slots are available for this tournament.");
-      }
-
-      if (error.message === "REGISTRATION_NOT_APPROVABLE") {
-        return fail("Only registered teams can be approved.");
-      }
-
-      if (error.message === "TOURNAMENT_ENDED") {
-        return fail("Ended tournaments cannot approve new teams.");
-      }
-
-      if (error.message === "TEAM_GAME_MISMATCH") {
-        return fail("Team game no longer matches this tournament.");
-      }
-
-      if (error.message === "TEAM_SIZE_TOO_SMALL") {
-        return fail(
-          `Team needs ${registration.tournament.teamSize} player${
-            registration.tournament.teamSize === 1 ? "" : "s"
-          } before approval.`,
-        );
-      }
-
-      if (error.message === "TEAM_HAS_PENDING_INVITES") {
-        return fail("Resolve pending team invites before approval.");
-      }
+      return fail(
+        getApprovalErrorMessage(error, registration.tournament.teamSize),
+      );
     }
 
     if (
@@ -521,10 +539,12 @@ export async function rejectRegistrationInline(
       data: {
         status: "rejected",
         rejectionReason,
+        approvedAt: null,
         reviewedAt: new Date(),
 
         discordRoleStatus: shouldRemoveAccess ? "pending_remove" : "not_needed",
-        discordRoleRequestedAt: shouldRemoveAccess ? new Date() : undefined,
+        discordRoleRequestedAt: shouldRemoveAccess ? new Date() : null,
+        discordRoleError: null,
       },
     });
 
@@ -626,11 +646,13 @@ export async function cancelRegistrationInline(
       },
       data: {
         status: "cancelled",
+        approvedAt: null,
         reviewedAt: new Date(),
         cancelledAt: new Date(),
 
         discordRoleStatus: shouldRemoveAccess ? "pending_remove" : "not_needed",
-        discordRoleRequestedAt: shouldRemoveAccess ? new Date() : undefined,
+        discordRoleRequestedAt: shouldRemoveAccess ? new Date() : null,
+        discordRoleError: null,
       },
     });
 
