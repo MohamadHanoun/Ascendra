@@ -20,7 +20,6 @@ const staticRoutes = [
   "/roles",
   "/staff",
   "/stats",
-  "/login",
   "/terms",
   "/privacy",
   "/cookies",
