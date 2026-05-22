@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+const siteUrl = (
+  process.env.NEXT_PUBLIC_SITE_URL || "https://ascendra-ebon.vercel.app"
+).replace(/\/$/, "");
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://rtn-ebon.vercel.app"),
+  metadataBase: new URL(siteUrl),
   title: {
     default: "Ascendra",
     template: "%s | Ascendra",
@@ -15,6 +19,9 @@ export const metadata: Metadata = {
     apple: "/images/brand/apple-touch-icon.png",
   },
   openGraph: {
+    type: "website",
+    url: siteUrl,
+    siteName: "Ascendra",
     title: "Ascendra",
     description:
       "A competitive gaming platform for teams, tournaments, rankings, and organized community events.",

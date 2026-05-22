@@ -1,0 +1,16 @@
+import type { MetadataRoute } from "next";
+
+const siteUrl = (
+  process.env.NEXT_PUBLIC_SITE_URL || "https://ascendra-ebon.vercel.app"
+).replace(/\/$/, "");
+
+export default function robots(): MetadataRoute.Robots {
+  return {
+    rules: {
+      userAgent: "*",
+      allow: "/",
+      disallow: ["/admin", "/admin/", "/api", "/api/", "/profile", "/profile/"],
+    },
+    sitemap: `${siteUrl}/sitemap.xml`,
+  };
+}
