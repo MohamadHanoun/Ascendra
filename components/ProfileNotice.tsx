@@ -1,13 +1,31 @@
+import { getLocale } from "@/lib/i18nServer";
+
 type ProfileNoticeProps = {
   message?: string;
   error?: string;
 };
 
-export default function ProfileNotice({ message, error }: ProfileNoticeProps) {
+const noticeMessages = {
+  en: {
+    success: "Success",
+    failed: "Action failed",
+  },
+  ar: {
+    success: "تم بنجاح",
+    failed: "فشل الإجراء",
+  },
+};
+
+export default async function ProfileNotice({
+  message,
+  error,
+}: ProfileNoticeProps) {
   if (!message && !error) {
     return null;
   }
 
+  const locale = await getLocale();
+  const messages = noticeMessages[locale];
   const isError = Boolean(error);
 
   return (
@@ -23,7 +41,7 @@ export default function ProfileNotice({ message, error }: ProfileNoticeProps) {
           isError ? "text-red-300" : "text-emerald-300"
         }`}
       >
-        {isError ? "Action failed" : "Success"}
+        {isError ? messages.failed : messages.success}
       </p>
 
       <p className="mt-2 text-sm leading-6 text-gray-300">{error || message}</p>

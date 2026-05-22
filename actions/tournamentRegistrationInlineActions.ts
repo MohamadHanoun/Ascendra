@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
 
@@ -10,6 +12,90 @@ export type TournamentRegistrationActionResult = {
   ok: boolean;
   message: string;
   redirectTo?: string;
+};
+
+type TournamentRegistrationActionMessages = {
+  loginRequired: string;
+  discordMemberRequired: string;
+  tournamentAndTeamRequired: string;
+  tournamentNotFound: string;
+  registrationClosed: string;
+  tournamentUnavailable: string;
+  slotsFull: string;
+  teamNotFound: string;
+  onlyLeaderCanRegister: string;
+  wrongGame: string;
+  teamSizeRequired: string;
+  pendingInvites: string;
+  alreadyRegistered: string;
+  registeredSuccess: string;
+  registrationIdMissing: string;
+  registrationNotFound: string;
+  onlyLeaderCanCancel: string;
+  alreadyCancelled: string;
+  approvedCannotCancel: string;
+  cancellationClosed: string;
+  cannotCancelTournament: string;
+  cancelledSuccess: string;
+};
+
+const actionMessages: Record<Locale, TournamentRegistrationActionMessages> = {
+  en: {
+    loginRequired: "Please login first.",
+    discordMemberRequired:
+      "You must be an Ascendra Discord member to register.",
+    tournamentAndTeamRequired: "Tournament and team are required.",
+    tournamentNotFound: "Tournament was not found.",
+    registrationClosed: "Registration is currently closed for this tournament.",
+    tournamentUnavailable: "This tournament is not available for registration.",
+    slotsFull: "All approved tournament slots are full.",
+    teamNotFound: "Team was not found.",
+    onlyLeaderCanRegister: "Only the team leader can register this team.",
+    wrongGame: "This team does not match the tournament game.",
+    teamSizeRequired: "This tournament requires {count} player(s).",
+    pendingInvites: "Resolve pending team invites before registering.",
+    alreadyRegistered: "This team is already registered for this tournament.",
+    registeredSuccess:
+      "Team registered successfully. Waiting for admin review.",
+    registrationIdMissing: "Registration ID is missing.",
+    registrationNotFound: "Registration was not found.",
+    onlyLeaderCanCancel: "Only the team leader can cancel this registration.",
+    alreadyCancelled: "This registration is already cancelled.",
+    approvedCannotCancel:
+      "Approved registrations cannot be cancelled by players. Please contact an admin.",
+    cancellationClosed:
+      "Registration cancellation is closed for this tournament.",
+    cannotCancelTournament:
+      "This tournament registration can no longer be cancelled.",
+    cancelledSuccess: "Registration cancelled successfully.",
+  },
+
+  ar: {
+    loginRequired: "يرجى تسجيل الدخول أولًا.",
+    discordMemberRequired:
+      "يجب أن تكون عضوًا في Discord الخاص بـ Ascendra للتسجيل.",
+    tournamentAndTeamRequired: "البطولة والفريق مطلوبان.",
+    tournamentNotFound: "لم يتم العثور على البطولة.",
+    registrationClosed: "التسجيل مغلق حاليًا لهذه البطولة.",
+    tournamentUnavailable: "هذه البطولة غير متاحة للتسجيل.",
+    slotsFull: "جميع المقاعد المقبولة في البطولة ممتلئة.",
+    teamNotFound: "لم يتم العثور على الفريق.",
+    onlyLeaderCanRegister: "يمكن لقائد الفريق فقط تسجيل هذا الفريق.",
+    wrongGame: "لعبة هذا الفريق لا تطابق لعبة البطولة.",
+    teamSizeRequired: "هذه البطولة تتطلب {count} لاعب.",
+    pendingInvites: "يرجى حل الدعوات المعلقة في الفريق قبل التسجيل.",
+    alreadyRegistered: "هذا الفريق مسجل بالفعل في هذه البطولة.",
+    registeredSuccess: "تم تسجيل الفريق بنجاح. بانتظار مراجعة الإدارة.",
+    registrationIdMissing: "معرّف التسجيل مفقود.",
+    registrationNotFound: "لم يتم العثور على التسجيل.",
+    onlyLeaderCanCancel: "يمكن لقائد الفريق فقط إلغاء هذا التسجيل.",
+    alreadyCancelled: "تم إلغاء هذا التسجيل مسبقًا.",
+    approvedCannotCancel:
+      "لا يمكن للاعبين إلغاء التسجيلات المقبولة. يرجى التواصل مع الإدارة.",
+    cancellationClosed: "إلغاء التسجيل مغلق لهذه البطولة.",
+    cannotCancelTournament: "لم يعد من الممكن إلغاء التسجيل في هذه البطولة.",
+    cancelledSuccess: "تم إلغاء التسجيل بنجاح.",
+  },
 };
 
 function success(
@@ -36,6 +122,19 @@ function fail(
 
 function getValue(formData: FormData, name: string) {
   return String(formData.get(name) || "").trim();
+}
+
+function formatMessage(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{${key}}`, value),
+    template,
+  );
+}
+
+async function getMessages() {
+  const locale = await getLocale();
+
+  return actionMessages[locale];
 }
 
 async function getCurrentUser() {
@@ -117,21 +216,22 @@ async function publishRegistrationRealtimeEvent(params: {
 async function registerTeamForTournament(
   formData: FormData,
 ): Promise<TournamentRegistrationActionResult> {
+  const messages = await getMessages();
   const user = await getCurrentUser();
 
   if (!user) {
-    return fail("Please login first.", "/login");
+    return fail(messages.loginRequired, "/login");
   }
 
   if (!user.isGuildMember) {
-    return fail("You must be an Ascendra Discord member to register.");
+    return fail(messages.discordMemberRequired);
   }
 
   const tournamentId = getValue(formData, "tournamentId");
   const teamId = getValue(formData, "teamId");
 
   if (!tournamentId || !teamId) {
-    return fail("Tournament and team are required.");
+    return fail(messages.tournamentAndTeamRequired);
   }
 
   const tournament = await prisma.tournament.findUnique({
@@ -148,19 +248,19 @@ async function registerTeamForTournament(
   });
 
   if (!tournament) {
-    return fail("Tournament was not found.");
+    return fail(messages.tournamentNotFound);
   }
 
   if (tournament.registrationStatus !== "open") {
-    return fail("Registration is currently closed for this tournament.");
+    return fail(messages.registrationClosed);
   }
 
   if (["closed", "cancelled", "ended"].includes(tournament.status)) {
-    return fail("This tournament is not available for registration.");
+    return fail(messages.tournamentUnavailable);
   }
 
   if (tournament.registrations.length >= tournament.maxSlots) {
-    return fail("All approved tournament slots are full.");
+    return fail(messages.slotsFull);
   }
 
   const team = await prisma.team.findUnique({
@@ -188,27 +288,27 @@ async function registerTeamForTournament(
   });
 
   if (!team) {
-    return fail("Team was not found.");
+    return fail(messages.teamNotFound);
   }
 
   if (team.leaderId !== user.id) {
-    return fail("Only the team leader can register this team.");
+    return fail(messages.onlyLeaderCanRegister);
   }
 
   if (team.game !== tournament.game) {
-    return fail("This team does not match the tournament game.");
+    return fail(messages.wrongGame);
   }
 
   if (team.members.length < tournament.teamSize) {
     return fail(
-      `This tournament requires ${tournament.teamSize} player${
-        tournament.teamSize === 1 ? "" : "s"
-      }.`,
+      formatMessage(messages.teamSizeRequired, {
+        count: String(tournament.teamSize),
+      }),
     );
   }
 
   if (team.invites.length > 0) {
-    return fail("Resolve pending team invites before registering.");
+    return fail(messages.pendingInvites);
   }
 
   const existingRegistration = await prisma.tournamentRegistration.findUnique({
@@ -224,7 +324,7 @@ async function registerTeamForTournament(
     existingRegistration &&
     ["registered", "approved"].includes(existingRegistration.status)
   ) {
-    return fail("This team is already registered for this tournament.");
+    return fail(messages.alreadyRegistered);
   }
 
   const snapshotMembers = buildSnapshotMembers(team.members);
@@ -281,22 +381,23 @@ async function registerTeamForTournament(
 
   revalidateTournamentRegistrationViews(tournament.id);
 
-  return success("Team registered successfully. Waiting for admin review.");
+  return success(messages.registeredSuccess);
 }
 
 async function cancelTournamentRegistration(
   formData: FormData,
 ): Promise<TournamentRegistrationActionResult> {
+  const messages = await getMessages();
   const user = await getCurrentUser();
 
   if (!user) {
-    return fail("Please login first.", "/login");
+    return fail(messages.loginRequired, "/login");
   }
 
   const registrationId = getValue(formData, "registrationId");
 
   if (!registrationId) {
-    return fail("Registration ID is missing.");
+    return fail(messages.registrationIdMissing);
   }
 
   const registration = await prisma.tournamentRegistration.findUnique({
@@ -310,31 +411,29 @@ async function cancelTournamentRegistration(
   });
 
   if (!registration) {
-    return fail("Registration was not found.");
+    return fail(messages.registrationNotFound);
   }
 
   if (registration.team.leaderId !== user.id) {
-    return fail("Only the team leader can cancel this registration.");
+    return fail(messages.onlyLeaderCanCancel);
   }
 
   if (registration.status === "cancelled") {
-    return fail("This registration is already cancelled.");
+    return fail(messages.alreadyCancelled);
   }
 
   if (registration.status === "approved") {
-    return fail(
-      "Approved registrations cannot be cancelled by players. Please contact an admin.",
-    );
+    return fail(messages.approvedCannotCancel);
   }
 
   if (registration.tournament.registrationStatus !== "open") {
-    return fail("Registration cancellation is closed for this tournament.");
+    return fail(messages.cancellationClosed);
   }
 
   if (
     ["closed", "cancelled", "ended"].includes(registration.tournament.status)
   ) {
-    return fail("This tournament registration can no longer be cancelled.");
+    return fail(messages.cannotCancelTournament);
   }
 
   const needsRoleRemoval = shouldRequestRoleRemoval(
@@ -366,7 +465,7 @@ async function cancelTournamentRegistration(
 
   revalidateTournamentRegistrationViews(registration.tournamentId);
 
-  return success("Registration cancelled successfully.");
+  return success(messages.cancelledSuccess);
 }
 
 export async function registerRegistrationInline(
