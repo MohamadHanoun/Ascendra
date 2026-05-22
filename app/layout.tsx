@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { getLocale, getTextDirection } from "@/lib/i18n";
+import { getTextDirection } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import "./globals.css";
 
 const siteUrl = (

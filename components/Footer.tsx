@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { getDictionary, getLocale } from "@/lib/i18n";
+import { getDictionary } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 
 const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "";
 

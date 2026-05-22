@@ -4,53 +4,22 @@ import Link from "next/link";
 
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import { getDictionary } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Community | Ascendra",
-  description: "Ascendra community hub.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = getDictionary(locale).community.metadata;
 
-const communityLinks = [
-  {
-    href: "/about",
-    label: "About",
-    title: "Platform purpose",
-    description:
-      "Learn what Ascendra is built for and how the platform supports organized competitive play.",
-  },
-  {
-    href: "/rules",
-    label: "Rules",
-    title: "Community rules",
-    description:
-      "Read the active rules that keep tournaments and community activity fair and clear.",
-  },
-  {
-    href: "/roles",
-    label: "Roles",
-    title: "Public roles",
-    description:
-      "View the roles used inside the community and understand what each role means.",
-  },
-  {
-    href: "/staff",
-    label: "Staff",
-    title: "Staff team",
-    description:
-      "See the people helping manage Ascendra, events, and community operations.",
-  },
-  {
-    href: "/stats",
-    label: "Stats",
-    title: "Platform stats",
-    description:
-      "Follow useful numbers from tournaments, results, rankings, and game activity.",
-  },
-];
+  return {
+    title: messages.title,
+    description: messages.description,
+  };
+}
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
@@ -69,11 +38,13 @@ function CommunityRow({
   label,
   title,
   description,
+  openLabel,
 }: {
   href: string;
   label: string;
   title: string;
   description: string;
+  openLabel: string;
 }) {
   return (
     <Link
@@ -90,8 +61,8 @@ function CommunityRow({
         <p className="mt-2 text-sm leading-6 text-gray-400">{description}</p>
       </div>
 
-      <span className="text-sm font-black text-gray-500 md:text-right">
-        Open →
+      <span className="text-sm font-black text-gray-500 md:text-right rtl:md:text-left">
+        {openLabel} →
       </span>
     </Link>
   );
@@ -152,6 +123,9 @@ function SecondaryLink({
 }
 
 export default async function CommunityPage() {
+  const locale = await getLocale();
+  const messages = getDictionary(locale).community;
+
   const [
     activeRules,
     activeRoles,
@@ -202,53 +176,57 @@ export default async function CommunityPage() {
 
           <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-28 pt-20 lg:px-10">
             <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
-              Ascendra community
+              {messages.hero.label}
             </p>
 
             <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.04] tracking-tight text-white md:text-7xl">
-              Community hub
+              {messages.hero.title}
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              Everything around the Ascendra community in one clean place:
-              purpose, rules, roles, staff, and platform activity.
+              {messages.hero.description}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <PrimaryLink href="/tournaments">View tournaments</PrimaryLink>
-              <SecondaryLink href="/rules">Read rules</SecondaryLink>
+              <PrimaryLink href="/tournaments">
+                {messages.hero.primary}
+              </PrimaryLink>
+              <SecondaryLink href="/rules">
+                {messages.hero.secondary}
+              </SecondaryLink>
             </div>
           </div>
         </section>
 
         <section className="relative -mt-16 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
           <section className="grid gap-5 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 md:grid-cols-2 xl:grid-cols-5">
-            <Stat label="Rules" value={activeRules} />
-            <Stat label="Roles" value={activeRoles} />
-            <Stat label="Staff" value={activeStaff} />
-            <Stat label="Tournaments" value={tournaments} />
-            <Stat label="Results" value={tournamentResults} />
+            <Stat label={messages.stats.rules} value={activeRules} />
+            <Stat label={messages.stats.roles} value={activeRoles} />
+            <Stat label={messages.stats.staff} value={activeStaff} />
+            <Stat label={messages.stats.tournaments} value={tournaments} />
+            <Stat label={messages.stats.results} value={tournamentResults} />
           </section>
 
           <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
             <div className="border-b border-white/10 px-5 py-4">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                Directory
+                {messages.directory.label}
               </p>
 
               <h2 className="mt-1 text-xl font-black text-white">
-                Community pages
+                {messages.directory.title}
               </h2>
             </div>
 
             <div>
-              {communityLinks.map((link) => (
+              {messages.directory.links.map((link) => (
                 <CommunityRow
                   key={link.href}
                   href={link.href}
                   label={link.label}
                   title={link.title}
                   description={link.description}
+                  openLabel={messages.directory.open}
                 />
               ))}
             </div>
@@ -258,58 +236,46 @@ export default async function CommunityPage() {
             <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
               <div className="border-b border-white/10 px-5 py-4">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                  How it works
+                  {messages.flow.label}
                 </p>
 
                 <h2 className="mt-1 text-xl font-black text-white">
-                  Clean community flow
+                  {messages.flow.title}
                 </h2>
               </div>
 
               <div>
-                <Step
-                  number="01"
-                  title="Join"
-                  description="Login with Discord and connect your Ascendra profile."
-                />
-
-                <Step
-                  number="02"
-                  title="Team up"
-                  description="Create or join a team and prepare for tournaments."
-                />
-
-                <Step
-                  number="03"
-                  title="Register"
-                  description="Submit a team application for open tournaments."
-                />
-
-                <Step
-                  number="04"
-                  title="Compete"
-                  description="Play approved events and earn official points."
-                />
+                {messages.flow.steps.map((step) => (
+                  <Step
+                    key={step.number}
+                    number={step.number}
+                    title={step.title}
+                    description={step.description}
+                  />
+                ))}
               </div>
             </section>
 
             <aside className="rounded-3xl border border-violet-400/20 bg-violet-500/[0.06] p-6 shadow-2xl shadow-black/20">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                Quick access
+                {messages.quickAccess.label}
               </p>
 
               <h2 className="mt-2 text-2xl font-black text-white">
-                Ready to compete?
+                {messages.quickAccess.title}
               </h2>
 
               <p className="mt-3 text-sm leading-7 text-gray-400">
-                Open tournaments, create your team, and follow rankings from the
-                same platform.
+                {messages.quickAccess.description}
               </p>
 
               <div className="mt-6 grid gap-3">
-                <PrimaryLink href="/profile">Open profile</PrimaryLink>
-                <SecondaryLink href="/leaderboard">Leaderboard</SecondaryLink>
+                <PrimaryLink href="/profile">
+                  {messages.quickAccess.profile}
+                </PrimaryLink>
+                <SecondaryLink href="/leaderboard">
+                  {messages.quickAccess.leaderboard}
+                </SecondaryLink>
               </div>
             </aside>
           </section>

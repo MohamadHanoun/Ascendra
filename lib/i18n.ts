@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+
 
 export const localeCookieName = "ascendra_locale";
 
@@ -72,9 +72,120 @@ export type FooterMessages = {
   developedBy: string;
 };
 
+export type HomeMessages = {
+  metadata: {
+    title: string;
+    description: string;
+  };
+  hero: {
+    label: string;
+    title: string;
+    description: string;
+    primary: string;
+    secondary: string;
+  };
+  statuses: {
+    tournamentOpen: string;
+    tournamentClosed: string;
+    registrationOpen: string;
+    registrationClosed: string;
+    upcoming: string;
+    ended: string;
+    cancelled: string;
+  };
+  tournaments: {
+    label: string;
+    title: string;
+    description: string;
+    empty: string;
+    viewAll: string;
+    viewDetails: string;
+    approved: string;
+    applicationSubmitted: string;
+    applicationsSubmitted: string;
+  };
+  flow: {
+    label: string;
+    title: string;
+    description: string;
+    steps: {
+      title: string;
+      description: string;
+    }[];
+  };
+  playerHub: {
+    label: string;
+    loggedInTitle: string;
+    guestTitle: string;
+    loggedInDescription: string;
+    guestDescription: string;
+    openProfile: string;
+    loginWithDiscord: string;
+    viewTournaments: string;
+    stats: {
+      teams: string;
+      invites: string;
+      entries: string;
+      points: string;
+      results: string;
+      best: string;
+    };
+  };
+};
+
+export type CommunityMessages = {
+  metadata: {
+    title: string;
+    description: string;
+  };
+  hero: {
+    label: string;
+    title: string;
+    description: string;
+    primary: string;
+    secondary: string;
+  };
+  stats: {
+    rules: string;
+    roles: string;
+    staff: string;
+    tournaments: string;
+    results: string;
+  };
+  directory: {
+    label: string;
+    title: string;
+    open: string;
+    links: {
+      href: string;
+      label: string;
+      title: string;
+      description: string;
+    }[];
+  };
+  flow: {
+    label: string;
+    title: string;
+    steps: {
+      number: string;
+      title: string;
+      description: string;
+    }[];
+  };
+  quickAccess: {
+    label: string;
+    title: string;
+    description: string;
+    profile: string;
+    leaderboard: string;
+  };
+};
+
 export type I18nMessages = {
   navbar: NavigationMessages;
   footer: FooterMessages;
+  home: HomeMessages;
+  community: CommunityMessages;
 };
 
 export const dictionaries: Record<Locale, I18nMessages> = {
@@ -143,6 +254,187 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       rights: "All rights reserved.",
       developedBy: "Developed by",
     },
+    home: {
+      metadata: {
+        title: "Ascendra",
+        description: "Ascendra competitive gaming and tournament platform.",
+      },
+      hero: {
+        label: "Ascendra tournament platform",
+        title: "Compete in organized tournaments.",
+        description:
+          "Create teams, register for events, and track official results through one clean competitive platform.",
+        primary: "Explore tournaments",
+        secondary: "Create a team",
+      },
+      statuses: {
+        tournamentOpen: "Tournament open",
+        tournamentClosed: "Tournament closed",
+        registrationOpen: "Registration open",
+        registrationClosed: "Registration closed",
+        upcoming: "Upcoming",
+        ended: "Ended",
+        cancelled: "Cancelled",
+      },
+      tournaments: {
+        label: "Tournaments",
+        title: "Latest tournaments",
+        description:
+          "Browse current events, check available approved slots, and open details before registering.",
+        empty: "No tournaments available yet.",
+        viewAll: "View all tournaments",
+        viewDetails: "View details",
+        approved: "approved",
+        applicationSubmitted: "application submitted.",
+        applicationsSubmitted: "applications submitted.",
+      },
+      flow: {
+        label: "Flow",
+        title: "Simple competition workflow",
+        description:
+          "From creating a team to earning official tournament points.",
+        steps: [
+          {
+            title: "Create team",
+            description: "Build your roster and invite players.",
+          },
+          {
+            title: "Register",
+            description: "Enter eligible teams into open tournaments.",
+          },
+          {
+            title: "Admin review",
+            description: "Applications are reviewed before approval.",
+          },
+          {
+            title: "Compete",
+            description: "Play official events with confirmed teams.",
+          },
+          {
+            title: "Earn points",
+            description: "Results update rankings and history.",
+          },
+        ],
+      },
+      playerHub: {
+        label: "Player hub",
+        loggedInTitle: "Your activity in one place.",
+        guestTitle: "Teams, entries, and results.",
+        loggedInDescription:
+          "Open your profile to manage teams, invitations, registrations, and tournament history.",
+        guestDescription:
+          "Login with Discord to create teams, register for tournaments, and follow your progress.",
+        openProfile: "Open profile",
+        loginWithDiscord: "Login with Discord",
+        viewTournaments: "View tournaments",
+        stats: {
+          teams: "Teams",
+          invites: "Invites",
+          entries: "Entries",
+          points: "Points",
+          results: "Results",
+          best: "Best",
+        },
+      },
+    },
+    community: {
+      metadata: {
+        title: "Community | Ascendra",
+        description: "Ascendra community hub.",
+      },
+      hero: {
+        label: "Ascendra community",
+        title: "Community hub",
+        description:
+          "Everything around the Ascendra community in one clean place: purpose, rules, roles, staff, and platform activity.",
+        primary: "View tournaments",
+        secondary: "Read rules",
+      },
+      stats: {
+        rules: "Rules",
+        roles: "Roles",
+        staff: "Staff",
+        tournaments: "Tournaments",
+        results: "Results",
+      },
+      directory: {
+        label: "Directory",
+        title: "Community pages",
+        open: "Open",
+        links: [
+          {
+            href: "/about",
+            label: "About",
+            title: "Platform purpose",
+            description:
+              "Learn what Ascendra is built for and how the platform supports organized competitive play.",
+          },
+          {
+            href: "/rules",
+            label: "Rules",
+            title: "Community rules",
+            description:
+              "Read the active rules that keep tournaments and community activity fair and clear.",
+          },
+          {
+            href: "/roles",
+            label: "Roles",
+            title: "Public roles",
+            description:
+              "View the roles used inside the community and understand what each role means.",
+          },
+          {
+            href: "/staff",
+            label: "Staff",
+            title: "Staff team",
+            description:
+              "See the people helping manage Ascendra, events, and community operations.",
+          },
+          {
+            href: "/stats",
+            label: "Stats",
+            title: "Platform stats",
+            description:
+              "Follow useful numbers from tournaments, results, rankings, and game activity.",
+          },
+        ],
+      },
+      flow: {
+        label: "How it works",
+        title: "Clean community flow",
+        steps: [
+          {
+            number: "01",
+            title: "Join",
+            description:
+              "Login with Discord and connect your Ascendra profile.",
+          },
+          {
+            number: "02",
+            title: "Team up",
+            description: "Create or join a team and prepare for tournaments.",
+          },
+          {
+            number: "03",
+            title: "Register",
+            description: "Submit a team application for open tournaments.",
+          },
+          {
+            number: "04",
+            title: "Compete",
+            description: "Play approved events and earn official points.",
+          },
+        ],
+      },
+      quickAccess: {
+        label: "Quick access",
+        title: "Ready to compete?",
+        description:
+          "Open tournaments, create your team, and follow rankings from the same platform.",
+        profile: "Open profile",
+        leaderboard: "Leaderboard",
+      },
+    },
   },
 
   ar: {
@@ -210,6 +502,185 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       rights: "جميع الحقوق محفوظة.",
       developedBy: "تم التطوير بواسطة",
     },
+    home: {
+      metadata: {
+        title: "Ascendra",
+        description: "منصة Ascendra للألعاب التنافسية وإدارة البطولات.",
+      },
+      hero: {
+        label: "منصة Ascendra للبطولات",
+        title: "نافس ضمن بطولات منظّمة.",
+        description:
+          "أنشئ فريقك، سجّل في البطولات، وتابع النتائج الرسمية من خلال منصة تنافسية واضحة واحترافية.",
+        primary: "استكشف البطولات",
+        secondary: "إنشاء فريق",
+      },
+      statuses: {
+        tournamentOpen: "البطولة مفتوحة",
+        tournamentClosed: "البطولة مغلقة",
+        registrationOpen: "التسجيل مفتوح",
+        registrationClosed: "التسجيل مغلق",
+        upcoming: "قادمة",
+        ended: "منتهية",
+        cancelled: "ملغاة",
+      },
+      tournaments: {
+        label: "البطولات",
+        title: "أحدث البطولات",
+        description:
+          "تصفّح البطولات الحالية، راجع عدد المقاعد المقبولة، وافتح التفاصيل قبل التسجيل.",
+        empty: "لا توجد بطولات متاحة حاليًا.",
+        viewAll: "عرض جميع البطولات",
+        viewDetails: "عرض التفاصيل",
+        approved: "مقبول",
+        applicationSubmitted: "طلب تم إرساله.",
+        applicationsSubmitted: "طلبات تم إرسالها.",
+      },
+      flow: {
+        label: "آلية المشاركة",
+        title: "مسار تنافسي واضح وبسيط",
+        description: "من إنشاء الفريق إلى كسب النقاط الرسمية في البطولات.",
+        steps: [
+          {
+            title: "إنشاء فريق",
+            description: "كوّن قائمتك وادعُ اللاعبين للانضمام إلى فريقك.",
+          },
+          {
+            title: "التسجيل",
+            description: "سجّل الفرق المؤهلة في البطولات المفتوحة.",
+          },
+          {
+            title: "مراجعة الإدارة",
+            description: "تتم مراجعة طلبات المشاركة قبل الموافقة النهائية.",
+          },
+          {
+            title: "المنافسة",
+            description: "شارك في الأحداث الرسمية مع الفرق المؤكدة.",
+          },
+          {
+            title: "كسب النقاط",
+            description: "تُحدّث النتائج لوحة المتصدرين وسجل المشاركات.",
+          },
+        ],
+      },
+      playerHub: {
+        label: "مركز اللاعب",
+        loggedInTitle: "نشاطك في مكان واحد.",
+        guestTitle: "الفرق، التسجيلات، والنتائج.",
+        loggedInDescription:
+          "افتح ملفك الشخصي لإدارة الفرق والدعوات والتسجيلات وسجل البطولات.",
+        guestDescription:
+          "سجّل الدخول عبر Discord لإنشاء الفرق والتسجيل في البطولات ومتابعة تقدمك.",
+        openProfile: "فتح الملف الشخصي",
+        loginWithDiscord: "تسجيل الدخول عبر Discord",
+        viewTournaments: "عرض البطولات",
+        stats: {
+          teams: "الفرق",
+          invites: "الدعوات",
+          entries: "التسجيلات",
+          points: "النقاط",
+          results: "النتائج",
+          best: "أفضل مركز",
+        },
+      },
+    },
+    community: {
+      metadata: {
+        title: "المجتمع | Ascendra",
+        description: "مركز مجتمع Ascendra.",
+      },
+      hero: {
+        label: "مجتمع Ascendra",
+        title: "مركز المجتمع",
+        description:
+          "كل ما يتعلق بمجتمع Ascendra في مكان واحد: هدف المنصة، القواعد، الأدوار، الفريق، ونشاط المنصة.",
+        primary: "عرض البطولات",
+        secondary: "قراءة القواعد",
+      },
+      stats: {
+        rules: "القواعد",
+        roles: "الأدوار",
+        staff: "الفريق",
+        tournaments: "البطولات",
+        results: "النتائج",
+      },
+      directory: {
+        label: "الدليل",
+        title: "صفحات المجتمع",
+        open: "فتح",
+        links: [
+          {
+            href: "/about",
+            label: "حول",
+            title: "هدف المنصة",
+            description:
+              "تعرّف على فكرة Ascendra وكيف تدعم المنصة المنافسات المنظمة.",
+          },
+          {
+            href: "/rules",
+            label: "القواعد",
+            title: "قواعد المجتمع",
+            description:
+              "اطّلع على القواعد النشطة التي تحافظ على عدالة البطولات ووضوح نشاط المجتمع.",
+          },
+          {
+            href: "/roles",
+            label: "الأدوار",
+            title: "الأدوار العامة",
+            description:
+              "تعرّف على الأدوار المستخدمة داخل المجتمع ومعنى كل دور.",
+          },
+          {
+            href: "/staff",
+            label: "الفريق",
+            title: "فريق الإدارة",
+            description:
+              "تعرّف على الأشخاص الذين يساعدون في إدارة Ascendra والفعاليات والمجتمع.",
+          },
+          {
+            href: "/stats",
+            label: "الإحصائيات",
+            title: "إحصائيات المنصة",
+            description:
+              "تابع أرقامًا مفيدة حول البطولات والنتائج والترتيب ونشاط الألعاب.",
+          },
+        ],
+      },
+      flow: {
+        label: "كيف تعمل المنصة",
+        title: "مسار مجتمع واضح",
+        steps: [
+          {
+            number: "01",
+            title: "انضم",
+            description: "سجّل الدخول عبر Discord واربط ملفك بمنصة Ascendra.",
+          },
+          {
+            number: "02",
+            title: "كوّن فريقك",
+            description: "أنشئ فريقًا أو انضم إلى فريق واستعد للبطولات.",
+          },
+          {
+            number: "03",
+            title: "سجّل",
+            description: "أرسل طلب مشاركة الفريق في البطولات المفتوحة.",
+          },
+          {
+            number: "04",
+            title: "نافس",
+            description: "شارك في الأحداث المقبولة واكسب النقاط الرسمية.",
+          },
+        ],
+      },
+      quickAccess: {
+        label: "وصول سريع",
+        title: "جاهز للمنافسة؟",
+        description:
+          "افتح البطولات، أنشئ فريقك، وتابع لوحة المتصدرين من نفس المنصة.",
+        profile: "فتح الملف الشخصي",
+        leaderboard: "لوحة المتصدرين",
+      },
+    },
   },
 };
 
@@ -217,12 +688,6 @@ export function isLocale(value: string | undefined | null): value is Locale {
   return Boolean(value && locales.includes(value as Locale));
 }
 
-export async function getLocale(): Promise<Locale> {
-  const cookieStore = await cookies();
-  const locale = cookieStore.get(localeCookieName)?.value;
-
-  return isLocale(locale) ? locale : defaultLocale;
-}
 
 export function getDictionary(locale: Locale): I18nMessages {
   return dictionaries[locale] || dictionaries[defaultLocale];

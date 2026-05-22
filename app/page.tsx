@@ -5,15 +5,12 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import { getDictionary, type HomeMessages, type Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
 export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "Ascendra",
-  description: "Ascendra competitive gaming and tournament platform.",
-};
 
 type SnapshotMember = {
   userId?: string;
@@ -30,28 +27,15 @@ type PlayerHubStats = {
   bestPlacement: number | null;
 };
 
-const playerJourney = [
-  {
-    title: "Create team",
-    description: "Build your roster and invite players.",
-  },
-  {
-    title: "Register",
-    description: "Enter eligible teams into open tournaments.",
-  },
-  {
-    title: "Admin review",
-    description: "Applications are reviewed before approval.",
-  },
-  {
-    title: "Compete",
-    description: "Play official events with confirmed teams.",
-  },
-  {
-    title: "Earn points",
-    description: "Results update rankings and history.",
-  },
-];
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = getDictionary(locale).home.metadata;
+
+  return {
+    title: messages.title,
+    description: messages.description,
+  };
+}
 
 function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
   if (!Array.isArray(snapshotMembers)) {
@@ -70,22 +54,28 @@ function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
     .filter((member) => Boolean(member.userId));
 }
 
-function getTournamentStatusLabel(status: string) {
+function getTournamentStatusLabel(
+  status: string,
+  messages: HomeMessages["statuses"],
+) {
   const labels: Record<string, string> = {
-    open: "Tournament open",
-    upcoming: "Upcoming",
-    closed: "Tournament closed",
-    ended: "Ended",
-    cancelled: "Cancelled",
+    open: messages.tournamentOpen,
+    upcoming: messages.upcoming,
+    closed: messages.tournamentClosed,
+    ended: messages.ended,
+    cancelled: messages.cancelled,
   };
 
   return labels[status.toLowerCase()] || status;
 }
 
-function getRegistrationStatusLabel(status: string) {
+function getRegistrationStatusLabel(
+  status: string,
+  messages: HomeMessages["statuses"],
+) {
   const labels: Record<string, string> = {
-    open: "Registration open",
-    closed: "Registration closed",
+    open: messages.registrationOpen,
+    closed: messages.registrationClosed,
   };
 
   return labels[status.toLowerCase()] || status;
@@ -103,6 +93,26 @@ function getTournamentSortPriority(status: string) {
   return priorities[status.toLowerCase()] ?? 10;
 }
 
+function formatApplications(
+  applications: number,
+  messages: HomeMessages["tournaments"],
+  locale: Locale,
+) {
+  if (locale === "ar") {
+    return `${applications} ${
+      applications === 1
+        ? messages.applicationSubmitted
+        : messages.applicationsSubmitted
+    }`;
+  }
+
+  return `${applications} ${
+    applications === 1
+      ? messages.applicationSubmitted
+      : messages.applicationsSubmitted
+  }`;
+}
+
 function StatusBadge({ status, label }: { status: string; label?: string }) {
   const normalized = status.toLowerCase().replace("registration ", "");
 
@@ -110,7 +120,7 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
     normalized === "open" || normalized === "approved"
       ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
       : normalized === "upcoming" || normalized === "registered"
-        ? "border-yellow-400/25 bg-yellow-500/10 text-yellow-300"
+        ? "border-sky-400/25 bg-sky-500/10 text-sky-300"
         : normalized === "closed" || normalized === "rejected"
           ? "border-red-400/25 bg-red-500/10 text-red-300"
           : normalized === "ended"
@@ -201,9 +211,11 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 function ProgressBar({
   approvedSlots,
   maxSlots,
+  approvedLabel,
 }: {
   approvedSlots: number;
   maxSlots: number;
+  approvedLabel: string;
 }) {
   const progress =
     maxSlots > 0 ? Math.min((approvedSlots / maxSlots) * 100, 100) : 0;
@@ -212,7 +224,7 @@ function ProgressBar({
     <div className="grid gap-2">
       <div className="flex items-center justify-between text-xs font-bold text-gray-500">
         <span>
-          {approvedSlots}/{maxSlots} approved
+          {approvedSlots}/{maxSlots} {approvedLabel}
         </span>
 
         <span>{Math.round(progress)}%</span>
@@ -232,6 +244,8 @@ function ProgressBar({
 
 function TournamentMiniCard({
   tournament,
+  locale,
+  messages,
 }: {
   tournament: {
     id: string;
@@ -248,6 +262,8 @@ function TournamentMiniCard({
       status: string;
     }[];
   };
+  locale: Locale;
+  messages: HomeMessages;
 }) {
   const approvedSlots = tournament.registrations.filter(
     (registration) => registration.status === "approved",
@@ -269,12 +285,18 @@ function TournamentMiniCard({
         <div className="flex flex-wrap gap-2">
           <StatusBadge
             status={tournament.status}
-            label={getTournamentStatusLabel(tournament.status)}
+            label={getTournamentStatusLabel(
+              tournament.status,
+              messages.statuses,
+            )}
           />
 
           <StatusBadge
             status={tournament.registrationStatus}
-            label={getRegistrationStatusLabel(tournament.registrationStatus)}
+            label={getRegistrationStatusLabel(
+              tournament.registrationStatus,
+              messages.statuses,
+            )}
           />
         </div>
 
@@ -295,17 +317,18 @@ function TournamentMiniCard({
         <ProgressBar
           approvedSlots={approvedSlots}
           maxSlots={tournament.maxSlots}
+          approvedLabel={messages.tournaments.approved}
         />
 
         <p className="text-xs font-bold text-gray-500">
-          {applications} application{applications === 1 ? "" : "s"} submitted.
+          {formatApplications(applications, messages.tournaments, locale)}
         </p>
 
         <Link
           href={`/tournaments/${tournament.id}`}
           className="rounded-xl bg-violet-600 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-violet-500"
         >
-          View details
+          {messages.tournaments.viewDetails}
         </Link>
       </div>
     </article>
@@ -334,7 +357,13 @@ function JourneyRow({
   );
 }
 
-function PlayerHubSection({ stats }: { stats: PlayerHubStats }) {
+function PlayerHubSection({
+  stats,
+  messages,
+}: {
+  stats: PlayerHubStats;
+  messages: HomeMessages["playerHub"];
+}) {
   return (
     <section className="relative py-16 lg:py-20">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
@@ -342,40 +371,54 @@ function PlayerHubSection({ stats }: { stats: PlayerHubStats }) {
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_460px] lg:items-end">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-300">
-                Player hub
+                {messages.label}
               </p>
 
               <h2 className="mt-2 text-3xl font-black text-white md:text-4xl">
                 {stats.isLoggedIn
-                  ? "Your activity in one place."
-                  : "Teams, entries, and results."}
+                  ? messages.loggedInTitle
+                  : messages.guestTitle}
               </h2>
 
               <p className="mt-4 max-w-3xl text-sm leading-7 text-gray-400">
                 {stats.isLoggedIn
-                  ? "Open your profile to manage teams, invitations, registrations, and tournament history."
-                  : "Login with Discord to create teams, register for tournaments, and follow your progress."}
+                  ? messages.loggedInDescription
+                  : messages.guestDescription}
               </p>
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <PrimaryLink href={stats.isLoggedIn ? "/profile" : "/login"}>
-                  {stats.isLoggedIn ? "Open profile" : "Login with Discord"}
+                  {stats.isLoggedIn
+                    ? messages.openProfile
+                    : messages.loginWithDiscord}
                 </PrimaryLink>
 
                 <SecondaryLink href="/tournaments">
-                  View tournaments
+                  {messages.viewTournaments}
                 </SecondaryLink>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-5">
-              <Stat label="Teams" value={stats.teamsCount} />
-              <Stat label="Invites" value={stats.pendingInvitesCount} />
-              <Stat label="Entries" value={stats.activeRegistrationsCount} />
-              <Stat label="Points" value={stats.tournamentPoints} />
-              <Stat label="Results" value={stats.tournamentResultsCount} />
+              <Stat label={messages.stats.teams} value={stats.teamsCount} />
               <Stat
-                label="Best"
+                label={messages.stats.invites}
+                value={stats.pendingInvitesCount}
+              />
+              <Stat
+                label={messages.stats.entries}
+                value={stats.activeRegistrationsCount}
+              />
+              <Stat
+                label={messages.stats.points}
+                value={stats.tournamentPoints}
+              />
+              <Stat
+                label={messages.stats.results}
+                value={stats.tournamentResultsCount}
+              />
+              <Stat
+                label={messages.stats.best}
                 value={stats.bestPlacement ? `#${stats.bestPlacement}` : "-"}
               />
             </div>
@@ -504,6 +547,9 @@ async function getPlayerHubStats(): Promise<PlayerHubStats> {
 }
 
 export default async function HomePage() {
+  const locale = await getLocale();
+  const messages = getDictionary(locale).home;
+
   const [rawTournaments, playerHubStats] = await Promise.all([
     prisma.tournament.findMany({
       orderBy: {
@@ -572,24 +618,25 @@ export default async function HomePage() {
           <div className="relative z-10 flex min-h-[720px] items-center px-6 pb-32 pt-20 lg:px-10 2xl:px-14">
             <div className="max-w-5xl">
               <p className="mb-5 text-sm font-black uppercase tracking-[0.22em] text-violet-300">
-                Ascendra tournament platform
+                {messages.hero.label}
               </p>
 
               <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
-                Compete in organized tournaments.
+                {messages.hero.title}
               </h1>
 
               <p className="mt-6 max-w-2xl text-base leading-7 text-gray-300">
-                Create teams, register for events, and track official results
-                through one clean competitive platform.
+                {messages.hero.description}
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
                 <PrimaryLink href="/tournaments">
-                  Explore tournaments
+                  {messages.hero.primary}
                 </PrimaryLink>
 
-                <SecondaryLink href="/profile">Create a team</SecondaryLink>
+                <SecondaryLink href="/profile">
+                  {messages.hero.secondary}
+                </SecondaryLink>
               </div>
             </div>
           </div>
@@ -598,14 +645,14 @@ export default async function HomePage() {
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader
-              label="Tournaments"
-              title="Latest tournaments"
-              description="Browse current events, check available approved slots, and open details before registering."
+              label={messages.tournaments.label}
+              title={messages.tournaments.title}
+              description={messages.tournaments.description}
             />
 
             {tournaments.length === 0 ? (
               <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-gray-300 shadow-2xl shadow-black/20">
-                No tournaments available yet.
+                {messages.tournaments.empty}
               </div>
             ) : (
               <div className="grid gap-6 lg:grid-cols-3">
@@ -613,6 +660,8 @@ export default async function HomePage() {
                   <TournamentMiniCard
                     key={tournament.id}
                     tournament={tournament}
+                    locale={locale}
+                    messages={messages}
                   />
                 ))}
               </div>
@@ -620,7 +669,7 @@ export default async function HomePage() {
 
             <div className="mt-8 flex justify-center">
               <SecondaryLink href="/tournaments">
-                View all tournaments
+                {messages.tournaments.viewAll}
               </SecondaryLink>
             </div>
           </div>
@@ -629,13 +678,13 @@ export default async function HomePage() {
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader
-              label="Flow"
-              title="Simple competition workflow"
-              description="From creating a team to earning official tournament points."
+              label={messages.flow.label}
+              title={messages.flow.title}
+              description={messages.flow.description}
             />
 
             <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              {playerJourney.map((step, index) => (
+              {messages.flow.steps.map((step, index) => (
                 <JourneyRow
                   key={step.title}
                   index={index + 1}
@@ -647,7 +696,10 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <PlayerHubSection stats={playerHubStats} />
+        <PlayerHubSection
+          stats={playerHubStats}
+          messages={messages.playerHub}
+        />
 
         <Footer />
       </div>
