@@ -41,7 +41,7 @@ async function publishProfileUpdate(payload: {
   inviteId?: string;
 }) {
   await createRealtimeEvent({
-    type: "profile.updated",
+    type: payload.type,
     audience: "public",
     entityType: "profile",
     entityId: payload.userId || "team",
@@ -57,7 +57,7 @@ async function publishTeamUpdate(payload: {
 }) {
   await Promise.all([
     createRealtimeEvent({
-      type: "profile.updated",
+      type: payload.type,
       audience: "public",
       entityType: "team",
       entityId: payload.teamId,
@@ -119,50 +119,12 @@ async function getLeaderTeam(teamId: string, userId: string) {
   };
 }
 
-function getEditableError(_status: string) {
-  return null;
-}
-
-async function getBlockingActiveRegistration({
-  teamId,
-  memberCountAfterChange,
-}: {
-  teamId: string;
-  memberCountAfterChange: number;
-}) {
-  return prisma.tournamentRegistration.findFirst({
-    where: {
-      teamId,
-      status: {
-        in: ["registered", "approved"],
-      },
-      tournament: {
-        status: {
-          notIn: ["ended", "cancelled"],
-        },
-        teamSize: {
-          gt: memberCountAfterChange,
-        },
-      },
-    },
-    select: {
-      status: true,
-      tournament: {
-        select: {
-          title: true,
-          teamSize: true,
-        },
-      },
-    },
-  });
-}
-
 async function getActiveTeamRegistration(teamId: string) {
   return prisma.tournamentRegistration.findFirst({
     where: {
       teamId,
       status: {
-        notIn: ["rejected", "cancelled", "canceled"],
+        in: ["registered", "approved"],
       },
       tournament: {
         status: {
@@ -176,18 +138,42 @@ async function getActiveTeamRegistration(teamId: string) {
       tournament: {
         select: {
           title: true,
-          game: true,
+          status: true,
         },
       },
     },
   });
 }
 
-function getTeamSizeBlockMessage(
-  tournamentTitle: string,
-  requiredTeamSize: number,
-) {
-  return `This action is blocked because it would make the team too small for "${tournamentTitle}". This tournament requires ${requiredTeamSize} players.`;
+async function getBlockingActiveRegistration(teamId: string) {
+  const activeRegistration = await getActiveTeamRegistration(teamId);
+
+  if (!activeRegistration) {
+    return null;
+  }
+
+  return `This team is locked while registered for "${activeRegistration.tournament.title}".`;
+}
+
+async function getTournamentHistory(teamId: string) {
+  const [registrationsCount, resultsCount] = await Promise.all([
+    prisma.tournamentRegistration.count({
+      where: {
+        teamId,
+      },
+    }),
+    prisma.tournamentResult.count({
+      where: {
+        teamId,
+      },
+    }),
+  ]);
+
+  return {
+    registrationsCount,
+    resultsCount,
+    hasHistory: registrationsCount > 0 || resultsCount > 0,
+  };
 }
 
 export async function updateTeamInline(
@@ -217,18 +203,10 @@ export async function updateTeamInline(
     return fail(error || "Team was not found.");
   }
 
-  const editableError = getEditableError(team.status);
+  const activeRegistrationError = await getBlockingActiveRegistration(team.id);
 
-  if (editableError) {
-    return fail(editableError);
-  }
-
-  const activeRegistration = await getActiveTeamRegistration(team.id);
-
-  if (activeRegistration && game !== team.game) {
-    return fail(
-      `You cannot change this team's game because it has an active registration for "${activeRegistration.tournament.title}".`,
-    );
+  if (activeRegistrationError) {
+    return fail(activeRegistrationError);
   }
 
   const updatedTeam = await prisma.team.update({
@@ -278,18 +256,10 @@ export async function invitePlayerToTeamInline(
     return fail(error || "Team was not found.");
   }
 
-  const activeRegistration = await getActiveTeamRegistration(team.id);
+  const activeRegistrationError = await getBlockingActiveRegistration(team.id);
 
-  if (activeRegistration) {
-    return fail(
-      `This team is locked while registered for "${activeRegistration.tournament.title}".`,
-    );
-  }
-
-  const editableError = getEditableError(team.status);
-
-  if (editableError) {
-    return fail(editableError);
+  if (activeRegistrationError) {
+    return fail(activeRegistrationError);
   }
 
   const invitedUser = await prisma.user.findFirst({
@@ -402,10 +372,10 @@ export async function removeTeamMemberInline(
     return fail(error || "Team was not found.");
   }
 
-  const editableError = getEditableError(team.status);
+  const activeRegistrationError = await getBlockingActiveRegistration(team.id);
 
-  if (editableError) {
-    return fail(editableError);
+  if (activeRegistrationError) {
+    return fail(activeRegistrationError);
   }
 
   const member = await prisma.teamMember.findUnique({
@@ -420,22 +390,6 @@ export async function removeTeamMemberInline(
 
   if (member.userId === user.id || member.role === "leader") {
     return fail("The team leader cannot be removed.");
-  }
-
-  const memberCountAfterRemove = team.members.length - 1;
-
-  const blockingRegistration = await getBlockingActiveRegistration({
-    teamId: team.id,
-    memberCountAfterChange: memberCountAfterRemove,
-  });
-
-  if (blockingRegistration) {
-    return fail(
-      getTeamSizeBlockMessage(
-        blockingRegistration.tournament.title,
-        blockingRegistration.tournament.teamSize,
-      ),
-    );
   }
 
   await prisma.teamMember.delete({
@@ -493,6 +447,12 @@ export async function leaveTeamInline(
     );
   }
 
+  const activeRegistrationError = await getBlockingActiveRegistration(team.id);
+
+  if (activeRegistrationError) {
+    return fail(activeRegistrationError);
+  }
+
   const membership = await prisma.teamMember.findUnique({
     where: {
       teamId_userId: {
@@ -504,22 +464,6 @@ export async function leaveTeamInline(
 
   if (!membership) {
     return fail("You are not a member of this team.");
-  }
-
-  const memberCountAfterLeave = team.members.length - 1;
-
-  const blockingRegistration = await getBlockingActiveRegistration({
-    teamId: team.id,
-    memberCountAfterChange: memberCountAfterLeave,
-  });
-
-  if (blockingRegistration) {
-    return fail(
-      getTeamSizeBlockMessage(
-        blockingRegistration.tournament.title,
-        blockingRegistration.tournament.teamSize,
-      ),
-    );
   }
 
   await prisma.teamMember.delete({
@@ -563,6 +507,12 @@ export async function transferTeamLeadershipInline(
 
   if (!team) {
     return fail(error || "Team was not found.");
+  }
+
+  const activeRegistrationError = await getBlockingActiveRegistration(team.id);
+
+  if (activeRegistrationError) {
+    return fail(activeRegistrationError);
   }
 
   const targetMember = await prisma.teamMember.findUnique({
@@ -661,10 +611,12 @@ export async function cancelTeamInviteInline(
     return fail("Only the team leader can cancel invitations.");
   }
 
-  const editableError = getEditableError(invite.team.status);
+  const activeRegistrationError = await getBlockingActiveRegistration(
+    invite.teamId,
+  );
 
-  if (editableError) {
-    return fail(editableError);
+  if (activeRegistrationError) {
+    return fail(activeRegistrationError);
   }
 
   await prisma.teamInvite.delete({
@@ -705,10 +657,6 @@ export async function submitTeamForReviewInline(
 
   if (!team) {
     return fail(error || "Team was not found.");
-  }
-
-  if (!["draft", "rejected"].includes(team.status)) {
-    return fail("This team cannot be submitted right now.");
   }
 
   await prisma.team.update({
@@ -756,11 +704,17 @@ export async function deleteTeamInline(
     return fail(error || "Team was not found.");
   }
 
-  const activeRegistration = await getActiveTeamRegistration(team.id);
+  const activeRegistrationError = await getBlockingActiveRegistration(team.id);
 
-  if (activeRegistration) {
+  if (activeRegistrationError) {
+    return fail(activeRegistrationError);
+  }
+
+  const history = await getTournamentHistory(team.id);
+
+  if (history.hasHistory) {
     return fail(
-      `This team cannot be deleted because it has a ${activeRegistration.status} registration for "${activeRegistration.tournament.title}".`,
+      "This team cannot be deleted because it has tournament history.",
     );
   }
 
