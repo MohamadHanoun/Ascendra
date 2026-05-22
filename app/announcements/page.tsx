@@ -60,11 +60,12 @@ function Pill({
   tone = "violet",
 }: {
   children: ReactNode;
-  tone?: "violet" | "yellow" | "gray";
+  tone?: "violet" | "green" | "blue" | "gray";
 }) {
   const styles = {
     violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+    blue: "border-sky-400/25 bg-sky-500/10 text-sky-300",
     gray: "border-white/10 bg-black/25 text-gray-400",
   };
 
@@ -89,32 +90,54 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+function FeaturedAnnouncement({
+  announcement,
+}: {
+  announcement: AnnouncementItem;
+}) {
+  return (
+    <article className="rounded-3xl border border-emerald-400/20 bg-emerald-500/[0.055] p-6 shadow-2xl shadow-black/20">
+      <div className="flex flex-wrap gap-2">
+        <Pill tone="green">Featured update</Pill>
+        <Pill>{announcement.category}</Pill>
+        <Pill tone="gray">{formatDate(announcement.createdAt)}</Pill>
+      </div>
+
+      <h2 className="mt-5 max-w-4xl text-3xl font-black text-white md:text-4xl">
+        {announcement.title}
+      </h2>
+
+      <p className="mt-4 max-w-5xl text-sm leading-7 text-gray-300">
+        {announcement.description}
+      </p>
+    </article>
+  );
+}
+
 function AnnouncementRow({ announcement }: { announcement: AnnouncementItem }) {
   return (
-    <article
-      className={`grid gap-4 px-5 py-5 transition hover:bg-white/[0.035] md:grid-cols-[minmax(0,1fr)_140px] md:items-center ${
-        announcement.important ? "bg-yellow-500/[0.035]" : ""
-      }`}
-    >
+    <article className="grid gap-4 px-5 py-5 transition hover:bg-white/[0.035] md:grid-cols-[170px_minmax(0,1fr)] md:items-start">
+      <div className="flex flex-wrap gap-2 md:block">
+        <Pill tone={announcement.important ? "green" : "violet"}>
+          {announcement.category}
+        </Pill>
+
+        <div className="mt-0 md:mt-3">
+          <Pill tone="gray">{formatDate(announcement.createdAt)}</Pill>
+        </div>
+      </div>
+
       <div className="min-w-0">
         <div className="mb-3 flex flex-wrap gap-2">
-          <Pill>{announcement.category}</Pill>
-
-          {announcement.important && <Pill tone="yellow">Important</Pill>}
-
-          <Pill tone="gray">{formatDate(announcement.createdAt)}</Pill>
+          {announcement.important && <Pill tone="green">Important</Pill>}
         </div>
 
         <h2 className="text-2xl font-black text-white">{announcement.title}</h2>
 
-        <p className="mt-2 max-w-4xl text-sm leading-6 text-gray-400">
+        <p className="mt-2 max-w-5xl text-sm leading-7 text-gray-400">
           {announcement.description}
         </p>
       </div>
-
-      <p className="text-sm font-bold text-gray-500">
-        {formatDate(announcement.createdAt)}
-      </p>
     </article>
   );
 }
@@ -130,14 +153,23 @@ export default async function AnnouncementsPage() {
     announcements.map((announcement) => announcement.category),
   ).size;
 
+  const featuredAnnouncement =
+    announcements.find((announcement) => announcement.important) || null;
+
+  const regularAnnouncements = featuredAnnouncement
+    ? announcements.filter(
+        (announcement) => announcement.id !== featuredAnnouncement.id,
+      )
+    : announcements;
+
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.10)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(139,92,246,0.14)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
 
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[390px] overflow-hidden">
+        <section className="relative min-h-[430px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -145,25 +177,26 @@ export default async function AnnouncementsPage() {
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.64)_44%,rgba(7,8,17,0.82)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.94)_0%,rgba(7,8,17,0.68)_44%,rgba(7,8,17,0.84)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.14),transparent_34%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
-          <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-20 lg:px-10 2xl:px-14">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
+          <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
+            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-emerald-300">
               Ascendra updates
             </p>
 
-            <h1 className="text-5xl font-black uppercase tracking-tight text-white md:text-7xl">
+            <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
               News
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              Announcements, tournament updates, and community notices.
+              Official announcements, tournament updates, and community notes.
             </p>
           </div>
         </section>
 
-        <section className="relative -mt-12 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
+        <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
           <section className="grid gap-5 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 md:grid-cols-3">
             <Stat label="Published" value={announcements.length} />
             <Stat label="Important" value={importantCount} />
@@ -176,26 +209,38 @@ export default async function AnnouncementsPage() {
               description="Published announcements will appear here."
             />
           ) : (
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-              <div className="border-b border-white/10 px-5 py-4">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                  Latest updates
-                </p>
+            <>
+              {featuredAnnouncement && (
+                <FeaturedAnnouncement announcement={featuredAnnouncement} />
+              )}
 
-                <h2 className="mt-1 text-xl font-black text-white">
-                  Published announcements
-                </h2>
-              </div>
+              <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
+                <div className="border-b border-white/10 px-5 py-4">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">
+                    Latest updates
+                  </p>
 
-              <div className="divide-y divide-white/10">
-                {announcements.map((announcement) => (
-                  <AnnouncementRow
-                    key={announcement.id}
-                    announcement={announcement}
-                  />
-                ))}
-              </div>
-            </section>
+                  <h2 className="mt-1 text-xl font-black text-white">
+                    Published announcements
+                  </h2>
+                </div>
+
+                {regularAnnouncements.length === 0 ? (
+                  <div className="p-5 text-sm text-gray-400">
+                    No other announcements published.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-white/10">
+                    {regularAnnouncements.map((announcement) => (
+                      <AnnouncementRow
+                        key={announcement.id}
+                        announcement={announcement}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            </>
           )}
         </section>
 
