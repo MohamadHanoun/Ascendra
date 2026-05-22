@@ -65,6 +65,7 @@ function revalidateResultViews(tournamentId: string) {
   revalidatePath("/leaderboard");
   revalidatePath("/stats");
   revalidatePath("/profile");
+  revalidatePath("/tournaments");
   revalidatePath(`/tournaments/${tournamentId}`);
   revalidatePath(`/admin/tournaments/${tournamentId}`);
 }
@@ -80,6 +81,7 @@ async function publishResultRealtimeEvents(tournamentId: string) {
         tournamentId,
       },
     }),
+
     createRealtimeEvent({
       type: "leaderboard.updated",
       audience: "public",
@@ -89,6 +91,7 @@ async function publishResultRealtimeEvents(tournamentId: string) {
         tournamentId,
       },
     }),
+
     createRealtimeEvent({
       type: "profile.updated",
       audience: "public",
@@ -184,9 +187,22 @@ export async function saveTournamentResultInline(
     return fail("This team is not registered for this tournament.");
   }
 
+  if (registration.tournament.status === "cancelled") {
+    return fail("Cancelled tournaments cannot receive results.");
+  }
+
   if (registration.status !== "approved") {
     return fail("Only approved teams can receive tournament results.");
   }
+
+  const existingResult = await prisma.tournamentResult.findUnique({
+    where: {
+      tournamentId_teamId: {
+        tournamentId,
+        teamId,
+      },
+    },
+  });
 
   const placementOwner = await prisma.tournamentResult.findFirst({
     where: {
@@ -207,15 +223,22 @@ export async function saveTournamentResultInline(
 
   if (placementOwner) {
     return fail(
-      `Placement #${placement} is already assigned to ${placementOwner.team.name}.`,
+      `Placement #${placement} is already assigned to ${placementOwner.snapshotTeamName || placementOwner.team.name}.`,
     );
   }
 
   const snapshotTeamName =
-    registration.snapshotTeamName || registration.team.name;
+    existingResult?.snapshotTeamName ||
+    registration.snapshotTeamName ||
+    registration.team.name;
+
   const snapshotTeamGame =
-    registration.snapshotTeamGame || registration.team.game;
+    existingResult?.snapshotTeamGame ||
+    registration.snapshotTeamGame ||
+    registration.team.game;
+
   const snapshotMembers =
+    existingResult?.snapshotMembers ||
     registration.snapshotMembers ||
     buildSnapshotMembers(registration.team.members);
 

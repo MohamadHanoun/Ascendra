@@ -22,8 +22,10 @@ type TournamentResultItem = {
   points: number;
   note: string | null;
   snapshotTeamName: string | null;
+  snapshotTeamGame?: string | null;
   team: {
     name: string;
+    game?: string;
   };
 };
 
@@ -66,18 +68,6 @@ function Stat({ label, value }: { label: string; value: string | number }) {
       </p>
 
       <p className="mt-1 text-2xl font-black text-white">{value}</p>
-    </div>
-  );
-}
-
-function SectionTitle({ label, title }: { label: string; title: string }) {
-  return (
-    <div className="border-b border-white/10 px-5 py-4">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-        {label}
-      </p>
-
-      <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
     </div>
   );
 }
@@ -143,29 +133,41 @@ export default function AdminTournamentResultsPanel({
   );
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-      <SectionTitle label="Results" title="Tournament standings" />
+    <section className="grid gap-5">
+      <div className="grid gap-5 rounded-2xl border border-white/10 bg-black/20 p-4 sm:grid-cols-3">
+        <Stat label="Approved" value={approvedRegistrations.length} />
+        <Stat label="Saved" value={results.length} />
+        <Stat label="Points" value={totalPoints} />
+      </div>
 
-      <div className="grid gap-6 p-5">
-        <div className="grid grid-cols-3 gap-5">
-          <Stat label="Approved" value={approvedRegistrations.length} />
-          <Stat label="Saved" value={results.length} />
-          <Stat label="Points" value={totalPoints} />
-        </div>
+      <ProgressBar
+        resultsCount={results.length}
+        approvedTeams={approvedRegistrations.length}
+      />
 
-        <ProgressBar
-          resultsCount={results.length}
-          approvedTeams={approvedRegistrations.length}
-        />
+      {remainingResults > 0 && (
+        <p className="rounded-xl border border-yellow-400/25 bg-yellow-500/10 px-4 py-3 text-sm font-bold text-yellow-300">
+          {remainingResults} approved team
+          {remainingResults === 1 ? "" : "s"} still missing results.
+        </p>
+      )}
 
-        {remainingResults > 0 && (
-          <p className="text-sm text-yellow-300">
-            {remainingResults} approved team
-            {remainingResults === 1 ? "" : "s"} still missing results.
-          </p>
-        )}
+      <details className="group overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 transition hover:bg-white/[0.035]">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-violet-300">
+              Add or edit
+            </p>
 
-        <section className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <h3 className="mt-1 font-black text-white">Result form</h3>
+          </div>
+
+          <span className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition group-open:rotate-45">
+            +
+          </span>
+        </summary>
+
+        <div className="border-t border-white/10 p-4">
           {approvedRegistrations.length === 0 ? (
             <p className="text-sm text-gray-400">
               Approve teams before adding results.
@@ -177,69 +179,72 @@ export default function AdminTournamentResultsPanel({
               results={results}
             />
           )}
-        </section>
+        </div>
+      </details>
 
-        <section className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
-          <div className="border-b border-white/10 px-4 py-3">
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-              Saved standings
-            </p>
-          </div>
+      <section className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+        <div className="border-b border-white/10 px-4 py-3">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+            Saved standings
+          </p>
+        </div>
 
-          {sortedResults.length === 0 ? (
-            <div className="p-4 text-sm text-gray-400">
-              No results saved yet.
-            </div>
-          ) : (
-            <div className="divide-y divide-white/10">
-              {sortedResults.map((result) => {
-                const teamName = result.snapshotTeamName || result.team.name;
+        {sortedResults.length === 0 ? (
+          <div className="p-4 text-sm text-gray-400">No results saved yet.</div>
+        ) : (
+          <div className="divide-y divide-white/10">
+            {sortedResults.map((result) => {
+              const teamName = result.snapshotTeamName || result.team.name;
+              const teamGame = result.snapshotTeamGame || result.team.game;
 
-                return (
-                  <article
-                    key={result.id}
-                    className="grid gap-4 px-4 py-4 md:grid-cols-[90px_minmax(0,1fr)_90px_110px] md:items-center"
+              return (
+                <article
+                  key={result.id}
+                  className="grid gap-4 px-4 py-4 md:grid-cols-[90px_minmax(0,1fr)_90px_110px] md:items-center"
+                >
+                  <Pill tone={result.placement <= 3 ? "yellow" : "violet"}>
+                    #{result.placement}
+                  </Pill>
+
+                  <div>
+                    <p className="font-black text-white">{teamName}</p>
+
+                    {teamGame && (
+                      <p className="mt-1 text-xs text-gray-500">{teamGame}</p>
+                    )}
+
+                    {result.note && (
+                      <p className="mt-1 text-sm text-gray-400">
+                        {result.note}
+                      </p>
+                    )}
+                  </div>
+
+                  <Pill tone="green">{result.points} pts</Pill>
+
+                  <InlineAdminTournamentForm
+                    action={deleteTournamentResultInline}
+                    buttonLabel="Delete"
+                    pendingLabel="Deleting..."
+                    variant="danger"
+                    className="grid gap-2"
+                    confirmTitle="Delete result?"
+                    confirmDescription={`Delete ${teamName}'s result from ${tournamentTitle}?`}
+                    confirmLabel="Delete result"
                   >
-                    <Pill tone={result.placement <= 3 ? "yellow" : "violet"}>
-                      #{result.placement}
-                    </Pill>
-
-                    <div>
-                      <p className="font-black text-white">{teamName}</p>
-
-                      {result.note && (
-                        <p className="mt-1 text-sm text-gray-400">
-                          {result.note}
-                        </p>
-                      )}
-                    </div>
-
-                    <Pill tone="green">{result.points} pts</Pill>
-
-                    <InlineAdminTournamentForm
-                      action={deleteTournamentResultInline}
-                      buttonLabel="Delete"
-                      pendingLabel="Deleting..."
-                      variant="danger"
-                      className="grid gap-2"
-                      confirmTitle="Delete result?"
-                      confirmDescription={`Delete ${teamName}'s result from ${tournamentTitle}?`}
-                      confirmLabel="Delete result"
-                    >
-                      <input type="hidden" name="resultId" value={result.id} />
-                      <input
-                        type="hidden"
-                        name="tournamentId"
-                        value={tournamentId}
-                      />
-                    </InlineAdminTournamentForm>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      </div>
+                    <input type="hidden" name="resultId" value={result.id} />
+                    <input
+                      type="hidden"
+                      name="tournamentId"
+                      value={tournamentId}
+                    />
+                  </InlineAdminTournamentForm>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </section>
   );
 }

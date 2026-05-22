@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { saveTournamentResultInline } from "@/actions/adminTournamentResultActions";
 import CustomSelect from "@/components/CustomSelect";
@@ -124,7 +124,10 @@ export default function AdminTournamentResultForm({
   const [points, setPoints] = useState(getSuggestedPoints(nextPlacement));
   const [note, setNote] = useState(getSuggestedNote(nextPlacement));
 
-  const existingResultTeamIds = new Set(results.map((result) => result.teamId));
+  const existingResultTeamIds = useMemo(
+    () => new Set(results.map((result) => result.teamId)),
+    [results],
+  );
 
   const options = registrations.map((registration) => {
     const alreadyHasResult = existingResultTeamIds.has(registration.teamId);
@@ -133,7 +136,7 @@ export default function AdminTournamentResultForm({
 
     return {
       value: registration.teamId,
-      label: alreadyHasResult ? `${teamName} · update result` : teamName,
+      label: alreadyHasResult ? `${teamName} · edit result` : teamName,
       description: `${teamGame} · approved${
         alreadyHasResult ? " · result saved" : ""
       }`,
@@ -155,9 +158,11 @@ export default function AdminTournamentResultForm({
   }
 
   function handlePlacementChange(value: number) {
-    setPlacement(value);
-    setPoints(getSuggestedPoints(value));
-    setNote(getSuggestedNote(value));
+    const safeValue = Number.isFinite(value) && value > 0 ? value : 1;
+
+    setPlacement(safeValue);
+    setPoints(getSuggestedPoints(safeValue));
+    setNote(getSuggestedNote(safeValue));
   }
 
   return (
