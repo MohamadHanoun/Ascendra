@@ -11,14 +11,11 @@ import Navbar from "@/components/Navbar";
 import ProfileIdentityActions from "@/components/ProfileIdentityActions";
 import ProfileNotice from "@/components/ProfileNotice";
 import ProfileRealtime from "@/components/ProfileRealtime";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "Profile | Ascendra",
-  description: "Manage your Ascendra profile, invitations, and teams.",
-};
 
 type ProfilePageProps = {
   searchParams: Promise<{
@@ -33,7 +30,213 @@ type SnapshotMember = {
   discordId?: string;
 };
 
+type ProfileMessages = {
+  metadata: {
+    title: string;
+    description: string;
+  };
+  hero: {
+    label: string;
+    discordId: string;
+    member: string;
+    notMember: string;
+    teams: string;
+    team: string;
+    points: string;
+    invites: string;
+    invite: string;
+  };
+  sections: {
+    invitations: string;
+    teamInvitations: string;
+    pendingInvitation: string;
+    pendingInvitations: string;
+    noPendingInvitations: string;
+    myTeams: string;
+    teamOverview: string;
+    noTeamsTitle: string;
+    noTeamsDescription: string;
+    createTeam: string;
+    startNewTeam: string;
+    createTeamMeta: string;
+    discordRequiredMeta: string;
+    progress: string;
+    tournamentHistory: string;
+    noTournamentResults: string;
+  };
+  labels: {
+    by: string;
+    members: string;
+    member: string;
+    leader: string;
+    open: string;
+    accept: string;
+    decline: string;
+    teamName: string;
+    teamNamePlaceholder: string;
+    game: string;
+    selectGame: string;
+    teamGame: string;
+    createTeam: string;
+    ascendraDiscordRequired: string;
+    discordRequiredDescription: string;
+    results: string;
+    result: string;
+    best: string;
+    pts: string;
+  };
+  statuses: {
+    active: string;
+    pending: string;
+    rejected: string;
+    member: string;
+    notMember: string;
+  };
+};
+
+const profileMessages: Record<Locale, ProfileMessages> = {
+  en: {
+    metadata: {
+      title: "Profile | Ascendra",
+      description: "Manage your Ascendra profile, invitations, and teams.",
+    },
+    hero: {
+      label: "Player profile",
+      discordId: "Discord ID",
+      member: "Member",
+      notMember: "Not member",
+      teams: "teams",
+      team: "team",
+      points: "points",
+      invites: "invites",
+      invite: "invite",
+    },
+    sections: {
+      invitations: "Invitations",
+      teamInvitations: "Team invitations",
+      pendingInvitation: "pending invitation",
+      pendingInvitations: "pending invitations",
+      noPendingInvitations: "No pending invitations.",
+      myTeams: "My teams",
+      teamOverview: "Team overview",
+      noTeamsTitle: "No teams yet",
+      noTeamsDescription: "Create your first team from the section below.",
+      createTeam: "Create team",
+      startNewTeam: "Start a new team",
+      createTeamMeta: "Create a team for a specific game.",
+      discordRequiredMeta: "Discord membership required.",
+      progress: "Progress",
+      tournamentHistory: "Tournament history",
+      noTournamentResults: "No tournament results yet.",
+    },
+    labels: {
+      by: "by",
+      members: "members",
+      member: "member",
+      leader: "Leader",
+      open: "Open",
+      accept: "Accept",
+      decline: "Decline",
+      teamName: "Team name",
+      teamNamePlaceholder: "Example: Ascendra Wolves",
+      game: "Game",
+      selectGame: "Select game",
+      teamGame: "Team game",
+      createTeam: "Create team",
+      ascendraDiscordRequired: "Ascendra Discord required",
+      discordRequiredDescription:
+        "Join the Discord server and refresh your login to create or join teams.",
+      results: "Results",
+      result: "result",
+      best: "Best",
+      pts: "pts",
+    },
+    statuses: {
+      active: "Active",
+      pending: "Pending",
+      rejected: "Rejected",
+      member: "Member",
+      notMember: "Not member",
+    },
+  },
+
+  ar: {
+    metadata: {
+      title: "الملف الشخصي | Ascendra",
+      description: "إدارة ملفك في Ascendra والدعوات والفرق.",
+    },
+    hero: {
+      label: "الملف الشخصي للاعب",
+      discordId: "معرّف Discord",
+      member: "عضو",
+      notMember: "غير عضو",
+      teams: "فرق",
+      team: "فريق",
+      points: "نقطة",
+      invites: "دعوات",
+      invite: "دعوة",
+    },
+    sections: {
+      invitations: "الدعوات",
+      teamInvitations: "دعوات الفرق",
+      pendingInvitation: "دعوة معلقة",
+      pendingInvitations: "دعوات معلقة",
+      noPendingInvitations: "لا توجد دعوات معلقة.",
+      myTeams: "فرقي",
+      teamOverview: "نظرة عامة على الفرق",
+      noTeamsTitle: "لا توجد فرق بعد",
+      noTeamsDescription: "أنشئ فريقك الأول من القسم الموجود بالأسفل.",
+      createTeam: "إنشاء فريق",
+      startNewTeam: "بدء فريق جديد",
+      createTeamMeta: "أنشئ فريقًا للعبة محددة.",
+      discordRequiredMeta: "عضوية Discord مطلوبة.",
+      progress: "التقدم",
+      tournamentHistory: "سجل البطولات",
+      noTournamentResults: "لا توجد نتائج بطولات حاليًا.",
+    },
+    labels: {
+      by: "بواسطة",
+      members: "أعضاء",
+      member: "عضو",
+      leader: "القائد",
+      open: "فتح",
+      accept: "قبول",
+      decline: "رفض",
+      teamName: "اسم الفريق",
+      teamNamePlaceholder: "مثال: Ascendra Wolves",
+      game: "اللعبة",
+      selectGame: "اختر اللعبة",
+      teamGame: "لعبة الفريق",
+      createTeam: "إنشاء فريق",
+      ascendraDiscordRequired: "Discord الخاص بـ Ascendra مطلوب",
+      discordRequiredDescription:
+        "انضم إلى خادم Discord ثم حدّث تسجيل الدخول لإنشاء الفرق أو الانضمام إليها.",
+      results: "النتائج",
+      result: "نتيجة",
+      best: "أفضل مركز",
+      pts: "نقطة",
+    },
+    statuses: {
+      active: "نشط",
+      pending: "قيد المراجعة",
+      rejected: "مرفوض",
+      member: "عضو",
+      notMember: "غير عضو",
+    },
+  },
+};
+
 const games = ["Valorant", "League of Legends", "CS2", "Dota2"];
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = profileMessages[locale].metadata;
+
+  return {
+    title: messages.title,
+    description: messages.description,
+  };
+}
 
 function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
   if (!Array.isArray(snapshotMembers)) {
@@ -54,16 +257,20 @@ function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
     .filter((member) => Boolean(member.userId));
 }
 
+function getCountLabel(count: number, singular: string, plural: string) {
+  return count === 1 ? singular : plural;
+}
+
 function Pill({
   label,
   tone = "violet",
 }: {
   label: string;
-  tone?: "green" | "yellow" | "red" | "gray" | "violet";
+  tone?: "green" | "blue" | "red" | "gray" | "violet";
 }) {
   const styles = {
     green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    blue: "border-blue-400/25 bg-blue-500/10 text-blue-300",
     red: "border-red-400/25 bg-red-500/10 text-red-300",
     gray: "border-white/10 bg-white/5 text-gray-300",
     violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
@@ -78,21 +285,33 @@ function Pill({
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({
+  status,
+  messages,
+}: {
+  status: string;
+  messages: ProfileMessages;
+}) {
   const normalizedStatus = status.toLowerCase();
 
   const tone =
     normalizedStatus === "approved" || normalizedStatus === "member"
       ? "green"
       : normalizedStatus === "pending"
-        ? "yellow"
+        ? "blue"
         : normalizedStatus === "rejected" || normalizedStatus === "not member"
           ? "red"
           : "gray";
 
-  const label = normalizedStatus === "approved" ? "Active" : status;
+  const labels: Record<string, string> = {
+    approved: messages.statuses.active,
+    pending: messages.statuses.pending,
+    rejected: messages.statuses.rejected,
+    member: messages.statuses.member,
+    "not member": messages.statuses.notMember,
+  };
 
-  return <Pill label={label} tone={tone} />;
+  return <Pill label={labels[normalizedStatus] || status} tone={tone} />;
 }
 
 function Stat({ label, value }: { label: string; value: string | number }) {
@@ -173,8 +392,13 @@ function CollapsibleSection({
 }
 
 export default async function ProfilePage({ searchParams }: ProfilePageProps) {
-  const params = await searchParams;
-  const session = await auth();
+  const [params, locale, session] = await Promise.all([
+    searchParams,
+    getLocale(),
+    auth(),
+  ]);
+
+  const messages = profileMessages[locale];
 
   if (!session?.user?.databaseId) {
     redirect("/login");
@@ -314,7 +538,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
                   <div className="min-w-0">
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-300">
-                      Player profile
+                      {messages.hero.label}
                     </p>
 
                     <h1 className="mt-2 truncate text-4xl font-black uppercase tracking-tight text-white md:text-5xl">
@@ -323,21 +547,36 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
                     <div className="mt-4 flex flex-wrap gap-2">
                       {user.isGuildMember ? (
-                        <StatusBadge status="Member" />
+                        <StatusBadge status="Member" messages={messages} />
                       ) : (
-                        <StatusBadge status="Not member" />
+                        <StatusBadge status="Not member" messages={messages} />
                       )}
 
-                      <Pill label={`${teams.length} teams`} />
-                      <Pill label={`${tournamentPoints} points`} tone="green" />
-                      <Pill label={`${invitations.length} invites`} />
+                      <Pill
+                        label={`${teams.length} ${getCountLabel(
+                          teams.length,
+                          messages.hero.team,
+                          messages.hero.teams,
+                        )}`}
+                      />
+                      <Pill
+                        label={`${tournamentPoints} ${messages.hero.points}`}
+                        tone="green"
+                      />
+                      <Pill
+                        label={`${invitations.length} ${getCountLabel(
+                          invitations.length,
+                          messages.hero.invite,
+                          messages.hero.invites,
+                        )}`}
+                      />
                     </div>
                   </div>
                 </div>
 
                 <div className="grid gap-2 lg:justify-items-end">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-500">
-                    Discord ID
+                    {messages.hero.discordId}
                   </p>
 
                   <ProfileIdentityActions discordId={user.discordId} />
@@ -350,14 +589,18 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         <section className="relative -mt-14 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:grid-cols-[minmax(0,1fr)_320px] lg:px-10">
           <div className="grid min-w-0 content-start gap-5">
             <CollapsibleSection
-              label="Invitations"
-              title="Team invitations"
-              meta={`${invitations.length} pending invitation${invitations.length === 1 ? "" : "s"}`}
+              label={messages.sections.invitations}
+              title={messages.sections.teamInvitations}
+              meta={`${invitations.length} ${getCountLabel(
+                invitations.length,
+                messages.sections.pendingInvitation,
+                messages.sections.pendingInvitations,
+              )}`}
               defaultOpen={invitations.length > 0}
             >
               {invitations.length === 0 ? (
                 <div className="p-5 text-sm text-gray-400">
-                  No pending invitations.
+                  {messages.sections.noPendingInvitations}
                 </div>
               ) : (
                 <div className="divide-y divide-white/10">
@@ -373,9 +616,12 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
                         <p className="mt-1 text-sm text-gray-400">
                           {invite.team.game} · {invite.team.members.length}{" "}
-                          member
-                          {invite.team.members.length === 1 ? "" : "s"} · by{" "}
-                          {invite.invitedBy.username}
+                          {getCountLabel(
+                            invite.team.members.length,
+                            messages.labels.member,
+                            messages.labels.members,
+                          )}{" "}
+                          · {messages.labels.by} {invite.invitedBy.username}
                         </p>
                       </div>
 
@@ -396,7 +642,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                             type="submit"
                             className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-white transition hover:bg-emerald-400"
                           >
-                            Accept
+                            {messages.labels.accept}
                           </button>
                         </form>
 
@@ -416,7 +662,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                             type="submit"
                             className="rounded-xl border border-red-500/20 px-4 py-2 text-sm font-black text-red-300 transition hover:bg-red-500/10"
                           >
-                            Decline
+                            {messages.labels.decline}
                           </button>
                         </form>
                       </div>
@@ -427,16 +673,22 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             </CollapsibleSection>
 
             <CollapsibleSection
-              label="My teams"
-              title="Team overview"
-              meta={`${teams.length} team${teams.length === 1 ? "" : "s"}`}
+              label={messages.sections.myTeams}
+              title={messages.sections.teamOverview}
+              meta={`${teams.length} ${getCountLabel(
+                teams.length,
+                messages.hero.team,
+                messages.hero.teams,
+              )}`}
               defaultOpen
             >
               {teams.length === 0 ? (
                 <div className="p-5">
-                  <p className="font-black text-white">No teams yet</p>
+                  <p className="font-black text-white">
+                    {messages.sections.noTeamsTitle}
+                  </p>
                   <p className="mt-2 text-sm text-gray-400">
-                    Create your first team from the section below.
+                    {messages.sections.noTeamsDescription}
                   </p>
                 </div>
               ) : (
@@ -459,8 +711,12 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                           </p>
 
                           <p className="mt-1 text-sm text-gray-400">
-                            {team.game} · {team.members.length} member
-                            {team.members.length === 1 ? "" : "s"}
+                            {team.game} · {team.members.length}{" "}
+                            {getCountLabel(
+                              team.members.length,
+                              messages.labels.member,
+                              messages.labels.members,
+                            )}
                           </p>
 
                           {team.rejectionReason && (
@@ -470,17 +726,19 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                           )}
                         </div>
 
-                        <StatusBadge status={team.status} />
+                        <StatusBadge status={team.status} messages={messages} />
 
                         <p className="text-sm font-bold text-gray-400">
-                          {isLeader ? "Leader" : membership?.role || "Member"}
+                          {isLeader
+                            ? messages.labels.leader
+                            : membership?.role || messages.statuses.member}
                         </p>
 
                         <Link
                           href={`/profile/teams/${team.id}`}
                           className="rounded-xl bg-violet-600 px-4 py-2 text-center text-sm font-black text-white transition hover:bg-violet-500"
                         >
-                          Open
+                          {messages.labels.open}
                         </Link>
                       </article>
                     );
@@ -490,12 +748,12 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             </CollapsibleSection>
 
             <CollapsibleSection
-              label="Create team"
-              title="Start a new team"
+              label={messages.sections.createTeam}
+              title={messages.sections.startNewTeam}
               meta={
                 user.isGuildMember
-                  ? "Create a team for a specific game."
-                  : "Discord membership required."
+                  ? messages.sections.createTeamMeta
+                  : messages.sections.discordRequiredMeta
               }
             >
               {user.isGuildMember ? (
@@ -503,30 +761,30 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   <div className="relative z-50 grid gap-5 md:grid-cols-2">
                     <label className="grid gap-2">
                       <span className="text-sm font-bold text-gray-200">
-                        Team name
+                        {messages.labels.teamName}
                       </span>
 
                       <input
                         name="name"
                         required
-                        placeholder="Example: Ascendra Wolves"
+                        placeholder={messages.labels.teamNamePlaceholder}
                         className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400"
                       />
                     </label>
 
                     <label className="grid gap-2">
                       <span className="text-sm font-bold text-gray-200">
-                        Game
+                        {messages.labels.game}
                       </span>
 
                       <CustomSelect
                         name="game"
                         required
-                        placeholder="Select game"
+                        placeholder={messages.labels.selectGame}
                         options={games.map((game) => ({
                           value: game,
                           label: game,
-                          description: "Team game",
+                          description: messages.labels.teamGame,
                         }))}
                       />
                     </label>
@@ -536,19 +794,18 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     type="submit"
                     className="w-fit rounded-xl bg-violet-600 px-5 py-3 font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
                   >
-                    Create team
+                    {messages.labels.createTeam}
                   </button>
                 </form>
               ) : (
                 <div className="p-5">
-                  <div className="rounded-2xl border border-yellow-400/25 bg-yellow-500/10 p-4">
-                    <p className="font-black text-yellow-300">
-                      Ascendra Discord required
+                  <div className="rounded-2xl border border-violet-400/25 bg-violet-500/10 p-4">
+                    <p className="font-black text-violet-200">
+                      {messages.labels.ascendraDiscordRequired}
                     </p>
 
                     <p className="mt-2 text-sm leading-6 text-gray-300">
-                      Join the Discord server and refresh your login to create
-                      or join teams.
+                      {messages.labels.discordRequiredDescription}
                     </p>
                   </div>
                 </div>
@@ -558,23 +815,30 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
           <aside>
             <CollapsibleSection
-              label="Progress"
-              title="Tournament history"
-              meta={`${tournamentResults.length} result${tournamentResults.length === 1 ? "" : "s"} · ${tournamentPoints} points`}
+              label={messages.sections.progress}
+              title={messages.sections.tournamentHistory}
+              meta={`${tournamentResults.length} ${getCountLabel(
+                tournamentResults.length,
+                messages.labels.result,
+                messages.labels.results,
+              )} · ${tournamentPoints} ${messages.hero.points}`}
               defaultOpen
             >
               <div className="grid grid-cols-3 gap-5 border-b border-white/10 p-5">
-                <Stat label="Points" value={tournamentPoints} />
-                <Stat label="Results" value={tournamentResults.length} />
+                <Stat label={messages.hero.points} value={tournamentPoints} />
                 <Stat
-                  label="Best"
+                  label={messages.labels.results}
+                  value={tournamentResults.length}
+                />
+                <Stat
+                  label={messages.labels.best}
                   value={bestPlacement ? `#${bestPlacement}` : "-"}
                 />
               </div>
 
               {tournamentResults.length === 0 ? (
                 <div className="p-5 text-sm text-gray-400">
-                  No tournament results yet.
+                  {messages.sections.noTournamentResults}
                 </div>
               ) : (
                 <div className="divide-y divide-white/10">
@@ -599,8 +863,11 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                         </p>
 
                         <div className="mt-3 flex flex-wrap gap-2">
-                          <Pill label={`#${result.placement}`} tone="yellow" />
-                          <Pill label={`${result.points} pts`} tone="green" />
+                          <Pill label={`#${result.placement}`} tone="blue" />
+                          <Pill
+                            label={`${result.points} ${messages.labels.pts}`}
+                            tone="green"
+                          />
                         </div>
                       </Link>
                     );
