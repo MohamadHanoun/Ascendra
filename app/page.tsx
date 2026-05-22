@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+
 import { auth } from "@/auth";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
@@ -14,33 +15,10 @@ export const metadata: Metadata = {
   description: "Ascendra competitive gaming and tournament platform.",
 };
 
-const playerJourney = [
-  {
-    title: "Verify access",
-    description:
-      "Players sign in with Discord and connect their account to the Ascendra community.",
-  },
-  {
-    title: "Build a roster",
-    description:
-      "Team leaders create teams, invite members, and prepare eligible lineups.",
-  },
-  {
-    title: "Enter tournaments",
-    description:
-      "Eligible teams register for open events that match their game and team size.",
-  },
-  {
-    title: "Admin review",
-    description:
-      "Registrations are reviewed before teams are confirmed for official events.",
-  },
-  {
-    title: "Results and ranking",
-    description:
-      "Placements award points that update profiles, team history, and leaderboards.",
-  },
-];
+type SnapshotMember = {
+  userId?: string;
+  username?: string;
+};
 
 type PlayerHubStats = {
   isLoggedIn: boolean;
@@ -52,45 +30,67 @@ type PlayerHubStats = {
   bestPlacement: number | null;
 };
 
-function StatusBadge({
-  status,
-  variant = "default",
-}: {
-  status: string;
-  variant?: "default" | "success" | "warning" | "danger";
-}) {
-  const styles = {
-    default: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-    success: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    warning: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    danger: "border-red-400/25 bg-red-500/10 text-red-300",
-  };
+const playerJourney = [
+  {
+    title: "Create team",
+    description: "Build your roster and invite players.",
+  },
+  {
+    title: "Register",
+    description: "Enter eligible teams into open tournaments.",
+  },
+  {
+    title: "Admin review",
+    description: "Applications are reviewed before approval.",
+  },
+  {
+    title: "Compete",
+    description: "Play official events with confirmed teams.",
+  },
+  {
+    title: "Earn points",
+    description: "Results update rankings and history.",
+  },
+];
+
+function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
+  if (!Array.isArray(snapshotMembers)) {
+    return [];
+  }
+
+  return snapshotMembers
+    .filter((member): member is Record<string, unknown> => {
+      return Boolean(member) && typeof member === "object";
+    })
+    .map((member) => ({
+      userId: typeof member.userId === "string" ? member.userId : undefined,
+      username:
+        typeof member.username === "string" ? member.username : undefined,
+    }))
+    .filter((member) => Boolean(member.userId));
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const normalized = status.toLowerCase();
+
+  const tone =
+    normalized === "open" || normalized === "approved"
+      ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
+      : normalized === "upcoming" || normalized === "registered"
+        ? "border-yellow-400/25 bg-yellow-500/10 text-yellow-300"
+        : normalized === "closed" || normalized === "rejected"
+          ? "border-red-400/25 bg-red-500/10 text-red-300"
+          : normalized === "ended"
+            ? "border-blue-400/25 bg-blue-500/10 text-blue-300"
+            : "border-white/10 bg-white/5 text-gray-300";
 
   return (
     <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.12em] ${styles[variant]}`}
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize ${tone}`}
     >
       {status}
     </span>
   );
-}
-
-function getStatusVariant(status: string) {
-  const normalized = status.toLowerCase();
-
-  if (normalized.includes("open") || normalized.includes("approved")) {
-    return "success";
-  }
-
-  if (normalized.includes("upcoming") || normalized.includes("pending")) {
-    return "warning";
-  }
-
-  if (normalized.includes("closed") || normalized.includes("rejected")) {
-    return "danger";
-  }
-
-  return "default";
 }
 
 function PrimaryLink({
@@ -120,7 +120,7 @@ function SecondaryLink({
   return (
     <Link
       href={href}
-      className="inline-flex justify-center rounded-xl border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-black text-white transition hover:border-violet-400/30 hover:bg-white/10"
+      className="inline-flex justify-center rounded-xl border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-black text-white transition hover:bg-white/10"
     >
       {children}
     </Link>
@@ -137,45 +137,63 @@ function SectionHeader({
   description: string;
 }) {
   return (
-    <div className="mx-auto mb-10 max-w-3xl text-center">
-      <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-violet-300">
+    <div className="mb-8">
+      <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-300">
         {label}
       </p>
 
-      <h2 className="text-4xl font-black tracking-tight text-white md:text-5xl">
+      <h2 className="mt-2 text-3xl font-black text-white md:text-4xl">
         {title}
       </h2>
 
-      <p className="mt-4 text-base leading-8 text-gray-400 md:text-lg">
+      <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-400">
         {description}
       </p>
     </div>
   );
 }
 
-function PlayerJourneyStep({
-  index,
-  title,
-  description,
-}: {
-  index: number;
-  title: string;
-  description: string;
-}) {
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <article className="relative rounded-3xl border border-white/10 bg-black/25 p-6 transition hover:border-violet-400/30 hover:bg-white/[0.045]">
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-violet-600 text-sm font-black text-white shadow-lg shadow-violet-950/30">
-          {String(index).padStart(2, "0")}
-        </div>
+    <div>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+        {label}
+      </p>
 
-        <div className="h-px flex-1 bg-gradient-to-r from-violet-400/40 to-transparent" />
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+    </div>
+  );
+}
+
+function ProgressBar({
+  approvedSlots,
+  maxSlots,
+}: {
+  approvedSlots: number;
+  maxSlots: number;
+}) {
+  const progress =
+    maxSlots > 0 ? Math.min((approvedSlots / maxSlots) * 100, 100) : 0;
+
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center justify-between text-xs font-bold text-gray-500">
+        <span>
+          {approvedSlots}/{maxSlots} approved
+        </span>
+
+        <span>{Math.round(progress)}%</span>
       </div>
 
-      <h3 className="text-xl font-black text-white">{title}</h3>
-
-      <p className="mt-3 text-sm leading-7 text-gray-400">{description}</p>
-    </article>
+      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="h-full rounded-full bg-violet-500 shadow-lg shadow-violet-500/25"
+          style={{
+            width: `${progress}%`,
+          }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -192,101 +210,60 @@ function TournamentMiniCard({
     teamSize: number;
     status: string;
     registrationStatus: string;
-    registrations: { id: string }[];
+    registrations: {
+      id: string;
+      status: string;
+    }[];
   };
 }) {
-  const registeredTeams = tournament.registrations.length;
+  const approvedSlots = tournament.registrations.filter(
+    (registration) => registration.status === "approved",
+  ).length;
 
-  const progress =
-    tournament.maxSlots > 0
-      ? Math.min((registeredTeams / tournament.maxSlots) * 100, 100)
-      : 0;
-
+  const applications = tournament.registrations.length;
   const imageSrc = getTournamentImageUrl(tournament.game, tournament.imageUrl);
 
   return (
-    <article className="group overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/20 backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-violet-400/30 hover:bg-white/[0.06]">
+    <article className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 transition hover:bg-white/[0.06]">
       <div
-        className="relative h-48 overflow-hidden bg-cover bg-center transition duration-500 group-hover:scale-[1.02]"
+        className="h-44 bg-cover bg-center"
         style={{
-          backgroundImage: `url("${imageSrc}")`,
+          backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.10), rgba(7,8,17,0.82)), url("${imageSrc}")`,
         }}
-      >
-        <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(7,8,17,0.96)_0%,rgba(7,8,17,0.42)_58%,rgba(7,8,17,0.12)_100%)]" />
+      />
 
-        <div className="absolute left-4 right-4 top-4 flex flex-wrap gap-2">
-          <StatusBadge
-            status={tournament.status}
-            variant={getStatusVariant(tournament.status)}
-          />
-
-          <StatusBadge
-            status={`Registration ${tournament.registrationStatus}`}
-            variant={getStatusVariant(tournament.registrationStatus)}
-          />
+      <div className="grid gap-4 p-5">
+        <div className="flex flex-wrap gap-2">
+          <StatusBadge status={tournament.status} />
+          <StatusBadge status={tournament.registrationStatus} />
         </div>
 
-        <div className="absolute bottom-4 left-4 right-4">
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-violet-200/90">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
             {tournament.game}
           </p>
 
-          <h3 className="mt-1 text-3xl font-black leading-none text-white">
+          <h3 className="mt-2 text-2xl font-black text-white">
             {tournament.title}
           </h3>
-        </div>
-      </div>
 
-      <div className="p-5">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-500">
-              Date
-            </p>
-
-            <p className="mt-1 truncate text-sm font-black text-white">
-              {tournament.date || "TBA"}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-500">
-              Team
-            </p>
-
-            <p className="mt-1 text-sm font-black text-white">
-              {tournament.teamSize}v{tournament.teamSize}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-500">
-              Slots
-            </p>
-
-            <p className="mt-1 text-sm font-black text-white">
-              {registeredTeams}/{tournament.maxSlots}
-            </p>
-          </div>
+          <p className="mt-2 text-sm text-gray-400">
+            {tournament.date} · {tournament.teamSize}v{tournament.teamSize}
+          </p>
         </div>
 
-        <div className="mt-4">
-          <div className="mb-2 flex items-center justify-between text-xs font-bold text-gray-400">
-            <span>{registeredTeams} registered teams</span>
-            <span>{Math.round(progress)}%</span>
-          </div>
+        <ProgressBar
+          approvedSlots={approvedSlots}
+          maxSlots={tournament.maxSlots}
+        />
 
-          <div className="h-2 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
+        <p className="text-xs font-bold text-gray-500">
+          {applications} application{applications === 1 ? "" : "s"} submitted.
+        </p>
 
         <Link
           href={`/tournaments/${tournament.id}`}
-          className="mt-5 inline-flex w-full justify-center rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white transition hover:bg-violet-500"
+          className="rounded-xl bg-violet-600 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-violet-500"
         >
           View details
         </Link>
@@ -295,56 +272,52 @@ function TournamentMiniCard({
   );
 }
 
-function PlayerHubStatCard({
-  label,
-  value,
+function JourneyRow({
+  index,
+  title,
   description,
 }: {
-  label: string;
-  value: string | number;
+  index: number;
+  title: string;
   description: string;
 }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-black/25 p-5">
-      <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
-        {label}
+    <article className="grid gap-3 border-b border-white/10 px-5 py-4 last:border-b-0 md:grid-cols-[80px_180px_minmax(0,1fr)] md:items-center">
+      <p className="text-sm font-black text-violet-300">
+        {String(index).padStart(2, "0")}
       </p>
 
-      <p className="mt-3 text-3xl font-black text-white">{value}</p>
+      <h3 className="font-black text-white">{title}</h3>
 
-      <p className="mt-2 text-sm leading-6 text-gray-500">{description}</p>
-    </div>
+      <p className="text-sm leading-6 text-gray-400">{description}</p>
+    </article>
   );
 }
 
 function PlayerHubSection({ stats }: { stats: PlayerHubStats }) {
-  const bestPlacementValue = stats.bestPlacement
-    ? `#${stats.bestPlacement}`
-    : "-";
-
   return (
     <section className="relative py-16 lg:py-20">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
-        <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-8 shadow-2xl shadow-black/20 backdrop-blur md:p-12">
-          <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+        <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/20">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_460px] lg:items-end">
             <div>
-              <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-violet-300">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-300">
                 Player hub
               </p>
 
-              <h2 className="max-w-3xl text-4xl font-black tracking-tight text-white md:text-5xl">
+              <h2 className="mt-2 text-3xl font-black text-white md:text-4xl">
                 {stats.isLoggedIn
-                  ? "Your competitive activity in one place."
-                  : "A dedicated hub for teams, entries, and results."}
+                  ? "Your activity in one place."
+                  : "Teams, entries, and results."}
               </h2>
 
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-400">
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-gray-400">
                 {stats.isLoggedIn
-                  ? "Track your teams, invitations, tournament registrations, results, and points directly from your player profile."
-                  : "Sign in with Discord to manage teams, enter tournaments, and follow your competitive record across Ascendra events."}
+                  ? "Open your profile to manage teams, invitations, registrations, and tournament history."
+                  : "Login with Discord to create teams, register for tournaments, and follow your progress."}
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-wrap gap-3">
                 <PrimaryLink href={stats.isLoggedIn ? "/profile" : "/login"}>
                   {stats.isLoggedIn ? "Open profile" : "Login with Discord"}
                 </PrimaryLink>
@@ -355,35 +328,19 @@ function PlayerHubSection({ stats }: { stats: PlayerHubStats }) {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <PlayerHubStatCard
-                label="Teams"
-                value={stats.teamsCount}
-                description="Teams where you are currently listed as a member."
-              />
-
-              <PlayerHubStatCard
-                label="Invites"
-                value={stats.pendingInvitesCount}
-                description="Pending team invitations waiting for your response."
-              />
-
-              <PlayerHubStatCard
-                label="Entries"
-                value={stats.activeRegistrationsCount}
-                description="Active tournament entries connected to your teams."
-              />
-
-              <PlayerHubStatCard
-                label="Points"
-                value={stats.tournamentPoints}
-                description={`${stats.tournamentResultsCount} result${
-                  stats.tournamentResultsCount === 1 ? "" : "s"
-                } · Best placement ${bestPlacementValue}`}
+            <div className="grid grid-cols-2 gap-5">
+              <Stat label="Teams" value={stats.teamsCount} />
+              <Stat label="Invites" value={stats.pendingInvitesCount} />
+              <Stat label="Entries" value={stats.activeRegistrationsCount} />
+              <Stat label="Points" value={stats.tournamentPoints} />
+              <Stat label="Results" value={stats.tournamentResultsCount} />
+              <Stat
+                label="Best"
+                value={stats.bestPlacement ? `#${stats.bestPlacement}` : "-"}
               />
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </section>
   );
@@ -410,7 +367,7 @@ async function getPlayerHubStats(): Promise<PlayerHubStats> {
     teamsCount,
     pendingInvitesCount,
     activeRegistrationsCount,
-    resultStats,
+    tournamentResults,
   ] = await Promise.all([
     prisma.team.count({
       where: {
@@ -434,6 +391,11 @@ async function getPlayerHubStats(): Promise<PlayerHubStats> {
         status: {
           in: ["registered", "approved"],
         },
+        tournament: {
+          status: {
+            notIn: ["ended", "cancelled"],
+          },
+        },
         team: {
           members: {
             some: {
@@ -444,36 +406,60 @@ async function getPlayerHubStats(): Promise<PlayerHubStats> {
       },
     }),
 
-    prisma.tournamentResult.aggregate({
-      where: {
+    prisma.tournamentResult.findMany({
+      select: {
+        points: true,
+        placement: true,
+        snapshotMembers: true,
         team: {
-          members: {
-            some: {
-              userId,
+          select: {
+            members: {
+              select: {
+                userId: true,
+              },
             },
           },
         },
       },
-      _count: {
-        id: true,
-      },
-      _sum: {
-        points: true,
-      },
-      _min: {
-        placement: true,
-      },
     }),
   ]);
+
+  let tournamentResultsCount = 0;
+  let tournamentPoints = 0;
+  let bestPlacement: number | null = null;
+
+  for (const result of tournamentResults) {
+    const snapshotMembers = parseSnapshotMembers(result.snapshotMembers);
+
+    const resultUserIds =
+      snapshotMembers.length > 0
+        ? snapshotMembers
+            .map((member) => member.userId)
+            .filter((memberUserId): memberUserId is string =>
+              Boolean(memberUserId),
+            )
+        : result.team.members.map((member) => member.userId);
+
+    if (!resultUserIds.includes(userId)) {
+      continue;
+    }
+
+    tournamentResultsCount += 1;
+    tournamentPoints += result.points;
+    bestPlacement =
+      bestPlacement === null
+        ? result.placement
+        : Math.min(bestPlacement, result.placement);
+  }
 
   return {
     isLoggedIn: true,
     teamsCount,
     pendingInvitesCount,
     activeRegistrationsCount,
-    tournamentResultsCount: resultStats._count.id,
-    tournamentPoints: resultStats._sum.points || 0,
-    bestPlacement: resultStats._min.placement,
+    tournamentResultsCount,
+    tournamentPoints,
+    bestPlacement,
   };
 }
 
@@ -497,11 +483,12 @@ export default async function HomePage() {
         registrations: {
           where: {
             status: {
-              in: ["registered", "approved"],
+              in: ["registered", "approved", "rejected"],
             },
           },
           select: {
             id: true,
+            status: true,
           },
         },
       },
@@ -517,7 +504,7 @@ export default async function HomePage() {
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[760px] overflow-hidden">
+        <section className="relative min-h-[720px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -525,29 +512,29 @@ export default async function HomePage() {
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.82)_0%,rgba(7,8,17,0.45)_44%,rgba(7,8,17,0.58)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.18),transparent_34%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.14),transparent_32%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.86)_0%,rgba(7,8,17,0.50)_44%,rgba(7,8,17,0.68)_100%)]" />
           <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
-          <div className="relative z-10 flex min-h-[760px] items-center px-6 pb-32 pt-20 lg:px-10 2xl:px-14">
+          <div className="relative z-10 flex min-h-[720px] items-center px-6 pb-32 pt-20 lg:px-10 2xl:px-14">
             <div className="max-w-5xl">
               <p className="mb-5 text-sm font-black uppercase tracking-[0.22em] text-violet-300">
                 Ascendra tournament platform
               </p>
 
               <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
-                Compete in organized community tournaments
+                Compete in organized tournaments.
               </h1>
 
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-300">
-                Manage teams, enter tournaments, and track official results
-                through one competitive platform.
+              <p className="mt-6 max-w-2xl text-base leading-7 text-gray-300">
+                Create teams, register for events, and track official results
+                through one clean competitive platform.
               </p>
 
-              <div className="mt-9 flex flex-wrap gap-3">
+              <div className="mt-8 flex flex-wrap gap-3">
                 <PrimaryLink href="/tournaments">
                   Explore tournaments
                 </PrimaryLink>
+
                 <SecondaryLink href="/profile">Create a team</SecondaryLink>
               </div>
             </div>
@@ -558,12 +545,12 @@ export default async function HomePage() {
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader
               label="Tournaments"
-              title="Latest tournaments."
-              description="Browse active and upcoming events, review entry requirements, and open each tournament page for registration details."
+              title="Latest tournaments"
+              description="Browse current events, check available approved slots, and open details before registering."
             />
 
             {tournaments.length === 0 ? (
-              <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8 text-center text-gray-300 shadow-2xl shadow-black/20">
+              <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-gray-300 shadow-2xl shadow-black/20">
                 No tournaments available yet.
               </div>
             ) : (
@@ -587,36 +574,22 @@ export default async function HomePage() {
 
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
-            <div className="overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.02))] p-8 shadow-2xl shadow-black/25 backdrop-blur md:p-10">
-              <div className="mb-10 grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
-                <div>
-                  <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-violet-300">
-                    Player journey
-                  </p>
+            <SectionHeader
+              label="Flow"
+              title="Simple competition workflow"
+              description="From creating a team to earning official tournament points."
+            />
 
-                  <h2 className="max-w-2xl text-4xl font-black tracking-tight text-white md:text-5xl">
-                    A structured path for every competitive team.
-                  </h2>
-                </div>
-
-                <p className="max-w-3xl text-base leading-8 text-gray-400 lg:justify-self-end">
-                  Ascendra brings roster management, tournament entry, admin
-                  approval, and results tracking into a clear competition
-                  workflow.
-                </p>
-              </div>
-
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-                {playerJourney.map((step, index) => (
-                  <PlayerJourneyStep
-                    key={step.title}
-                    index={index + 1}
-                    title={step.title}
-                    description={step.description}
-                  />
-                ))}
-              </div>
-            </div>
+            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+              {playerJourney.map((step, index) => (
+                <JourneyRow
+                  key={step.title}
+                  index={index + 1}
+                  title={step.title}
+                  description={step.description}
+                />
+              ))}
+            </section>
           </div>
         </section>
 
