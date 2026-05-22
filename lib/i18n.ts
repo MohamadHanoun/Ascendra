@@ -326,6 +326,88 @@ export type LeaderboardMessages = {
     none: string;
   };
 };
+export type TournamentDetailsMessages = {
+  metadata: {
+    title: string;
+    description: string;
+  };
+  statuses: {
+    open: string;
+    upcoming: string;
+    closed: string;
+    ended: string;
+    cancelled: string;
+    registrationOpen: string;
+    registrationClosed: string;
+    registered: string;
+    approved: string;
+    rejected: string;
+  };
+  labels: {
+    backToTournaments: string;
+    date: string;
+    prize: string;
+    team: string;
+    slotsLeft: string;
+    approved: string;
+    applicationSubmitted: string;
+    applicationsSubmitted: string;
+    registration: string;
+    registerYourTeam: string;
+    teams: string;
+    applications: string;
+    noTeamsRegistered: string;
+    players: string;
+    player: string;
+    results: string;
+    finalStandings: string;
+    points: string;
+    unavailableReasons: {
+      wrongGame: string;
+      needsMorePlayer: string;
+      needsMorePlayers: string;
+      pendingInvites: string;
+      notEligible: string;
+    };
+  };
+  panel: {
+    chooseTeam: string;
+    selectTeam: string;
+    registering: string;
+    registerTeam: string;
+    cancelling: string;
+    cancelRegistration: string;
+    confirmation: string;
+    cancelRegistrationTitle: string;
+    cancelRegistrationDescription: string;
+    keepRegistration: string;
+    currentRegistrationStatus: string;
+    approvedByAdmin: string;
+    tournamentEnded: string;
+    tournamentEndedDescription: string;
+    loginRequired: string;
+    loginRequiredDescription: string;
+    loginWithDiscord: string;
+    discordRequired: string;
+    discordRequiredDescription: string;
+    joinDiscord: string;
+    discordInviteNotConfigured: string;
+    refreshLogin: string;
+    registrationClosed: string;
+    registrationClosedDescription: string;
+    tournamentFull: string;
+    tournamentFullDescription: string;
+    noEligibleTeams: string;
+    noEligibleTeamsDescription: string;
+    manageTeams: string;
+    unavailableTeams: string;
+    requirements: string;
+    requirementSameGame: string;
+    requirementAtLeast: string;
+    requirementNoPending: string;
+    tournamentStatus: string;
+  };
+};
 
 export type I18nMessages = {
   navbar: NavigationMessages;
@@ -335,6 +417,7 @@ export type I18nMessages = {
   news: NewsMessages;
   tournaments: TournamentsMessages;
   leaderboard: LeaderboardMessages;
+  tournamentDetails: TournamentDetailsMessages;
 };
 
 export const dictionaries: Record<Locale, I18nMessages> = {
@@ -741,6 +824,93 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         none: "-",
       },
     },
+
+    tournamentDetails: {
+      metadata: {
+        title: "Tournament Details | Ascendra",
+        description: "Tournament details and registration.",
+      },
+      statuses: {
+        open: "Open",
+        upcoming: "Upcoming",
+        closed: "Closed",
+        ended: "Ended",
+        cancelled: "Cancelled",
+        registrationOpen: "Registration open",
+        registrationClosed: "Registration closed",
+        registered: "Waiting review",
+        approved: "Approved",
+        rejected: "Rejected",
+      },
+      labels: {
+        backToTournaments: "Back to tournaments",
+        date: "Date",
+        prize: "Prize",
+        team: "Team",
+        slotsLeft: "Slots left",
+        approved: "approved",
+        applicationSubmitted: "application submitted.",
+        applicationsSubmitted: "applications submitted.",
+        registration: "Registration",
+        registerYourTeam: "Register your team",
+        teams: "Teams",
+        applications: "Applications",
+        noTeamsRegistered: "No teams registered yet.",
+        players: "players",
+        player: "player",
+        results: "Results",
+        finalStandings: "Final standings",
+        points: "points",
+        unavailableReasons: {
+          wrongGame: "Wrong game",
+          needsMorePlayer: "Needs 1 more player",
+          needsMorePlayers: "Needs {count} more players",
+          pendingInvites: "Pending invites",
+          notEligible: "Not eligible",
+        },
+      },
+      panel: {
+        chooseTeam: "Choose team",
+        selectTeam: "Select team",
+        registering: "Registering...",
+        registerTeam: "Register team",
+        cancelling: "Cancelling...",
+        cancelRegistration: "Cancel registration",
+        confirmation: "Confirmation",
+        cancelRegistrationTitle: "Cancel registration?",
+        cancelRegistrationDescription: "Cancel {teamName}'s registration?",
+        keepRegistration: "Keep registration",
+        currentRegistrationStatus: "Current registration status",
+        approvedByAdmin:
+          "Approved by admin. Contact an admin if changes are needed.",
+        tournamentEnded: "Tournament ended",
+        tournamentEndedDescription:
+          "Registration is closed for this tournament.",
+        loginRequired: "Login required",
+        loginRequiredDescription: "Login with Discord to register a team.",
+        loginWithDiscord: "Login with Discord",
+        discordRequired: "Discord membership required",
+        discordRequiredDescription:
+          "Join Ascendra Discord and refresh your login.",
+        joinDiscord: "Join Discord",
+        discordInviteNotConfigured: "Discord invite not configured",
+        refreshLogin: "Refresh login",
+        registrationClosed: "Registration closed",
+        registrationClosedDescription:
+          "This tournament is not accepting registrations.",
+        tournamentFull: "Tournament full",
+        tournamentFullDescription: "Approved slots are full.",
+        noEligibleTeams: "No eligible teams",
+        noEligibleTeamsDescription: "No team is ready for this tournament.",
+        manageTeams: "Manage teams",
+        unavailableTeams: "Unavailable teams",
+        requirements: "Requirements",
+        requirementSameGame: "Same game as the tournament.",
+        requirementAtLeast: "At least {count} player(s).",
+        requirementNoPending: "No pending team invites.",
+        tournamentStatus: "Tournament status",
+      },
+    },
   },
 
   ar: {
@@ -1138,6 +1308,90 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       fallback: {
         unknownPlayer: "لاعب غير معروف",
         none: "-",
+      },
+    },
+    tournamentDetails: {
+      metadata: {
+        title: "تفاصيل البطولة | Ascendra",
+        description: "تفاصيل البطولة والتسجيل.",
+      },
+      statuses: {
+        open: "مفتوحة",
+        upcoming: "قادمة",
+        closed: "مغلقة",
+        ended: "منتهية",
+        cancelled: "ملغاة",
+        registrationOpen: "التسجيل مفتوح",
+        registrationClosed: "التسجيل مغلق",
+        registered: "بانتظار المراجعة",
+        approved: "مقبول",
+        rejected: "مرفوض",
+      },
+      labels: {
+        backToTournaments: "العودة إلى البطولات",
+        date: "التاريخ",
+        prize: "الجائزة",
+        team: "الفريق",
+        slotsLeft: "المقاعد المتبقية",
+        approved: "مقبول",
+        applicationSubmitted: "طلب تم إرساله.",
+        applicationsSubmitted: "طلبات تم إرسالها.",
+        registration: "التسجيل",
+        registerYourTeam: "تسجيل فريقك",
+        teams: "الفرق",
+        applications: "طلبات المشاركة",
+        noTeamsRegistered: "لا توجد فرق مسجلة حاليًا.",
+        players: "لاعبين",
+        player: "لاعب",
+        results: "النتائج",
+        finalStandings: "الترتيب النهائي",
+        points: "نقطة",
+        unavailableReasons: {
+          wrongGame: "اللعبة غير مطابقة",
+          needsMorePlayer: "يحتاج إلى لاعب إضافي واحد",
+          needsMorePlayers: "يحتاج إلى {count} لاعبين إضافيين",
+          pendingInvites: "توجد دعوات معلقة",
+          notEligible: "غير مؤهل",
+        },
+      },
+      panel: {
+        chooseTeam: "اختر الفريق",
+        selectTeam: "اختر فريقًا",
+        registering: "جارٍ التسجيل...",
+        registerTeam: "تسجيل الفريق",
+        cancelling: "جارٍ الإلغاء...",
+        cancelRegistration: "إلغاء التسجيل",
+        confirmation: "تأكيد",
+        cancelRegistrationTitle: "إلغاء التسجيل؟",
+        cancelRegistrationDescription: "هل تريد إلغاء تسجيل فريق {teamName}؟",
+        keepRegistration: "الإبقاء على التسجيل",
+        currentRegistrationStatus: "حالة التسجيل الحالية",
+        approvedByAdmin:
+          "تمت الموافقة من الإدارة. تواصل مع الإدارة إذا كانت هناك حاجة إلى تعديل.",
+        tournamentEnded: "انتهت البطولة",
+        tournamentEndedDescription: "التسجيل مغلق لهذه البطولة.",
+        loginRequired: "تسجيل الدخول مطلوب",
+        loginRequiredDescription: "سجّل الدخول عبر Discord لتسجيل فريق.",
+        loginWithDiscord: "تسجيل الدخول عبر Discord",
+        discordRequired: "عضوية Discord مطلوبة",
+        discordRequiredDescription:
+          "انضم إلى Discord الخاص بـ Ascendra ثم حدّث تسجيل الدخول.",
+        joinDiscord: "انضم إلى Discord",
+        discordInviteNotConfigured: "رابط دعوة Discord غير مفعّل",
+        refreshLogin: "تحديث تسجيل الدخول",
+        registrationClosed: "التسجيل مغلق",
+        registrationClosedDescription: "هذه البطولة لا تقبل تسجيلات حاليًا.",
+        tournamentFull: "البطولة ممتلئة",
+        tournamentFullDescription: "جميع المقاعد المقبولة ممتلئة.",
+        noEligibleTeams: "لا توجد فرق مؤهلة",
+        noEligibleTeamsDescription: "لا يوجد فريق جاهز لهذه البطولة.",
+        manageTeams: "إدارة الفرق",
+        unavailableTeams: "الفرق غير المتاحة",
+        requirements: "المتطلبات",
+        requirementSameGame: "يجب أن تكون لعبة الفريق مطابقة للبطولة.",
+        requirementAtLeast: "يجب أن يحتوي الفريق على {count} لاعب على الأقل.",
+        requirementNoPending: "يجب ألا توجد دعوات فريق معلقة.",
+        tournamentStatus: "حالة البطولة",
       },
     },
   },

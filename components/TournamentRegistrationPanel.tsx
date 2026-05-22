@@ -16,6 +16,7 @@ import {
 } from "@/actions/tournamentRegistrationInlineActions";
 import type { TournamentRegistrationActionResult } from "@/actions/tournamentRegistrationInlineActions";
 import CustomSelect from "@/components/CustomSelect";
+import type { TournamentDetailsMessages } from "@/lib/i18n";
 
 type AvailableTeam = {
   id: string;
@@ -42,6 +43,7 @@ type ActiveRegistration = {
 type TournamentRegistrationPanelProps = {
   tournamentId: string;
   tournamentStatus: string;
+  tournamentStatusLabel: string;
   registrationStatus: string;
   slotsRemaining: number;
   teamSize: number;
@@ -50,20 +52,39 @@ type TournamentRegistrationPanelProps = {
   availableTeams: AvailableTeam[];
   unavailableTeams: UnavailableTeam[];
   activeRegistrations: ActiveRegistration[];
+  messages: TournamentDetailsMessages["panel"];
+  statusLabels: TournamentDetailsMessages["statuses"];
+  playerLabel: string;
+  playersLabel: string;
 };
 
 const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "";
+
+function formatTemplate(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{${key}}`, value),
+    template,
+  );
+}
+
+function getPlayerLabel(
+  count: number,
+  playerLabel: string,
+  playersLabel: string,
+) {
+  return count === 1 ? playerLabel : playersLabel;
+}
 
 function Pill({
   children,
   tone = "gray",
 }: {
   children: ReactNode;
-  tone?: "green" | "yellow" | "red" | "gray" | "violet";
+  tone?: "green" | "blue" | "red" | "gray" | "violet";
 }) {
   const styles = {
     green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    blue: "border-blue-400/25 bg-blue-500/10 text-blue-300",
     red: "border-red-400/25 bg-red-500/10 text-red-300",
     gray: "border-white/10 bg-white/5 text-gray-300",
     violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
@@ -78,7 +99,13 @@ function Pill({
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({
+  status,
+  labels,
+}: {
+  status: string;
+  labels: TournamentDetailsMessages["statuses"];
+}) {
   const normalizedStatus = status.toLowerCase();
 
   const tone =
@@ -90,14 +117,14 @@ function StatusBadge({ status }: { status: string }) {
           ? "red"
           : "gray";
 
-  const labels: Record<string, string> = {
-    registered: "Waiting review",
-    approved: "Approved",
-    rejected: "Rejected",
-    cancelled: "Cancelled",
+  const statusLabels: Record<string, string> = {
+    registered: labels.registered,
+    approved: labels.approved,
+    rejected: labels.rejected,
+    cancelled: labels.cancelled,
   };
 
-  return <Pill tone={tone}>{labels[normalizedStatus] || status}</Pill>;
+  return <Pill tone={tone}>{statusLabels[normalizedStatus] || status}</Pill>;
 }
 
 function ActionNotice({
@@ -125,16 +152,16 @@ function ActionNotice({
 function PanelNotice({
   title,
   description,
-  tone = "yellow",
+  tone = "violet",
   children,
 }: {
   title: string;
   description: string;
-  tone?: "yellow" | "red" | "gray" | "green";
+  tone?: "violet" | "red" | "gray" | "green";
   children?: ReactNode;
 }) {
   const styles = {
-    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
     red: "border-red-400/25 bg-red-500/10 text-red-300",
     gray: "border-white/10 bg-black/20 text-white",
     green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
@@ -180,9 +207,15 @@ function NoticeLink({
 function RegisterForm({
   tournamentId,
   availableTeams,
+  messages,
+  playerLabel,
+  playersLabel,
 }: {
   tournamentId: string;
   availableTeams: AvailableTeam[];
+  messages: TournamentDetailsMessages["panel"];
+  playerLabel: string;
+  playersLabel: string;
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -228,18 +261,22 @@ function RegisterForm({
       <input type="hidden" name="tournamentId" value={tournamentId} />
 
       <label className="grid gap-2">
-        <span className="text-sm font-bold text-gray-200">Choose team</span>
+        <span className="text-sm font-bold text-gray-200">
+          {messages.chooseTeam}
+        </span>
 
         <CustomSelect
           name="teamId"
           required
-          placeholder="Select team"
+          placeholder={messages.selectTeam}
           options={availableTeams.map((team) => ({
             value: team.id,
             label: team.name,
-            description: `${team.game} · ${team.memberCount} player${
-              team.memberCount === 1 ? "" : "s"
-            }`,
+            description: `${team.game} · ${team.memberCount} ${getPlayerLabel(
+              team.memberCount,
+              playerLabel,
+              playersLabel,
+            )}`,
           }))}
         />
       </label>
@@ -249,7 +286,7 @@ function RegisterForm({
         disabled={pending}
         className="w-fit rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {pending ? "Registering..." : "Register team"}
+        {pending ? messages.registering : messages.registerTeam}
       </button>
 
       <ActionNotice result={notice} />
@@ -260,9 +297,11 @@ function RegisterForm({
 function CancelRegistrationForm({
   registrationId,
   teamName,
+  messages,
 }: {
   registrationId: string;
   teamName: string;
+  messages: TournamentDetailsMessages["panel"];
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -320,7 +359,7 @@ function CancelRegistrationForm({
           disabled={pending}
           className="w-fit rounded-xl border border-red-500/25 px-4 py-2 text-sm font-black text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {pending ? "Cancelling..." : "Cancel registration"}
+          {pending ? messages.cancelling : messages.cancelRegistration}
         </button>
 
         <ActionNotice result={notice} />
@@ -331,15 +370,17 @@ function CancelRegistrationForm({
           <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#11121d] shadow-2xl shadow-black/40">
             <div className="border-b border-white/10 px-6 py-5">
               <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
-                Confirmation
+                {messages.confirmation}
               </p>
 
               <h2 className="mt-2 text-2xl font-black text-white">
-                Cancel registration?
+                {messages.cancelRegistrationTitle}
               </h2>
 
               <p className="mt-2 leading-7 text-gray-300">
-                Cancel {teamName}&apos;s registration?
+                {formatTemplate(messages.cancelRegistrationDescription, {
+                  teamName,
+                })}
               </p>
             </div>
 
@@ -349,7 +390,7 @@ function CancelRegistrationForm({
                 onClick={() => setConfirmOpen(false)}
                 className="rounded-xl border border-white/10 px-5 py-3 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
               >
-                Keep registration
+                {messages.keepRegistration}
               </button>
 
               <button
@@ -358,7 +399,7 @@ function CancelRegistrationForm({
                 disabled={pending}
                 className="rounded-xl bg-red-500 px-5 py-3 text-sm font-black text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {pending ? "Cancelling..." : "Cancel registration"}
+                {pending ? messages.cancelling : messages.cancelRegistration}
               </button>
             </div>
           </div>
@@ -370,8 +411,12 @@ function CancelRegistrationForm({
 
 function ActiveRegistrationCard({
   registration,
+  messages,
+  statusLabels,
 }: {
   registration: ActiveRegistration;
+  messages: TournamentDetailsMessages["panel"];
+  statusLabels: TournamentDetailsMessages["statuses"];
 }) {
   return (
     <div className="grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4">
@@ -379,11 +424,11 @@ function ActiveRegistrationCard({
         <div>
           <p className="font-black text-white">{registration.teamName}</p>
           <p className="mt-1 text-sm text-gray-400">
-            Current registration status
+            {messages.currentRegistrationStatus}
           </p>
         </div>
 
-        <StatusBadge status={registration.status} />
+        <StatusBadge status={registration.status} labels={statusLabels} />
       </div>
 
       {registration.rejectionReason && (
@@ -396,19 +441,30 @@ function ActiveRegistrationCard({
         <CancelRegistrationForm
           registrationId={registration.id}
           teamName={registration.teamName}
+          messages={messages}
         />
       )}
 
       {registration.status === "approved" && (
         <p className="text-sm leading-6 text-emerald-300">
-          Approved by admin. Contact an admin if changes are needed.
+          {messages.approvedByAdmin}
         </p>
       )}
     </div>
   );
 }
 
-function UnavailableTeamsList({ teams }: { teams: UnavailableTeam[] }) {
+function UnavailableTeamsList({
+  teams,
+  messages,
+  playerLabel,
+  playersLabel,
+}: {
+  teams: UnavailableTeam[];
+  messages: TournamentDetailsMessages["panel"];
+  playerLabel: string;
+  playersLabel: string;
+}) {
   if (teams.length === 0) {
     return null;
   }
@@ -416,7 +472,7 @@ function UnavailableTeamsList({ teams }: { teams: UnavailableTeam[] }) {
   return (
     <details className="rounded-2xl border border-white/10 bg-black/20">
       <summary className="cursor-pointer px-4 py-3 text-sm font-black text-gray-300 transition hover:text-white">
-        Unavailable teams ({teams.length})
+        {messages.unavailableTeams} ({teams.length})
       </summary>
 
       <div className="divide-y divide-white/10 border-t border-white/10">
@@ -428,12 +484,12 @@ function UnavailableTeamsList({ teams }: { teams: UnavailableTeam[] }) {
             <div>
               <p className="font-black text-white">{team.name}</p>
               <p className="mt-1 text-sm text-gray-400">
-                {team.game} · {team.memberCount} player
-                {team.memberCount === 1 ? "" : "s"}
+                {team.game} · {team.memberCount}{" "}
+                {getPlayerLabel(team.memberCount, playerLabel, playersLabel)}
               </p>
             </div>
 
-            <Pill tone="yellow">{team.reason}</Pill>
+            <Pill tone="blue">{team.reason}</Pill>
           </div>
         ))}
       </div>
@@ -441,19 +497,27 @@ function UnavailableTeamsList({ teams }: { teams: UnavailableTeam[] }) {
   );
 }
 
-function RequirementsList({ teamSize }: { teamSize: number }) {
+function RequirementsList({
+  teamSize,
+  messages,
+}: {
+  teamSize: number;
+  messages: TournamentDetailsMessages["panel"];
+}) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
       <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-        Requirements
+        {messages.requirements}
       </p>
 
       <div className="mt-3 grid gap-2 text-sm leading-6 text-gray-300">
-        <p>Same game as the tournament.</p>
+        <p>{messages.requirementSameGame}</p>
         <p>
-          At least {teamSize} player{teamSize === 1 ? "" : "s"}.
+          {formatTemplate(messages.requirementAtLeast, {
+            count: String(teamSize),
+          })}
         </p>
-        <p>No pending team invites.</p>
+        <p>{messages.requirementNoPending}</p>
       </div>
     </div>
   );
@@ -462,6 +526,7 @@ function RequirementsList({ teamSize }: { teamSize: number }) {
 function TournamentRegistrationPanel({
   tournamentId,
   tournamentStatus,
+  tournamentStatusLabel,
   registrationStatus,
   slotsRemaining,
   teamSize,
@@ -470,6 +535,10 @@ function TournamentRegistrationPanel({
   availableTeams,
   unavailableTeams,
   activeRegistrations,
+  messages,
+  statusLabels,
+  playerLabel,
+  playersLabel,
 }: TournamentRegistrationPanelProps) {
   const hasOpenRegistration = activeRegistrations.some((registration) =>
     ["registered", "approved"].includes(registration.status),
@@ -478,8 +547,8 @@ function TournamentRegistrationPanel({
   if (tournamentStatus === "ended") {
     return (
       <PanelNotice
-        title="Tournament ended"
-        description="Registration is closed for this tournament."
+        title={messages.tournamentEnded}
+        description={messages.tournamentEndedDescription}
         tone="gray"
       />
     );
@@ -488,10 +557,10 @@ function TournamentRegistrationPanel({
   if (!isLoggedIn) {
     return (
       <PanelNotice
-        title="Login required"
-        description="Login with Discord to register a team."
+        title={messages.loginRequired}
+        description={messages.loginRequiredDescription}
       >
-        <NoticeLink href="/login">Login with Discord</NoticeLink>
+        <NoticeLink href="/login">{messages.loginWithDiscord}</NoticeLink>
       </PanelNotice>
     );
   }
@@ -499,20 +568,20 @@ function TournamentRegistrationPanel({
   if (!isGuildMember) {
     return (
       <PanelNotice
-        title="Discord membership required"
-        description="Join Ascendra Discord and refresh your login."
+        title={messages.discordRequired}
+        description={messages.discordRequiredDescription}
       >
         {discordInvite ? (
           <NoticeLink href={discordInvite} external>
-            Join Discord
+            {messages.joinDiscord}
           </NoticeLink>
         ) : (
           <span className="rounded-xl border border-white/10 px-4 py-2 text-sm font-black text-gray-400">
-            Discord invite not configured
+            {messages.discordInviteNotConfigured}
           </span>
         )}
 
-        <NoticeLink href="/login">Refresh login</NoticeLink>
+        <NoticeLink href="/login">{messages.refreshLogin}</NoticeLink>
       </PanelNotice>
     );
   }
@@ -525,6 +594,8 @@ function TournamentRegistrationPanel({
             <ActiveRegistrationCard
               key={registration.id}
               registration={registration}
+              messages={messages}
+              statusLabels={statusLabels}
             />
           ))}
         </section>
@@ -532,16 +603,16 @@ function TournamentRegistrationPanel({
 
       {registrationStatus !== "open" && (
         <PanelNotice
-          title="Registration closed"
-          description="This tournament is not accepting registrations."
+          title={messages.registrationClosed}
+          description={messages.registrationClosedDescription}
           tone="red"
         />
       )}
 
       {registrationStatus === "open" && slotsRemaining <= 0 && (
         <PanelNotice
-          title="Tournament full"
-          description="Approved slots are full."
+          title={messages.tournamentFull}
+          description={messages.tournamentFullDescription}
           tone="red"
         />
       )}
@@ -554,25 +625,33 @@ function TournamentRegistrationPanel({
               <RegisterForm
                 tournamentId={tournamentId}
                 availableTeams={availableTeams}
+                messages={messages}
+                playerLabel={playerLabel}
+                playersLabel={playersLabel}
               />
             ) : (
               <PanelNotice
-                title="No eligible teams"
-                description="No team is ready for this tournament."
+                title={messages.noEligibleTeams}
+                description={messages.noEligibleTeamsDescription}
                 tone="gray"
               >
-                <NoticeLink href="/profile">Manage teams</NoticeLink>
+                <NoticeLink href="/profile">{messages.manageTeams}</NoticeLink>
               </PanelNotice>
             )}
 
-            <UnavailableTeamsList teams={unavailableTeams} />
-            <RequirementsList teamSize={teamSize} />
+            <UnavailableTeamsList
+              teams={unavailableTeams}
+              messages={messages}
+              playerLabel={playerLabel}
+              playersLabel={playersLabel}
+            />
+            <RequirementsList teamSize={teamSize} messages={messages} />
           </section>
         )}
 
       <p className="text-sm text-gray-500">
-        Tournament status:{" "}
-        <span className="font-black text-white">{tournamentStatus}</span>
+        {messages.tournamentStatus}:{" "}
+        <span className="font-black text-white">{tournamentStatusLabel}</span>
       </p>
     </div>
   );

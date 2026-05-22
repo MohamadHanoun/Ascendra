@@ -9,15 +9,16 @@ import Navbar from "@/components/Navbar";
 import ProfileNotice from "@/components/ProfileNotice";
 import TournamentDetailsRealtime from "@/components/TournamentDetailsRealtime";
 import { TournamentRegistrationPanel } from "@/components/TournamentRegistrationPanel";
+import {
+  getDictionary,
+  type Locale,
+  type TournamentDetailsMessages,
+} from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
 export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "Tournament Details | Ascendra",
-  description: "Tournament details and registration.",
-};
 
 type TournamentDetailsPageProps = {
   params: Promise<{
@@ -29,16 +30,25 @@ type TournamentDetailsPageProps = {
   }>;
 };
 
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = getDictionary(locale).tournamentDetails.metadata;
+
+  return {
+    title: messages.title,
+    description: messages.description,
+  };
+}
+
 function Pill({
   children,
   tone = "gray",
 }: {
   children: ReactNode;
-  tone?: "green" | "yellow" | "red" | "blue" | "gray" | "violet";
+  tone?: "green" | "red" | "blue" | "gray" | "violet";
 }) {
   const styles = {
     green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
     red: "border-red-400/25 bg-red-500/10 text-red-300",
     blue: "border-blue-400/25 bg-blue-500/10 text-blue-300",
     gray: "border-white/10 bg-white/5 text-gray-300",
@@ -47,14 +57,55 @@ function Pill({
 
   return (
     <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize ${styles[tone]}`}
+      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
     >
       {children}
     </span>
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function getTournamentStatusLabel(
+  status: string,
+  messages: TournamentDetailsMessages["statuses"],
+) {
+  const labels: Record<string, string> = {
+    open: messages.open,
+    upcoming: messages.upcoming,
+    closed: messages.closed,
+    ended: messages.ended,
+    cancelled: messages.cancelled,
+  };
+
+  return labels[status.toLowerCase()] || status;
+}
+
+function getRegistrationStatusLabel(
+  status: string,
+  messages: TournamentDetailsMessages["statuses"],
+) {
+  const labels: Record<string, string> = {
+    open: messages.registrationOpen,
+    closed: messages.registrationClosed,
+  };
+
+  return labels[status.toLowerCase()] || status;
+}
+
+function getRegistrationReviewStatusLabel(
+  status: string,
+  messages: TournamentDetailsMessages["statuses"],
+) {
+  const labels: Record<string, string> = {
+    registered: messages.registered,
+    approved: messages.approved,
+    rejected: messages.rejected,
+    cancelled: messages.cancelled,
+  };
+
+  return labels[status.toLowerCase()] || status;
+}
+
+function StatusBadge({ status, label }: { status: string; label?: string }) {
   const normalizedStatus = status.toLowerCase().replace("registration ", "");
 
   const tone =
@@ -63,14 +114,14 @@ function StatusBadge({ status }: { status: string }) {
       : normalizedStatus === "upcoming" ||
           normalizedStatus === "pending" ||
           normalizedStatus === "registered"
-        ? "yellow"
+        ? "blue"
         : normalizedStatus === "closed" || normalizedStatus === "rejected"
           ? "red"
           : normalizedStatus === "ended"
-            ? "blue"
+            ? "violet"
             : "gray";
 
-  return <Pill tone={tone}>{status}</Pill>;
+  return <Pill tone={tone}>{label || status}</Pill>;
 }
 
 function Stat({ label, value }: { label: string; value: string | number }) {
@@ -97,8 +148,8 @@ function SectionTitle({ label, title }: { label: string; title: string }) {
   );
 }
 
-function formatDate(date: Date) {
-  return date.toLocaleString("en", {
+function formatDate(date: Date, locale: Locale) {
+  return date.toLocaleString(locale === "ar" ? "ar" : "en", {
     dateStyle: "medium",
     timeStyle: "short",
   });
@@ -114,7 +165,7 @@ function getSnapshotMemberCount(
 }
 
 function PlacementBadge({ placement }: { placement: number }) {
-  const tone = placement <= 3 ? "yellow" : "violet";
+  const tone = placement === 1 ? "green" : placement <= 3 ? "blue" : "violet";
 
   return <Pill tone={tone}>#{placement}</Pill>;
 }
@@ -122,9 +173,11 @@ function PlacementBadge({ placement }: { placement: number }) {
 function ProgressBar({
   approvedSlots,
   maxSlots,
+  approvedLabel,
 }: {
   approvedSlots: number;
   maxSlots: number;
+  approvedLabel: string;
 }) {
   const progress =
     maxSlots > 0 ? Math.min((approvedSlots / maxSlots) * 100, 100) : 0;
@@ -133,7 +186,7 @@ function ProgressBar({
     <div className="grid gap-2">
       <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-500">
         <span>
-          {approvedSlots}/{maxSlots} approved
+          {approvedSlots}/{maxSlots} {approvedLabel}
         </span>
 
         <span>{Math.round(progress)}%</span>
@@ -151,43 +204,68 @@ function ProgressBar({
   );
 }
 
+function formatTemplate(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{${key}}`, value),
+    template,
+  );
+}
+
 function getUnavailableTeamReason({
   teamGame,
   tournamentGame,
   memberCount,
   teamSize,
   pendingInvites,
+  messages,
 }: {
   teamGame: string;
   tournamentGame: string;
   memberCount: number;
   teamSize: number;
   pendingInvites: number;
+  messages: TournamentDetailsMessages["labels"]["unavailableReasons"];
 }) {
   if (teamGame !== tournamentGame) {
-    return "Wrong game";
+    return messages.wrongGame;
   }
 
   if (memberCount < teamSize) {
-    return `Needs ${teamSize - memberCount} more player${
-      teamSize - memberCount === 1 ? "" : "s"
-    }`;
+    const missingPlayers = teamSize - memberCount;
+
+    return missingPlayers === 1
+      ? messages.needsMorePlayer
+      : formatTemplate(messages.needsMorePlayers, {
+          count: String(missingPlayers),
+        });
   }
 
   if (pendingInvites > 0) {
-    return "Pending invites";
+    return messages.pendingInvites;
   }
 
-  return "Not eligible";
+  return messages.notEligible;
+}
+
+function getPlayerLabel(
+  count: number,
+  messages: TournamentDetailsMessages["labels"],
+) {
+  return count === 1 ? messages.player : messages.players;
 }
 
 export default async function TournamentDetailsPage({
   params,
   searchParams,
 }: TournamentDetailsPageProps) {
-  const { id } = await params;
-  const noticeParams = await searchParams;
-  const session = await auth();
+  const [{ id }, noticeParams, session, locale] = await Promise.all([
+    params,
+    searchParams,
+    auth(),
+    getLocale(),
+  ]);
+
+  const messages = getDictionary(locale).tournamentDetails;
 
   const currentUser = session?.user?.databaseId
     ? await prisma.user.findUnique({
@@ -393,6 +471,7 @@ export default async function TournamentDetailsPage({
         memberCount: team.members.length,
         teamSize: tournament.teamSize,
         pendingInvites: team.invites.length,
+        messages: messages.labels.unavailableReasons,
       }),
     }));
 
@@ -428,16 +507,26 @@ export default async function TournamentDetailsPage({
               href="/tournaments"
               className="mb-8 inline-flex rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
             >
-              ← Back to tournaments
+              {locale === "ar" ? "→" : "←"} {messages.labels.backToTournaments}
             </Link>
 
             <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-6 shadow-2xl shadow-black/30 backdrop-blur">
               <div className="grid gap-8 lg:grid-cols-[1fr_420px] lg:items-end">
                 <div>
                   <div className="flex flex-wrap gap-2">
-                    <StatusBadge status={tournament.status} />
+                    <StatusBadge
+                      status={tournament.status}
+                      label={getTournamentStatusLabel(
+                        tournament.status,
+                        messages.statuses,
+                      )}
+                    />
                     <StatusBadge
                       status={`Registration ${tournament.registrationStatus}`}
+                      label={getRegistrationStatusLabel(
+                        tournament.registrationStatus,
+                        messages.statuses,
+                      )}
                     />
                     <Pill tone="violet">{tournament.game}</Pill>
                   </div>
@@ -455,23 +544,35 @@ export default async function TournamentDetailsPage({
 
                 <div className="grid gap-5">
                   <div className="grid grid-cols-2 gap-5">
-                    <Stat label="Date" value={tournament.date} />
-                    <Stat label="Prize" value={tournament.prize} />
                     <Stat
-                      label="Team"
+                      label={messages.labels.date}
+                      value={tournament.date}
+                    />
+                    <Stat
+                      label={messages.labels.prize}
+                      value={tournament.prize}
+                    />
+                    <Stat
+                      label={messages.labels.team}
                       value={`${tournament.teamSize}v${tournament.teamSize}`}
                     />
-                    <Stat label="Slots left" value={remainingSlots} />
+                    <Stat
+                      label={messages.labels.slotsLeft}
+                      value={remainingSlots}
+                    />
                   </div>
 
                   <ProgressBar
                     approvedSlots={approvedSlots}
                     maxSlots={tournament.maxSlots}
+                    approvedLabel={messages.labels.approved}
                   />
 
                   <p className="text-sm text-gray-500">
-                    {totalApplications} application
-                    {totalApplications === 1 ? "" : "s"} submitted.
+                    {totalApplications}{" "}
+                    {totalApplications === 1
+                      ? messages.labels.applicationSubmitted
+                      : messages.labels.applicationsSubmitted}
                   </p>
                 </div>
               </div>
@@ -489,12 +590,19 @@ export default async function TournamentDetailsPage({
 
           <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
             <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              <SectionTitle label="Registration" title="Register your team" />
+              <SectionTitle
+                label={messages.labels.registration}
+                title={messages.labels.registerYourTeam}
+              />
 
               <div className="p-5">
                 <TournamentRegistrationPanel
                   tournamentId={tournament.id}
                   tournamentStatus={tournament.status}
+                  tournamentStatusLabel={getTournamentStatusLabel(
+                    tournament.status,
+                    messages.statuses,
+                  )}
                   registrationStatus={tournament.registrationStatus}
                   slotsRemaining={remainingSlots}
                   teamSize={tournament.teamSize}
@@ -503,16 +611,23 @@ export default async function TournamentDetailsPage({
                   availableTeams={availableTeams}
                   unavailableTeams={unavailableTeams}
                   activeRegistrations={activeRegistrations}
+                  messages={messages.panel}
+                  statusLabels={messages.statuses}
+                  playerLabel={messages.labels.player}
+                  playersLabel={messages.labels.players}
                 />
               </div>
             </section>
 
             <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              <SectionTitle label="Teams" title="Applications" />
+              <SectionTitle
+                label={messages.labels.teams}
+                title={messages.labels.applications}
+              />
 
               {tournament.registrations.length === 0 ? (
                 <div className="p-5 text-gray-300">
-                  No teams registered yet.
+                  {messages.labels.noTeamsRegistered}
                 </div>
               ) : (
                 <div className="divide-y divide-white/10">
@@ -536,14 +651,20 @@ export default async function TournamentDetailsPage({
 
                           <p className="mt-1 text-sm text-gray-400">
                             {teamGame} · {memberCount}/{tournament.teamSize}{" "}
-                            players
+                            {getPlayerLabel(memberCount, messages.labels)}
                           </p>
                         </div>
 
-                        <StatusBadge status={registration.status} />
+                        <StatusBadge
+                          status={registration.status}
+                          label={getRegistrationReviewStatusLabel(
+                            registration.status,
+                            messages.statuses,
+                          )}
+                        />
 
                         <p className="text-sm text-gray-500">
-                          {formatDate(registration.createdAt)}
+                          {formatDate(registration.createdAt, locale)}
                         </p>
                       </div>
                     );
@@ -555,7 +676,10 @@ export default async function TournamentDetailsPage({
 
           {tournament.results.length > 0 && (
             <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              <SectionTitle label="Results" title="Final standings" />
+              <SectionTitle
+                label={messages.labels.results}
+                title={messages.labels.finalStandings}
+              />
 
               <div className="divide-y divide-white/10">
                 {tournament.results.map((result) => {
@@ -577,8 +701,8 @@ export default async function TournamentDetailsPage({
                         <p className="font-black text-white">{teamName}</p>
 
                         <p className="mt-1 text-sm text-gray-400">
-                          {teamGame} · {memberCount} player
-                          {memberCount === 1 ? "" : "s"}
+                          {teamGame} · {memberCount}{" "}
+                          {getPlayerLabel(memberCount, messages.labels)}
                         </p>
 
                         {result.note && (
@@ -588,7 +712,9 @@ export default async function TournamentDetailsPage({
                         )}
                       </div>
 
-                      <Pill tone="green">{result.points} points</Pill>
+                      <Pill tone="green">
+                        {result.points} {messages.labels.points}
+                      </Pill>
                     </article>
                   );
                 })}
