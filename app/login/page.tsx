@@ -5,11 +5,83 @@ import { auth } from "@/auth";
 import Footer from "@/components/Footer";
 import LoginWithDiscordButton from "@/components/LoginWithDiscordButton";
 import Navbar from "@/components/Navbar";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 
-export const metadata: Metadata = {
-  title: "Login | Ascendra",
-  description: "Login to Ascendra with Discord.",
+type LoginMessages = {
+  metadata: {
+    title: string;
+    description: string;
+  };
+  hero: {
+    label: string;
+    title: string;
+    description: string;
+    pills: string[];
+  };
+  card: {
+    label: string;
+    title: string;
+    description: string;
+    button: string;
+    note: string;
+  };
 };
+
+const loginMessages: Record<Locale, LoginMessages> = {
+  en: {
+    metadata: {
+      title: "Login | Ascendra",
+      description: "Login to Ascendra with Discord.",
+    },
+    hero: {
+      label: "Ascendra login",
+      title: "Login with Discord.",
+      description:
+        "Access your profile, teams, invitations, registrations, and tournament progress with one Discord login.",
+      pills: ["Profile", "Teams", "Tournaments", "Leaderboard"],
+    },
+    card: {
+      label: "Secure access",
+      title: "Continue to Ascendra",
+      description:
+        "Discord connects your account to team management and tournament registration.",
+      button: "Login with Discord",
+      note: "After login, Ascendra checks your Discord identity and sends you to your profile.",
+    },
+  },
+
+  ar: {
+    metadata: {
+      title: "تسجيل الدخول | Ascendra",
+      description: "سجّل الدخول إلى Ascendra عبر Discord.",
+    },
+    hero: {
+      label: "تسجيل الدخول إلى Ascendra",
+      title: "سجّل الدخول عبر Discord.",
+      description:
+        "ادخل إلى ملفك الشخصي، فرقك، الدعوات، التسجيلات، وتقدمك في البطولات من خلال تسجيل دخول واحد عبر Discord.",
+      pills: ["الملف الشخصي", "الفرق", "البطولات", "لوحة المتصدرين"],
+    },
+    card: {
+      label: "وصول آمن",
+      title: "المتابعة إلى Ascendra",
+      description: "يربط Discord حسابك بإدارة الفرق والتسجيل في البطولات.",
+      button: "تسجيل الدخول عبر Discord",
+      note: "بعد تسجيل الدخول، تتحقق Ascendra من هويتك في Discord ثم تنقلك إلى ملفك الشخصي.",
+    },
+  },
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = loginMessages[locale].metadata;
+
+  return {
+    title: messages.title,
+    description: messages.description,
+  };
+}
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
@@ -20,7 +92,8 @@ function Pill({ children }: { children: React.ReactNode }) {
 }
 
 export default async function LoginPage() {
-  const session = await auth();
+  const [session, locale] = await Promise.all([auth(), getLocale()]);
+  const messages = loginMessages[locale];
 
   if (session?.user?.databaseId) {
     redirect("/profile");
@@ -47,47 +120,43 @@ export default async function LoginPage() {
           <div className="relative z-10 mx-auto grid min-h-[650px] max-w-[1440px] gap-10 px-6 pb-28 pt-20 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:px-10">
             <section>
               <p className="mb-5 text-sm font-black uppercase tracking-[0.22em] text-violet-300">
-                Ascendra login
+                {messages.hero.label}
               </p>
 
               <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
-                Login with Discord.
+                {messages.hero.title}
               </h1>
 
               <p className="mt-6 max-w-2xl text-base leading-7 text-gray-300">
-                Access your profile, teams, invitations, registrations, and
-                tournament progress with one Discord login.
+                {messages.hero.description}
               </p>
 
               <div className="mt-6 flex flex-wrap gap-2">
-                <Pill>Profile</Pill>
-                <Pill>Teams</Pill>
-                <Pill>Tournaments</Pill>
-                <Pill>Leaderboard</Pill>
+                {messages.hero.pills.map((pill) => (
+                  <Pill key={pill}>{pill}</Pill>
+                ))}
               </div>
             </section>
 
             <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-6 shadow-2xl shadow-black/30 backdrop-blur">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                Secure access
+                {messages.card.label}
               </p>
 
               <h2 className="mt-2 text-3xl font-black text-white">
-                Continue to Ascendra
+                {messages.card.title}
               </h2>
 
               <p className="mt-3 text-sm leading-7 text-gray-400">
-                Discord connects your account to team management and tournament
-                registration.
+                {messages.card.description}
               </p>
 
               <div className="mt-6">
-                <LoginWithDiscordButton />
+                <LoginWithDiscordButton label={messages.card.button} />
               </div>
 
               <p className="mt-5 text-xs leading-5 text-gray-500">
-                After login, Ascendra checks your Discord identity and sends you
-                to your profile.
+                {messages.card.note}
               </p>
             </section>
           </div>
