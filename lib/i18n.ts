@@ -260,6 +260,73 @@ export type TournamentsMessages = {
   };
 };
 
+export type LeaderboardMessages = {
+  metadata: {
+    title: string;
+    description: string;
+  };
+  hero: {
+    label: string;
+    title: string;
+    description: string;
+  };
+  types: {
+    playerRanking: string;
+    teamRanking: string;
+  };
+  filters: {
+    overall: string;
+  };
+  headings: {
+    players: string;
+    teams: string;
+    overallStandings: string;
+    gameStandings: string;
+    rankedBy: string;
+  };
+  stats: {
+    players: string;
+    teams: string;
+    totalPoints: string;
+    results: string;
+    topPlayer: string;
+    topTeam: string;
+  };
+  table: {
+    playerRanking: string;
+    teamRanking: string;
+    standings: string;
+    rank: string;
+    player: string;
+    team: string;
+    role: string;
+    game: string;
+    leader: string;
+    members: string;
+    results: string;
+    best: string;
+    points: string;
+    ledBy: string;
+    noRankedPlayers: string;
+    noRankedTeams: string;
+    resultSingular: string;
+    resultPlural: string;
+    memberSingular: string;
+    memberPlural: string;
+    pointsSuffix: string;
+  };
+  empty: {
+    title: string;
+    overallDescription: string;
+    gameDescription: string;
+    action: string;
+  };
+  fallback: {
+    unknownPlayer: string;
+    none: string;
+  };
+};
+
 export type I18nMessages = {
   navbar: NavigationMessages;
   footer: FooterMessages;
@@ -267,6 +334,7 @@ export type I18nMessages = {
   community: CommunityMessages;
   news: NewsMessages;
   tournaments: TournamentsMessages;
+  leaderboard: LeaderboardMessages;
 };
 
 export const dictionaries: Record<Locale, I18nMessages> = {
@@ -604,6 +672,75 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         noArchived: "No archived tournaments yet.",
       },
     },
+
+    leaderboard: {
+      metadata: {
+        title: "Leaderboard | Ascendra",
+        description: "Ascendra tournament points and standings.",
+      },
+      hero: {
+        label: "Competitive standings",
+        title: "Leaderboard",
+        description:
+          "Track the strongest players and teams by official tournament points.",
+      },
+      types: {
+        playerRanking: "Player ranking",
+        teamRanking: "Team ranking",
+      },
+      filters: {
+        overall: "Overall",
+      },
+      headings: {
+        players: "Players",
+        teams: "Teams",
+        overallStandings: "Overall standings",
+        gameStandings: "standings",
+        rankedBy: "Ranked by points, results, then best placement.",
+      },
+      stats: {
+        players: "Players",
+        teams: "Teams",
+        totalPoints: "Total points",
+        results: "Results",
+        topPlayer: "Top player",
+        topTeam: "Top team",
+      },
+      table: {
+        playerRanking: "Player ranking",
+        teamRanking: "Team ranking",
+        standings: "Standings",
+        rank: "Rank",
+        player: "Player",
+        team: "Team",
+        role: "Role",
+        game: "Game",
+        leader: "Leader",
+        members: "Members",
+        results: "Results",
+        best: "Best",
+        points: "Points",
+        ledBy: "Led by",
+        noRankedPlayers: "No ranked players yet.",
+        noRankedTeams: "No ranked teams yet.",
+        resultSingular: "result",
+        resultPlural: "results",
+        memberSingular: "member",
+        memberPlural: "members",
+        pointsSuffix: "pts",
+      },
+      empty: {
+        title: "No tournament points yet",
+        overallDescription:
+          "Rankings will appear here when official results are added.",
+        gameDescription: "No points have been awarded for this game yet.",
+        action: "View tournaments",
+      },
+      fallback: {
+        unknownPlayer: "Unknown player",
+        none: "-",
+      },
+    },
   },
 
   ar: {
@@ -933,6 +1070,74 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         noTournamentsDescription: "ستظهر الفعاليات هنا عند نشرها.",
         noActive: "لا توجد بطولات نشطة حاليًا.",
         noArchived: "لا توجد بطولات مؤرشفة حاليًا.",
+      },
+    },
+
+    leaderboard: {
+      metadata: {
+        title: "لوحة المتصدرين | Ascendra",
+        description: "نقاط وترتيب بطولات Ascendra.",
+      },
+      hero: {
+        label: "الترتيب التنافسي",
+        title: "لوحة المتصدرين",
+        description:
+          "تابع أقوى اللاعبين والفرق حسب النقاط الرسمية في البطولات.",
+      },
+      types: {
+        playerRanking: "ترتيب اللاعبين",
+        teamRanking: "ترتيب الفرق",
+      },
+      filters: {
+        overall: "الإجمالي",
+      },
+      headings: {
+        players: "اللاعبون",
+        teams: "الفرق",
+        overallStandings: "الترتيب العام",
+        gameStandings: "ترتيب",
+        rankedBy: "يتم الترتيب حسب النقاط، ثم النتائج، ثم أفضل مركز.",
+      },
+      stats: {
+        players: "اللاعبون",
+        teams: "الفرق",
+        totalPoints: "إجمالي النقاط",
+        results: "النتائج",
+        topPlayer: "أفضل لاعب",
+        topTeam: "أفضل فريق",
+      },
+      table: {
+        playerRanking: "ترتيب اللاعبين",
+        teamRanking: "ترتيب الفرق",
+        standings: "الترتيب",
+        rank: "المركز",
+        player: "اللاعب",
+        team: "الفريق",
+        role: "الدور",
+        game: "اللعبة",
+        leader: "القائد",
+        members: "الأعضاء",
+        results: "النتائج",
+        best: "أفضل",
+        points: "النقاط",
+        ledBy: "بقيادة",
+        noRankedPlayers: "لا يوجد لاعبون في الترتيب حاليًا.",
+        noRankedTeams: "لا توجد فرق في الترتيب حاليًا.",
+        resultSingular: "نتيجة",
+        resultPlural: "نتائج",
+        memberSingular: "عضو",
+        memberPlural: "أعضاء",
+        pointsSuffix: "نقطة",
+      },
+      empty: {
+        title: "لا توجد نقاط بطولات حاليًا",
+        overallDescription: "سيظهر الترتيب هنا عند إضافة النتائج الرسمية.",
+        gameDescription: "لم يتم منح أي نقاط لهذه اللعبة حتى الآن.",
+        action: "عرض البطولات",
+      },
+      fallback: {
+        unknownPlayer: "لاعب غير معروف",
+        none: "-",
       },
     },
   },

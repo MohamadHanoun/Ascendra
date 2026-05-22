@@ -8,12 +8,13 @@ import LeaderboardTable from "@/components/LeaderboardTable";
 import Navbar from "@/components/Navbar";
 import TeamLeaderboardTable from "@/components/TeamLeaderboardTable";
 import type { LeaderboardTeam, LeaderboardUser } from "@/data/leaderboard";
+import {
+  getDictionary,
+  type LeaderboardMessages,
+  type Locale,
+} from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
-
-export const metadata: Metadata = {
-  title: "Leaderboard | Ascendra",
-  description: "Ascendra tournament points and standings.",
-};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,6 +32,36 @@ type SnapshotMember = {
 };
 
 const games = ["Overall", "Valorant", "League of Legends", "CS2", "Dota2"];
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = getDictionary(locale).leaderboard.metadata;
+
+  return {
+    title: messages.title,
+    description: messages.description,
+  };
+}
+
+function getGameLabel(game: string, messages: LeaderboardMessages) {
+  return game === "Overall" ? messages.filters.overall : game;
+}
+
+function getGameHeading(
+  game: string,
+  messages: LeaderboardMessages,
+  locale: Locale,
+) {
+  if (game === "Overall") {
+    return messages.headings.overallStandings;
+  }
+
+  if (locale === "ar") {
+    return `${messages.headings.gameStandings} ${game}`;
+  }
+
+  return `${game} ${messages.headings.gameStandings}`;
+}
 
 function buildLeaderboardHref(game: string, type: "players" | "teams") {
   const params = new URLSearchParams();
@@ -127,6 +158,7 @@ function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
 
 async function getPlayerLeaderboard(
   selectedGame: string,
+  unknownPlayerLabel: string,
 ): Promise<LeaderboardUser[]> {
   const results = await prisma.tournamentResult.findMany({
     select: {
@@ -226,7 +258,8 @@ async function getPlayerLeaderboard(
 
       const existing = leaderboard.get(member.userId) || {
         id: member.userId,
-        username: currentUser?.username || member.username || "Unknown player",
+        username:
+          currentUser?.username || member.username || unknownPlayerLabel,
         role: currentUser?.role || "member",
         tournamentPoints: 0,
         tournamentResults: 0,
@@ -366,7 +399,8 @@ async function getTeamLeaderboard(
 export default async function LeaderboardPage({
   searchParams,
 }: LeaderboardPageProps) {
-  const params = await searchParams;
+  const [params, locale] = await Promise.all([searchParams, getLocale()]);
+  const messages = getDictionary(locale).leaderboard;
 
   const selectedGame = games.includes(params.game || "")
     ? params.game || "Overall"
@@ -375,7 +409,12 @@ export default async function LeaderboardPage({
   const selectedType = params.type === "teams" ? "teams" : "players";
 
   const playerLeaderboard =
-    selectedType === "players" ? await getPlayerLeaderboard(selectedGame) : [];
+    selectedType === "players"
+      ? await getPlayerLeaderboard(
+          selectedGame,
+          messages.fallback.unknownPlayer,
+        )
+      : [];
 
   const teamLeaderboard =
     selectedType === "teams" ? await getTeamLeaderboard(selectedGame) : [];
@@ -395,8 +434,8 @@ export default async function LeaderboardPage({
 
   const topItem =
     selectedType === "players"
-      ? playerLeaderboard[0]?.username || "-"
-      : teamLeaderboard[0]?.name || "-";
+      ? playerLeaderboard[0]?.username || messages.fallback.none
+      : teamLeaderboard[0]?.name || messages.fallback.none;
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
@@ -420,28 +459,27 @@ export default async function LeaderboardPage({
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-32 pt-20 lg:px-10 2xl:px-14">
             <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-emerald-300">
-              Competitive standings
+              {messages.hero.label}
             </p>
 
             <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
-              Leaderboard
+              {messages.hero.title}
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              Track the strongest players and teams by official tournament
-              points.
+              {messages.hero.description}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <TypeButton
                 href={buildLeaderboardHref(selectedGame, "players")}
-                label="Player ranking"
+                label={messages.types.playerRanking}
                 active={selectedType === "players"}
               />
 
               <TypeButton
                 href={buildLeaderboardHref(selectedGame, "teams")}
-                label="Team ranking"
+                label={messages.types.teamRanking}
                 active={selectedType === "teams"}
               />
             </div>
@@ -455,17 +493,17 @@ export default async function LeaderboardPage({
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">
-                  {selectedType === "players" ? "Players" : "Teams"}
+                  {selectedType === "players"
+                    ? messages.headings.players
+                    : messages.headings.teams}
                 </p>
 
                 <h2 className="mt-2 text-3xl font-black text-white">
-                  {selectedGame === "Overall"
-                    ? "Overall standings"
-                    : `${selectedGame} standings`}
+                  {getGameHeading(selectedGame, messages, locale)}
                 </h2>
 
                 <p className="mt-2 text-sm text-gray-500">
-                  Ranked by points, results, then best placement.
+                  {messages.headings.rankedBy}
                 </p>
               </div>
 
@@ -474,7 +512,7 @@ export default async function LeaderboardPage({
                   <FilterButton
                     key={game}
                     href={buildLeaderboardHref(game, selectedType)}
-                    label={game}
+                    label={getGameLabel(game, messages)}
                     active={selectedGame === game}
                   />
                 ))}
@@ -484,32 +522,46 @@ export default async function LeaderboardPage({
 
           <section className="grid gap-5 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 md:grid-cols-2 xl:grid-cols-4">
             <Stat
-              label={selectedType === "players" ? "Players" : "Teams"}
+              label={
+                selectedType === "players"
+                  ? messages.stats.players
+                  : messages.stats.teams
+              }
               value={activeLeaderboard.length}
             />
-            <Stat label="Total points" value={totalPoints} />
-            <Stat label="Results" value={totalResults} />
+            <Stat label={messages.stats.totalPoints} value={totalPoints} />
+            <Stat label={messages.stats.results} value={totalResults} />
             <Stat
-              label={selectedType === "players" ? "Top player" : "Top team"}
+              label={
+                selectedType === "players"
+                  ? messages.stats.topPlayer
+                  : messages.stats.topTeam
+              }
               value={topItem}
             />
           </section>
 
           {activeLeaderboard.length > 0 ? (
             selectedType === "players" ? (
-              <LeaderboardTable users={playerLeaderboard} />
+              <LeaderboardTable
+                users={playerLeaderboard}
+                messages={messages.table}
+              />
             ) : (
-              <TeamLeaderboardTable teams={teamLeaderboard} />
+              <TeamLeaderboardTable
+                teams={teamLeaderboard}
+                messages={messages.table}
+              />
             )
           ) : (
             <EmptyState
-              title="No tournament points yet"
+              title={messages.empty.title}
               description={
                 selectedGame === "Overall"
-                  ? "Rankings will appear here when official results are added."
-                  : `No points have been awarded for ${selectedGame} yet.`
+                  ? messages.empty.overallDescription
+                  : messages.empty.gameDescription
               }
-              actionLabel="View tournaments"
+              actionLabel={messages.empty.action}
               actionHref="/tournaments"
             />
           )}
