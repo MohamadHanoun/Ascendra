@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getLocale, getTextDirection } from "@/lib/i18n";
 import "./globals.css";
 
 const siteUrl = (
@@ -43,13 +44,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+
   return (
-    <html lang="en">
+    <html lang={locale} dir={getTextDirection(locale)} suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );

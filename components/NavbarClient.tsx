@@ -6,17 +6,14 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 
-const mainLinks = [
-  { href: "/", label: "Home" },
-  { href: "/tournaments", label: "Tournaments" },
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/announcements", label: "News" },
-  { href: "/community", label: "Community" },
-];
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import type { Locale, NavigationMessages } from "@/lib/i18n";
 
 const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "";
 
 type NavbarClientProps = {
+  locale: Locale;
+  labels: NavigationMessages;
   isAdmin: boolean;
   isLoggedIn: boolean;
   userName: string | null;
@@ -129,6 +126,8 @@ function UserAvatar({
 }
 
 export default function NavbarClient({
+  locale,
+  labels,
   isAdmin,
   isLoggedIn,
   userName,
@@ -136,6 +135,14 @@ export default function NavbarClient({
 }: NavbarClientProps) {
   const pathname = usePathname();
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const mainLinks = [
+    { href: "/", label: labels.links.home },
+    { href: "/tournaments", label: labels.links.tournaments },
+    { href: "/leaderboard", label: labels.links.leaderboard },
+    { href: "/announcements", label: labels.links.news },
+    { href: "/community", label: labels.links.community },
+  ];
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -197,6 +204,8 @@ export default function NavbarClient({
           </div>
 
           <div className="ml-auto hidden items-center gap-3 lg:flex">
+            <LanguageSwitcher locale={locale} labels={labels.language} />
+
             {isLoggedIn ? (
               <div ref={profileMenuRef} className="relative">
                 <button
@@ -207,7 +216,7 @@ export default function NavbarClient({
                   <UserAvatar userName={userName} userImage={userImage} small />
 
                   <span className="max-w-[120px] truncate text-sm font-bold text-white">
-                    Profile
+                    {labels.links.profile}
                   </span>
                 </button>
 
@@ -218,10 +227,12 @@ export default function NavbarClient({
 
                       <div className="min-w-0">
                         <p className="truncate text-sm font-bold text-white">
-                          {userName || "Ascendra Player"}
+                          {userName || labels.account.fallbackName}
                         </p>
 
-                        <p className="text-xs text-gray-400">Signed in</p>
+                        <p className="text-xs text-gray-400">
+                          {labels.account.signedIn}
+                        </p>
                       </div>
                     </div>
 
@@ -229,7 +240,7 @@ export default function NavbarClient({
                       href="/profile"
                       className="block rounded-xl px-4 py-3 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
                     >
-                      Profile
+                      {labels.links.profile}
                     </Link>
 
                     {isAdmin && (
@@ -240,14 +251,14 @@ export default function NavbarClient({
                           href="/admin"
                           className="block rounded-xl px-4 py-3 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
                         >
-                          Admin Panel
+                          {labels.links.adminPanel}
                         </Link>
 
                         <Link
                           href="/admin/bot"
                           className="block rounded-xl px-4 py-3 text-sm font-bold text-emerald-200 transition hover:bg-emerald-500/10 hover:text-white"
                         >
-                          Bot Dashboard
+                          {labels.links.botDashboard}
                         </Link>
                       </>
                     )}
@@ -257,9 +268,9 @@ export default function NavbarClient({
                     <button
                       type="button"
                       onClick={confirmLogout}
-                      className="w-full rounded-xl px-4 py-3 text-left text-sm font-bold text-red-300 transition hover:bg-red-500/10"
+                      className="w-full rounded-xl px-4 py-3 text-left text-sm font-bold text-red-300 transition hover:bg-red-500/10 rtl:text-right"
                     >
-                      Logout
+                      {labels.actions.logout}
                     </button>
                   </div>
                 )}
@@ -269,7 +280,7 @@ export default function NavbarClient({
                 href="/login"
                 className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
               >
-                Login
+                {labels.actions.login}
               </Link>
             )}
 
@@ -280,7 +291,7 @@ export default function NavbarClient({
                 rel="noreferrer"
                 className="rounded-xl bg-violet-600 px-5 py-2 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
               >
-                Join Discord
+                {labels.actions.joinDiscord}
               </a>
             )}
           </div>
@@ -291,7 +302,7 @@ export default function NavbarClient({
             aria-expanded={isMenuOpen}
             className="ml-auto rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10 lg:hidden"
           >
-            {isMenuOpen ? "Close" : "Menu"}
+            {isMenuOpen ? labels.actions.close : labels.actions.menu}
           </button>
         </nav>
 
@@ -308,6 +319,12 @@ export default function NavbarClient({
               ))}
 
               <div className="mt-3 grid gap-2 border-t border-white/10 pt-4">
+                <LanguageSwitcher
+                  locale={locale}
+                  labels={labels.language}
+                  compact
+                />
+
                 {isLoggedIn ? (
                   <>
                     <Link
@@ -322,7 +339,7 @@ export default function NavbarClient({
                       />
 
                       <span className="text-sm font-bold text-gray-200">
-                        Profile
+                        {labels.links.profile}
                       </span>
                     </Link>
 
@@ -333,7 +350,7 @@ export default function NavbarClient({
                           onClick={() => setIsMenuOpen(false)}
                           className="rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
                         >
-                          Admin Panel
+                          {labels.links.adminPanel}
                         </Link>
 
                         <Link
@@ -341,7 +358,7 @@ export default function NavbarClient({
                           onClick={() => setIsMenuOpen(false)}
                           className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-3 text-center text-sm font-bold text-emerald-200 transition hover:border-emerald-300/40 hover:bg-emerald-500/15 hover:text-white"
                         >
-                          Bot Dashboard
+                          {labels.links.botDashboard}
                         </Link>
                       </>
                     )}
@@ -351,7 +368,7 @@ export default function NavbarClient({
                       onClick={confirmLogout}
                       className="rounded-xl border border-red-500/20 px-4 py-3 text-center text-sm font-bold text-red-300 transition hover:bg-red-500/10"
                     >
-                      Logout
+                      {labels.actions.logout}
                     </button>
                   </>
                 ) : (
@@ -360,7 +377,7 @@ export default function NavbarClient({
                     onClick={() => setIsMenuOpen(false)}
                     className="rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
                   >
-                    Login
+                    {labels.actions.login}
                   </Link>
                 )}
 
@@ -371,7 +388,7 @@ export default function NavbarClient({
                     rel="noreferrer"
                     className="rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-violet-500"
                   >
-                    Join Discord
+                    {labels.actions.joinDiscord}
                   </a>
                 )}
               </div>
@@ -384,11 +401,11 @@ export default function NavbarClient({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-6">
           <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#11121d] p-6 shadow-2xl">
             <h2 className="mb-3 text-2xl font-black text-white">
-              Confirm logout
+              {labels.account.logoutTitle}
             </h2>
 
             <p className="mb-6 leading-7 text-gray-300">
-              Are you sure you want to log out?
+              {labels.account.logoutDescription}
             </p>
 
             <div className="grid gap-3 sm:flex sm:justify-end">
@@ -397,7 +414,7 @@ export default function NavbarClient({
                 onClick={() => setIsLogoutConfirmOpen(false)}
                 className="rounded-xl border border-white/10 px-5 py-3 font-bold text-gray-300 transition hover:bg-white/10"
               >
-                Cancel
+                {labels.actions.cancel}
               </button>
 
               <button
@@ -405,7 +422,7 @@ export default function NavbarClient({
                 onClick={handleLogout}
                 className="rounded-xl bg-red-500 px-5 py-3 font-bold text-white transition hover:bg-red-400"
               >
-                Logout
+                {labels.actions.confirmLogout}
               </button>
             </div>
           </div>

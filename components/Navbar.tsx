@@ -1,11 +1,15 @@
 import { auth } from "@/auth";
 import NavbarClient from "@/components/NavbarClient";
+import { getDictionary, getLocale } from "@/lib/i18n";
 
 export default async function Navbar() {
-  const session = await auth();
+  const [session, locale] = await Promise.all([auth(), getLocale()]);
+  const dictionary = getDictionary(locale);
 
   return (
     <NavbarClient
+      locale={locale}
+      labels={dictionary.navbar}
       isAdmin={Boolean(session?.user?.isAdmin)}
       isLoggedIn={Boolean(session?.user)}
       userName={session?.user?.name || null}

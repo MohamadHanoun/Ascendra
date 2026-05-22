@@ -1,27 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const platformLinks = [
-  { href: "/", label: "Home" },
-  { href: "/tournaments", label: "Tournaments" },
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/announcements", label: "News" },
-  { href: "/community", label: "Community" },
-];
-
-const communityLinks = [
-  { href: "/about", label: "About" },
-  { href: "/rules", label: "Rules" },
-  { href: "/roles", label: "Roles" },
-  { href: "/staff", label: "Staff" },
-  { href: "/stats", label: "Stats" },
-];
-
-const legalLinks = [
-  { href: "/terms", label: "Terms" },
-  { href: "/privacy", label: "Privacy Policy" },
-  { href: "/cookies", label: "Cookie Policy" },
-];
+import { getDictionary, getLocale } from "@/lib/i18n";
 
 const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "";
 
@@ -53,7 +33,32 @@ function FooterColumn({
   );
 }
 
-export default function Footer() {
+export default async function Footer() {
+  const locale = await getLocale();
+  const messages = getDictionary(locale).footer;
+
+  const platformLinks = [
+    { href: "/", label: messages.links.home },
+    { href: "/tournaments", label: messages.links.tournaments },
+    { href: "/leaderboard", label: messages.links.leaderboard },
+    { href: "/announcements", label: messages.links.news },
+    { href: "/community", label: messages.links.community },
+  ];
+
+  const communityLinks = [
+    { href: "/about", label: messages.links.about },
+    { href: "/rules", label: messages.links.rules },
+    { href: "/roles", label: messages.links.roles },
+    { href: "/staff", label: messages.links.staff },
+    { href: "/stats", label: messages.links.stats },
+  ];
+
+  const legalLinks = [
+    { href: "/terms", label: messages.links.terms },
+    { href: "/privacy", label: messages.links.privacy },
+    { href: "/cookies", label: messages.links.cookies },
+  ];
+
   return (
     <footer className="border-t border-white/10 bg-[#06070f] text-white">
       <div className="grid gap-10 px-6 py-14 lg:grid-cols-[1.25fr_0.75fr_0.75fr_0.75fr_1fr] lg:px-10 2xl:px-14">
@@ -77,23 +82,24 @@ export default function Footer() {
           </Link>
 
           <p className="mt-6 max-w-md text-sm leading-7 text-gray-500">
-            A competitive gaming platform for tournaments, teams, rankings, and
-            official community updates.
+            {messages.description}
           </p>
         </div>
 
-        <FooterColumn title="Platform" links={platformLinks} />
-        <FooterColumn title="Community" links={communityLinks} />
-        <FooterColumn title="Legal" links={legalLinks} />
+        <FooterColumn title={messages.columns.platform} links={platformLinks} />
+        <FooterColumn
+          title={messages.columns.community}
+          links={communityLinks}
+        />
+        <FooterColumn title={messages.columns.legal} links={legalLinks} />
 
         <div>
           <h3 className="mb-4 text-sm font-black uppercase tracking-[0.16em] text-gray-300">
-            Discord
+            {messages.columns.discord}
           </h3>
 
           <p className="mb-5 text-sm leading-7 text-gray-500">
-            Follow tournaments, team updates, announcements, and community
-            activity directly on Discord.
+            {messages.discordDescription}
           </p>
 
           {discordInvite && (
@@ -103,7 +109,7 @@ export default function Footer() {
               rel="noreferrer"
               className="inline-flex rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
             >
-              Join Discord
+              {messages.joinDiscord}
             </a>
           )}
         </div>
@@ -113,12 +119,12 @@ export default function Footer() {
         <div className="flex flex-col gap-3 text-sm text-gray-600 md:flex-row md:items-center md:justify-between">
           <p>
             © {new Date().getFullYear()}{" "}
-            <span className="font-bold text-gray-400">Ascendra</span>. All
-            rights reserved.
+            <span className="font-bold text-gray-400">Ascendra</span>.{" "}
+            {messages.rights}
           </p>
 
           <p>
-            Developed by{" "}
+            {messages.developedBy}{" "}
             <span className="font-bold text-violet-300">Abu 3Day</span>
           </p>
         </div>
