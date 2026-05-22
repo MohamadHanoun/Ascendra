@@ -1,5 +1,3 @@
-
-
 export const localeCookieName = "ascendra_locale";
 
 export const locales = ["en", "ar"] as const;
@@ -181,11 +179,94 @@ export type CommunityMessages = {
   };
 };
 
+export type NewsMessages = {
+  metadata: {
+    title: string;
+    description: string;
+  };
+  hero: {
+    label: string;
+    title: string;
+    description: string;
+  };
+  stats: {
+    published: string;
+    important: string;
+    categories: string;
+  };
+  labels: {
+    featured: string;
+    important: string;
+    latest: string;
+    publishedAnnouncements: string;
+    noOtherAnnouncements: string;
+  };
+  empty: {
+    title: string;
+    description: string;
+  };
+};
+
+export type TournamentsMessages = {
+  metadata: {
+    title: string;
+    description: string;
+  };
+  hero: {
+    label: string;
+    title: string;
+    description: string;
+  };
+  statuses: {
+    tournamentOpen: string;
+    tournamentClosed: string;
+    registrationOpen: string;
+    registrationClosed: string;
+    upcoming: string;
+    ended: string;
+    cancelled: string;
+  };
+  stats: {
+    tournaments: string;
+    open: string;
+    applications: string;
+    approved: string;
+  };
+  sections: {
+    active: string;
+    archive: string;
+  };
+  labels: {
+    tournamentSingular: string;
+    tournamentPlural: string;
+    approved: string;
+    prize: string;
+    team: string;
+    slotLeft: string;
+    slotsLeft: string;
+    application: string;
+    applications: string;
+    resultSaved: string;
+    resultsSaved: string;
+    details: string;
+    currentlyAccept: string;
+    currentlyAcceptPlural: string;
+  };
+  empty: {
+    noTournamentsTitle: string;
+    noTournamentsDescription: string;
+    noActive: string;
+    noArchived: string;
+  };
+};
+
 export type I18nMessages = {
   navbar: NavigationMessages;
   footer: FooterMessages;
   home: HomeMessages;
   community: CommunityMessages;
+  news: NewsMessages;
+  tournaments: TournamentsMessages;
 };
 
 export const dictionaries: Record<Locale, I18nMessages> = {
@@ -224,6 +305,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         switchToArabic: "التبديل إلى العربية",
       },
     },
+
     footer: {
       description:
         "A competitive gaming platform for tournaments, teams, rankings, and official community updates.",
@@ -254,6 +336,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       rights: "All rights reserved.",
       developedBy: "Developed by",
     },
+
     home: {
       metadata: {
         title: "Ascendra",
@@ -337,6 +420,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         },
       },
     },
+
     community: {
       metadata: {
         title: "Community | Ascendra",
@@ -435,6 +519,91 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         leaderboard: "Leaderboard",
       },
     },
+
+    news: {
+      metadata: {
+        title: "News | Ascendra",
+        description: "Ascendra announcements and updates.",
+      },
+      hero: {
+        label: "Ascendra updates",
+        title: "News",
+        description:
+          "Official announcements, tournament updates, and community notes.",
+      },
+      stats: {
+        published: "Published",
+        important: "Important",
+        categories: "Categories",
+      },
+      labels: {
+        featured: "Featured update",
+        important: "Important",
+        latest: "Latest updates",
+        publishedAnnouncements: "Published announcements",
+        noOtherAnnouncements: "No other announcements published.",
+      },
+      empty: {
+        title: "No announcements yet",
+        description: "Published announcements will appear here.",
+      },
+    },
+
+    tournaments: {
+      metadata: {
+        title: "Tournaments | Ascendra",
+        description: "Ascendra tournaments and events.",
+      },
+      hero: {
+        label: "Ascendra events",
+        title: "Tournaments",
+        description:
+          "Register, follow active events, and view completed tournament history.",
+      },
+      statuses: {
+        tournamentOpen: "Tournament open",
+        tournamentClosed: "Tournament closed",
+        registrationOpen: "Registration open",
+        registrationClosed: "Registration closed",
+        upcoming: "Upcoming",
+        ended: "Ended",
+        cancelled: "Cancelled",
+      },
+      stats: {
+        tournaments: "Tournaments",
+        open: "Open",
+        applications: "Applications",
+        approved: "Approved",
+      },
+      sections: {
+        active: "Active tournaments",
+        archive: "Tournament archive",
+      },
+      labels: {
+        tournamentSingular: "tournament",
+        tournamentPlural: "tournaments",
+        approved: "approved",
+        prize: "Prize",
+        team: "Team",
+        slotLeft: "slot left",
+        slotsLeft: "slots left",
+        application: "application",
+        applications: "applications",
+        resultSaved: "result saved",
+        resultsSaved: "results saved",
+        details: "Details",
+        currentlyAccept: "tournament currently accepts team applications.",
+        currentlyAcceptPlural:
+          "tournaments currently accept team applications.",
+      },
+      empty: {
+        noTournamentsTitle: "No tournaments yet",
+        noTournamentsDescription:
+          "Events will appear here when they are published.",
+        noActive: "No active tournaments right now.",
+        noArchived: "No archived tournaments yet.",
+      },
+    },
   },
 
   ar: {
@@ -472,6 +641,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         switchToArabic: "التبديل إلى العربية",
       },
     },
+
     footer: {
       description:
         "منصة ألعاب تنافسية لإدارة البطولات والفرق ولوحة المتصدرين والتحديثات الرسمية للمجتمع.",
@@ -502,6 +672,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       rights: "جميع الحقوق محفوظة.",
       developedBy: "تم التطوير بواسطة",
     },
+
     home: {
       metadata: {
         title: "Ascendra",
@@ -584,6 +755,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         },
       },
     },
+
     community: {
       metadata: {
         title: "المجتمع | Ascendra",
@@ -681,13 +853,94 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         leaderboard: "لوحة المتصدرين",
       },
     },
+
+    news: {
+      metadata: {
+        title: "الأخبار | Ascendra",
+        description: "إعلانات وتحديثات Ascendra.",
+      },
+      hero: {
+        label: "تحديثات Ascendra",
+        title: "الأخبار",
+        description: "الإعلانات الرسمية، تحديثات البطولات، وملاحظات المجتمع.",
+      },
+      stats: {
+        published: "المنشور",
+        important: "المهم",
+        categories: "التصنيفات",
+      },
+      labels: {
+        featured: "تحديث مميز",
+        important: "مهم",
+        latest: "آخر التحديثات",
+        publishedAnnouncements: "الإعلانات المنشورة",
+        noOtherAnnouncements: "لا توجد إعلانات أخرى منشورة.",
+      },
+      empty: {
+        title: "لا توجد إعلانات حاليًا",
+        description: "ستظهر الإعلانات المنشورة هنا.",
+      },
+    },
+
+    tournaments: {
+      metadata: {
+        title: "البطولات | Ascendra",
+        description: "بطولات وفعاليات Ascendra.",
+      },
+      hero: {
+        label: "فعاليات Ascendra",
+        title: "البطولات",
+        description:
+          "سجّل في البطولات، تابع الفعاليات النشطة، واستعرض سجل البطولات المكتملة.",
+      },
+      statuses: {
+        tournamentOpen: "البطولة مفتوحة",
+        tournamentClosed: "البطولة مغلقة",
+        registrationOpen: "التسجيل مفتوح",
+        registrationClosed: "التسجيل مغلق",
+        upcoming: "قادمة",
+        ended: "منتهية",
+        cancelled: "ملغاة",
+      },
+      stats: {
+        tournaments: "البطولات",
+        open: "المفتوحة",
+        applications: "الطلبات",
+        approved: "المقبولة",
+      },
+      sections: {
+        active: "البطولات النشطة",
+        archive: "أرشيف البطولات",
+      },
+      labels: {
+        tournamentSingular: "بطولة",
+        tournamentPlural: "بطولات",
+        approved: "مقبول",
+        prize: "الجائزة",
+        team: "الفريق",
+        slotLeft: "مقعد متبقٍ",
+        slotsLeft: "مقاعد متبقية",
+        application: "طلب",
+        applications: "طلبات",
+        resultSaved: "نتيجة محفوظة",
+        resultsSaved: "نتائج محفوظة",
+        details: "التفاصيل",
+        currentlyAccept: "بطولة تقبل طلبات الفرق حاليًا.",
+        currentlyAcceptPlural: "بطولات تقبل طلبات الفرق حاليًا.",
+      },
+      empty: {
+        noTournamentsTitle: "لا توجد بطولات حاليًا",
+        noTournamentsDescription: "ستظهر الفعاليات هنا عند نشرها.",
+        noActive: "لا توجد بطولات نشطة حاليًا.",
+        noArchived: "لا توجد بطولات مؤرشفة حاليًا.",
+      },
+    },
   },
 };
 
 export function isLocale(value: string | undefined | null): value is Locale {
   return Boolean(value && locales.includes(value as Locale));
 }
-
 
 export function getDictionary(locale: Locale): I18nMessages {
   return dictionaries[locale] || dictionaries[defaultLocale];

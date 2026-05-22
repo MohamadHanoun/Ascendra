@@ -6,15 +6,12 @@ import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import ProfileNotice from "@/components/ProfileNotice";
+import { getDictionary, type TournamentsMessages } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
 export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "Tournaments | Ascendra",
-  description: "Ascendra tournaments and events.",
-};
 
 type TournamentsPageProps = {
   searchParams: Promise<{
@@ -23,22 +20,38 @@ type TournamentsPageProps = {
   }>;
 };
 
-function getTournamentStatusLabel(status: string) {
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = getDictionary(locale).tournaments.metadata;
+
+  return {
+    title: messages.title,
+    description: messages.description,
+  };
+}
+
+function getTournamentStatusLabel(
+  status: string,
+  messages: TournamentsMessages["statuses"],
+) {
   const labels: Record<string, string> = {
-    open: "Tournament open",
-    upcoming: "Upcoming",
-    closed: "Tournament closed",
-    ended: "Ended",
-    cancelled: "Cancelled",
+    open: messages.tournamentOpen,
+    upcoming: messages.upcoming,
+    closed: messages.tournamentClosed,
+    ended: messages.ended,
+    cancelled: messages.cancelled,
   };
 
   return labels[status.toLowerCase()] || status;
 }
 
-function getRegistrationStatusLabel(status: string) {
+function getRegistrationStatusLabel(
+  status: string,
+  messages: TournamentsMessages["statuses"],
+) {
   const labels: Record<string, string> = {
-    open: "Registration open",
-    closed: "Registration closed",
+    open: messages.registrationOpen,
+    closed: messages.registrationClosed,
   };
 
   return labels[status.toLowerCase()] || status;
@@ -50,8 +63,8 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
   const styles: Record<string, string> = {
     open: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
     approved: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    upcoming: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    pending: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+    upcoming: "border-sky-400/25 bg-sky-500/10 text-sky-300",
+    pending: "border-sky-400/25 bg-sky-500/10 text-sky-300",
     closed: "border-red-400/25 bg-red-500/10 text-red-300",
     rejected: "border-red-400/25 bg-red-500/10 text-red-300",
     registered: "border-violet-400/25 bg-violet-500/10 text-violet-200",
@@ -89,9 +102,11 @@ function DetailLine({ children }: { children: ReactNode }) {
 function ProgressBar({
   approvedSlots,
   maxSlots,
+  approvedLabel,
 }: {
   approvedSlots: number;
   maxSlots: number;
+  approvedLabel: string;
 }) {
   const progress =
     maxSlots > 0 ? Math.min((approvedSlots / maxSlots) * 100, 100) : 0;
@@ -100,7 +115,7 @@ function ProgressBar({
     <div className="grid gap-2">
       <div className="flex items-center justify-between text-xs font-bold text-gray-500">
         <span>
-          {approvedSlots}/{maxSlots} approved
+          {approvedSlots}/{maxSlots} {approvedLabel}
         </span>
 
         <span>{Math.round(progress)}%</span>
@@ -118,13 +133,30 @@ function ProgressBar({
   );
 }
 
-function SectionTitle({ title, count }: { title: string; count: number }) {
+function getTournamentCountLabel(
+  count: number,
+  labels: TournamentsMessages["labels"],
+) {
+  return `${count} ${
+    count === 1 ? labels.tournamentSingular : labels.tournamentPlural
+  }`;
+}
+
+function SectionTitle({
+  title,
+  count,
+  labels,
+}: {
+  title: string;
+  count: number;
+  labels: TournamentsMessages["labels"];
+}) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <h2 className="text-2xl font-black text-white">{title}</h2>
 
       <span className="rounded-full border border-white/10 bg-black/25 px-3 py-1 text-xs font-black text-gray-400">
-        {count} tournament{count === 1 ? "" : "s"}
+        {getTournamentCountLabel(count, labels)}
       </span>
     </div>
   );
@@ -133,16 +165,18 @@ function SectionTitle({ title, count }: { title: string; count: number }) {
 function TournamentArchive({
   title,
   count,
+  labels,
   children,
 }: {
   title: string;
   count: number;
+  labels: TournamentsMessages["labels"];
   children: ReactNode;
 }) {
   return (
     <details className="group grid gap-4">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-3xl border border-white/10 bg-white/[0.04] px-5 py-4 shadow-2xl shadow-black/20 transition hover:bg-white/[0.06]">
-        <SectionTitle title={title} count={count} />
+        <SectionTitle title={title} count={count} labels={labels} />
 
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition group-open:rotate-45 group-hover:border-violet-400/30 group-hover:text-white">
           +
@@ -157,7 +191,8 @@ function TournamentArchive({
 export default async function TournamentsPage({
   searchParams,
 }: TournamentsPageProps) {
-  const params = await searchParams;
+  const [params, locale] = await Promise.all([searchParams, getLocale()]);
+  const messages = getDictionary(locale).tournaments;
 
   const tournaments = await prisma.tournament.findMany({
     orderBy: {
@@ -300,7 +335,10 @@ export default async function TournamentsPage({
 
                     <StatusBadge
                       status={tournament.status}
-                      label={getTournamentStatusLabel(tournament.status)}
+                      label={getTournamentStatusLabel(
+                        tournament.status,
+                        messages.statuses,
+                      )}
                     />
 
                     {shouldShowRegistrationStatus && (
@@ -308,6 +346,7 @@ export default async function TournamentsPage({
                         status={tournament.registrationStatus}
                         label={getRegistrationStatusLabel(
                           tournament.registrationStatus,
+                          messages.statuses,
                         )}
                       />
                     )}
@@ -319,7 +358,8 @@ export default async function TournamentsPage({
                     </DetailLine>
 
                     <DetailLine>
-                      Prize: {tournament.prize} · Team: {tournament.teamSize}v
+                      {messages.labels.prize}: {tournament.prize} ·{" "}
+                      {messages.labels.team}: {tournament.teamSize}v
                       {tournament.teamSize}
                     </DetailLine>
                   </div>
@@ -329,18 +369,26 @@ export default async function TournamentsPage({
                   <ProgressBar
                     approvedSlots={approvedSlots}
                     maxSlots={tournament.maxSlots}
+                    approvedLabel={messages.labels.approved}
                   />
 
                   <p className="text-xs font-bold text-gray-500">
-                    {remainingSlots} slot{remainingSlots === 1 ? "" : "s"} left
-                    · {applications} application
-                    {applications === 1 ? "" : "s"}
+                    {remainingSlots}{" "}
+                    {remainingSlots === 1
+                      ? messages.labels.slotLeft
+                      : messages.labels.slotsLeft}{" "}
+                    · {applications}{" "}
+                    {applications === 1
+                      ? messages.labels.application
+                      : messages.labels.applications}
                   </p>
 
                   {tournament.results.length > 0 && (
                     <p className="text-xs font-black text-emerald-300">
-                      {tournament.results.length} result
-                      {tournament.results.length === 1 ? "" : "s"} saved
+                      {tournament.results.length}{" "}
+                      {tournament.results.length === 1
+                        ? messages.labels.resultSaved
+                        : messages.labels.resultsSaved}
                     </p>
                   )}
                 </div>
@@ -349,7 +397,7 @@ export default async function TournamentsPage({
                   href={`/tournaments/${tournament.id}`}
                   className="inline-flex justify-center rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
                 >
-                  Details
+                  {messages.labels.details}
                 </Link>
               </article>
             );
@@ -381,16 +429,15 @@ export default async function TournamentsPage({
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
             <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
-              Ascendra events
+              {messages.hero.label}
             </p>
 
             <h1 className="max-w-4xl text-5xl font-black uppercase tracking-tight text-white md:text-7xl">
-              Tournaments
+              {messages.hero.title}
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              Register, follow active events, and view completed tournament
-              history.
+              {messages.hero.description}
             </p>
           </div>
         </section>
@@ -399,39 +446,47 @@ export default async function TournamentsPage({
           <ProfileNotice message={params.message} error={params.error} />
 
           <section className="grid gap-5 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 md:grid-cols-2 xl:grid-cols-4">
-            <Stat label="Tournaments" value={tournaments.length} />
-            <Stat label="Open" value={openTournamentCount} />
-            <Stat label="Applications" value={applicationsCount} />
-            <Stat label="Approved" value={approvedSlotsCount} />
+            <Stat
+              label={messages.stats.tournaments}
+              value={tournaments.length}
+            />
+            <Stat label={messages.stats.open} value={openTournamentCount} />
+            <Stat
+              label={messages.stats.applications}
+              value={applicationsCount}
+            />
+            <Stat label={messages.stats.approved} value={approvedSlotsCount} />
           </section>
 
           {tournaments.length === 0 ? (
             <EmptyState
-              title="No tournaments yet"
-              description="Events will appear here when they are published."
+              title={messages.empty.noTournamentsTitle}
+              description={messages.empty.noTournamentsDescription}
             />
           ) : (
             <>
               <section className="grid gap-4">
                 <SectionTitle
-                  title="Active tournaments"
+                  title={messages.sections.active}
                   count={activeTournaments.length}
+                  labels={messages.labels}
                 />
 
                 {renderTournamentList(
                   activeTournaments,
-                  "No active tournaments right now.",
+                  messages.empty.noActive,
                 )}
               </section>
 
               {archivedTournaments.length > 0 && (
                 <TournamentArchive
-                  title="Tournament archive"
+                  title={messages.sections.archive}
                   count={archivedTournaments.length}
+                  labels={messages.labels}
                 >
                   {renderTournamentList(
                     archivedTournaments,
-                    "No archived tournaments yet.",
+                    messages.empty.noArchived,
                   )}
                 </TournamentArchive>
               )}
@@ -440,9 +495,10 @@ export default async function TournamentsPage({
 
           {openRegistrationCount > 0 && (
             <p className="text-sm text-gray-500">
-              {openRegistrationCount} tournament
-              {openRegistrationCount === 1 ? "" : "s"} currently accept team
-              applications.
+              {openRegistrationCount}{" "}
+              {openRegistrationCount === 1
+                ? messages.labels.currentlyAccept
+                : messages.labels.currentlyAcceptPlural}
             </p>
           )}
         </section>

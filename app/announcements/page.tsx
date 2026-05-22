@@ -4,12 +4,9 @@ import type { ReactNode } from "react";
 import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import { getDictionary, type Locale, type NewsMessages } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
-
-export const metadata: Metadata = {
-  title: "News | Ascendra",
-  description: "Ascendra announcements and updates.",
-};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +19,16 @@ type AnnouncementItem = {
   important: boolean;
   createdAt: Date;
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = getDictionary(locale).news.metadata;
+
+  return {
+    title: messages.title,
+    description: messages.description,
+  };
+}
 
 async function getAnnouncements() {
   return prisma.announcement.findMany({
@@ -47,8 +54,8 @@ async function getAnnouncements() {
   });
 }
 
-function formatDate(date: Date) {
-  return date.toLocaleDateString("en-GB", {
+function formatDate(date: Date, locale: Locale) {
+  return date.toLocaleDateString(locale === "ar" ? "ar" : "en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -92,15 +99,19 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 
 function FeaturedAnnouncement({
   announcement,
+  locale,
+  labels,
 }: {
   announcement: AnnouncementItem;
+  locale: Locale;
+  labels: NewsMessages["labels"];
 }) {
   return (
     <article className="rounded-3xl border border-emerald-400/20 bg-emerald-500/[0.055] p-6 shadow-2xl shadow-black/20">
       <div className="flex flex-wrap gap-2">
-        <Pill tone="green">Featured update</Pill>
+        <Pill tone="green">{labels.featured}</Pill>
         <Pill>{announcement.category}</Pill>
-        <Pill tone="gray">{formatDate(announcement.createdAt)}</Pill>
+        <Pill tone="gray">{formatDate(announcement.createdAt, locale)}</Pill>
       </div>
 
       <h2 className="mt-5 max-w-4xl text-3xl font-black text-white md:text-4xl">
@@ -114,7 +125,15 @@ function FeaturedAnnouncement({
   );
 }
 
-function AnnouncementRow({ announcement }: { announcement: AnnouncementItem }) {
+function AnnouncementRow({
+  announcement,
+  locale,
+  labels,
+}: {
+  announcement: AnnouncementItem;
+  locale: Locale;
+  labels: NewsMessages["labels"];
+}) {
   return (
     <article className="grid gap-4 px-5 py-5 transition hover:bg-white/[0.035] md:grid-cols-[170px_minmax(0,1fr)] md:items-start">
       <div className="flex flex-wrap gap-2 md:block">
@@ -123,13 +142,15 @@ function AnnouncementRow({ announcement }: { announcement: AnnouncementItem }) {
         </Pill>
 
         <div className="mt-0 md:mt-3">
-          <Pill tone="gray">{formatDate(announcement.createdAt)}</Pill>
+          <Pill tone="gray">{formatDate(announcement.createdAt, locale)}</Pill>
         </div>
       </div>
 
       <div className="min-w-0">
         <div className="mb-3 flex flex-wrap gap-2">
-          {announcement.important && <Pill tone="green">Important</Pill>}
+          {announcement.important && (
+            <Pill tone="green">{labels.important}</Pill>
+          )}
         </div>
 
         <h2 className="text-2xl font-black text-white">{announcement.title}</h2>
@@ -143,6 +164,8 @@ function AnnouncementRow({ announcement }: { announcement: AnnouncementItem }) {
 }
 
 export default async function AnnouncementsPage() {
+  const locale = await getLocale();
+  const messages = getDictionary(locale).news;
   const announcements = await getAnnouncements();
 
   const importantCount = announcements.filter(
@@ -183,51 +206,58 @@ export default async function AnnouncementsPage() {
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
             <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-emerald-300">
-              Ascendra updates
+              {messages.hero.label}
             </p>
 
             <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
-              News
+              {messages.hero.title}
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              Official announcements, tournament updates, and community notes.
+              {messages.hero.description}
             </p>
           </div>
         </section>
 
         <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
           <section className="grid gap-5 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 md:grid-cols-3">
-            <Stat label="Published" value={announcements.length} />
-            <Stat label="Important" value={importantCount} />
-            <Stat label="Categories" value={categoriesCount} />
+            <Stat
+              label={messages.stats.published}
+              value={announcements.length}
+            />
+            <Stat label={messages.stats.important} value={importantCount} />
+            <Stat label={messages.stats.categories} value={categoriesCount} />
           </section>
 
           {announcements.length === 0 ? (
             <EmptyState
-              title="No announcements yet"
-              description="Published announcements will appear here."
+              title={messages.empty.title}
+              description={messages.empty.description}
             />
           ) : (
             <>
               {featuredAnnouncement && (
-                <FeaturedAnnouncement announcement={featuredAnnouncement} />
+                <FeaturedAnnouncement
+                  announcement={featuredAnnouncement}
+                  locale={locale}
+                  labels={messages.labels}
+                />
               )}
 
               <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
                 <div className="border-b border-white/10 px-5 py-4">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">
-                    Latest updates
+                    {messages.labels.latest}
                   </p>
 
                   <h2 className="mt-1 text-xl font-black text-white">
-                    Published announcements
+                    {messages.labels.publishedAnnouncements}
                   </h2>
                 </div>
 
                 {regularAnnouncements.length === 0 ? (
                   <div className="p-5 text-sm text-gray-400">
-                    No other announcements published.
+                    {messages.labels.noOtherAnnouncements}
                   </div>
                 ) : (
                   <div className="divide-y divide-white/10">
@@ -235,6 +265,8 @@ export default async function AnnouncementsPage() {
                       <AnnouncementRow
                         key={announcement.id}
                         announcement={announcement}
+                        locale={locale}
+                        labels={messages.labels}
                       />
                     ))}
                   </div>
