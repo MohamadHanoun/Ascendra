@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL || "https://ascendra-ebon.vercel.app"
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.ascendrahub.com"
 ).replace(/\/$/, "");
 
 const staticRoutes = [
