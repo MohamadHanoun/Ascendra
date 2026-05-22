@@ -3,15 +3,87 @@ import type { Metadata } from "next";
 import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
-
-export const metadata: Metadata = {
-  title: "Rules | Ascendra",
-  description: "Ascendra community rules.",
-};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+type RulesMessages = {
+  metadata: {
+    title: string;
+    description: string;
+  };
+  hero: {
+    label: string;
+    title: string;
+    description: string;
+  };
+  summary: {
+    label: string;
+    title: string;
+    total: string;
+  };
+  empty: {
+    title: string;
+    description: string;
+  };
+};
+
+const rulesMessages: Record<Locale, RulesMessages> = {
+  en: {
+    metadata: {
+      title: "Rules | Ascendra",
+      description: "Ascendra community rules.",
+    },
+    hero: {
+      label: "Community",
+      title: "Rules",
+      description: "Clear rules for fair and organized play.",
+    },
+    summary: {
+      label: "Community rules",
+      title: "Active guidelines",
+      total: "Total",
+    },
+    empty: {
+      title: "No active rules yet",
+      description: "Rules will appear here when they are published.",
+    },
+  },
+
+  ar: {
+    metadata: {
+      title: "القواعد | Ascendra",
+      description: "قواعد مجتمع Ascendra.",
+    },
+    hero: {
+      label: "المجتمع",
+      title: "القواعد",
+      description: "قواعد واضحة للحفاظ على منافسة عادلة ومنظّمة.",
+    },
+    summary: {
+      label: "قواعد المجتمع",
+      title: "الإرشادات النشطة",
+      total: "الإجمالي",
+    },
+    empty: {
+      title: "لا توجد قواعد نشطة حاليًا",
+      description: "ستظهر القواعد هنا عند نشرها.",
+    },
+  },
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = rulesMessages[locale].metadata;
+
+  return {
+    title: messages.title,
+    description: messages.description,
+  };
+}
 
 async function getRules() {
   return prisma.rule.findMany({
@@ -37,7 +109,8 @@ function RuleRow({ index, text }: { index: number; text: string }) {
 }
 
 export default async function RulesPage() {
-  const rules = await getRules();
+  const [rules, locale] = await Promise.all([getRules(), getLocale()]);
+  const messages = rulesMessages[locale];
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
@@ -59,15 +132,15 @@ export default async function RulesPage() {
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
             <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
-              Community
+              {messages.hero.label}
             </p>
 
             <h1 className="text-5xl font-black uppercase tracking-tight text-white md:text-7xl">
-              Rules
+              {messages.hero.title}
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              Clear rules for fair and organized play.
+              {messages.hero.description}
             </p>
           </div>
         </section>
@@ -77,17 +150,17 @@ export default async function RulesPage() {
             <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_160px] md:items-end">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                  Community rules
+                  {messages.summary.label}
                 </p>
 
                 <h2 className="mt-1 text-xl font-black text-white">
-                  Active guidelines
+                  {messages.summary.title}
                 </h2>
               </div>
 
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
-                  Total
+                  {messages.summary.total}
                 </p>
 
                 <p className="mt-1 text-2xl font-black text-white">
@@ -99,8 +172,8 @@ export default async function RulesPage() {
 
           {rules.length === 0 ? (
             <EmptyState
-              title="No active rules yet"
-              description="Rules will appear here when they are published."
+              title={messages.empty.title}
+              description={messages.empty.description}
             />
           ) : (
             <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">

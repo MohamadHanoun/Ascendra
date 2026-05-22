@@ -3,30 +3,174 @@ import Link from "next/link";
 
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 
-export const metadata: Metadata = {
-  title: "About | Ascendra",
-  description: "Learn more about Ascendra.",
+type AboutMessages = {
+  metadata: {
+    title: string;
+    description: string;
+  };
+  hero: {
+    label: string;
+    title: string;
+    description: string;
+  };
+  purpose: {
+    label: string;
+    title: string;
+    description: string;
+  };
+  stats: {
+    focus: string;
+    focusValue: string;
+    system: string;
+    systemValue: string;
+    tracking: string;
+    trackingValue: string;
+    motto: string;
+    mottoValue: string;
+  };
+  core: {
+    label: string;
+    title: string;
+    values: {
+      title: string;
+      description: string;
+    }[];
+  };
+  cta: {
+    label: string;
+    title: string;
+    action: string;
+  };
 };
 
-const values = [
-  {
-    title: "Teams",
-    description: "Create teams, invite players, and prepare for tournaments.",
+const aboutMessages: Record<Locale, AboutMessages> = {
+  en: {
+    metadata: {
+      title: "About | Ascendra",
+      description: "Learn more about Ascendra.",
+    },
+    hero: {
+      label: "Platform",
+      title: "About",
+      description:
+        "Ascendra is built for teams, tournaments, rankings, and organized competitive play.",
+    },
+    purpose: {
+      label: "Purpose",
+      title: "Organized competitive play.",
+      description:
+        "The platform helps players manage teams, join tournaments, follow official results, and compete through a cleaner system.",
+    },
+    stats: {
+      focus: "Focus",
+      focusValue: "Teams",
+      system: "System",
+      systemValue: "Tournaments",
+      tracking: "Tracking",
+      trackingValue: "Results",
+      motto: "Motto",
+      mottoValue: "Rise",
+    },
+    core: {
+      label: "What Ascendra does",
+      title: "Core areas",
+      values: [
+        {
+          title: "Teams",
+          description:
+            "Create teams, invite players, and prepare for tournaments.",
+        },
+        {
+          title: "Tournaments",
+          description:
+            "Register for events, follow applications, and track results.",
+        },
+        {
+          title: "Leaderboard",
+          description: "Official points and rankings based on saved results.",
+        },
+        {
+          title: "Community",
+          description: "A cleaner place for organized competitive play.",
+        },
+      ],
+    },
+    cta: {
+      label: "Start",
+      title: "Join the next tournament.",
+      action: "View tournaments",
+    },
   },
-  {
-    title: "Tournaments",
-    description: "Register for events, follow applications, and track results.",
+
+  ar: {
+    metadata: {
+      title: "حول المنصة | Ascendra",
+      description: "تعرّف أكثر على Ascendra.",
+    },
+    hero: {
+      label: "المنصة",
+      title: "حول المنصة",
+      description:
+        "تم بناء Ascendra للفرق والبطولات ولوحة المتصدرين وتنظيم المنافسات التنافسية.",
+    },
+    purpose: {
+      label: "الهدف",
+      title: "منافسات منظّمة واحترافية.",
+      description:
+        "تساعد المنصة اللاعبين على إدارة الفرق، والانضمام إلى البطولات، ومتابعة النتائج الرسمية، والمنافسة من خلال نظام أوضح وأكثر تنظيمًا.",
+    },
+    stats: {
+      focus: "التركيز",
+      focusValue: "الفرق",
+      system: "النظام",
+      systemValue: "البطولات",
+      tracking: "المتابعة",
+      trackingValue: "النتائج",
+      motto: "الشعار",
+      mottoValue: "الارتقاء",
+    },
+    core: {
+      label: "ماذا تقدم Ascendra",
+      title: "المجالات الأساسية",
+      values: [
+        {
+          title: "الفرق",
+          description: "أنشئ الفرق، وادعُ اللاعبين، واستعد للبطولات.",
+        },
+        {
+          title: "البطولات",
+          description: "سجّل في الفعاليات، وتابع الطلبات، وراجع النتائج.",
+        },
+        {
+          title: "لوحة المتصدرين",
+          description: "نقاط وترتيبات رسمية بناءً على النتائج المحفوظة.",
+        },
+        {
+          title: "المجتمع",
+          description: "مساحة أوضح لتنظيم المنافسات واللعب التنافسي.",
+        },
+      ],
+    },
+    cta: {
+      label: "ابدأ",
+      title: "انضم إلى البطولة القادمة.",
+      action: "عرض البطولات",
+    },
   },
-  {
-    title: "Leaderboard",
-    description: "Official points and rankings based on saved results.",
-  },
-  {
-    title: "Community",
-    description: "A cleaner place for organized competitive play.",
-  },
-];
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = aboutMessages[locale].metadata;
+
+  return {
+    title: messages.title,
+    description: messages.description,
+  };
+}
 
 function ValueRow({
   title,
@@ -56,7 +200,10 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const locale = await getLocale();
+  const messages = aboutMessages[locale];
+
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
@@ -77,16 +224,15 @@ export default function AboutPage() {
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
             <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
-              Platform
+              {messages.hero.label}
             </p>
 
             <h1 className="text-5xl font-black uppercase tracking-tight text-white md:text-7xl">
-              About
+              {messages.hero.title}
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              Ascendra is built for teams, tournaments, rankings, and organized
-              competitive play.
+              {messages.hero.description}
             </p>
           </div>
         </section>
@@ -96,24 +242,35 @@ export default function AboutPage() {
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                  Purpose
+                  {messages.purpose.label}
                 </p>
 
                 <h2 className="mt-2 text-3xl font-black text-white">
-                  Organized competitive play.
+                  {messages.purpose.title}
                 </h2>
 
                 <p className="mt-4 max-w-3xl text-sm leading-7 text-gray-400">
-                  The platform helps players manage teams, join tournaments,
-                  follow official results, and compete through a cleaner system.
+                  {messages.purpose.description}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-5">
-                <Stat label="Focus" value="Teams" />
-                <Stat label="System" value="Tournaments" />
-                <Stat label="Tracking" value="Results" />
-                <Stat label="Motto" value="Rise" />
+                <Stat
+                  label={messages.stats.focus}
+                  value={messages.stats.focusValue}
+                />
+                <Stat
+                  label={messages.stats.system}
+                  value={messages.stats.systemValue}
+                />
+                <Stat
+                  label={messages.stats.tracking}
+                  value={messages.stats.trackingValue}
+                />
+                <Stat
+                  label={messages.stats.motto}
+                  value={messages.stats.mottoValue}
+                />
               </div>
             </div>
           </section>
@@ -121,14 +278,16 @@ export default function AboutPage() {
           <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
             <div className="border-b border-white/10 px-5 py-4">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                What Ascendra does
+                {messages.core.label}
               </p>
 
-              <h2 className="mt-1 text-xl font-black text-white">Core areas</h2>
+              <h2 className="mt-1 text-xl font-black text-white">
+                {messages.core.title}
+              </h2>
             </div>
 
             <div>
-              {values.map((item) => (
+              {messages.core.values.map((item) => (
                 <ValueRow
                   key={item.title}
                   title={item.title}
@@ -141,11 +300,11 @@ export default function AboutPage() {
           <section className="flex flex-col justify-between gap-4 rounded-3xl border border-violet-400/20 bg-violet-500/[0.06] p-6 shadow-2xl shadow-black/20 md:flex-row md:items-center">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                Start
+                {messages.cta.label}
               </p>
 
               <h2 className="mt-1 text-2xl font-black text-white">
-                Join the next tournament.
+                {messages.cta.title}
               </h2>
             </div>
 
@@ -153,7 +312,7 @@ export default function AboutPage() {
               href="/tournaments"
               className="w-fit rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white transition hover:bg-violet-500"
             >
-              View tournaments
+              {messages.cta.action}
             </Link>
           </section>
         </section>

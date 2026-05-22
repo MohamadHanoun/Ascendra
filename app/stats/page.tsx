@@ -2,17 +2,107 @@ import type { Metadata } from "next";
 
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
-
-export const metadata: Metadata = {
-  title: "Stats | Ascendra",
-  description: "Ascendra platform and tournament statistics.",
-};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type StatsMessages = {
+  metadata: {
+    title: string;
+    description: string;
+  };
+  hero: {
+    label: string;
+    title: string;
+    description: string;
+  };
+  overview: {
+    label: string;
+    title: string;
+  };
+  labels: {
+    players: string;
+    teams: string;
+    tournaments: string;
+    points: string;
+    games: string;
+    results: string;
+    pts: string;
+    gameActivity: string;
+    gameActivityDescription: string;
+  };
+};
+
+const statsMessages: Record<Locale, StatsMessages> = {
+  en: {
+    metadata: {
+      title: "Stats | Ascendra",
+      description: "Ascendra platform and tournament statistics.",
+    },
+    hero: {
+      label: "Platform",
+      title: "Stats",
+      description: "A quick overview of Ascendra activity.",
+    },
+    overview: {
+      label: "Overview",
+      title: "Main numbers",
+    },
+    labels: {
+      players: "Players",
+      teams: "Teams",
+      tournaments: "Tournaments",
+      points: "Points",
+      games: "Games",
+      results: "results",
+      pts: "pts",
+      gameActivity: "Games",
+      gameActivityDescription: "Tournament activity for this game.",
+    },
+  },
+
+  ar: {
+    metadata: {
+      title: "الإحصائيات | Ascendra",
+      description: "إحصائيات منصة Ascendra والبطولات.",
+    },
+    hero: {
+      label: "المنصة",
+      title: "الإحصائيات",
+      description: "نظرة سريعة على نشاط Ascendra.",
+    },
+    overview: {
+      label: "نظرة عامة",
+      title: "الأرقام الرئيسية",
+    },
+    labels: {
+      players: "اللاعبون",
+      teams: "الفرق",
+      tournaments: "البطولات",
+      points: "النقاط",
+      games: "الألعاب",
+      results: "نتائج",
+      pts: "نقطة",
+      gameActivity: "الألعاب",
+      gameActivityDescription: "نشاط البطولات لهذه اللعبة.",
+    },
+  },
+};
+
 const games = ["Valorant", "League of Legends", "CS2", "Dota2"];
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = statsMessages[locale].metadata;
+
+  return {
+    title: messages.title,
+    description: messages.description,
+  };
+}
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
@@ -48,7 +138,7 @@ function Pill({
   );
 }
 
-async function getStatsData() {
+async function getStatsData(messages: StatsMessages) {
   const [
     usersCount,
     teamsCount,
@@ -90,11 +180,11 @@ async function getStatsData() {
   ).length;
 
   const overviewStats = [
-    { label: "Players", value: usersCount },
-    { label: "Teams", value: teamsCount },
-    { label: "Tournaments", value: tournamentsCount },
-    { label: "Points", value: totalPoints },
-    { label: "Games", value: activeGamesCount },
+    { label: messages.labels.players, value: usersCount },
+    { label: messages.labels.teams, value: teamsCount },
+    { label: messages.labels.tournaments, value: tournamentsCount },
+    { label: messages.labels.points, value: totalPoints },
+    { label: messages.labels.games, value: activeGamesCount },
   ];
 
   const gameStats = games.map((game) => {
@@ -125,7 +215,9 @@ async function getStatsData() {
 }
 
 export default async function StatsPage() {
-  const { overviewStats, gameStats } = await getStatsData();
+  const locale = await getLocale();
+  const messages = statsMessages[locale];
+  const { overviewStats, gameStats } = await getStatsData(messages);
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
@@ -147,15 +239,15 @@ export default async function StatsPage() {
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
             <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
-              Platform
+              {messages.hero.label}
             </p>
 
             <h1 className="text-5xl font-black uppercase tracking-tight text-white md:text-7xl">
-              Stats
+              {messages.hero.title}
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              A quick overview of Ascendra activity.
+              {messages.hero.description}
             </p>
           </div>
         </section>
@@ -164,11 +256,11 @@ export default async function StatsPage() {
           <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
             <div className="border-b border-white/10 pb-4">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                Overview
+                {messages.overview.label}
               </p>
 
               <h2 className="mt-1 text-xl font-black text-white">
-                Main numbers
+                {messages.overview.title}
               </h2>
             </div>
 
@@ -182,11 +274,11 @@ export default async function StatsPage() {
           <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
             <div className="border-b border-white/10 px-5 py-4">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                Games
+                {messages.labels.gameActivity}
               </p>
 
               <h2 className="mt-1 text-xl font-black text-white">
-                Game activity
+                {messages.labels.gameActivityDescription}
               </h2>
             </div>
 
@@ -200,13 +292,19 @@ export default async function StatsPage() {
                     <p className="font-black text-white">{item.game}</p>
 
                     <p className="mt-1 text-sm text-gray-400">
-                      Tournament activity for this game.
+                      {messages.labels.gameActivityDescription}
                     </p>
                   </div>
 
-                  <Pill>{item.tournaments} tournaments</Pill>
-                  <Pill tone="gray">{item.results} results</Pill>
-                  <Pill tone="green">{item.points} pts</Pill>
+                  <Pill>
+                    {item.tournaments} {messages.labels.tournaments}
+                  </Pill>
+                  <Pill tone="gray">
+                    {item.results} {messages.labels.results}
+                  </Pill>
+                  <Pill tone="green">
+                    {item.points} {messages.labels.pts}
+                  </Pill>
                 </article>
               ))}
             </div>
