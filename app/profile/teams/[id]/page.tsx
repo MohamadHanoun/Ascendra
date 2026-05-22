@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -106,15 +107,42 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function PanelTitle({ label, title }: { label: string; title: string }) {
+function CollapsibleSection({
+  label,
+  title,
+  meta,
+  children,
+  defaultOpen = false,
+}: {
+  label: string;
+  title: string;
+  meta?: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
   return (
-    <div className="border-b border-white/10 px-5 py-4">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-        {label}
-      </p>
+    <details
+      open={defaultOpen}
+      className="group overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20"
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition hover:bg-white/[0.035]">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+            {label}
+          </p>
 
-      <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
-    </div>
+          <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
+
+          {meta && <p className="mt-1 text-sm text-gray-500">{meta}</p>}
+        </div>
+
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition group-open:rotate-45 group-hover:border-violet-400/30 group-hover:text-white">
+          +
+        </span>
+      </summary>
+
+      <div className="border-t border-white/10">{children}</div>
+    </details>
   );
 }
 
@@ -327,10 +355,19 @@ export default async function TeamDetailsPage({
         </section>
 
         <section className="relative -mt-16 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:grid-cols-[minmax(0,1fr)_380px] lg:px-10">
-          <div className="grid gap-8">
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              <PanelTitle label="Settings" title="Team setup" />
-
+          <div className="grid content-start gap-5">
+            <CollapsibleSection
+              label="Settings"
+              title="Team setup"
+              meta={
+                isTeamLocked
+                  ? "Locked while registered in an active tournament."
+                  : isLeader
+                    ? "Edit team name, game, invites, and team actions."
+                    : "Only the leader can edit team settings."
+              }
+              defaultOpen={!isTeamLocked}
+            >
               <div className="grid gap-6 p-5">
                 {isLeader && !isTeamLocked ? (
                   <InlineTeamActionForm
@@ -376,7 +413,7 @@ export default async function TeamDetailsPage({
                 ) : (
                   <p className="text-sm leading-6 text-gray-400">
                     {isTeamLocked
-                      ? "Settings are locked while this team is registered in an active tournament."
+                      ? "Settings are locked while this team is registered in an active tournament. They unlock after the tournament ends or the registration is cancelled."
                       : "Only the team leader can edit settings."}
                   </p>
                 )}
@@ -442,11 +479,14 @@ export default async function TeamDetailsPage({
                   </div>
                 )}
               </div>
-            </section>
+            </CollapsibleSection>
 
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              <PanelTitle label="History" title="Tournament results" />
-
+            <CollapsibleSection
+              label="History"
+              title="Tournament results"
+              meta={`${team.results.length} result${team.results.length === 1 ? "" : "s"} · ${totalTeamPoints} points`}
+              defaultOpen={team.results.length > 0}
+            >
               <div className="grid grid-cols-3 gap-5 border-b border-white/10 p-5">
                 <Stat label="Points" value={totalTeamPoints} />
                 <Stat label="Results" value={team.results.length} />
@@ -492,130 +532,135 @@ export default async function TeamDetailsPage({
                   ))}
                 </div>
               )}
-            </section>
+            </CollapsibleSection>
           </div>
 
-          <aside className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 lg:sticky lg:top-24 lg:self-start">
-            <PanelTitle label="Roster" title="Players and invites" />
+          <aside>
+            <CollapsibleSection
+              label="Roster"
+              title="Players and invites"
+              meta={`${team.members.length} member${team.members.length === 1 ? "" : "s"} · ${team.invites.length} invite${team.invites.length === 1 ? "" : "s"}`}
+              defaultOpen
+            >
+              <div className="divide-y divide-white/10">
+                {team.members.map((member) => {
+                  const isMemberLeader = member.userId === team.leaderId;
 
-            <div className="divide-y divide-white/10">
-              {team.members.map((member) => {
-                const isMemberLeader = member.userId === team.leaderId;
+                  return (
+                    <div key={member.id} className="grid gap-3 px-5 py-4">
+                      <div>
+                        <p className="font-black text-white">
+                          {member.user.username}
+                        </p>
 
-                return (
-                  <div key={member.id} className="grid gap-3 px-5 py-4">
+                        <p className="mt-1 break-all text-xs text-gray-500">
+                          {member.user.discordId}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <StatusBadge
+                          status={isMemberLeader ? "Leader" : "Member"}
+                        />
+
+                        {isLeader && !isMemberLeader && !isTeamLocked ? (
+                          <div className="flex flex-wrap gap-2">
+                            <InlineTeamActionForm
+                              action={transferTeamLeadershipInline}
+                              buttonLabel="Make leader"
+                              pendingLabel="Transferring..."
+                              variant="secondary"
+                              confirmTitle="Transfer leadership?"
+                              confirmDescription={`Make ${member.user.username} the new team leader?`}
+                              confirmLabel="Transfer"
+                            >
+                              <input
+                                type="hidden"
+                                name="teamId"
+                                value={team.id}
+                              />
+                              <input
+                                type="hidden"
+                                name="memberId"
+                                value={member.id}
+                              />
+                            </InlineTeamActionForm>
+
+                            <InlineTeamActionForm
+                              action={removeTeamMemberInline}
+                              buttonLabel="Remove"
+                              pendingLabel="Removing..."
+                              variant="danger"
+                              confirmTitle="Remove player?"
+                              confirmDescription={`Remove ${member.user.username} from this team?`}
+                              confirmLabel="Remove"
+                            >
+                              <input
+                                type="hidden"
+                                name="teamId"
+                                value={team.id}
+                              />
+                              <input
+                                type="hidden"
+                                name="memberId"
+                                value={member.id}
+                              />
+                            </InlineTeamActionForm>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-500">—</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {team.invites.map((invite) => (
+                  <div key={invite.id} className="grid gap-3 px-5 py-4">
                     <div>
                       <p className="font-black text-white">
-                        {member.user.username}
+                        {invite.invitedUser.username}
                       </p>
 
                       <p className="mt-1 break-all text-xs text-gray-500">
-                        {member.user.discordId}
+                        {invite.invitedUser.discordId}
                       </p>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <StatusBadge
-                        status={isMemberLeader ? "Leader" : "Member"}
-                      />
+                      <StatusBadge status="Invited" />
 
-                      {isLeader && !isMemberLeader && !isTeamLocked ? (
-                        <div className="flex flex-wrap gap-2">
-                          <InlineTeamActionForm
-                            action={transferTeamLeadershipInline}
-                            buttonLabel="Make leader"
-                            pendingLabel="Transferring..."
-                            variant="secondary"
-                            confirmTitle="Transfer leadership?"
-                            confirmDescription={`Make ${member.user.username} the new team leader?`}
-                            confirmLabel="Transfer"
-                          >
-                            <input
-                              type="hidden"
-                              name="teamId"
-                              value={team.id}
-                            />
-                            <input
-                              type="hidden"
-                              name="memberId"
-                              value={member.id}
-                            />
-                          </InlineTeamActionForm>
-
-                          <InlineTeamActionForm
-                            action={removeTeamMemberInline}
-                            buttonLabel="Remove"
-                            pendingLabel="Removing..."
-                            variant="danger"
-                            confirmTitle="Remove player?"
-                            confirmDescription={`Remove ${member.user.username} from this team?`}
-                            confirmLabel="Remove"
-                          >
-                            <input
-                              type="hidden"
-                              name="teamId"
-                              value={team.id}
-                            />
-                            <input
-                              type="hidden"
-                              name="memberId"
-                              value={member.id}
-                            />
-                          </InlineTeamActionForm>
-                        </div>
+                      {isLeader && !isTeamLocked ? (
+                        <InlineTeamActionForm
+                          action={cancelTeamInviteInline}
+                          buttonLabel="Cancel"
+                          pendingLabel="Cancelling..."
+                          variant="secondary"
+                          confirmTitle="Cancel invitation?"
+                          confirmDescription={`Cancel the invitation sent to ${invite.invitedUser.username}?`}
+                          confirmLabel="Cancel invite"
+                        >
+                          <input type="hidden" name="teamId" value={team.id} />
+                          <input
+                            type="hidden"
+                            name="inviteId"
+                            value={invite.id}
+                          />
+                        </InlineTeamActionForm>
                       ) : (
                         <span className="text-sm text-gray-500">—</span>
                       )}
                     </div>
                   </div>
-                );
-              })}
+                ))}
 
-              {team.invites.map((invite) => (
-                <div key={invite.id} className="grid gap-3 px-5 py-4">
-                  <div>
-                    <p className="font-black text-white">
-                      {invite.invitedUser.username}
-                    </p>
-
-                    <p className="mt-1 break-all text-xs text-gray-500">
-                      {invite.invitedUser.discordId}
-                    </p>
+                {team.members.length === 0 && team.invites.length === 0 && (
+                  <div className="p-5 text-gray-300">
+                    No players in this team yet.
                   </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <StatusBadge status="Invited" />
-
-                    {isLeader && !isTeamLocked ? (
-                      <InlineTeamActionForm
-                        action={cancelTeamInviteInline}
-                        buttonLabel="Cancel"
-                        pendingLabel="Cancelling..."
-                        variant="secondary"
-                        confirmTitle="Cancel invitation?"
-                        confirmDescription={`Cancel the invitation sent to ${invite.invitedUser.username}?`}
-                        confirmLabel="Cancel invite"
-                      >
-                        <input type="hidden" name="teamId" value={team.id} />
-                        <input
-                          type="hidden"
-                          name="inviteId"
-                          value={invite.id}
-                        />
-                      </InlineTeamActionForm>
-                    ) : (
-                      <span className="text-sm text-gray-500">—</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {team.members.length === 0 && team.invites.length === 0 && (
-                <div className="p-5 text-gray-300">
-                  No players in this team yet.
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            </CollapsibleSection>
           </aside>
         </section>
 

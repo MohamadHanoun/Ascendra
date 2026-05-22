@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -26,7 +27,32 @@ type ProfilePageProps = {
   }>;
 };
 
+type SnapshotMember = {
+  userId?: string;
+  username?: string;
+  discordId?: string;
+};
+
 const games = ["Valorant", "League of Legends", "CS2", "Dota2"];
+
+function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
+  if (!Array.isArray(snapshotMembers)) {
+    return [];
+  }
+
+  return snapshotMembers
+    .filter((member): member is Record<string, unknown> => {
+      return Boolean(member) && typeof member === "object";
+    })
+    .map((member) => ({
+      userId: typeof member.userId === "string" ? member.userId : undefined,
+      username:
+        typeof member.username === "string" ? member.username : undefined,
+      discordId:
+        typeof member.discordId === "string" ? member.discordId : undefined,
+    }))
+    .filter((member) => Boolean(member.userId));
+}
 
 function Pill({
   label,
@@ -81,18 +107,6 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function PanelTitle({ label, title }: { label: string; title: string }) {
-  return (
-    <div className="border-b border-white/10 px-5 py-4">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-        {label}
-      </p>
-
-      <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
-    </div>
-  );
-}
-
 function Avatar({
   username,
   avatar,
@@ -119,6 +133,45 @@ function Avatar({
   );
 }
 
+function CollapsibleSection({
+  label,
+  title,
+  meta,
+  children,
+  defaultOpen = false,
+}: {
+  label: string;
+  title: string;
+  meta?: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  return (
+    <details
+      open={defaultOpen}
+      className="group overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20"
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition hover:bg-white/[0.035]">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+            {label}
+          </p>
+
+          <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
+
+          {meta && <p className="mt-1 text-sm text-gray-500">{meta}</p>}
+        </div>
+
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition group-open:rotate-45 group-hover:border-violet-400/30 group-hover:text-white">
+          +
+        </span>
+      </summary>
+
+      <div className="border-t border-white/10">{children}</div>
+    </details>
+  );
+}
+
 export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const params = await searchParams;
   const session = await auth();
@@ -137,7 +190,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     redirect("/login");
   }
 
-  const [teams, invitations, tournamentResults] = await Promise.all([
+  const [teams, invitations, allTournamentResults] = await Promise.all([
     prisma.team.findMany({
       where: {
         members: {
@@ -173,17 +226,26 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     }),
 
     prisma.tournamentResult.findMany({
-      where: {
+      select: {
+        id: true,
+        placement: true,
+        points: true,
+        note: true,
+        awardedAt: true,
+        snapshotTeamName: true,
+        snapshotTeamGame: true,
+        snapshotMembers: true,
         team: {
-          members: {
-            some: {
-              userId: user.id,
+          select: {
+            name: true,
+            game: true,
+            members: {
+              select: {
+                userId: true,
+              },
             },
           },
         },
-      },
-      include: {
-        team: true,
         tournament: {
           select: {
             id: true,
@@ -192,13 +254,26 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           },
         },
       },
-      orderBy: [
-        {
-          awardedAt: "desc",
-        },
-      ],
+      orderBy: {
+        awardedAt: "desc",
+      },
     }),
   ]);
+
+  const tournamentResults = allTournamentResults.filter((result) => {
+    const snapshotMembers = parseSnapshotMembers(result.snapshotMembers);
+
+    const resultUserIds =
+      snapshotMembers.length > 0
+        ? snapshotMembers
+            .map((member) => member.userId)
+            .filter((memberUserId): memberUserId is string =>
+              Boolean(memberUserId),
+            )
+        : result.team.members.map((member) => member.userId);
+
+    return resultUserIds.includes(user.id);
+  });
 
   const tournamentPoints = tournamentResults.reduce(
     (total, result) => total + result.points,
@@ -273,11 +348,18 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         </section>
 
         <section className="relative -mt-14 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:grid-cols-[minmax(0,1fr)_320px] lg:px-10">
-          <div className="grid min-w-0 gap-8">
-            {invitations.length > 0 && (
-              <section className="overflow-hidden rounded-3xl border border-yellow-400/20 bg-yellow-500/[0.05] shadow-2xl shadow-black/20">
-                <PanelTitle label="Invitations" title="Pending team invites" />
-
+          <div className="grid min-w-0 content-start gap-5">
+            <CollapsibleSection
+              label="Invitations"
+              title="Team invitations"
+              meta={`${invitations.length} pending invitation${invitations.length === 1 ? "" : "s"}`}
+              defaultOpen={invitations.length > 0}
+            >
+              {invitations.length === 0 ? (
+                <div className="p-5 text-sm text-gray-400">
+                  No pending invitations.
+                </div>
+              ) : (
                 <div className="divide-y divide-white/10">
                   {invitations.map((invite) => (
                     <div
@@ -341,17 +423,20 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     </div>
                   ))}
                 </div>
-              </section>
-            )}
+              )}
+            </CollapsibleSection>
 
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              <PanelTitle label="My teams" title="Team overview" />
-
+            <CollapsibleSection
+              label="My teams"
+              title="Team overview"
+              meta={`${teams.length} team${teams.length === 1 ? "" : "s"}`}
+              defaultOpen
+            >
               {teams.length === 0 ? (
                 <div className="p-5">
                   <p className="font-black text-white">No teams yet</p>
                   <p className="mt-2 text-sm text-gray-400">
-                    Create your first team below.
+                    Create your first team from the section below.
                   </p>
                 </div>
               ) : (
@@ -402,11 +487,17 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   })}
                 </div>
               )}
-            </section>
+            </CollapsibleSection>
 
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              <PanelTitle label="Create team" title="Start a new team" />
-
+            <CollapsibleSection
+              label="Create team"
+              title="Start a new team"
+              meta={
+                user.isGuildMember
+                  ? "Create a team for a specific game."
+                  : "Discord membership required."
+              }
+            >
               {user.isGuildMember ? (
                 <form action={createTeam} className="grid gap-5 p-5">
                   <div className="relative z-50 grid gap-5 md:grid-cols-2">
@@ -462,24 +553,23 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   </div>
                 </div>
               )}
-            </section>
+            </CollapsibleSection>
           </div>
 
           <aside>
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 lg:sticky lg:top-24">
-              <div className="grid gap-4 border-b border-white/10 p-5">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                  Progress
-                </p>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <Stat label="Points" value={tournamentPoints} />
-                  <Stat label="Results" value={tournamentResults.length} />
-                  <Stat
-                    label="Best"
-                    value={bestPlacement ? `#${bestPlacement}` : "-"}
-                  />
-                </div>
+            <CollapsibleSection
+              label="Progress"
+              title="Tournament history"
+              meta={`${tournamentResults.length} result${tournamentResults.length === 1 ? "" : "s"} · ${tournamentPoints} points`}
+              defaultOpen
+            >
+              <div className="grid grid-cols-3 gap-5 border-b border-white/10 p-5">
+                <Stat label="Points" value={tournamentPoints} />
+                <Stat label="Results" value={tournamentResults.length} />
+                <Stat
+                  label="Best"
+                  value={bestPlacement ? `#${bestPlacement}` : "-"}
+                />
               </div>
 
               {tournamentResults.length === 0 ? (
@@ -491,6 +581,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   {tournamentResults.slice(0, 6).map((result) => {
                     const teamName =
                       result.snapshotTeamName || result.team.name;
+                    const teamGame =
+                      result.snapshotTeamGame || result.team.game;
 
                     return (
                       <Link
@@ -503,7 +595,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                         </p>
 
                         <p className="mt-1 text-xs text-gray-400">
-                          {teamName} · {result.tournament.game}
+                          {teamName} · {teamGame}
                         </p>
 
                         <div className="mt-3 flex flex-wrap gap-2">
@@ -515,7 +607,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   })}
                 </div>
               )}
-            </section>
+            </CollapsibleSection>
           </aside>
         </section>
 

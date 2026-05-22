@@ -49,20 +49,14 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function CompactStat({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number;
-}) {
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+    <div>
       <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
         {label}
       </p>
 
-      <p className="mt-1 text-xl font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
     </div>
   );
 }
@@ -112,6 +106,30 @@ function SectionTitle({ title, count }: { title: string; count: number }) {
         {count} tournament{count === 1 ? "" : "s"}
       </span>
     </div>
+  );
+}
+
+function TournamentArchive({
+  title,
+  count,
+  children,
+}: {
+  title: string;
+  count: number;
+  children: ReactNode;
+}) {
+  return (
+    <details className="group grid gap-4">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-3xl border border-white/10 bg-white/[0.04] px-5 py-4 shadow-2xl shadow-black/20 transition hover:bg-white/[0.06]">
+        <SectionTitle title={title} count={count} />
+
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition group-open:rotate-45 group-hover:border-violet-400/30 group-hover:text-white">
+          +
+        </span>
+      </summary>
+
+      <div className="mt-4">{children}</div>
+    </details>
   );
 }
 
@@ -185,18 +203,25 @@ export default async function TournamentsPage({
     (tournament) => tournament.status === "open",
   ).length;
 
-  const endedTournamentCount = tournaments.filter(
-    (tournament) => tournament.status === "ended",
-  ).length;
-
   const openRegistrationCount = tournaments.filter(
     (tournament) =>
       tournament.registrationStatus === "open" &&
       !["ended", "cancelled"].includes(tournament.status),
   ).length;
 
-  const gamesCount = new Set(tournaments.map((tournament) => tournament.game))
-    .size;
+  const approvedSlotsCount = tournaments.reduce(
+    (total, tournament) =>
+      total +
+      tournament.registrations.filter(
+        (registration) => registration.status === "approved",
+      ).length,
+    0,
+  );
+
+  const applicationsCount = tournaments.reduce(
+    (total, tournament) => total + tournament.registrations.length,
+    0,
+  );
 
   function renderTournamentList(
     list: typeof sortedTournaments,
@@ -232,7 +257,7 @@ export default async function TournamentsPage({
             return (
               <article
                 key={tournament.id}
-                className="grid gap-5 p-5 transition hover:bg-white/[0.035] lg:grid-cols-[180px_minmax(0,1fr)_230px_140px] lg:items-center"
+                className="grid gap-5 p-5 transition hover:bg-white/[0.035] lg:grid-cols-[160px_minmax(0,1fr)_230px_130px] lg:items-center"
               >
                 <div
                   className="h-28 rounded-2xl border border-white/10 bg-cover bg-center lg:h-24"
@@ -274,9 +299,9 @@ export default async function TournamentsPage({
                   />
 
                   <p className="text-xs font-bold text-gray-500">
-                    {remainingSlots} approved slot
-                    {remainingSlots === 1 ? "" : "s"} left · {applications}{" "}
-                    application{applications === 1 ? "" : "s"}
+                    {remainingSlots} slot{remainingSlots === 1 ? "" : "s"} left
+                    · {applications} application
+                    {applications === 1 ? "" : "s"}
                   </p>
 
                   {tournament.results.length > 0 && (
@@ -340,11 +365,11 @@ export default async function TournamentsPage({
         <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
           <ProfileNotice message={params.message} error={params.error} />
 
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <CompactStat label="Total" value={tournaments.length} />
-            <CompactStat label="Open" value={openTournamentCount} />
-            <CompactStat label="Registration" value={openRegistrationCount} />
-            <CompactStat label="Ended" value={endedTournamentCount} />
+          <section className="grid gap-5 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 md:grid-cols-2 xl:grid-cols-4">
+            <Stat label="Tournaments" value={tournaments.length} />
+            <Stat label="Open" value={openTournamentCount} />
+            <Stat label="Applications" value={applicationsCount} />
+            <Stat label="Approved" value={approvedSlotsCount} />
           </section>
 
           {tournaments.length === 0 ? (
@@ -367,25 +392,24 @@ export default async function TournamentsPage({
               </section>
 
               {archivedTournaments.length > 0 && (
-                <section className="grid gap-4">
-                  <SectionTitle
-                    title="Tournament archive"
-                    count={archivedTournaments.length}
-                  />
-
+                <TournamentArchive
+                  title="Tournament archive"
+                  count={archivedTournaments.length}
+                >
                   {renderTournamentList(
                     archivedTournaments,
                     "No archived tournaments yet.",
                   )}
-                </section>
+                </TournamentArchive>
               )}
             </>
           )}
 
-          {gamesCount > 0 && (
+          {openRegistrationCount > 0 && (
             <p className="text-sm text-gray-500">
-              Showing tournaments across {gamesCount} game
-              {gamesCount === 1 ? "" : "s"}.
+              {openRegistrationCount} tournament
+              {openRegistrationCount === 1 ? "" : "s"} currently accept team
+              applications.
             </p>
           )}
         </section>
