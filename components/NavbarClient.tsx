@@ -11,14 +11,7 @@ const mainLinks = [
   { href: "/tournaments", label: "Tournaments" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/announcements", label: "News" },
-];
-
-const mobileSecondaryLinks = [
-  { href: "/about", label: "About" },
-  { href: "/rules", label: "Rules" },
-  { href: "/roles", label: "Roles" },
-  { href: "/staff", label: "Staff" },
-  { href: "/stats", label: "Stats" },
+  { href: "/community", label: "Community" },
 ];
 
 const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "";
@@ -227,6 +220,7 @@ export default function NavbarClient({
                         <p className="truncate text-sm font-bold text-white">
                           {userName || "Ascendra Player"}
                         </p>
+
                         <p className="text-xs text-gray-400">Signed in</p>
                       </div>
                     </div>
@@ -380,23 +374,6 @@ export default function NavbarClient({
                     Join Discord
                   </a>
                 )}
-
-                <div className="mt-3 border-t border-white/10 pt-4">
-                  <p className="mb-2 px-4 text-xs font-black uppercase tracking-[0.16em] text-gray-500">
-                    More
-                  </p>
-
-                  <div className="grid gap-2">
-                    {mobileSecondaryLinks.map((link) => (
-                      <NavLink
-                        key={link.href}
-                        href={link.href}
-                        label={link.label}
-                        onClick={() => setIsMenuOpen(false)}
-                      />
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
           </div>
