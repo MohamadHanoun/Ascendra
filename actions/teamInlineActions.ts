@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
 
@@ -12,7 +14,122 @@ export type TeamInlineActionResult = {
   redirectTo?: string;
 };
 
+type TeamInlineActionMessages = {
+  loginRequired: string;
+  teamNotFound: string;
+  onlyLeaderCanManage: string;
+  teamLocked: string;
+  teamIdNameGameRequired: string;
+  invalidGame: string;
+  teamUpdated: string;
+  teamAndPlayerRequired: string;
+  playerNotFound: string;
+  playerMustJoinDiscord: string;
+  alreadyLeader: string;
+  alreadyInTeam: string;
+  alreadyPendingInvite: string;
+  inviteSent: string;
+  teamIdMemberIdRequired: string;
+  memberNotFound: string;
+  leaderCannotBeRemoved: string;
+  memberRemoved: string;
+  teamIdMissing: string;
+  leaderCannotLeave: string;
+  notTeamMember: string;
+  leftTeam: string;
+  alreadyTeamLeader: string;
+  leadershipTransferred: string;
+  teamIdInviteIdRequired: string;
+  invitationNotFound: string;
+  invitationWrongTeam: string;
+  onlyLeaderCanCancelInvites: string;
+  invitationCancelled: string;
+  teamSubmitted: string;
+  cannotDeleteWithHistory: string;
+  teamDeleted: string;
+};
+
 const allowedGames = ["Valorant", "League of Legends", "CS2", "Dota2"];
+
+const actionMessages: Record<Locale, TeamInlineActionMessages> = {
+  en: {
+    loginRequired: "Please login first.",
+    teamNotFound: "Team was not found.",
+    onlyLeaderCanManage: "Only the team leader can manage this team.",
+    teamLocked: 'This team is locked while registered for "{title}".',
+    teamIdNameGameRequired: "Team ID, name, and game are required.",
+    invalidGame: "Invalid game selected.",
+    teamUpdated: "Team updated successfully.",
+    teamAndPlayerRequired: "Team and player are required.",
+    playerNotFound:
+      "Player was not found. They must login to the website first.",
+    playerMustJoinDiscord:
+      "This player must join the Ascendra Discord server first.",
+    alreadyLeader: "You are already the leader of this team.",
+    alreadyInTeam: "This player is already in the team.",
+    alreadyPendingInvite: "This player already has a pending invitation.",
+    inviteSent: "Invitation sent successfully.",
+    teamIdMemberIdRequired: "Team ID and member ID are required.",
+    memberNotFound: "Team member was not found.",
+    leaderCannotBeRemoved: "The team leader cannot be removed.",
+    memberRemoved: "Team member removed.",
+    teamIdMissing: "Team ID is missing.",
+    leaderCannotLeave:
+      "The team leader cannot leave the team. Delete the team or transfer leadership first.",
+    notTeamMember: "You are not a member of this team.",
+    leftTeam: "You left the team.",
+    alreadyTeamLeader: "You are already the team leader.",
+    leadershipTransferred: "Leadership transferred to {username}.",
+    teamIdInviteIdRequired: "Team ID and invite ID are required.",
+    invitationNotFound: "Invitation was not found.",
+    invitationWrongTeam: "This invitation does not belong to this team.",
+    onlyLeaderCanCancelInvites: "Only the team leader can cancel invitations.",
+    invitationCancelled: "Invitation cancelled.",
+    teamSubmitted: "Team submitted for admin review.",
+    cannotDeleteWithHistory:
+      "This team cannot be deleted because it has tournament history.",
+    teamDeleted: "Team deleted.",
+  },
+
+  ar: {
+    loginRequired: "يرجى تسجيل الدخول أولًا.",
+    teamNotFound: "لم يتم العثور على الفريق.",
+    onlyLeaderCanManage: "يمكن لقائد الفريق فقط إدارة هذا الفريق.",
+    teamLocked: 'هذا الفريق مقفل أثناء تسجيله في بطولة "{title}".',
+    teamIdNameGameRequired: "معرّف الفريق والاسم واللعبة مطلوبة.",
+    invalidGame: "تم اختيار لعبة غير صالحة.",
+    teamUpdated: "تم تحديث الفريق بنجاح.",
+    teamAndPlayerRequired: "الفريق واللاعب مطلوبان.",
+    playerNotFound:
+      "لم يتم العثور على اللاعب. يجب أن يسجل الدخول إلى الموقع أولًا.",
+    playerMustJoinDiscord:
+      "يجب على هذا اللاعب الانضمام إلى Discord الخاص بـ Ascendra أولًا.",
+    alreadyLeader: "أنت بالفعل قائد هذا الفريق.",
+    alreadyInTeam: "هذا اللاعب موجود بالفعل في الفريق.",
+    alreadyPendingInvite: "هذا اللاعب لديه دعوة معلقة بالفعل.",
+    inviteSent: "تم إرسال الدعوة بنجاح.",
+    teamIdMemberIdRequired: "معرّف الفريق ومعرّف العضو مطلوبان.",
+    memberNotFound: "لم يتم العثور على عضو الفريق.",
+    leaderCannotBeRemoved: "لا يمكن إزالة قائد الفريق.",
+    memberRemoved: "تمت إزالة عضو الفريق.",
+    teamIdMissing: "معرّف الفريق مفقود.",
+    leaderCannotLeave:
+      "لا يمكن لقائد الفريق مغادرة الفريق. احذف الفريق أو انقل القيادة أولًا.",
+    notTeamMember: "أنت لست عضوًا في هذا الفريق.",
+    leftTeam: "لقد غادرت الفريق.",
+    alreadyTeamLeader: "أنت بالفعل قائد الفريق.",
+    leadershipTransferred: "تم نقل القيادة إلى {username}.",
+    teamIdInviteIdRequired: "معرّف الفريق ومعرّف الدعوة مطلوبان.",
+    invitationNotFound: "لم يتم العثور على الدعوة.",
+    invitationWrongTeam: "هذه الدعوة لا تنتمي إلى هذا الفريق.",
+    onlyLeaderCanCancelInvites: "يمكن لقائد الفريق فقط إلغاء الدعوات.",
+    invitationCancelled: "تم إلغاء الدعوة.",
+    teamSubmitted: "تم إرسال الفريق لمراجعة الإدارة.",
+    cannotDeleteWithHistory:
+      "لا يمكن حذف هذا الفريق لأنه يملك سجلًا في البطولات.",
+    teamDeleted: "تم حذف الفريق.",
+  },
+};
 
 function success(message: string, redirectTo?: string): TeamInlineActionResult {
   return {
@@ -32,6 +149,23 @@ function fail(message: string, redirectTo?: string): TeamInlineActionResult {
 
 function getTeamId(formData: FormData) {
   return String(formData.get("teamId") || formData.get("id") || "").trim();
+}
+
+function formatMessage(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{${key}}`, value),
+    template,
+  );
+}
+
+function profileMessageRedirect(message: string) {
+  return `/profile?message=${encodeURIComponent(message)}`;
+}
+
+async function getMessages() {
+  const locale = await getLocale();
+
+  return actionMessages[locale];
 }
 
 async function publishProfileUpdate(payload: {
@@ -88,7 +222,11 @@ async function getCurrentUser() {
   });
 }
 
-async function getLeaderTeam(teamId: string, userId: string) {
+async function getLeaderTeam(
+  teamId: string,
+  userId: string,
+  messages: TeamInlineActionMessages,
+) {
   const team = await prisma.team.findUnique({
     where: {
       id: teamId,
@@ -102,14 +240,14 @@ async function getLeaderTeam(teamId: string, userId: string) {
   if (!team) {
     return {
       team: null,
-      error: "Team was not found.",
+      error: messages.teamNotFound,
     };
   }
 
   if (team.leaderId !== userId) {
     return {
       team: null,
-      error: "Only the team leader can manage this team.",
+      error: messages.onlyLeaderCanManage,
     };
   }
 
@@ -145,14 +283,19 @@ async function getActiveTeamRegistration(teamId: string) {
   });
 }
 
-async function getBlockingActiveRegistration(teamId: string) {
+async function getBlockingActiveRegistration(
+  teamId: string,
+  messages: TeamInlineActionMessages,
+) {
   const activeRegistration = await getActiveTeamRegistration(teamId);
 
   if (!activeRegistration) {
     return null;
   }
 
-  return `This team is locked while registered for "${activeRegistration.tournament.title}".`;
+  return formatMessage(messages.teamLocked, {
+    title: activeRegistration.tournament.title,
+  });
 }
 
 async function getTournamentHistory(teamId: string) {
@@ -179,10 +322,11 @@ async function getTournamentHistory(teamId: string) {
 export async function updateTeamInline(
   formData: FormData,
 ): Promise<TeamInlineActionResult> {
+  const messages = await getMessages();
   const user = await getCurrentUser();
 
   if (!user) {
-    return fail("Please login first.", "/login");
+    return fail(messages.loginRequired, "/login");
   }
 
   const teamId = getTeamId(formData);
@@ -190,20 +334,23 @@ export async function updateTeamInline(
   const game = String(formData.get("game") || "").trim();
 
   if (!teamId || !name || !game) {
-    return fail("Team ID, name, and game are required.");
+    return fail(messages.teamIdNameGameRequired);
   }
 
   if (!allowedGames.includes(game)) {
-    return fail("Invalid game selected.");
+    return fail(messages.invalidGame);
   }
 
-  const { team, error } = await getLeaderTeam(teamId, user.id);
+  const { team, error } = await getLeaderTeam(teamId, user.id, messages);
 
   if (!team) {
-    return fail(error || "Team was not found.");
+    return fail(error || messages.teamNotFound);
   }
 
-  const activeRegistrationError = await getBlockingActiveRegistration(team.id);
+  const activeRegistrationError = await getBlockingActiveRegistration(
+    team.id,
+    messages,
+  );
 
   if (activeRegistrationError) {
     return fail(activeRegistrationError);
@@ -231,32 +378,36 @@ export async function updateTeamInline(
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${updatedTeam.id}`);
 
-  return success("Team updated successfully.");
+  return success(messages.teamUpdated);
 }
 
 export async function invitePlayerToTeamInline(
   formData: FormData,
 ): Promise<TeamInlineActionResult> {
+  const messages = await getMessages();
   const user = await getCurrentUser();
 
   if (!user) {
-    return fail("Please login first.", "/login");
+    return fail(messages.loginRequired, "/login");
   }
 
   const teamId = getTeamId(formData);
   const player = String(formData.get("player") || "").trim();
 
   if (!teamId || !player) {
-    return fail("Team and player are required.");
+    return fail(messages.teamAndPlayerRequired);
   }
 
-  const { team, error } = await getLeaderTeam(teamId, user.id);
+  const { team, error } = await getLeaderTeam(teamId, user.id, messages);
 
   if (!team) {
-    return fail(error || "Team was not found.");
+    return fail(error || messages.teamNotFound);
   }
 
-  const activeRegistrationError = await getBlockingActiveRegistration(team.id);
+  const activeRegistrationError = await getBlockingActiveRegistration(
+    team.id,
+    messages,
+  );
 
   if (activeRegistrationError) {
     return fail(activeRegistrationError);
@@ -279,15 +430,15 @@ export async function invitePlayerToTeamInline(
   });
 
   if (!invitedUser) {
-    return fail("Player was not found. They must login to the website first.");
+    return fail(messages.playerNotFound);
   }
 
   if (!invitedUser.isGuildMember) {
-    return fail("This player must join the Ascendra Discord server first.");
+    return fail(messages.playerMustJoinDiscord);
   }
 
   if (invitedUser.id === user.id) {
-    return fail("You are already the leader of this team.");
+    return fail(messages.alreadyLeader);
   }
 
   const existingMember = await prisma.teamMember.findUnique({
@@ -300,7 +451,7 @@ export async function invitePlayerToTeamInline(
   });
 
   if (existingMember) {
-    return fail("This player is already in the team.");
+    return fail(messages.alreadyInTeam);
   }
 
   const existingInvite = await prisma.teamInvite.findUnique({
@@ -313,7 +464,7 @@ export async function invitePlayerToTeamInline(
   });
 
   if (existingInvite?.status === "pending") {
-    return fail("This player already has a pending invitation.");
+    return fail(messages.alreadyPendingInvite);
   }
 
   const invite = existingInvite
@@ -347,32 +498,36 @@ export async function invitePlayerToTeamInline(
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
-  return success("Invitation sent successfully.");
+  return success(messages.inviteSent);
 }
 
 export async function removeTeamMemberInline(
   formData: FormData,
 ): Promise<TeamInlineActionResult> {
+  const messages = await getMessages();
   const user = await getCurrentUser();
 
   if (!user) {
-    return fail("Please login first.", "/login");
+    return fail(messages.loginRequired, "/login");
   }
 
   const teamId = getTeamId(formData);
   const memberId = String(formData.get("memberId") || "").trim();
 
   if (!teamId || !memberId) {
-    return fail("Team ID and member ID are required.");
+    return fail(messages.teamIdMemberIdRequired);
   }
 
-  const { team, error } = await getLeaderTeam(teamId, user.id);
+  const { team, error } = await getLeaderTeam(teamId, user.id, messages);
 
   if (!team) {
-    return fail(error || "Team was not found.");
+    return fail(error || messages.teamNotFound);
   }
 
-  const activeRegistrationError = await getBlockingActiveRegistration(team.id);
+  const activeRegistrationError = await getBlockingActiveRegistration(
+    team.id,
+    messages,
+  );
 
   if (activeRegistrationError) {
     return fail(activeRegistrationError);
@@ -385,11 +540,11 @@ export async function removeTeamMemberInline(
   });
 
   if (!member || member.teamId !== team.id) {
-    return fail("Team member was not found.");
+    return fail(messages.memberNotFound);
   }
 
   if (member.userId === user.id || member.role === "leader") {
-    return fail("The team leader cannot be removed.");
+    return fail(messages.leaderCannotBeRemoved);
   }
 
   await prisma.teamMember.delete({
@@ -410,22 +565,23 @@ export async function removeTeamMemberInline(
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
-  return success("Team member removed.");
+  return success(messages.memberRemoved);
 }
 
 export async function leaveTeamInline(
   formData: FormData,
 ): Promise<TeamInlineActionResult> {
+  const messages = await getMessages();
   const user = await getCurrentUser();
 
   if (!user) {
-    return fail("Please login first.", "/login");
+    return fail(messages.loginRequired, "/login");
   }
 
   const teamId = getTeamId(formData);
 
   if (!teamId) {
-    return fail("Team ID is missing.");
+    return fail(messages.teamIdMissing);
   }
 
   const team = await prisma.team.findUnique({
@@ -438,16 +594,17 @@ export async function leaveTeamInline(
   });
 
   if (!team) {
-    return fail("Team was not found.");
+    return fail(messages.teamNotFound);
   }
 
   if (team.leaderId === user.id) {
-    return fail(
-      "The team leader cannot leave the team. Delete the team or transfer leadership first.",
-    );
+    return fail(messages.leaderCannotLeave);
   }
 
-  const activeRegistrationError = await getBlockingActiveRegistration(team.id);
+  const activeRegistrationError = await getBlockingActiveRegistration(
+    team.id,
+    messages,
+  );
 
   if (activeRegistrationError) {
     return fail(activeRegistrationError);
@@ -463,7 +620,7 @@ export async function leaveTeamInline(
   });
 
   if (!membership) {
-    return fail("You are not a member of this team.");
+    return fail(messages.notTeamMember);
   }
 
   await prisma.teamMember.delete({
@@ -481,35 +638,36 @@ export async function leaveTeamInline(
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
-  return success(
-    "You left the team.",
-    "/profile?message=You%20left%20the%20team.",
-  );
+  return success(messages.leftTeam, profileMessageRedirect(messages.leftTeam));
 }
 
 export async function transferTeamLeadershipInline(
   formData: FormData,
 ): Promise<TeamInlineActionResult> {
+  const messages = await getMessages();
   const user = await getCurrentUser();
 
   if (!user) {
-    return fail("Please login first.", "/login");
+    return fail(messages.loginRequired, "/login");
   }
 
   const teamId = getTeamId(formData);
   const memberId = String(formData.get("memberId") || "").trim();
 
   if (!teamId || !memberId) {
-    return fail("Team ID and member ID are required.");
+    return fail(messages.teamIdMemberIdRequired);
   }
 
-  const { team, error } = await getLeaderTeam(teamId, user.id);
+  const { team, error } = await getLeaderTeam(teamId, user.id, messages);
 
   if (!team) {
-    return fail(error || "Team was not found.");
+    return fail(error || messages.teamNotFound);
   }
 
-  const activeRegistrationError = await getBlockingActiveRegistration(team.id);
+  const activeRegistrationError = await getBlockingActiveRegistration(
+    team.id,
+    messages,
+  );
 
   if (activeRegistrationError) {
     return fail(activeRegistrationError);
@@ -525,11 +683,11 @@ export async function transferTeamLeadershipInline(
   });
 
   if (!targetMember || targetMember.teamId !== team.id) {
-    return fail("Team member was not found.");
+    return fail(messages.memberNotFound);
   }
 
   if (targetMember.userId === user.id) {
-    return fail("You are already the team leader.");
+    return fail(messages.alreadyTeamLeader);
   }
 
   await prisma.$transaction([
@@ -571,23 +729,28 @@ export async function transferTeamLeadershipInline(
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
-  return success(`Leadership transferred to ${targetMember.user.username}.`);
+  return success(
+    formatMessage(messages.leadershipTransferred, {
+      username: targetMember.user.username,
+    }),
+  );
 }
 
 export async function cancelTeamInviteInline(
   formData: FormData,
 ): Promise<TeamInlineActionResult> {
+  const messages = await getMessages();
   const user = await getCurrentUser();
 
   if (!user) {
-    return fail("Please login first.", "/login");
+    return fail(messages.loginRequired, "/login");
   }
 
   const teamId = getTeamId(formData);
   const inviteId = String(formData.get("inviteId") || "").trim();
 
   if (!teamId || !inviteId) {
-    return fail("Team ID and invite ID are required.");
+    return fail(messages.teamIdInviteIdRequired);
   }
 
   const invite = await prisma.teamInvite.findUnique({
@@ -600,19 +763,20 @@ export async function cancelTeamInviteInline(
   });
 
   if (!invite) {
-    return fail("Invitation was not found.");
+    return fail(messages.invitationNotFound);
   }
 
   if (invite.teamId !== teamId) {
-    return fail("This invitation does not belong to this team.");
+    return fail(messages.invitationWrongTeam);
   }
 
   if (invite.team.leaderId !== user.id) {
-    return fail("Only the team leader can cancel invitations.");
+    return fail(messages.onlyLeaderCanCancelInvites);
   }
 
   const activeRegistrationError = await getBlockingActiveRegistration(
     invite.teamId,
+    messages,
   );
 
   if (activeRegistrationError) {
@@ -635,28 +799,29 @@ export async function cancelTeamInviteInline(
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${invite.teamId}`);
 
-  return success("Invitation cancelled.");
+  return success(messages.invitationCancelled);
 }
 
 export async function submitTeamForReviewInline(
   formData: FormData,
 ): Promise<TeamInlineActionResult> {
+  const messages = await getMessages();
   const user = await getCurrentUser();
 
   if (!user) {
-    return fail("Please login first.", "/login");
+    return fail(messages.loginRequired, "/login");
   }
 
   const teamId = getTeamId(formData);
 
   if (!teamId) {
-    return fail("Team ID is missing.");
+    return fail(messages.teamIdMissing);
   }
 
-  const { team, error } = await getLeaderTeam(teamId, user.id);
+  const { team, error } = await getLeaderTeam(teamId, user.id, messages);
 
   if (!team) {
-    return fail(error || "Team was not found.");
+    return fail(error || messages.teamNotFound);
   }
 
   await prisma.team.update({
@@ -680,31 +845,35 @@ export async function submitTeamForReviewInline(
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
-  return success("Team submitted for admin review.");
+  return success(messages.teamSubmitted);
 }
 
 export async function deleteTeamInline(
   formData: FormData,
 ): Promise<TeamInlineActionResult> {
+  const messages = await getMessages();
   const user = await getCurrentUser();
 
   if (!user) {
-    return fail("Please login first.", "/login");
+    return fail(messages.loginRequired, "/login");
   }
 
   const teamId = getTeamId(formData);
 
   if (!teamId) {
-    return fail("Team ID is missing.");
+    return fail(messages.teamIdMissing);
   }
 
-  const { team, error } = await getLeaderTeam(teamId, user.id);
+  const { team, error } = await getLeaderTeam(teamId, user.id, messages);
 
   if (!team) {
-    return fail(error || "Team was not found.");
+    return fail(error || messages.teamNotFound);
   }
 
-  const activeRegistrationError = await getBlockingActiveRegistration(team.id);
+  const activeRegistrationError = await getBlockingActiveRegistration(
+    team.id,
+    messages,
+  );
 
   if (activeRegistrationError) {
     return fail(activeRegistrationError);
@@ -713,9 +882,7 @@ export async function deleteTeamInline(
   const history = await getTournamentHistory(team.id);
 
   if (history.hasHistory) {
-    return fail(
-      "This team cannot be deleted because it has tournament history.",
-    );
+    return fail(messages.cannotDeleteWithHistory);
   }
 
   const memberUserIds = team.members.map((member) => member.userId);
@@ -734,5 +901,8 @@ export async function deleteTeamInline(
 
   revalidatePath("/profile");
 
-  return success("Team deleted.", "/profile?message=Team%20deleted.");
+  return success(
+    messages.teamDeleted,
+    profileMessageRedirect(messages.teamDeleted),
+  );
 }
