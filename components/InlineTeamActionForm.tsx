@@ -16,9 +16,12 @@ type InlineTeamActionFormProps = {
   buttonLabel: string;
   pendingLabel?: string;
   variant?: "primary" | "success" | "danger" | "secondary";
+  confirmEyebrow?: string;
   confirmTitle?: string;
   confirmDescription?: string;
   confirmLabel?: string;
+  confirmFallbackTitle?: string;
+  cancelLabel?: string;
 };
 
 function getButtonClass(variant: InlineTeamActionFormProps["variant"]) {
@@ -55,9 +58,12 @@ export default function InlineTeamActionForm({
   buttonLabel,
   pendingLabel = "Working...",
   variant = "primary",
+  confirmEyebrow = "Confirmation",
   confirmTitle,
   confirmDescription,
   confirmLabel = "Confirm",
+  confirmFallbackTitle = "Confirm action",
+  cancelLabel = "Cancel",
 }: InlineTeamActionFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -138,11 +144,11 @@ export default function InlineTeamActionForm({
           <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#11121d] shadow-2xl shadow-black/40">
             <div className="border-b border-white/10 px-6 py-5">
               <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
-                Confirmation
+                {confirmEyebrow}
               </p>
 
               <h2 className="mt-2 text-2xl font-black text-white">
-                {confirmTitle || "Confirm action"}
+                {confirmTitle || confirmFallbackTitle}
               </h2>
 
               {confirmDescription && (
@@ -158,7 +164,7 @@ export default function InlineTeamActionForm({
                 onClick={() => setConfirmOpen(false)}
                 className="rounded-xl border border-white/10 px-5 py-3 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
               >
-                Cancel
+                {cancelLabel}
               </button>
 
               <button
