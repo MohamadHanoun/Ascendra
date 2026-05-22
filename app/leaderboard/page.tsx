@@ -72,6 +72,30 @@ function FilterButton({
   );
 }
 
+function TypeButton({
+  href,
+  label,
+  active,
+}: {
+  href: string;
+  label: string;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      scroll={false}
+      className={`rounded-2xl border px-5 py-3 text-sm font-black transition ${
+        active
+          ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-200 shadow-lg shadow-emerald-950/20"
+          : "border-white/10 bg-black/20 text-gray-300 hover:border-emerald-400/25 hover:bg-white/10 hover:text-white"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
+
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
@@ -376,12 +400,12 @@ export default async function LeaderboardPage({
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(139,92,246,0.16)_0%,transparent_32%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
 
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[460px] overflow-hidden">
+        <section className="relative min-h-[500px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -390,45 +414,47 @@ export default async function LeaderboardPage({
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.64)_44%,rgba(7,8,17,0.80)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent via-[#070811]/80 to-[#070811]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.94)_0%,rgba(7,8,17,0.66)_44%,rgba(7,8,17,0.84)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.16),transparent_34%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-b from-transparent via-[#070811]/80 to-[#070811]" />
 
-          <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
+          <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-32 pt-20 lg:px-10 2xl:px-14">
+            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-emerald-300">
               Competitive standings
             </p>
 
-            <h1 className="text-5xl font-black uppercase tracking-tight text-white md:text-7xl">
+            <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
               Leaderboard
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              Rankings based on saved tournament results and snapshot rosters.
+              Track the strongest players and teams by official tournament
+              points.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <FilterButton
+              <TypeButton
                 href={buildLeaderboardHref(selectedGame, "players")}
-                label="Players"
+                label="Player ranking"
                 active={selectedType === "players"}
               />
 
-              <FilterButton
+              <TypeButton
                 href={buildLeaderboardHref(selectedGame, "teams")}
-                label="Teams"
+                label="Team ranking"
                 active={selectedType === "teams"}
               />
             </div>
           </div>
         </section>
 
-        <section className="relative -mt-20 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
+        <section className="relative -mt-24 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
           <LeaderboardRealtime />
 
           <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/20 backdrop-blur">
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">
                   {selectedType === "players" ? "Players" : "Teams"}
                 </p>
 
@@ -437,6 +463,10 @@ export default async function LeaderboardPage({
                     ? "Overall standings"
                     : `${selectedGame} standings`}
                 </h2>
+
+                <p className="mt-2 text-sm text-gray-500">
+                  Ranked by points, results, then best placement.
+                </p>
               </div>
 
               <div className="flex flex-wrap gap-2">
