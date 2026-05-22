@@ -1,130 +1,162 @@
 import type { Metadata } from "next";
 
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
+import LegalPolicyPage, {
+  type LegalHighlight,
+  type LegalSection,
+} from "@/components/LegalPolicyPage";
 
 export const metadata: Metadata = {
-  title: "Cookie Policy | Ascendra",
-  description: "Ascendra cookie policy.",
+  title: "Cookie Policy | AscendraHub",
+  description:
+    "Cookie Policy for AscendraHub authentication, sessions, security, and similar browser storage.",
 };
 
-const sections = [
+const highlights: LegalHighlight[] = [
+  { label: "Current use", value: "Necessary cookies only" },
+  { label: "Advertising", value: "No advertising cookies currently" },
+  { label: "Betting tracking", value: "Never used" },
+  { label: "Contact", value: "support@ascendrahub.com" },
+];
+
+const sections: LegalSection[] = [
   {
+    id: "what-cookies-are",
     title: "What cookies are",
-    description:
-      "Cookies are small files stored in your browser to help websites remember information and provide essential functionality.",
+    intro:
+      "Cookies are small text files stored in your browser by websites you visit.",
+    paragraphs: [
+      "Cookies and similar technologies can help websites remember sessions, keep users logged in, protect forms from abuse, store basic preferences, and maintain security.",
+      "Similar technologies may include local storage, session storage, authentication tokens, server-side sessions, and security identifiers.",
+    ],
   },
   {
-    title: "How Ascendra uses cookies",
-    description:
-      "Ascendra may use cookies or similar storage for login sessions, authentication, security, user preferences, and basic website functionality.",
+    id: "how-we-use-cookies",
+    title: "How AscendraHub uses cookies",
+    intro:
+      "AscendraHub currently uses cookies and similar technologies only for necessary platform functions.",
+    bullets: [
+      "Authentication and login sessions.",
+      "Discord OAuth sign-in flow.",
+      "Session security and anti-abuse protection.",
+      "Basic platform functionality.",
+      "Keeping account-based features working while you use the website.",
+      "Technical debugging and reliability when required by hosting or authentication systems.",
+    ],
   },
   {
-    title: "Discord login",
-    description:
-      "When you sign in with Discord, authentication cookies may be used to keep you logged in and connect your Discord account with your Ascendra profile.",
+    id: "necessary-cookies",
+    title: "Necessary cookies",
+    intro:
+      "Necessary cookies are required for core website functions and do not require the same type of optional consent as analytics or advertising cookies.",
+    bullets: [
+      "Session cookies: used to keep you signed in.",
+      "Authentication cookies: used to connect your Discord login with your AscendraHub session.",
+      "Security cookies or tokens: used to protect login, forms, and account actions.",
+      "Preference storage: may be used for essential display or functionality preferences.",
+    ],
+    note: "If you block necessary cookies, login, profile pages, team creation, invitations, registrations, and admin features may not work correctly.",
   },
   {
-    title: "Managing cookies",
-    description:
-      "You can clear or block cookies in your browser settings. Some Ascendra features, such as login and profile management, may not work correctly if required cookies are disabled.",
+    id: "discord-login",
+    title: "Discord login cookies",
+    intro: "AscendraHub uses Discord login for account-based features.",
+    paragraphs: [
+      "When you choose to sign in with Discord, your browser may be redirected to Discord and back to AscendraHub. During this process, cookies or similar authentication data may be used to complete the login securely.",
+      "Discord may set its own cookies or process data when you use Discord services. Discord's own cookie and privacy practices are controlled by Discord, not AscendraHub.",
+    ],
   },
   {
-    title: "Updates",
-    description:
-      "This cookie policy may be updated as Ascendra develops and new platform features are added.",
+    id: "analytics",
+    title: "Analytics and measurement",
+    intro:
+      "AscendraHub does not currently intentionally use Google Analytics, advertising pixels, or marketing tracking cookies.",
+    bullets: [
+      "No advertising cookies are intentionally used at this stage.",
+      "No betting, gambling, or wagering tracking is used and will not be used.",
+      "Infrastructure providers may process limited technical logs for security, performance, error handling, and delivery of the website.",
+      "If AscendraHub later adds analytics, measurement, or optional tracking, this Cookie Policy will be updated before or at the time those tools are introduced.",
+      "If consent is required for future analytics or optional cookies, AscendraHub should add a cookie consent banner or equivalent control.",
+    ],
+  },
+  {
+    id: "advertising",
+    title: "No advertising, betting, or gambling cookies",
+    intro:
+      "AscendraHub does not use cookies for gambling, betting, wagering, casino activity, or odds-related tracking.",
+    paragraphs: [
+      "AscendraHub is not a gambling or betting platform. Cookies must not be used to support gambling, betting, wagering, match betting, casino-style activity, or related tracking.",
+      "AscendraHub does not currently use advertising cookies, targeted ad cookies, retargeting pixels, or marketing profiling cookies.",
+    ],
+  },
+  {
+    id: "third-party-cookies",
+    title: "Third-party cookies and services",
+    intro:
+      "Some third-party services may set or use cookies when you interact with their services.",
+    bullets: [
+      "Discord may use cookies when you sign in or interact with Discord services.",
+      "Vercel may process technical data related to hosting and delivery of the website.",
+      "Cloudflare may process DNS, security, and traffic-related technical data depending on configuration.",
+      "Your browser, extensions, or device may also store data independently of AscendraHub.",
+      "AscendraHub does not control third-party cookies outside the AscendraHub website.",
+    ],
+  },
+  {
+    id: "cookie-duration",
+    title: "How long cookies last",
+    intro: "Cookie duration depends on the type of cookie or storage used.",
+    bullets: [
+      "Session cookies may expire when you close your browser or after a limited session period.",
+      "Authentication cookies may last longer to keep you signed in.",
+      "Security cookies or tokens may expire automatically after a configured period.",
+      "Third-party cookies are controlled by the third party that sets them.",
+      "If AscendraHub later adds a cookie preference tool, it may store your cookie choices for a limited period.",
+    ],
+  },
+  {
+    id: "manage-cookies",
+    title: "How to manage cookies",
+    intro: "You can manage cookies through your browser settings.",
+    bullets: [
+      "You can delete cookies already stored in your browser.",
+      "You can block cookies for all websites or for selected websites.",
+      "You can use private browsing or browser privacy controls.",
+      "You can disable third-party cookies in many browsers.",
+      "Blocking required cookies may stop login, profile, team, tournament, and admin features from working correctly.",
+    ],
+  },
+  {
+    id: "future-changes",
+    title: "Future changes",
+    intro:
+      "AscendraHub may add new features that change how cookies or similar technologies are used.",
+    bullets: [
+      "Future features may include analytics, email notifications, language preferences, payment-related features, subscriptions, prize verification, uploads, or user settings.",
+      "If non-essential cookies are added, AscendraHub should update this policy and provide consent options where required.",
+      "The latest version of this Cookie Policy will be available on this page.",
+    ],
+  },
+  {
+    id: "contact",
+    title: "Contact",
+    intro: "For cookie, privacy, or account questions, contact AscendraHub.",
+    bullets: [
+      "Email: support@ascendrahub.com.",
+      "Please describe your question clearly and include your Discord username or account information only if needed.",
+    ],
   },
 ];
 
-function LegalSection({
-  index,
-  title,
-  description,
-}: {
-  index: number;
-  title: string;
-  description: string;
-}) {
-  return (
-    <article className="grid gap-3 border-b border-white/10 px-5 py-5 last:border-b-0 md:grid-cols-[80px_minmax(0,1fr)]">
-      <p className="text-sm font-black text-violet-300">
-        {String(index + 1).padStart(2, "0")}
-      </p>
-
-      <div>
-        <h2 className="text-xl font-black text-white">{title}</h2>
-
-        <p className="mt-2 text-sm leading-7 text-gray-400">{description}</p>
-      </div>
-    </article>
-  );
-}
-
 export default function CookiesPage() {
   return (
-    <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
-
-      <div className="relative z-10">
-        <Navbar />
-
-        <section className="relative min-h-[360px] overflow-hidden">
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: 'url("/images/backgrounds/community-hero.webp")',
-            }}
-          />
-
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.94)_0%,rgba(7,8,17,0.70)_48%,rgba(7,8,17,0.86)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
-
-          <div className="relative z-10 mx-auto max-w-[1200px] px-6 pb-24 pt-20 lg:px-10">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
-              Legal
-            </p>
-
-            <h1 className="text-5xl font-black uppercase tracking-tight text-white md:text-6xl">
-              Cookie Policy
-            </h1>
-
-            <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
-              How Ascendra uses cookies and similar browser storage for login
-              and core website features.
-            </p>
-          </div>
-        </section>
-
-        <section className="relative -mt-14 mx-auto grid max-w-[1200px] gap-8 px-6 pb-16 lg:px-10">
-          <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-              Summary
-            </p>
-
-            <h2 className="mt-1 text-xl font-black text-white">
-              Cookies support login and basic functionality.
-            </h2>
-
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-400">
-              Required cookies or similar storage may be needed for
-              authentication, sessions, and core platform features.
-            </p>
-          </section>
-
-          <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-            {sections.map((section, index) => (
-              <LegalSection
-                key={section.title}
-                index={index}
-                title={section.title}
-                description={section.description}
-              />
-            ))}
-          </section>
-        </section>
-
-        <Footer />
-      </div>
-    </main>
+    <LegalPolicyPage
+      title="Cookie Policy"
+      description="How AscendraHub uses cookies and similar technologies for login, authentication, security, sessions, and core website functionality."
+      summaryTitle="AscendraHub currently uses cookies only for essential platform functionality."
+      summaryBody="Cookies and similar technologies help account login, Discord authentication, session security, and core platform features work correctly. AscendraHub does not currently use advertising cookies and does not use gambling, betting, or wagering cookies."
+      lastUpdated="22 May 2026"
+      highlights={highlights}
+      sections={sections}
+    />
   );
 }
