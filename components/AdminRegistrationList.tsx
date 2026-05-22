@@ -21,6 +21,12 @@ type AdminRegistrationListProps = {
 
 type Tone = "green" | "yellow" | "red" | "gray" | "violet";
 
+type SnapshotMember = {
+  userId?: string;
+  username?: string;
+  discordId?: string;
+};
+
 function toneClass(tone: Tone) {
   const styles: Record<Tone, string> = {
     green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
@@ -103,14 +109,14 @@ function DiscordRoleBadge({ status }: { status: string }) {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+    <div>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
         {label}
       </p>
 
-      <p className="mt-1 text-lg font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
     </div>
   );
 }
@@ -124,6 +130,25 @@ function formatDate(date: Date | null) {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
+  if (!Array.isArray(snapshotMembers)) {
+    return [];
+  }
+
+  return snapshotMembers
+    .filter((member): member is Record<string, unknown> => {
+      return Boolean(member) && typeof member === "object";
+    })
+    .map((member) => ({
+      userId: typeof member.userId === "string" ? member.userId : undefined,
+      username:
+        typeof member.username === "string" ? member.username : undefined,
+      discordId:
+        typeof member.discordId === "string" ? member.discordId : undefined,
+    }))
+    .filter((member) => Boolean(member.username || member.userId));
 }
 
 function getReadinessIssues({
@@ -288,6 +313,9 @@ export default async function AdminRegistrationList({
         rejectionReason: true,
         createdAt: true,
         reviewedAt: true,
+        snapshotTeamName: true,
+        snapshotTeamGame: true,
+        snapshotMembers: true,
         discordRoleStatus: true,
         discordRoleName: true,
         discordRoleId: true,
@@ -411,7 +439,7 @@ export default async function AdminRegistrationList({
       <ProfileNotice message={message} error={error} />
       <AdminRegistrationsRealtime />
 
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+      <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
           <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
             Registrations
@@ -422,17 +450,16 @@ export default async function AdminRegistrationList({
           </h1>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
-            Review teams quickly. Details and Discord actions stay hidden until
-            needed.
+            Review teams, approve valid entries, and manage Discord access.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <StatCard label="Total" value={registrations.length} />
-          <StatCard label="Pending" value={pendingCount} />
-          <StatCard label="Approved" value={approvedCount} />
-          <StatCard label="Rejected" value={rejectedCount} />
-          <StatCard label="Bot queue" value={botQueueCount} />
+        <div className="grid grid-cols-2 gap-5 lg:grid-cols-5">
+          <Stat label="Total" value={registrations.length} />
+          <Stat label="Pending" value={pendingCount} />
+          <Stat label="Approved" value={approvedCount} />
+          <Stat label="Rejected" value={rejectedCount} />
+          <Stat label="Bot queue" value={botQueueCount} />
         </div>
       </div>
 
@@ -442,7 +469,7 @@ export default async function AdminRegistrationList({
         </section>
       ) : (
         <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-          <div className="hidden border-b border-white/10 bg-black/25 px-5 py-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_120px_120px_170px] xl:gap-5">
+          <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_120px_120px_170px] xl:gap-5">
             <span>Team</span>
             <span>Tournament</span>
             <span>Status</span>
@@ -454,6 +481,35 @@ export default async function AdminRegistrationList({
             {sortedRegistrations.map((registration) => {
               const approvedTournamentCount =
                 approvedCountByTournament.get(registration.tournamentId) || 0;
+
+              const snapshotMembers = parseSnapshotMembers(
+                registration.snapshotMembers,
+              );
+
+              const displayedTeamName =
+                registration.snapshotTeamName || registration.team.name;
+
+              const displayedTeamGame =
+                registration.snapshotTeamGame || registration.team.game;
+
+              const displayedMembers =
+                snapshotMembers.length > 0
+                  ? snapshotMembers.map((member) => ({
+                      id:
+                        member.userId ||
+                        `${member.username}-${member.discordId}`,
+                      userId: member.userId || "",
+                      username: member.username || "Unknown player",
+                      discordId: member.discordId || "Snapshot member",
+                      isLeader: member.userId === registration.team.leaderId,
+                    }))
+                  : registration.team.members.map((member) => ({
+                      id: member.id,
+                      userId: member.userId,
+                      username: member.user.username,
+                      discordId: member.user.discordId,
+                      isLeader: member.userId === registration.team.leaderId,
+                    }));
 
               const readinessIssues = getReadinessIssues({
                 teamGame: registration.team.game,
@@ -489,30 +545,31 @@ export default async function AdminRegistrationList({
               return (
                 <article
                   key={registration.id}
-                  className="grid gap-4 p-5 transition hover:bg-white/[0.035]"
+                  className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.035]"
                 >
                   <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_120px_120px_170px] xl:items-center xl:gap-5">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="truncate text-xl font-black text-white">
-                          {registration.team.name}
+                          {displayedTeamName}
                         </h2>
 
-                        <Pill tone="violet">{registration.team.game}</Pill>
+                        <Pill tone="violet">{displayedTeamGame}</Pill>
                       </div>
 
                       <p className="mt-1 text-sm text-gray-400">
-                        {registration.team.members.length} player
-                        {registration.team.members.length === 1 ? "" : "s"} ·
-                        leader {registration.team.leader.username}
+                        {displayedMembers.length} player
+                        {displayedMembers.length === 1 ? "" : "s"} · leader{" "}
+                        {registration.team.leader.username}
                       </p>
 
-                      {registration.team.invites.length > 0 && (
-                        <p className="mt-1 text-sm font-bold text-yellow-300">
-                          {registration.team.invites.length} pending invite
-                          {registration.team.invites.length === 1 ? "" : "s"}
-                        </p>
-                      )}
+                      {registration.team.invites.length > 0 &&
+                        registration.status === "registered" && (
+                          <p className="mt-1 text-sm font-bold text-yellow-300">
+                            {registration.team.invites.length} pending invite
+                            {registration.team.invites.length === 1 ? "" : "s"}
+                          </p>
+                        )}
                     </div>
 
                     <div className="min-w-0">
@@ -557,7 +614,7 @@ export default async function AdminRegistrationList({
                         )}
 
                       {registration.status === "approved" && (
-                        <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/[0.06] px-4 py-2 text-center text-sm font-black text-emerald-300/80">
+                        <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/[0.06] px-4 py-2 text-center text-sm font-black text-emerald-300">
                           Approved
                         </div>
                       )}
@@ -588,19 +645,17 @@ export default async function AdminRegistrationList({
                         </p>
 
                         <div className="mt-3 divide-y divide-white/10">
-                          {registration.team.members.length === 0 ? (
+                          {displayedMembers.length === 0 ? (
                             <p className="py-2 text-sm text-gray-400">
                               No players in this team.
                             </p>
                           ) : (
-                            registration.team.members.map((member) => (
+                            displayedMembers.map((member) => (
                               <PlayerLine
                                 key={member.id}
-                                username={member.user.username}
-                                discordId={member.user.discordId}
-                                isLeader={
-                                  member.userId === registration.team.leaderId
-                                }
+                                username={member.username}
+                                discordId={member.discordId}
+                                isLeader={member.isLeader}
                               />
                             ))
                           )}
@@ -667,7 +722,7 @@ export default async function AdminRegistrationList({
                             pendingLabel="Rejecting..."
                             variant="danger"
                             confirmTitle="Reject registration?"
-                            confirmDescription={`Write a clear reason for rejecting ${registration.team.name}.`}
+                            confirmDescription={`Write a clear reason for rejecting ${displayedTeamName}.`}
                             confirmLabel="Reject"
                             textareaName="rejectionReason"
                             textareaLabel="Reason"
@@ -689,7 +744,7 @@ export default async function AdminRegistrationList({
                             pendingLabel="Cancelling..."
                             variant="secondary"
                             confirmTitle="Cancel registration?"
-                            confirmDescription={`Cancel ${registration.team.name}'s registration?`}
+                            confirmDescription={`Cancel ${displayedTeamName}'s registration?`}
                             confirmLabel="Cancel registration"
                           >
                             <input
@@ -707,7 +762,7 @@ export default async function AdminRegistrationList({
                             pendingLabel="Queueing..."
                             variant="success"
                             confirmTitle="Sync Discord access?"
-                            confirmDescription={`Queue Discord role and voice room sync for ${registration.team.name}.`}
+                            confirmDescription={`Queue Discord role and voice room sync for ${displayedTeamName}.`}
                             confirmLabel="Queue sync"
                           >
                             <input
@@ -729,7 +784,7 @@ export default async function AdminRegistrationList({
                             pendingLabel="Queueing..."
                             variant="danger"
                             confirmTitle="Remove Discord access?"
-                            confirmDescription={`Queue removal of Discord access for ${registration.team.name}.`}
+                            confirmDescription={`Queue removal of Discord access for ${displayedTeamName}.`}
                             confirmLabel="Queue removal"
                           >
                             <input

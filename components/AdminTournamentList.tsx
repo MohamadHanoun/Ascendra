@@ -43,14 +43,14 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+    <div>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
         {label}
       </p>
 
-      <p className="mt-1 text-lg font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
     </div>
   );
 }
@@ -67,7 +67,7 @@ function ProgressBar({
 
   return (
     <div className="grid gap-2">
-      <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-400">
+      <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-500">
         <span>
           {approvedSlots}/{maxSlots} approved
         </span>
@@ -77,7 +77,7 @@ function ProgressBar({
 
       <div className="h-2 overflow-hidden rounded-full bg-white/10">
         <div
-          className="h-full rounded-full bg-violet-500 shadow-lg shadow-violet-500/30"
+          className="h-full rounded-full bg-violet-500 shadow-lg shadow-violet-500/25"
           style={{
             width: `${progress}%`,
           }}
@@ -147,10 +147,6 @@ export default async function AdminTournamentList() {
     (tournament) => tournament.status === "open",
   ).length;
 
-  const endedTournaments = tournaments.filter(
-    (tournament) => tournament.status === "ended",
-  ).length;
-
   const pendingApplications = tournaments.reduce(
     (total, tournament) =>
       total +
@@ -160,21 +156,23 @@ export default async function AdminTournamentList() {
     0,
   );
 
+  const totalApproved = tournaments.reduce(
+    (total, tournament) =>
+      total +
+      tournament.registrations.filter(
+        (registration) => registration.status === "approved",
+      ).length,
+    0,
+  );
+
   const totalResults = tournaments.reduce(
     (total, tournament) => total + tournament.results.length,
     0,
   );
 
-  const totalPoints = tournaments.reduce(
-    (total, tournament) =>
-      total +
-      tournament.results.reduce((sum, result) => sum + result.points, 0),
-    0,
-  );
-
   return (
     <section className="grid gap-6">
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+      <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
           <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
             Manage tournaments
@@ -185,17 +183,15 @@ export default async function AdminTournamentList() {
           </h2>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
-            Open a tournament to manage details, registrations, and final
-            results.
+            Open a tournament to manage details, registrations, and results.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <StatCard label="Total" value={tournaments.length} />
-          <StatCard label="Open" value={openTournaments} />
-          <StatCard label="Ended" value={endedTournaments} />
-          <StatCard label="Pending" value={pendingApplications} />
-          <StatCard label="Results" value={totalResults} />
+        <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
+          <Stat label="Tournaments" value={tournaments.length} />
+          <Stat label="Open" value={openTournaments} />
+          <Stat label="Approved" value={totalApproved} />
+          <Stat label="Pending" value={pendingApplications} />
         </div>
       </div>
 
@@ -204,8 +200,8 @@ export default async function AdminTournamentList() {
           No tournaments found.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-          <div className="hidden border-b border-white/10 bg-black/25 px-5 py-4 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[100px_minmax(0,1fr)_170px_220px_170px_120px] xl:gap-5">
+        <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+          <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[90px_minmax(0,1fr)_170px_220px_150px_120px] xl:gap-5">
             <span>Image</span>
             <span>Tournament</span>
             <span>Status</span>
@@ -247,12 +243,12 @@ export default async function AdminTournamentList() {
               return (
                 <article
                   key={tournament.id}
-                  className="grid gap-4 p-5 transition hover:bg-white/[0.035] xl:grid-cols-[100px_minmax(0,1fr)_170px_220px_170px_120px] xl:items-center xl:gap-5"
+                  className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.035] xl:grid-cols-[90px_minmax(0,1fr)_170px_220px_150px_120px] xl:items-center xl:gap-5"
                 >
                   <div
-                    className="h-20 rounded-2xl border border-white/10 bg-cover bg-center xl:w-[100px]"
+                    className="h-16 rounded-2xl border border-white/10 bg-cover bg-center xl:w-[90px]"
                     style={{
-                      backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.05), rgba(7,8,17,0.60)), url("${tournamentImage}")`,
+                      backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.06), rgba(7,8,17,0.62)), url("${tournamentImage}")`,
                     }}
                   />
 
@@ -261,13 +257,9 @@ export default async function AdminTournamentList() {
                       {tournament.title}
                     </h3>
 
-                    <p className="mt-1 text-sm font-bold text-violet-300">
-                      {tournament.game}
-                    </p>
-
                     <p className="mt-1 text-sm text-gray-400">
-                      {tournament.date} · {tournament.teamSize}v
-                      {tournament.teamSize}
+                      {tournament.game} · {tournament.date} ·{" "}
+                      {tournament.teamSize}v{tournament.teamSize}
                     </p>
                   </div>
 
@@ -283,8 +275,8 @@ export default async function AdminTournamentList() {
                     />
 
                     <p className="text-xs font-bold text-gray-500">
-                      {remainingSlots} approved slot
-                      {remainingSlots === 1 ? "" : "s"} left
+                      {remainingSlots} slot{remainingSlots === 1 ? "" : "s"}{" "}
+                      left
                     </p>
                   </div>
 
@@ -294,7 +286,7 @@ export default async function AdminTournamentList() {
                       {applications === 1 ? "" : "s"}
                     </p>
 
-                    <p className="text-gray-400">
+                    <p className="text-gray-500">
                       {pendingCount} pending · {rejectedCount} rejected
                     </p>
 
@@ -309,7 +301,7 @@ export default async function AdminTournamentList() {
 
                   <Link
                     href={`/admin/tournaments/${tournament.id}`}
-                    className="rounded-xl bg-violet-600 px-5 py-3 text-center text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
+                    className="rounded-xl bg-violet-600 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-violet-500"
                   >
                     Manage
                   </Link>
@@ -317,13 +309,13 @@ export default async function AdminTournamentList() {
               );
             })}
           </div>
-        </div>
+        </section>
       )}
 
-      {totalPoints > 0 && (
+      {totalResults > 0 && (
         <p className="text-sm text-gray-500">
-          Total awarded tournament points:{" "}
-          <span className="font-black text-white">{totalPoints}</span>
+          Saved tournament results:{" "}
+          <span className="font-black text-white">{totalResults}</span>
         </p>
       )}
     </section>
