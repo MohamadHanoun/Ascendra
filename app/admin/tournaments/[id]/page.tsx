@@ -110,47 +110,37 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function SectionTitle({ label, title }: { label: string; title: string }) {
-  return (
-    <div className="border-b border-white/10 px-5 py-4">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-        {label}
-      </p>
-
-      <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
-    </div>
-  );
-}
-
-function ProgressBar({
-  approvedSlots,
-  maxSlots,
+function CollapsibleSection({
+  label,
+  title,
+  meta,
+  children,
 }: {
-  approvedSlots: number;
-  maxSlots: number;
+  label: string;
+  title: string;
+  meta?: string;
+  children: ReactNode;
 }) {
-  const progress =
-    maxSlots > 0 ? Math.min((approvedSlots / maxSlots) * 100, 100) : 0;
-
   return (
-    <div className="grid gap-2">
-      <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-500">
-        <span>
-          {approvedSlots}/{maxSlots} approved
+    <details className="group overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition hover:bg-white/[0.035]">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+            {label}
+          </p>
+
+          <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
+
+          {meta && <p className="mt-1 text-sm text-gray-500">{meta}</p>}
+        </div>
+
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition group-open:rotate-45 group-hover:border-violet-400/30 group-hover:text-white">
+          +
         </span>
+      </summary>
 
-        <span>{Math.round(progress)}%</span>
-      </div>
-
-      <div className="h-2 overflow-hidden rounded-full bg-white/10">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25"
-          style={{
-            width: `${progress}%`,
-          }}
-        />
-      </div>
-    </div>
+      <div className="border-t border-white/10 p-5">{children}</div>
+    </details>
   );
 }
 
@@ -185,6 +175,38 @@ function formatDate(date: Date) {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+function ProgressBar({
+  approvedSlots,
+  maxSlots,
+}: {
+  approvedSlots: number;
+  maxSlots: number;
+}) {
+  const progress =
+    maxSlots > 0 ? Math.min((approvedSlots / maxSlots) * 100, 100) : 0;
+
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-500">
+        <span>
+          {approvedSlots}/{maxSlots} approved
+        </span>
+
+        <span>{Math.round(progress)}%</span>
+      </div>
+
+      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25"
+          style={{
+            width: `${progress}%`,
+          }}
+        />
+      </div>
+    </div>
+  );
 }
 
 export default async function ManageTournamentPage({
@@ -269,7 +291,7 @@ export default async function ManageTournamentPage({
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[540px] overflow-hidden">
+        <section className="relative min-h-[480px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -280,7 +302,7 @@ export default async function ManageTournamentPage({
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.62)_48%,rgba(7,8,17,0.82)_100%)]" />
           <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
-          <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-28 pt-20 lg:px-10">
+          <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
             <Link
               href="/admin?tab=tournaments"
               className="mb-8 inline-flex rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
@@ -319,168 +341,174 @@ export default async function ManageTournamentPage({
           </div>
         </section>
 
-        <section className="relative -mt-16 mx-auto max-w-[1440px] px-6 pb-8 lg:px-10">
+        <section className="relative -mt-12 mx-auto max-w-[1440px] px-6 pb-8 lg:px-10">
           <AdminTabNavigation activeTab="tournaments" />
         </section>
 
         <section className="mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-10">
-          <div className="grid gap-8">
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              <SectionTitle label="Details" title="Tournament setup" />
+          <div className="grid content-start gap-5">
+            <CollapsibleSection
+              label="Details"
+              title="Tournament setup"
+              meta="Edit title, game, image, date, prize, slots, and team size."
+            >
+              <InlineAdminTournamentForm
+                action={updateTournamentInline}
+                buttonLabel="Save changes"
+                pendingLabel="Saving..."
+                className="grid gap-5"
+              >
+                <input
+                  type="hidden"
+                  name="tournamentId"
+                  value={tournament.id}
+                />
+                <input type="hidden" name="status" value={tournament.status} />
+                <input
+                  type="hidden"
+                  name="registrationStatus"
+                  value={tournament.registrationStatus}
+                />
 
-              <div className="p-5">
-                <InlineAdminTournamentForm
-                  action={updateTournamentInline}
-                  buttonLabel="Save changes"
-                  pendingLabel="Saving..."
-                  className="grid gap-5"
-                >
-                  <input
-                    type="hidden"
-                    name="tournamentId"
-                    value={tournament.id}
-                  />
-                  <input
-                    type="hidden"
-                    name="status"
-                    value={tournament.status}
-                  />
-                  <input
-                    type="hidden"
-                    name="registrationStatus"
-                    value={tournament.registrationStatus}
-                  />
+                <label className="grid gap-2">
+                  <FieldLabel>Title</FieldLabel>
 
+                  <input
+                    name="title"
+                    required
+                    defaultValue={tournament.title}
+                    className={inputClass()}
+                  />
+                </label>
+
+                <AdminTournamentImageFields
+                  games={games}
+                  defaultGame={tournament.game}
+                  defaultImageUrl={tournament.imageUrl}
+                />
+
+                <label className="grid gap-2">
+                  <FieldLabel>Description</FieldLabel>
+
+                  <textarea
+                    name="description"
+                    required
+                    defaultValue={tournament.description}
+                    className={`${inputClass()} min-h-28 resize-y text-sm leading-6`}
+                  />
+                </label>
+
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                   <label className="grid gap-2">
-                    <FieldLabel>Title</FieldLabel>
+                    <FieldLabel>Date</FieldLabel>
 
                     <input
-                      name="title"
+                      name="date"
                       required
-                      defaultValue={tournament.title}
+                      defaultValue={tournament.date}
                       className={inputClass()}
                     />
                   </label>
 
-                  <AdminTournamentImageFields
-                    games={games}
-                    defaultGame={tournament.game}
-                    defaultImageUrl={tournament.imageUrl}
-                  />
-
                   <label className="grid gap-2">
-                    <FieldLabel>Description</FieldLabel>
+                    <FieldLabel>Prize</FieldLabel>
 
-                    <textarea
-                      name="description"
+                    <input
+                      name="prize"
                       required
-                      defaultValue={tournament.description}
-                      className={`${inputClass()} min-h-28 resize-y text-sm leading-6`}
+                      defaultValue={tournament.prize}
+                      className={inputClass()}
                     />
                   </label>
 
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <label className="grid gap-2">
-                      <FieldLabel>Date</FieldLabel>
+                  <label className="grid gap-2">
+                    <FieldLabel>Max slots</FieldLabel>
 
-                      <input
-                        name="date"
-                        required
-                        defaultValue={tournament.date}
-                        className={inputClass()}
-                      />
-                    </label>
+                    <input
+                      name="maxSlots"
+                      type="number"
+                      min="1"
+                      required
+                      defaultValue={tournament.maxSlots}
+                      className={inputClass()}
+                    />
+                  </label>
 
-                    <label className="grid gap-2">
-                      <FieldLabel>Prize</FieldLabel>
+                  <label className="grid gap-2">
+                    <FieldLabel>Team size</FieldLabel>
 
-                      <input
-                        name="prize"
-                        required
-                        defaultValue={tournament.prize}
-                        className={inputClass()}
-                      />
-                    </label>
+                    <input
+                      name="teamSize"
+                      type="number"
+                      min="1"
+                      required
+                      defaultValue={tournament.teamSize}
+                      className={inputClass()}
+                    />
+                  </label>
+                </div>
+              </InlineAdminTournamentForm>
+            </CollapsibleSection>
 
-                    <label className="grid gap-2">
-                      <FieldLabel>Max slots</FieldLabel>
-
-                      <input
-                        name="maxSlots"
-                        type="number"
-                        min="1"
-                        required
-                        defaultValue={tournament.maxSlots}
-                        className={inputClass()}
-                      />
-                    </label>
-
-                    <label className="grid gap-2">
-                      <FieldLabel>Team size</FieldLabel>
-
-                      <input
-                        name="teamSize"
-                        type="number"
-                        min="1"
-                        required
-                        defaultValue={tournament.teamSize}
-                        className={inputClass()}
-                      />
-                    </label>
-                  </div>
-                </InlineAdminTournamentForm>
-              </div>
-            </section>
-
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              <SectionTitle label="Registrations" title="Applications" />
-
+            <CollapsibleSection
+              label="Registrations"
+              title="Applications"
+              meta={`${tournament.registrations.length} total applications · ${approvedRegistrations.length} approved · ${pendingRegistrations.length} pending`}
+            >
               {tournament.registrations.length === 0 ? (
-                <div className="p-5 text-sm text-gray-400">
+                <div className="text-sm text-gray-400">
                   No registrations yet.
                 </div>
               ) : (
-                <div className="divide-y divide-white/10">
-                  {tournament.registrations.map((registration) => (
-                    <article
-                      key={registration.id}
-                      className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_120px_140px] md:items-center"
-                    >
-                      <div>
-                        <p className="font-black text-white">
-                          {registration.snapshotTeamName ||
-                            registration.team.name}
-                        </p>
-
-                        <p className="mt-1 text-sm text-gray-400">
-                          {registration.snapshotTeamGame ||
-                            registration.team.game}
-                        </p>
-
-                        {registration.rejectionReason && (
-                          <p className="mt-2 text-sm text-red-300">
-                            {registration.rejectionReason}
+                <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+                  <div className="divide-y divide-white/10">
+                    {tournament.registrations.map((registration) => (
+                      <article
+                        key={registration.id}
+                        className="grid gap-4 px-4 py-4 md:grid-cols-[minmax(0,1fr)_120px_140px] md:items-center"
+                      >
+                        <div>
+                          <p className="font-black text-white">
+                            {registration.snapshotTeamName ||
+                              registration.team.name}
                           </p>
-                        )}
-                      </div>
 
-                      <StatusBadge status={registration.status} />
+                          <p className="mt-1 text-sm text-gray-400">
+                            {registration.snapshotTeamGame ||
+                              registration.team.game}
+                          </p>
 
-                      <p className="text-sm text-gray-500">
-                        {formatDate(registration.createdAt)}
-                      </p>
-                    </article>
-                  ))}
+                          {registration.rejectionReason && (
+                            <p className="mt-2 text-sm text-red-300">
+                              {registration.rejectionReason}
+                            </p>
+                          )}
+                        </div>
+
+                        <StatusBadge status={registration.status} />
+
+                        <p className="text-sm text-gray-500">
+                          {formatDate(registration.createdAt)}
+                        </p>
+                      </article>
+                    ))}
+                  </div>
                 </div>
               )}
-            </section>
+            </CollapsibleSection>
 
-            <AdminTournamentResultsPanel
-              tournamentId={tournament.id}
-              tournamentTitle={tournament.title}
-              registrations={tournament.registrations}
-              results={tournament.results}
-            />
+            <CollapsibleSection
+              label="Results"
+              title="Tournament standings"
+              meta={`${tournament.results.length} saved results · ${tournamentPoints} total points`}
+            >
+              <AdminTournamentResultsPanel
+                tournamentId={tournament.id}
+                tournamentTitle={tournament.title}
+                registrations={tournament.registrations}
+                results={tournament.results}
+              />
+            </CollapsibleSection>
           </div>
 
           <aside className="grid content-start gap-5 lg:sticky lg:top-24">
@@ -502,12 +530,16 @@ export default async function ManageTournamentPage({
               </p>
             </section>
 
-            <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-                Registration
-              </p>
-
-              <div className="mt-4 grid gap-2">
+            <CollapsibleSection
+              label="Registration"
+              title="Controls"
+              meta={
+                isEnded || isCancelled
+                  ? "Closed"
+                  : tournament.registrationStatus
+              }
+            >
+              <div className="grid gap-2">
                 {isEnded || isCancelled ? (
                   <div className="rounded-xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-black text-gray-400">
                     Registration closed.
@@ -530,14 +562,14 @@ export default async function ManageTournamentPage({
                   />
                 )}
               </div>
-            </section>
+            </CollapsibleSection>
 
-            <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
-                Tournament status
-              </p>
-
-              <div className="mt-4 grid gap-2">
+            <CollapsibleSection
+              label="Status"
+              title="Tournament status"
+              meta={`Current: ${tournament.status}`}
+            >
+              <div className="grid gap-2">
                 {tournament.status !== "upcoming" && (
                   <SmallAction
                     action={setTournamentUpcomingInline}
@@ -587,14 +619,26 @@ export default async function ManageTournamentPage({
                   />
                 )}
               </div>
-            </section>
+            </CollapsibleSection>
 
-            <section className="rounded-3xl border border-red-500/20 bg-red-500/5 p-5">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-red-300">
-                Danger zone
-              </p>
+            <details className="group overflow-hidden rounded-3xl border border-red-500/20 bg-red-500/5 shadow-2xl shadow-black/20">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition hover:bg-red-500/10">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-red-300">
+                    Danger zone
+                  </p>
 
-              <div className="mt-4">
+                  <h2 className="mt-1 text-xl font-black text-white">
+                    Delete tournament
+                  </h2>
+                </div>
+
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-red-400/20 bg-black/25 text-lg font-black text-red-200 transition group-open:rotate-45">
+                  +
+                </span>
+              </summary>
+
+              <div className="border-t border-red-500/20 p-5">
                 <InlineAdminTournamentForm
                   action={deleteTournamentInline}
                   buttonLabel="Delete tournament"
@@ -612,7 +656,7 @@ export default async function ManageTournamentPage({
                   />
                 </InlineAdminTournamentForm>
               </div>
-            </section>
+            </details>
           </aside>
         </section>
 
