@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import LegalPolicyPage, {
-  type LegalHighlight,
   type LegalSection,
 } from "@/components/LegalPolicyPage";
 
@@ -11,12 +10,6 @@ export const metadata: Metadata = {
     "Cookie Policy for AscendraHub authentication, sessions, security, and similar browser storage.",
 };
 
-const highlights: LegalHighlight[] = [
-  { label: "Current use", value: "Necessary cookies only" },
-  { label: "Advertising", value: "No advertising cookies currently" },
-  { label: "Betting tracking", value: "Never used" },
-  { label: "Contact", value: "support@ascendrahub.com" },
-];
 
 const sections: LegalSection[] = [
   {
@@ -152,10 +145,8 @@ export default function CookiesPage() {
     <LegalPolicyPage
       title="Cookie Policy"
       description="How AscendraHub uses cookies and similar technologies for login, authentication, security, sessions, and core website functionality."
-      summaryTitle="AscendraHub currently uses cookies only for essential platform functionality."
-      summaryBody="Cookies and similar technologies help account login, Discord authentication, session security, and core platform features work correctly. AscendraHub does not currently use advertising cookies and does not use gambling, betting, or wagering cookies."
       lastUpdated="22 May 2026"
-      highlights={highlights}
+      effectiveDate="22 May 2026"
       sections={sections}
     />
   );

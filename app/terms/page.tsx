@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import LegalPolicyPage, {
-  type LegalHighlight,
   type LegalSection,
 } from "@/components/LegalPolicyPage";
 
@@ -10,13 +9,6 @@ export const metadata: Metadata = {
   description:
     "Terms of Service for AscendraHub, Ascendra tournaments, teams, rankings, and Discord-related community features.",
 };
-
-const highlights: LegalHighlight[] = [
-  { label: "Operator", value: "Omar Hanoun, Växjö, Sweden" },
-  { label: "Platform", value: "AscendraHub / Ascendra" },
-  { label: "Access", value: "Discord login required for participation" },
-  { label: "Contact", value: "support@ascendrahub.com" },
-];
 
 const sections: LegalSection[] = [
   {
@@ -34,13 +26,13 @@ const sections: LegalSection[] = [
     id: "operator",
     title: "Operator and legal contact",
     intro:
-      "AscendraHub is currently operated as an individual project by Omar Hanoun, based in Växjö, Sweden.",
+      "AscendraHub / Ascendra is currently operated by Omar Hanoun as an individual project based in Växjö, Sweden.",
     bullets: [
       "Platform name: AscendraHub / Ascendra.",
-      "Operator: Omar Hanoun.",
-      "Current legal status: individual project, with the possibility of being operated by a Swedish registered business in the future.",
+      "Current operator: Omar Hanoun.",
+      "Location: Växjö, Sweden.",
       "Legal and support contact: support@ascendrahub.com.",
-      "If the operator changes to a registered business, these Terms will be updated with the correct legal entity information.",
+      "AscendraHub may later be operated through a Swedish registered business. If that happens, these Terms will be updated with the correct legal entity information.",
     ],
   },
   {
@@ -283,10 +275,8 @@ export default function TermsPage() {
     <LegalPolicyPage
       title="Terms of Service"
       description="The rules for using AscendraHub, participating in Ascendra tournaments, managing teams, using Discord-related features, and interacting with the community."
-      summaryTitle="Use AscendraHub fairly, safely, and competitively."
-      summaryBody="These Terms explain what users can expect from AscendraHub, what AscendraHub expects from users, how tournaments and teams are managed, and which conduct is not allowed. AscendraHub is independent, free to use at this stage, and does not allow gambling, betting, or wagering of any kind."
       lastUpdated="22 May 2026"
-      highlights={highlights}
+      effectiveDate="22 May 2026"
       sections={sections}
     />
   );

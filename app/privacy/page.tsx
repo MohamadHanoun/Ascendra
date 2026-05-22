@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import LegalPolicyPage, {
-  type LegalHighlight,
   type LegalSection,
 } from "@/components/LegalPolicyPage";
 
@@ -11,12 +10,7 @@ export const metadata: Metadata = {
     "Privacy Policy for AscendraHub and Ascendra account, team, tournament, Discord login, and leaderboard data.",
 };
 
-const highlights: LegalHighlight[] = [
-  { label: "Controller", value: "Omar Hanoun, Växjö, Sweden" },
-  { label: "Platform", value: "AscendraHub / Ascendra" },
-  { label: "Legal contact", value: "support@ascendrahub.com" },
-  { label: "Core law", value: "GDPR and Swedish applicable law" },
-];
+
 
 const sections: LegalSection[] = [
   {
@@ -264,10 +258,8 @@ export default function PrivacyPage() {
     <LegalPolicyPage
       title="Privacy Policy"
       description="How AscendraHub handles Discord login data, profiles, teams, tournament registrations, results, rankings, technical logs, and privacy rights."
-      summaryTitle="Your data is used to run the platform and protect tournament integrity."
-      summaryBody="AscendraHub uses personal data for Discord login, teams, tournament participation, moderation, results, rankings, security, and support. The platform does not sell personal data and does not intentionally read Discord private messages."
       lastUpdated="22 May 2026"
-      highlights={highlights}
+      effectiveDate="22 May 2026"
       sections={sections}
     />
   );

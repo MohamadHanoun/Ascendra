@@ -1,12 +1,5 @@
-import Link from "next/link";
-
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
-
-export type LegalHighlight = {
-  label: string;
-  value: string;
-};
 
 export type LegalSection = {
   id: string;
@@ -20,75 +13,61 @@ export type LegalSection = {
 type LegalPolicyPageProps = {
   title: string;
   description: string;
-  summaryTitle: string;
-  summaryBody: string;
   lastUpdated: string;
-  highlights: LegalHighlight[];
+  effectiveDate: string;
   sections: LegalSection[];
 };
 
-const legalLinks = [
-  { href: "/terms", label: "Terms" },
-  { href: "/privacy", label: "Privacy" },
-  { href: "/cookies", label: "Cookies" },
+const legalPages = [
+  { href: "/terms", label: "Terms of Service" },
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/cookies", label: "Cookie Policy" },
 ];
 
-function HighlightCard({ label, value }: LegalHighlight) {
+function LegalPageTabs() {
   return (
-    <article className="rounded-2xl border border-white/10 bg-black/25 p-4">
-      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-gray-500">
-        {label}
-      </p>
-
-      <p className="mt-2 text-sm font-black text-white">{value}</p>
-    </article>
+    <nav className="flex flex-wrap gap-2 border-b border-white/10 pb-5">
+      {legalPages.map((page) => (
+        <a
+          key={page.href}
+          href={page.href}
+          className="rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-sm font-bold text-gray-300 transition hover:border-violet-400/30 hover:bg-violet-500/10 hover:text-white"
+        >
+          {page.label}
+        </a>
+      ))}
+    </nav>
   );
 }
 
-function LegalNav({ sections }: { sections: LegalSection[] }) {
+function TableOfContents({ sections }: { sections: LegalSection[] }) {
   return (
-    <aside className="h-fit rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 lg:sticky lg:top-24">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-        Legal pages
-      </p>
+    <aside className="hidden xl:block">
+      <div className="sticky top-24">
+        <p className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+          Contents
+        </p>
 
-      <div className="mt-4 grid gap-2">
-        {legalLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm font-black text-gray-300 transition hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
-          >
-            {link.label}
-          </Link>
-        ))}
-      </div>
-
-      <div className="my-5 h-px bg-white/10" />
-
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-500">
-        On this page
-      </p>
-
-      <div className="mt-4 grid gap-2">
-        {sections.map((section, index) => (
-          <a
-            key={section.id}
-            href={`#${section.id}`}
-            className="rounded-xl px-3 py-2 text-sm font-bold text-gray-400 transition hover:bg-white/[0.06] hover:text-white"
-          >
-            <span className="mr-2 text-violet-300">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-            {section.title}
-          </a>
-        ))}
+        <div className="grid gap-1 border-l border-white/10 pl-4">
+          {sections.map((section, index) => (
+            <a
+              key={section.id}
+              href={`#${section.id}`}
+              className="group py-2 text-sm font-bold text-gray-500 transition hover:text-white"
+            >
+              <span className="mr-2 text-violet-400">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span className="group-hover:text-white">{section.title}</span>
+            </a>
+          ))}
+        </div>
       </div>
     </aside>
   );
 }
 
-function LegalSectionCard({
+function LegalSectionBlock({
   section,
   index,
 }: {
@@ -96,150 +75,145 @@ function LegalSectionCard({
   index: number;
 }) {
   return (
-    <article
+    <section
       id={section.id}
-      className="scroll-mt-28 border-b border-white/10 px-5 py-7 last:border-b-0 md:grid md:grid-cols-[90px_minmax(0,1fr)] md:gap-6"
+      className="scroll-mt-28 border-b border-white/10 py-10 last:border-b-0"
     >
-      <p className="mb-4 text-sm font-black text-violet-300 md:mb-0">
-        {String(index + 1).padStart(2, "0")}
-      </p>
-
-      <div>
-        <h2 className="text-2xl font-black text-white">{section.title}</h2>
-
-        {section.intro && (
-          <p className="mt-3 text-sm leading-7 text-gray-300">
-            {section.intro}
+      <div className="grid gap-5 md:grid-cols-[90px_minmax(0,1fr)]">
+        <div>
+          <p className="text-sm font-black text-violet-300">
+            {String(index + 1).padStart(2, "0")}
           </p>
-        )}
+        </div>
 
-        {section.paragraphs && section.paragraphs.length > 0 && (
-          <div className="mt-4 grid gap-3">
-            {section.paragraphs.map((paragraph) => (
-              <p key={paragraph} className="text-sm leading-7 text-gray-400">
-                {paragraph}
-              </p>
-            ))}
-          </div>
-        )}
+        <div>
+          <h2 className="text-2xl font-black tracking-tight text-white md:text-3xl">
+            {section.title}
+          </h2>
 
-        {section.bullets && section.bullets.length > 0 && (
-          <ul className="mt-4 grid gap-2">
-            {section.bullets.map((bullet) => (
-              <li
-                key={bullet}
-                className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm leading-6 text-gray-300"
-              >
-                {bullet}
-              </li>
-            ))}
-          </ul>
-        )}
+          {section.intro && (
+            <p className="mt-4 text-base leading-8 text-gray-300">
+              {section.intro}
+            </p>
+          )}
 
-        {section.note && (
-          <p className="mt-5 rounded-2xl border border-violet-400/20 bg-violet-500/10 px-4 py-3 text-sm leading-7 text-violet-100">
-            {section.note}
-          </p>
-        )}
+          {section.paragraphs && section.paragraphs.length > 0 && (
+            <div className="mt-5 grid gap-4">
+              {section.paragraphs.map((paragraph) => (
+                <p key={paragraph} className="text-sm leading-8 text-gray-400">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          )}
+
+          {section.bullets && section.bullets.length > 0 && (
+            <ul className="mt-6 grid gap-3">
+              {section.bullets.map((bullet) => (
+                <li
+                  key={bullet}
+                  className="relative pl-5 text-sm leading-8 text-gray-400 before:absolute before:left-0 before:top-[13px] before:h-1.5 before:w-1.5 before:rounded-full before:bg-violet-400"
+                >
+                  {bullet}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {section.note && (
+            <p className="mt-6 border-l-2 border-violet-400/60 bg-violet-500/[0.06] px-5 py-4 text-sm leading-8 text-violet-100">
+              {section.note}
+            </p>
+          )}
+        </div>
       </div>
-    </article>
+    </section>
   );
 }
 
 export default function LegalPolicyPage({
   title,
   description,
-  summaryTitle,
-  summaryBody,
   lastUpdated,
-  highlights,
+  effectiveDate,
   sections,
 }: LegalPolicyPageProps) {
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(16,185,129,0.10)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.13)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(16,185,129,0.08)_0%,transparent_28%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
 
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[440px] overflow-hidden">
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: 'url("/images/backgrounds/news-hero.webp")',
-            }}
-          />
-
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.96)_0%,rgba(7,8,17,0.76)_50%,rgba(7,8,17,0.9)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
-
-          <div className="relative z-10 mx-auto max-w-[1500px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
-              AscendraHub legal
+        <section className="border-b border-white/10">
+          <div className="mx-auto max-w-[1500px] px-6 py-20 lg:px-10 2xl:px-14">
+            <p className="mb-5 text-xs font-black uppercase tracking-[0.24em] text-violet-300">
+              AscendraHub Legal
             </p>
 
-            <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
-              {title}
-            </h1>
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
+              <div>
+                <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
+                  {title}
+                </h1>
 
-            <p className="mt-5 max-w-3xl text-base leading-7 text-gray-300">
-              {description}
-            </p>
+                <p className="mt-6 max-w-3xl text-base leading-8 text-gray-300">
+                  {description}
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-500">
+                  Document information
+                </p>
+
+                <div className="mt-4 grid gap-4">
+                  <div>
+                    <p className="text-xs font-bold text-gray-500">
+                      Last updated
+                    </p>
+                    <p className="mt-1 text-sm font-black text-white">
+                      {lastUpdated}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold text-gray-500">
+                      Effective date
+                    </p>
+                    <p className="mt-1 text-sm font-black text-white">
+                      {effectiveDate}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold text-gray-500">Contact</p>
+                    <p className="mt-1 text-sm font-black text-violet-200">
+                      support@ascendrahub.com
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section className="relative -mt-16 mx-auto grid max-w-[1500px] gap-8 px-6 pb-16 lg:grid-cols-[310px_minmax(0,1fr)] lg:px-10 2xl:px-14">
-          <LegalNav sections={sections} />
+        <section className="mx-auto grid max-w-[1500px] gap-12 px-6 py-12 lg:px-10 xl:grid-cols-[260px_minmax(0,1fr)] 2xl:px-14">
+          <TableOfContents sections={sections} />
 
-          <div className="grid gap-8">
-            <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/20 backdrop-blur">
-              <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px] xl:items-end">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-                    Last updated: {lastUpdated}
-                  </p>
+          <article className="mx-auto w-full max-w-[980px]">
+            <LegalPageTabs />
 
-                  <h2 className="mt-2 text-3xl font-black text-white">
-                    {summaryTitle}
-                  </h2>
-
-                  <p className="mt-3 max-w-4xl text-sm leading-7 text-gray-400">
-                    {summaryBody}
-                  </p>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {highlights.map((highlight) => (
-                    <HighlightCard
-                      key={highlight.label}
-                      label={highlight.label}
-                      value={highlight.value}
-                    />
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
+            <div className="mt-4">
               {sections.map((section, index) => (
-                <LegalSectionCard
+                <LegalSectionBlock
                   key={section.id}
                   section={section}
                   index={index}
                 />
               ))}
-            </section>
-
-            <section className="rounded-3xl border border-white/10 bg-black/25 p-6">
-              <p className="text-sm leading-7 text-gray-400">
-                These pages are written for transparency and platform
-                governance. They do not replace advice from a qualified lawyer.
-                If AscendraHub starts paid tournaments, sponsorships, business
-                operations, or a registered company, these policies should be
-                reviewed and updated.
-              </p>
-            </section>
-          </div>
+            </div>
+          </article>
         </section>
 
         <Footer />
