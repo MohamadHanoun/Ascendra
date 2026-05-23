@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import type { Prisma } from "@prisma/client";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -40,6 +41,14 @@ type TournamentAction = (formData: FormData) => Promise<{
   ok: boolean;
   message: string;
   redirectTo?: string;
+}>;
+
+type RegistrationWithTeam = Prisma.TournamentRegistrationGetPayload<{
+  include: { team: true };
+}>;
+
+type ResultWithTeam = Prisma.TournamentResultGetPayload<{
+  include: { team: true };
 }>;
 
 function inputClass() {
@@ -237,22 +246,22 @@ export default async function ManageTournamentPage({
   if (!tournament) notFound();
 
   const approvedRegistrations = tournament.registrations.filter(
-    (r) => r.status === "approved",
+    (r: RegistrationWithTeam) => r.status === "approved",
   );
 
   const pendingRegistrations = tournament.registrations.filter(
-    (r) => r.status === "registered",
+    (r: RegistrationWithTeam) => r.status === "registered",
   );
 
   const rejectedRegistrations = tournament.registrations.filter(
-    (r) => r.status === "rejected",
+    (r: RegistrationWithTeam) => r.status === "rejected",
   );
 
   const approvedSlots = approvedRegistrations.length;
   const remainingSlots = Math.max(tournament.maxTeams - approvedSlots, 0);
 
   const tournamentPoints = tournament.results.reduce(
-    (total, r) => total + r.points,
+    (total: number, r: ResultWithTeam) => total + r.points,
     0,
   );
 
@@ -427,7 +436,7 @@ export default async function ManageTournamentPage({
               ) : (
                 <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
                   <div className="divide-y divide-white/10">
-                    {tournament.registrations.map((registration) => (
+                    {tournament.registrations.map((registration: RegistrationWithTeam) => (
                       <article
                         key={registration.id}
                         className="grid gap-4 px-4 py-4 md:grid-cols-[minmax(0,1fr)_120px_140px] md:items-center"
