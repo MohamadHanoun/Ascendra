@@ -14,6 +14,10 @@ import {
   Routes,
   type Message,
 } from "discord.js";
+import {
+  getSlashCommands as getEnhancedSlashCommands,
+  handleSlashCommand as handleEnhancedSlashCommand,
+} from "./slashCommands";
 
 loadEnvConfig(process.cwd());
 
@@ -1782,7 +1786,7 @@ async function registerSlashCommands() {
     const rest = new REST({ version: "10" }).setToken(botToken);
 
     await rest.put(Routes.applicationGuildCommands(applicationId, guildId), {
-      body: getSlashCommands(),
+      body: getEnhancedSlashCommands(),
     });
 
     slashCommandsReady = true;
@@ -2223,7 +2227,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 
   try {
-    await handleSlashCommand(interaction);
+    await handleEnhancedSlashCommand(interaction, {
+      siteUrl: SITE_URL,
+      apiTimeoutMs: API_TIMEOUT_MS,
+      slashCommandsReady,
+      slashCommandError,
+      uptimeMs: Math.floor(process.uptime() * 1000),
+    });
   } catch (error) {
     console.error("[SlashCommands] Interaction failed:", error);
 
