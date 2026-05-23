@@ -10,6 +10,7 @@ import AdminBotControlsPanel from "@/components/AdminBotControlsPanel";
 import AdminBotDashboardTabs, {
   type AdminBotDashboardSection,
 } from "@/components/AdminBotDashboardTabs";
+import AdminBotEventInsightsPanel from "@/components/AdminBotEventInsightsPanel";
 import AdminBotEventsPanel from "@/components/AdminBotEventsPanel";
 import AdminBotHealthPanel from "@/components/AdminBotHealthPanel";
 import AdminBotInvitePanel from "@/components/AdminBotInvitePanel";
@@ -144,12 +145,16 @@ export default async function AdminBotPage({
           )}
 
           {activeSection === "events" && (
-            <AdminBotEventsPanel
-              statusFilter={params.botStatus}
-              eventTypeFilter={params.botType}
-              searchFilter={params.botEventSearch}
-              page={params.botEventPage}
-            />
+            <>
+              <AdminBotEventInsightsPanel />
+
+              <AdminBotEventsPanel
+                statusFilter={params.botStatus}
+                eventTypeFilter={params.botType}
+                searchFilter={params.botEventSearch}
+                page={params.botEventPage}
+              />
+            </>
           )}
 
           {activeSection === "commands" && (
