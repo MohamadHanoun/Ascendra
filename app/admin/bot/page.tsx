@@ -39,6 +39,7 @@ type AdminBotPageProps = {
     commandStatus?: string;
     commandName?: string;
     commandUser?: string;
+    commandPage?: string;
   }>;
 };
 
@@ -155,6 +156,7 @@ export default async function AdminBotPage({
                 statusFilter={params.commandStatus}
                 commandFilter={params.commandName}
                 userFilter={params.commandUser}
+                page={params.commandPage}
               />
             </>
           )}

@@ -11,6 +11,7 @@ type AdminBotCommandLogsPanelProps = {
   statusFilter?: string;
   commandFilter?: string;
   userFilter?: string;
+  page?: string;
 };
 
 type JsonRecord = Record<string, unknown>;
@@ -184,14 +185,57 @@ function buildExportHref(params: {
     : "/api/admin/bot/command-logs/export";
 }
 
+function normalizePage(value?: string) {
+  const page = Number(value || 1);
+
+  if (!Number.isFinite(page) || page < 1) {
+    return 1;
+  }
+
+  return Math.floor(page);
+}
+
+function buildCommandLogsHref(params: {
+  statusFilter: string;
+  commandFilter: string;
+  userFilter: string;
+  page: number;
+}) {
+  const searchParams = new URLSearchParams();
+
+  searchParams.set("botSection", "commands");
+
+  if (params.statusFilter !== "all") {
+    searchParams.set("commandStatus", params.statusFilter);
+  }
+
+  if (params.commandFilter) {
+    searchParams.set("commandName", params.commandFilter);
+  }
+
+  if (params.userFilter) {
+    searchParams.set("commandUser", params.userFilter);
+  }
+
+  if (params.page > 1) {
+    searchParams.set("commandPage", String(params.page));
+  }
+
+  return `/admin/bot?${searchParams.toString()}`;
+}
+
 export default async function AdminBotCommandLogsPanel({
   statusFilter,
   commandFilter,
   userFilter,
+  page,
 }: AdminBotCommandLogsPanelProps) {
   const normalizedStatus = normalizeStatusFilter(statusFilter);
   const normalizedCommand = normalizeTextFilter(commandFilter);
   const normalizedUser = normalizeTextFilter(userFilter);
+  const currentPage = normalizePage(page);
+  const pageSize = 25;
+  const offset = (currentPage - 1) * pageSize;
 
   const filteredWhere = buildWhere({
     statusFilter: normalizedStatus,
@@ -204,7 +248,7 @@ export default async function AdminBotCommandLogsPanel({
       orderBy: {
         createdAt: "desc",
       },
-      take: 100,
+      take: 500,
     }),
     prisma.botEvent.count({
       where: commandLogWhere,
@@ -235,7 +279,18 @@ export default async function AdminBotCommandLogsPanel({
     matchesUserFilter(log, normalizedUser),
   );
 
-  const logs = filteredLogs.slice(0, 25);
+  const totalFilteredPages = Math.max(
+    1,
+    Math.ceil(filteredLogs.length / pageSize),
+  );
+
+  const safeCurrentPage = Math.min(currentPage, totalFilteredPages);
+  const safeOffset = (safeCurrentPage - 1) * pageSize;
+
+  const logs = filteredLogs.slice(safeOffset, safeOffset + pageSize);
+
+  const hasPreviousPage = safeCurrentPage > 1;
+  const hasNextPage = safeCurrentPage < totalFilteredPages;
 
   return (
     <section className="grid gap-6">
@@ -401,7 +456,8 @@ export default async function AdminBotCommandLogsPanel({
           <div>
             <h3 className="text-xl font-black text-white">Latest Commands</h3>
             <p className="mt-1 text-sm text-gray-400">
-              Showing latest {logs.length} command logs.
+              Showing {logs.length} command logs on page {safeCurrentPage} of{" "}
+              {totalFilteredPages}.
             </p>
           </div>
         </div>
@@ -502,6 +558,53 @@ export default async function AdminBotCommandLogsPanel({
                 </article>
               );
             })}
+
+            {filteredLogs.length > pageSize && (
+              <div className="mt-6 flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-bold text-gray-400">
+                  Page {safeCurrentPage} of {totalFilteredPages} ·{" "}
+                  {filteredLogs.length} filtered logs
+                </p>
+
+                <div className="flex flex-wrap gap-3">
+                  {hasPreviousPage ? (
+                    <Link
+                      href={buildCommandLogsHref({
+                        statusFilter: normalizedStatus,
+                        commandFilter: normalizedCommand,
+                        userFilter: normalizedUser,
+                        page: safeCurrentPage - 1,
+                      })}
+                      className="rounded-xl border border-white/10 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
+                    >
+                      Previous
+                    </Link>
+                  ) : (
+                    <span className="rounded-xl border border-white/10 px-4 py-2 text-sm font-black text-gray-600">
+                      Previous
+                    </span>
+                  )}
+
+                  {hasNextPage ? (
+                    <Link
+                      href={buildCommandLogsHref({
+                        statusFilter: normalizedStatus,
+                        commandFilter: normalizedCommand,
+                        userFilter: normalizedUser,
+                        page: safeCurrentPage + 1,
+                      })}
+                      className="rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-2 text-sm font-black text-violet-200 transition hover:bg-violet-500/15 hover:text-white"
+                    >
+                      Next
+                    </Link>
+                  ) : (
+                    <span className="rounded-xl border border-white/10 px-4 py-2 text-sm font-black text-gray-600">
+                      Next
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
