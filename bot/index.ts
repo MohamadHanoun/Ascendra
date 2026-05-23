@@ -10,6 +10,7 @@ import {
   Events,
   GatewayIntentBits,
   PermissionFlagsBits,
+  type Message,
 } from "discord.js";
 
 loadEnvConfig(process.cwd());
@@ -31,13 +32,16 @@ const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
 
 const CONFIG_CACHE_MS = 30000;
-const HEARTBEAT_INTERVAL_MS = 60000;
-const POLL_INTERVAL_MS = 15000;
+const HEARTBEAT_INTERVAL_MS = 30000;
+const POLL_INTERVAL_MS = 5000;
+const API_TIMEOUT_MS = Number(process.env.BOT_API_TIMEOUT_MS || 8000);
+const EVENT_TIMEOUT_MS = Number(process.env.BOT_EVENT_TIMEOUT_MS || 25000);
+const PAUSED_LOG_INTERVAL_MS = 60000;
 
 const COLORS = {
   success: 0x10b981,
   error: 0xef4444,
-  warning: 0xf59e0b,
+  warning: 0xf97316,
   info: 0x8b5cf6,
   tournament: 0x7c3aed,
   premium: 0x6d28d9,
@@ -60,6 +64,8 @@ if (!DISCORD_BOT_TOKEN) {
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
+
+type DiscordMessage = Message<boolean>;
 
 type BotRuntimeConfig = {
   announcementChannelId: string;
@@ -96,7 +102,7 @@ type TournamentStatusPresentation = {
   badge: string;
 };
 
-type TournamentAnnouncementMessageResult = {
+type TournamentAnnouncementResult = {
   channelId: string;
   messageId: string;
   messageUrl: string;
@@ -112,6 +118,7 @@ let heartbeatInterval: NodeJS.Timeout | null = null;
 let pollingInterval: NodeJS.Timeout | null = null;
 let isPolling = false;
 let isShuttingDown = false;
+let lastPausedLogAt = 0;
 
 function parseRoleIds(value: string | undefined | null) {
   return String(value || "")
@@ -160,6 +167,22 @@ function pickFirstNonEmpty(...values: unknown[]) {
   return "";
 }
 
+function isValidHttpUrl(value: unknown) {
+  const raw = pickFirstNonEmpty(value);
+
+  if (!raw) {
+    return false;
+  }
+
+  try {
+    const url = new URL(raw);
+
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function getAbsoluteUrl(value: unknown) {
   const raw = pickFirstNonEmpty(value);
 
@@ -167,7 +190,7 @@ function getAbsoluteUrl(value: unknown) {
     return "";
   }
 
-  if (raw.startsWith("https://") || raw.startsWith("http://")) {
+  if (isValidHttpUrl(raw)) {
     return raw;
   }
 
@@ -176,6 +199,47 @@ function getAbsoluteUrl(value: unknown) {
   }
 
   return "";
+}
+
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit = {},
+  timeoutMs = API_TIMEOUT_MS,
+) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function withTimeout<T>(
+  task: Promise<T>,
+  timeoutMs: number,
+  timeoutMessage: string,
+) {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error(timeoutMessage));
+    }, timeoutMs);
+
+    task.then(
+      (value) => {
+        clearTimeout(timeout);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timeout);
+        reject(error);
+      },
+    );
+  });
 }
 
 function parseFlexibleDate(value: unknown) {
@@ -229,7 +293,13 @@ function formatTeamSize(value: unknown) {
     return "-";
   }
 
-  return `${value} player${String(value) === "1" ? "" : "s"}`;
+  const count = Number(value);
+
+  if (Number.isFinite(count)) {
+    return `${count} player${count === 1 ? "" : "s"}`;
+  }
+
+  return String(value);
 }
 
 function formatSlots(value: unknown) {
@@ -237,7 +307,13 @@ function formatSlots(value: unknown) {
     return "-";
   }
 
-  return `${value} team${String(value) === "1" ? "" : "s"}`;
+  const count = Number(value);
+
+  if (Number.isFinite(count)) {
+    return `${count} team${count === 1 ? "" : "s"}`;
+  }
+
+  return String(value);
 }
 
 function formatPrize(value: unknown) {
@@ -345,20 +421,24 @@ function buildTournamentDescription(payload: Record<string, any>) {
     return description.slice(0, 1200);
   }
 
-  return "A new Ascendra tournament is now live. Review the details, prepare your team, and follow all updates through the official tournament page.";
+  return "A new Ascendra tournament is now live. Review the details, prepare your team, and follow updates through the tournament page.";
 }
 
 function buildTournamentButtons(tournamentUrl: string) {
   const row = new ActionRowBuilder<ButtonBuilder>();
 
+  const safeTournamentUrl = isValidHttpUrl(tournamentUrl)
+    ? tournamentUrl
+    : SITE_URL;
+
   row.addComponents(
     new ButtonBuilder()
       .setLabel("Open Tournament")
       .setStyle(ButtonStyle.Link)
-      .setURL(tournamentUrl),
+      .setURL(safeTournamentUrl),
   );
 
-  if (DISCORD_INVITE_URL) {
+  if (isValidHttpUrl(DISCORD_INVITE_URL)) {
     row.addComponents(
       new ButtonBuilder()
         .setLabel("Join Discord")
@@ -371,7 +451,7 @@ function buildTournamentButtons(tournamentUrl: string) {
 }
 
 function buildTournamentAnnouncementContent(payload: Record<string, any>) {
-  const tournamentUrl = String(payload.websiteUrl || SITE_URL);
+  const tournamentUrl = pickFirstNonEmpty(payload.websiteUrl, SITE_URL);
   const title = pickFirstNonEmpty(payload.title, "Ascendra Tournament");
   const game = cleanLogValue(payload.game);
   const date = formatTournamentDate(payload.date);
@@ -399,10 +479,10 @@ function buildTournamentAnnouncementContent(payload: Record<string, any>) {
       url: SITE_URL,
     })
     .setTitle(`🏆 ${title}`)
-    .setURL(tournamentUrl)
+    .setURL(isValidHttpUrl(tournamentUrl) ? tournamentUrl : SITE_URL)
     .setDescription(
       [
-        `${registration.badge}  •  ${tournamentStatus.badge}`,
+        `${registration.badge} • ${tournamentStatus.badge}`,
         "",
         "━━━━━━━━━━━━━━━━━━━━",
         "",
@@ -503,14 +583,14 @@ async function getBotConfig(force = false): Promise<BotRuntimeConfig> {
   const fallback = getEnvBotConfig();
 
   try {
-    const response = await fetch(`${SITE_URL}/api/bot/config`, {
+    const response = await fetchWithTimeout(`${SITE_URL}/api/bot/config`, {
       headers: {
         Authorization: `Bearer ${BOT_API_TOKEN}`,
       },
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch bot config: ${response.status}`);
+      throw new Error(`Config ${response.status}`);
     }
 
     const data = await response.json();
@@ -581,7 +661,11 @@ async function sendDiscordLog(params: {
   }
 
   try {
-    const channel = await client.channels.fetch(params.channelId);
+    const channel = await withTimeout(
+      client.channels.fetch(params.channelId),
+      API_TIMEOUT_MS,
+      "Log channel timeout.",
+    );
 
     if (!channel || !channel.isSendable()) {
       return;
@@ -606,11 +690,15 @@ async function sendDiscordLog(params: {
       );
     }
 
-    await channel.send({
-      embeds: [embed],
-    });
+    await withTimeout<DiscordMessage>(
+      channel.send({
+        embeds: [embed],
+      }) as unknown as Promise<DiscordMessage>,
+      API_TIMEOUT_MS,
+      "Log send timeout.",
+    );
   } catch (error) {
-    console.error("[DiscordLog] Failed to send log:", error);
+    console.error("[DiscordLog] Failed:", error);
   }
 }
 
@@ -650,21 +738,25 @@ async function sendHeartbeat() {
   }
 
   try {
-    const response = await fetch(`${SITE_URL}/api/bot/heartbeat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${BOT_API_TOKEN}`,
+    const response = await fetchWithTimeout(
+      `${SITE_URL}/api/bot/heartbeat`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${BOT_API_TOKEN}`,
+        },
+        body: JSON.stringify({
+          botTag: client.user?.tag || "Unknown",
+          guildId: GUILD_ID,
+          uptimeMs: Math.floor(process.uptime() * 1000),
+        }),
       },
-      body: JSON.stringify({
-        botTag: client.user?.tag || "Unknown",
-        guildId: GUILD_ID,
-        uptimeMs: Math.floor(process.uptime() * 1000),
-      }),
-    });
+      API_TIMEOUT_MS,
+    );
 
     if (!response.ok) {
-      throw new Error(`Heartbeat failed: ${response.status}`);
+      throw new Error(`Heartbeat ${response.status}`);
     }
   } catch (error) {
     console.error("[Heartbeat] Failed:", error);
@@ -672,14 +764,18 @@ async function sendHeartbeat() {
 }
 
 async function fetchPendingEvents() {
-  const response = await fetch(`${SITE_URL}/api/bot/events/pending`, {
-    headers: {
-      Authorization: `Bearer ${BOT_API_TOKEN}`,
+  const response = await fetchWithTimeout(
+    `${SITE_URL}/api/bot/events/pending`,
+    {
+      headers: {
+        Authorization: `Bearer ${BOT_API_TOKEN}`,
+      },
     },
-  });
+    API_TIMEOUT_MS,
+  );
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch events: ${response.status}`);
+    throw new Error(`Events ${response.status}`);
   }
 
   return response.json();
@@ -693,20 +789,24 @@ async function updateEvent(
     error?: string;
   },
 ) {
-  const response = await fetch(`${SITE_URL}/api/bot/events/update`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${BOT_API_TOKEN}`,
+  const response = await fetchWithTimeout(
+    `${SITE_URL}/api/bot/events/update`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${BOT_API_TOKEN}`,
+      },
+      body: JSON.stringify({
+        eventId,
+        ...data,
+      }),
     },
-    body: JSON.stringify({
-      eventId,
-      ...data,
-    }),
-  });
+    API_TIMEOUT_MS,
+  );
 
   if (!response.ok) {
-    throw new Error(`Failed to update event: ${response.status}`);
+    throw new Error(`Update event ${response.status}`);
   }
 }
 
@@ -721,15 +821,19 @@ async function safeUpdateEvent(
   try {
     await updateEvent(eventId, data);
   } catch (error) {
-    console.error(`[BotEvent] Failed to update event ${eventId}:`, error);
+    console.error(`[BotEvent] Failed to update ${eventId}:`, error);
   }
 }
 
 async function getAnnouncementChannel(channelId: string) {
-  const channel = await client.channels.fetch(channelId);
+  const channel = await withTimeout(
+    client.channels.fetch(channelId),
+    API_TIMEOUT_MS,
+    "Announcement channel timeout.",
+  );
 
   if (!channel || !channel.isSendable()) {
-    throw new Error("Announcement channel was not found or is not sendable.");
+    throw new Error("Announcement channel unavailable.");
   }
 
   return channel;
@@ -738,61 +842,75 @@ async function getAnnouncementChannel(channelId: string) {
 async function fetchAnnouncementMessage(params: {
   channelId?: string | null;
   messageId?: string | null;
-}) {
+}): Promise<DiscordMessage | null> {
   if (!params.channelId || !params.messageId) {
     return null;
   }
 
-  const channel = await client.channels
-    .fetch(params.channelId)
-    .catch(() => null);
+  const channel = await withTimeout(
+    client.channels.fetch(params.channelId).catch(() => null),
+    API_TIMEOUT_MS,
+    "Message channel timeout.",
+  );
 
   if (!channel || !channel.isTextBased()) {
     return null;
   }
 
-  const message = await (channel as any).messages
-    .fetch(params.messageId)
-    .catch(() => null);
+  const messages = (channel as any).messages;
+
+  if (!messages?.fetch) {
+    return null;
+  }
+
+  const message = await withTimeout<DiscordMessage | null>(
+    (messages.fetch(params.messageId) as unknown as Promise<DiscordMessage>)
+      .then((message) => message)
+      .catch(() => null),
+    API_TIMEOUT_MS,
+    "Message fetch timeout.",
+  );
 
   return message;
 }
 
 async function upsertTournamentAnnouncementMessage(
   event: BotEvent,
-): Promise<TournamentAnnouncementMessageResult> {
+): Promise<TournamentAnnouncementResult> {
   const config = await getBotConfig();
 
   if (!config.enableAnnouncements) {
-    await sendBotLog({
-      title: "Tournament announcement skipped",
-      description: "Announcements are disabled from admin bot settings.",
-      fields: [{ name: "Event ID", value: event.id, inline: false }],
-      color: COLORS.warning,
-    });
-
-    throw new Error("Tournament announcements are disabled.");
+    throw new Error("Announcements disabled.");
   }
 
   const payload = event.payload;
-  const existingChannelId = pickFirstNonEmpty(payload.announcementChannelId);
-  const existingMessageId = pickFirstNonEmpty(payload.announcementMessageId);
+  const existingChannelId = pickFirstNonEmpty(
+    payload.announcementChannelId,
+    payload.discordAnnouncementChannelId,
+  );
+  const existingMessageId = pickFirstNonEmpty(
+    payload.announcementMessageId,
+    payload.discordAnnouncementMessageId,
+  );
 
   const targetChannelId = existingChannelId || config.announcementChannelId;
 
   if (!targetChannelId) {
-    throw new Error("Missing announcement channel ID");
+    throw new Error("Missing announcement channel.");
   }
 
-  const messageContent = buildTournamentAnnouncementContent(payload);
-
+  const content = buildTournamentAnnouncementContent(payload);
   const existingMessage = await fetchAnnouncementMessage({
     channelId: existingChannelId,
     messageId: existingMessageId,
   });
 
   if (existingMessage) {
-    const editedMessage = await existingMessage.edit(messageContent);
+    const editedMessage = await withTimeout<DiscordMessage>(
+      existingMessage.edit(content) as unknown as Promise<DiscordMessage>,
+      API_TIMEOUT_MS,
+      "Announcement edit timeout.",
+    );
 
     await sendTournamentLog({
       title: "Tournament announcement edited",
@@ -814,7 +932,12 @@ async function upsertTournamentAnnouncementMessage(
   }
 
   const channel = await getAnnouncementChannel(targetChannelId);
-  const sentMessage = await channel.send(messageContent);
+
+  const sentMessage = await withTimeout<DiscordMessage>(
+    channel.send(content) as unknown as Promise<DiscordMessage>,
+    API_TIMEOUT_MS,
+    "Announcement send timeout.",
+  );
 
   await sendTournamentLog({
     title:
@@ -843,12 +966,21 @@ async function getGuild() {
     throw new Error("Missing DISCORD_GUILD_ID");
   }
 
-  return client.guilds.fetch(GUILD_ID);
+  return withTimeout(
+    client.guilds.fetch(GUILD_ID),
+    API_TIMEOUT_MS,
+    "Guild fetch timeout.",
+  );
 }
 
 async function findOrCreateRole(roleName: string) {
   const guild = await getGuild();
-  const roles = await guild.roles.fetch();
+
+  const roles = await withTimeout(
+    guild.roles.fetch(),
+    API_TIMEOUT_MS,
+    "Roles fetch timeout.",
+  );
 
   const existingRole = roles.find((role) => role.name === roleName);
 
@@ -859,12 +991,16 @@ async function findOrCreateRole(roleName: string) {
     };
   }
 
-  const role = await guild.roles.create({
-    name: roleName,
-    mentionable: false,
-    hoist: false,
-    reason: "Tournament team access",
-  });
+  const role = await withTimeout(
+    guild.roles.create({
+      name: roleName,
+      mentionable: false,
+      hoist: false,
+      reason: "Tournament team access",
+    }),
+    API_TIMEOUT_MS,
+    "Role create timeout.",
+  );
 
   return {
     role,
@@ -879,11 +1015,16 @@ async function findOrCreateTeamChannel(params: {
   const config = await getBotConfig();
 
   if (!config.tournamentCategoryId) {
-    throw new Error("Missing tournament category ID");
+    throw new Error("Missing tournament category.");
   }
 
   const guild = await getGuild();
-  const channels = await guild.channels.fetch();
+
+  const channels = await withTimeout(
+    guild.channels.fetch(),
+    API_TIMEOUT_MS,
+    "Channels fetch timeout.",
+  );
 
   const existingChannel = channels.find((channel) => {
     if (!channel) {
@@ -898,12 +1039,12 @@ async function findOrCreateTeamChannel(params: {
 
   if (existingChannel) {
     return {
-      channel: existingChannel,
+      channel: existingChannel as any,
       created: false,
     };
   }
 
-  const permissionOverwrites = [
+  const permissionOverwrites: any[] = [
     {
       id: guild.roles.everyone.id,
       allow: [PermissionFlagsBits.ViewChannel],
@@ -952,13 +1093,17 @@ async function findOrCreateTeamChannel(params: {
     });
   }
 
-  const channel = await guild.channels.create({
-    name: params.channelName,
-    type: ChannelType.GuildVoice,
-    parent: config.tournamentCategoryId,
-    permissionOverwrites,
-    reason: "Tournament team voice channel",
-  });
+  const channel = await withTimeout(
+    guild.channels.create({
+      name: params.channelName,
+      type: ChannelType.GuildVoice,
+      parent: config.tournamentCategoryId,
+      permissionOverwrites,
+      reason: "Tournament team voice channel",
+    }),
+    API_TIMEOUT_MS,
+    "Team room create timeout.",
+  );
 
   return {
     channel,
@@ -977,9 +1122,17 @@ async function assignRoleToMembers(params: {
 
   for (const discordId of params.memberDiscordIds) {
     try {
-      const member = await guild.members.fetch(discordId);
+      const member = await withTimeout(
+        guild.members.fetch(discordId),
+        API_TIMEOUT_MS,
+        "Member fetch timeout.",
+      );
 
-      await member.roles.add(params.roleId, "Tournament team access");
+      await withTimeout(
+        member.roles.add(params.roleId, "Tournament team access"),
+        API_TIMEOUT_MS,
+        "Role assign timeout.",
+      );
 
       assigned.push(discordId);
     } catch (error) {
@@ -1012,11 +1165,16 @@ async function removeRoleFromMembers(params: {
 
   for (const discordId of params.memberDiscordIds) {
     try {
-      const member = await guild.members.fetch(discordId);
+      const member = await withTimeout(
+        guild.members.fetch(discordId),
+        API_TIMEOUT_MS,
+        "Member fetch timeout.",
+      );
 
-      await member.roles.remove(
-        params.roleId,
-        "Tournament team access removed",
+      await withTimeout(
+        member.roles.remove(params.roleId, "Tournament team access removed"),
+        API_TIMEOUT_MS,
+        "Role remove timeout.",
       );
 
       removed.push(discordId);
@@ -1039,12 +1197,14 @@ async function findTeamVoiceChannel(params: {
   const guild = await getGuild();
 
   if (params.channelId) {
-    const channel = await guild.channels
-      .fetch(params.channelId)
-      .catch(() => null);
+    const channel = await withTimeout(
+      guild.channels.fetch(params.channelId).catch(() => null),
+      API_TIMEOUT_MS,
+      "Team room fetch timeout.",
+    );
 
     if (channel && channel.type === ChannelType.GuildVoice) {
-      return channel;
+      return channel as any;
     }
   }
 
@@ -1052,9 +1212,13 @@ async function findTeamVoiceChannel(params: {
     return null;
   }
 
-  const channels = await guild.channels.fetch();
+  const channels = await withTimeout(
+    guild.channels.fetch(),
+    API_TIMEOUT_MS,
+    "Channels fetch timeout.",
+  );
 
-  return (
+  const channel =
     channels.find((item) => {
       if (!item) {
         return false;
@@ -1063,8 +1227,9 @@ async function findTeamVoiceChannel(params: {
       return (
         item.name === params.channelName && item.type === ChannelType.GuildVoice
       );
-    }) || null
-  );
+    }) || null;
+
+  return channel as any;
 }
 
 async function deleteTeamVoiceChannel(params: {
@@ -1085,7 +1250,11 @@ async function deleteTeamVoiceChannel(params: {
 
   const channelId = channel.id;
 
-  await channel.delete("Tournament team access removed");
+  await withTimeout(
+    channel.delete("Tournament team access removed"),
+    API_TIMEOUT_MS,
+    "Team room delete timeout.",
+  );
 
   return {
     deleted: true,
@@ -1102,11 +1271,19 @@ async function deleteTeamRole(params: {
   let role = null;
 
   if (params.roleId) {
-    role = await guild.roles.fetch(params.roleId).catch(() => null);
+    role = await withTimeout(
+      guild.roles.fetch(params.roleId).catch(() => null),
+      API_TIMEOUT_MS,
+      "Role fetch timeout.",
+    );
   }
 
   if (!role && params.roleName) {
-    const roles = await guild.roles.fetch();
+    const roles = await withTimeout(
+      guild.roles.fetch(),
+      API_TIMEOUT_MS,
+      "Roles fetch timeout.",
+    );
 
     role = roles.find((item) => item.name === params.roleName) || null;
   }
@@ -1124,7 +1301,11 @@ async function deleteTeamRole(params: {
     throw new Error(`Bot cannot delete role: ${role.name}`);
   }
 
-  await role.delete("Tournament team access removed");
+  await withTimeout(
+    role.delete("Tournament team access removed"),
+    API_TIMEOUT_MS,
+    "Role delete timeout.",
+  );
 
   return {
     deleted: true,
@@ -1137,9 +1318,7 @@ async function processTeamAccessCreate(event: BotEvent) {
   const config = await getBotConfig();
 
   if (!config.enableDiscordAccess) {
-    throw new Error(
-      "Discord access automation is disabled from admin settings.",
-    );
+    throw new Error("Discord access disabled.");
   }
 
   const roleResult = await findOrCreateRole(payload.roleName);
@@ -1191,9 +1370,7 @@ async function processTeamAccessRemove(event: BotEvent) {
   const config = await getBotConfig();
 
   if (!config.enableDiscordAccess) {
-    throw new Error(
-      "Discord access automation is disabled from admin settings.",
-    );
+    throw new Error("Discord access disabled.");
   }
 
   const roleRemoval = await removeRoleFromMembers({
@@ -1250,27 +1427,78 @@ async function processTeamAccessRemove(event: BotEvent) {
   };
 }
 
+async function processHealthCheck() {
+  const config = await getBotConfig(true);
+  const guild = await getGuild();
+
+  const announcementChannel = config.announcementChannelId
+    ? await client.channels
+        .fetch(config.announcementChannelId)
+        .catch(() => null)
+    : null;
+
+  const botLogChannel = config.botLogChannelId
+    ? await client.channels.fetch(config.botLogChannelId).catch(() => null)
+    : null;
+
+  return {
+    botTag: client.user?.tag || "Unknown",
+    guildId: guild.id,
+    guildName: guild.name,
+    uptimeMs: Math.floor(process.uptime() * 1000),
+    siteUrl: SITE_URL,
+    announcementChannel: Boolean(
+      announcementChannel && announcementChannel.isSendable(),
+    ),
+    botLogChannel: Boolean(botLogChannel && botLogChannel.isSendable()),
+    announcementsEnabled: config.enableAnnouncements,
+    discordAccessEnabled: config.enableDiscordAccess,
+  };
+}
+
+async function processEventOperation(event: BotEvent) {
+  switch (event.type) {
+    case "tournament_announcement_create":
+    case "tournament_announcement_update":
+      return upsertTournamentAnnouncementMessage(event);
+
+    case "team_discord_access_create":
+      return processTeamAccessCreate(event);
+
+    case "team_discord_access_remove":
+      return processTeamAccessRemove(event);
+
+    case "bot_command_health_check":
+      return processHealthCheck();
+
+    case "bot_command_refresh_config":
+      botConfigCache = null;
+      return getBotConfig(true);
+
+    case "bot_command_restart":
+      return {
+        restart: true,
+        message: "Restart requested.",
+      };
+
+    default:
+      throw new Error(`Unsupported event type: ${event.type}`);
+  }
+}
+
 async function processEvent(event: BotEvent) {
+  let shouldRestart = false;
+
   try {
-    let result: unknown = null;
+    const result = await withTimeout(
+      processEventOperation(event),
+      EVENT_TIMEOUT_MS,
+      `Event timeout after ${EVENT_TIMEOUT_MS / 1000}s.`,
+    );
 
-    switch (event.type) {
-      case "tournament_announcement_create":
-      case "tournament_announcement_update":
-        result = await upsertTournamentAnnouncementMessage(event);
-        break;
-
-      case "team_discord_access_create":
-        result = await processTeamAccessCreate(event);
-        break;
-
-      case "team_discord_access_remove":
-        result = await processTeamAccessRemove(event);
-        break;
-
-      default:
-        throw new Error(`Unsupported event type: ${event.type}`);
-    }
+    shouldRestart =
+      event.type === "bot_command_restart" &&
+      Boolean((result as { restart?: boolean } | null)?.restart);
 
     await safeUpdateEvent(event.id, {
       status: "completed",
@@ -1289,6 +1517,10 @@ async function processEvent(event: BotEvent) {
     });
 
     console.log(`[BotEvent] Completed ${event.type}`);
+
+    if (shouldRestart) {
+      await shutdown("Restart command completed");
+    }
   } catch (error) {
     const message = getErrorMessage(error);
 
@@ -1313,15 +1545,24 @@ async function processEvent(event: BotEvent) {
   }
 }
 
+function logPausedQueue() {
+  const now = Date.now();
+
+  if (now - lastPausedLogAt < PAUSED_LOG_INTERVAL_MS) {
+    return;
+  }
+
+  lastPausedLogAt = now;
+  console.log("[BotEvent] Queue paused.");
+}
+
 async function pollEvents() {
   if (isShuttingDown) {
     return;
   }
 
   if (isPolling) {
-    console.log(
-      "[BotEvent] Poll skipped because previous poll is still running.",
-    );
+    console.log("[BotEvent] Poll skipped.");
     return;
   }
 
@@ -1329,6 +1570,12 @@ async function pollEvents() {
 
   try {
     const data = await fetchPendingEvents();
+
+    if (data.paused) {
+      logPausedQueue();
+      return;
+    }
+
     const events: BotEvent[] = data.events || [];
 
     if (events.length > 0) {

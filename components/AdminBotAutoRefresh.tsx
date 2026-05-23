@@ -4,6 +4,19 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useRealtimeEvents } from "@/hooks/useRealtimeEvents";
 
+const refreshEventTypes = new Set([
+  "bot.heartbeat",
+  "bot.event.updated",
+  "bot.events.locked",
+  "bot.events.recovered",
+  "bot.events.failed",
+  "bot.events.processing.reset",
+  "bot.events.pending.cancelled",
+  "bot.events.cleaned",
+  "bot.queue.paused",
+  "bot.queue.resumed",
+]);
+
 export default function AdminBotAutoRefresh() {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -16,10 +29,10 @@ export default function AdminBotAutoRefresh() {
 
   useRealtimeEvents({
     audience: "admin",
-    intervalSeconds: 10,
+    intervalSeconds: 3,
     onEvents(events) {
       const shouldRefresh = events.some((event) =>
-        ["bot.heartbeat", "bot.event.updated"].includes(event.type),
+        refreshEventTypes.has(event.type),
       );
 
       if (shouldRefresh) {
