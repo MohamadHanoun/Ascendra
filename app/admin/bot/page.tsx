@@ -81,14 +81,14 @@ export default async function AdminBotPage({
 
         <section className="relative min-h-[360px] overflow-hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center"
+            className="pointer-events-none absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage: 'url("/images/backgrounds/admin-hero.webp")',
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.94)_0%,rgba(7,8,17,0.70)_48%,rgba(7,8,17,0.86)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.94)_0%,rgba(7,8,17,0.70)_48%,rgba(7,8,17,0.86)_100%)]" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
 
           <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
             <Link
@@ -116,7 +116,7 @@ export default async function AdminBotPage({
           <AdminToast message={params.message} type={toastType} />
         )}
 
-        <section className="relative -mt-14 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
+        <section className="relative z-30 -mt-14 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
           <AdminBotDashboardTabs activeSection={activeSection} />
 
           {activeSection === "overview" && (

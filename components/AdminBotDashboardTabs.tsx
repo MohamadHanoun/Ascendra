@@ -56,8 +56,8 @@ export default function AdminBotDashboardTabs({
   activeSection: AdminBotDashboardSection;
 }) {
   return (
-    <nav className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-2 shadow-2xl shadow-black/20">
-      <div className="flex flex-wrap gap-2">
+    <nav className="relative z-40 pointer-events-auto overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-2 shadow-2xl shadow-black/20 backdrop-blur-xl">
+      <div className="relative z-10 flex flex-wrap gap-2">
         {tabs.map((tab) => {
           const active = activeSection === tab.id;
 
@@ -65,8 +65,9 @@ export default function AdminBotDashboardTabs({
             <Link
               key={tab.id}
               href={getTabHref(tab.id)}
+              prefetch={false}
               scroll={false}
-              className={`rounded-2xl px-4 py-3 text-sm font-black transition ${
+              className={`relative z-10 inline-flex rounded-2xl px-4 py-3 text-sm font-black transition ${
                 active
                   ? "bg-violet-600 text-white shadow-lg shadow-violet-950/30"
                   : "text-gray-400 hover:bg-white/10 hover:text-white"
