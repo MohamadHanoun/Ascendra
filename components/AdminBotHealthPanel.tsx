@@ -305,6 +305,12 @@ export default async function AdminBotHealthPanel() {
           checked={checked}
         />
 
+        <PermissionCard
+          label="Slash commands"
+          ready={getHealthBool(healthResult, "slashCommandsReady")}
+          checked={checked}
+        />
+
         <HealthCard
           label="Last health check"
           value={formatDate(lastHealthCheck?.processedAt)}

@@ -10,6 +10,8 @@ import {
   Events,
   GatewayIntentBits,
   PermissionFlagsBits,
+  REST,
+  Routes,
   type Message,
 } from "discord.js";
 
@@ -30,6 +32,11 @@ const DISCORD_INVITE_URL = (
 const BOT_API_TOKEN = process.env.BOT_API_TOKEN;
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
+const APPLICATION_ID =
+  process.env.DISCORD_CLIENT_ID ||
+  process.env.DISCORD_APPLICATION_ID ||
+  process.env.AUTH_DISCORD_ID ||
+  "";
 
 const CONFIG_CACHE_MS = 30000;
 const HEARTBEAT_INTERVAL_MS = 30000;
@@ -119,6 +126,8 @@ let pollingInterval: NodeJS.Timeout | null = null;
 let isPolling = false;
 let isShuttingDown = false;
 let lastPausedLogAt = 0;
+let slashCommandsReady = false;
+let slashCommandError = "";
 
 function parseRoleIds(value: string | undefined | null) {
   return String(value || "")
@@ -1632,6 +1641,198 @@ async function fetchDiscordChannel(channelId: string) {
   return client.channels.fetch(channelId).catch(() => null);
 }
 
+function getSiteLink(path = "") {
+  if (!path) {
+    return SITE_URL;
+  }
+
+  return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+function buildLinkRow(label: string, url: string) {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setLabel(label).setStyle(ButtonStyle.Link).setURL(url),
+  );
+}
+
+function getSlashCommands() {
+  return [
+    {
+      name: "ascendra",
+      description: "Open AscendraHub.",
+    },
+    {
+      name: "tournaments",
+      description: "Open Ascendra tournaments.",
+    },
+    {
+      name: "leaderboard",
+      description: "Open the Ascendra leaderboard.",
+    },
+    {
+      name: "status",
+      description: "Check bot status.",
+    },
+    {
+      name: "help",
+      description: "Show Ascendra bot commands.",
+    },
+  ];
+}
+
+async function registerSlashCommands() {
+  if (!APPLICATION_ID || !GUILD_ID || !DISCORD_BOT_TOKEN) {
+    slashCommandsReady = false;
+    slashCommandError = "Missing application ID, guild ID, or bot token.";
+    console.warn(
+      "[SlashCommands] Missing application ID, guild ID, or bot token.",
+    );
+    return;
+  }
+
+  const applicationId: string = APPLICATION_ID;
+  const guildId: string = GUILD_ID;
+  const botToken: string = DISCORD_BOT_TOKEN;
+
+  try {
+    const rest = new REST({ version: "10" }).setToken(botToken);
+
+    await rest.put(Routes.applicationGuildCommands(applicationId, guildId), {
+      body: getSlashCommands(),
+    });
+
+    slashCommandsReady = true;
+    slashCommandError = "";
+
+    console.log("[SlashCommands] Registered.");
+  } catch (error) {
+    slashCommandsReady = false;
+    slashCommandError = getErrorMessage(error);
+
+    console.error("[SlashCommands] Failed:", error);
+  }
+}
+
+async function replyToCommand(interaction: any, payload: any) {
+  if (interaction.deferred || interaction.replied) {
+    await interaction.followUp({
+      ...payload,
+      ephemeral: true,
+    });
+
+    return;
+  }
+
+  await interaction.reply({
+    ...payload,
+    ephemeral: true,
+  });
+}
+
+async function handleSlashCommand(interaction: any) {
+  const commandName = interaction.commandName;
+
+  if (commandName === "ascendra") {
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.premium)
+      .setTitle("AscendraHub")
+      .setDescription("Open the AscendraHub website.")
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [buildLinkRow("Open AscendraHub", getSiteLink())],
+    });
+
+    return;
+  }
+
+  if (commandName === "tournaments") {
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.tournament)
+      .setTitle("Tournaments")
+      .setDescription("Open current and upcoming Ascendra tournaments.")
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [
+        buildLinkRow("Open Tournaments", getSiteLink("/tournaments")),
+      ],
+    });
+
+    return;
+  }
+
+  if (commandName === "leaderboard") {
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.info)
+      .setTitle("Leaderboard")
+      .setDescription("Open the Ascendra leaderboard.")
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [
+        buildLinkRow("Open Leaderboard", getSiteLink("/leaderboard")),
+      ],
+    });
+
+    return;
+  }
+
+  if (commandName === "status") {
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.success)
+      .setTitle("Bot status")
+      .addFields(
+        {
+          name: "Status",
+          value: "Online",
+          inline: true,
+        },
+        {
+          name: "Uptime",
+          value: `${Math.floor(process.uptime() / 60)}m`,
+          inline: true,
+        },
+        {
+          name: "Slash commands",
+          value: slashCommandsReady ? "Ready" : "Check required",
+          inline: true,
+        },
+      )
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+    });
+
+    return;
+  }
+
+  if (commandName === "help") {
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.deepPurple)
+      .setTitle("Ascendra Bot")
+      .setDescription(
+        [
+          "`/ascendra` — Website",
+          "`/tournaments` — Tournaments",
+          "`/leaderboard` — Leaderboard",
+          "`/status` — Bot status",
+          "`/help` — Commands",
+        ].join("\n"),
+      )
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [buildLinkRow("Open AscendraHub", getSiteLink())],
+    });
+  }
+}
+
 async function processHealthCheck() {
   const config = await getBotConfig(true);
   const guild = await getGuild();
@@ -1695,6 +1896,9 @@ async function processHealthCheck() {
 
     announcementsEnabled: config.enableAnnouncements,
     discordAccessEnabled: config.enableDiscordAccess,
+    slashCommandsReady,
+    slashCommandError,
+    applicationId: APPLICATION_ID || "",
   };
 }
 
@@ -1899,6 +2103,7 @@ client.once(Events.ClientReady, async () => {
   });
 
   await getBotConfig(true);
+  await registerSlashCommands();
   await sendHeartbeat();
 
   heartbeatInterval = setInterval(async () => {
@@ -1919,6 +2124,22 @@ client.once(Events.ClientReady, async () => {
   pollingInterval = setInterval(async () => {
     await pollEvents();
   }, POLL_INTERVAL_MS);
+});
+
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.isChatInputCommand()) {
+    return;
+  }
+
+  try {
+    await handleSlashCommand(interaction);
+  } catch (error) {
+    console.error("[SlashCommands] Interaction failed:", error);
+
+    await replyToCommand(interaction, {
+      content: "Command failed.",
+    }).catch(() => null);
+  }
 });
 
 client.on(Events.Error, (error) => {
