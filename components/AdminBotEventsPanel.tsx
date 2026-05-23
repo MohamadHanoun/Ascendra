@@ -103,6 +103,27 @@ function buildBotEventsPageHref(params: {
   return `/admin/bot?${searchParams.toString()}`;
 }
 
+function buildBotEventsExportHref(params: {
+  statusFilter: string;
+  typeFilter: string;
+}) {
+  const searchParams = new URLSearchParams();
+
+  if (params.statusFilter !== "all") {
+    searchParams.set("botStatus", params.statusFilter);
+  }
+
+  if (params.typeFilter !== "all") {
+    searchParams.set("botType", params.typeFilter);
+  }
+
+  const query = searchParams.toString();
+
+  return query
+    ? `/api/admin/bot/events/export?${query}`
+    : "/api/admin/bot/events/export";
+}
+
 function formatDate(date: Date | null) {
   if (!date) {
     return "-";
@@ -346,7 +367,7 @@ function EventsPagination({
   }
 
   return (
-    <div className="mt-6 flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mt-6 flex flex-col gap-3 border-t border-white/10 px-5 pt-5 pb-5 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm font-bold text-gray-400">
         Page {currentPage} of {totalPages} · {eventCount} event
         {eventCount === 1 ? "" : "s"}
@@ -672,10 +693,22 @@ export default async function AdminBotEventsPanel({
           </h3>
         </div>
 
-        <p className="text-sm text-gray-500">
-          Showing {events.length} of {eventCount} event
-          {eventCount === 1 ? "" : "s"} · Page {currentPage} of {totalPages}
-        </p>
+        <div className="flex flex-col gap-3 sm:items-end">
+          <Link
+            href={buildBotEventsExportHref({
+              statusFilter: activeStatusFilter,
+              typeFilter: activeTypeFilter,
+            })}
+            className="w-fit rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-2 text-sm font-black text-violet-200 transition hover:bg-violet-500/15 hover:text-white"
+          >
+            Export CSV
+          </Link>
+
+          <p className="text-sm text-gray-500">
+            Showing {events.length} of {eventCount} event
+            {eventCount === 1 ? "" : "s"} · Page {currentPage} of {totalPages}
+          </p>
+        </div>
       </div>
 
       {events.length === 0 ? (
