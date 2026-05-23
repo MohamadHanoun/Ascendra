@@ -2285,6 +2285,44 @@ function getInteractionOptionsSnapshot(interaction: any) {
   return values.slice(0, 900);
 }
 
+async function recordSlashCommandLog(params: {
+  interaction: any;
+  status: "completed" | "failed";
+  error?: unknown;
+  latencyMs?: number;
+}) {
+  try {
+    await fetchWithTimeout(
+      `${SITE_URL}/api/bot/slash-commands/log`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${BOT_API_TOKEN}`,
+        },
+        body: JSON.stringify({
+          commandName: params.interaction.commandName || "unknown",
+          status: params.status,
+          userId: params.interaction.user?.id || "unknown",
+          userTag:
+            params.interaction.user?.tag ||
+            params.interaction.user?.username ||
+            "Unknown user",
+          guildId: params.interaction.guildId || null,
+          channelId: params.interaction.channelId || null,
+          location: getInteractionLocation(params.interaction),
+          options: getInteractionOptionsSnapshot(params.interaction),
+          error: params.error ? getErrorMessage(params.error) : "",
+          latencyMs: params.latencyMs ?? null,
+        }),
+      },
+      API_TIMEOUT_MS,
+    );
+  } catch (error) {
+    console.error("[SlashCommands] Failed to record command log:", error);
+  }
+}
+
 async function logSlashCommandUsage(interaction: any) {
   try {
     await sendBotLog({
@@ -2353,6 +2391,8 @@ async function logSlashCommandFailure(interaction: any, error: unknown) {
 }
 
 client.on(Events.InteractionCreate, async (interaction) => {
+  const startedAt = Date.now();
+
   try {
     if (interaction.isAutocomplete()) {
       await handleAutocompleteInteraction(interaction, {
@@ -2375,12 +2415,29 @@ client.on(Events.InteractionCreate, async (interaction) => {
       uptimeMs: Math.floor(process.uptime() * 1000),
     });
 
+    const latencyMs = Date.now() - startedAt;
+
     await logSlashCommandUsage(interaction);
+
+    await recordSlashCommandLog({
+      interaction,
+      status: "completed",
+      latencyMs,
+    });
   } catch (error) {
     console.error("[SlashCommands] Interaction failed:", error);
 
     if (interaction.isChatInputCommand()) {
+      const latencyMs = Date.now() - startedAt;
+
       await logSlashCommandFailure(interaction, error);
+
+      await recordSlashCommandLog({
+        interaction,
+        status: "failed",
+        error,
+        latencyMs,
+      });
 
       await replyToCommand(interaction, {
         content: "Command failed.",
