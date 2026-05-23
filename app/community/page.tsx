@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
-import { getDictionary } from "@/lib/i18n";
+import { getDictionary, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 
@@ -39,12 +39,14 @@ function CommunityRow({
   title,
   description,
   openLabel,
+  locale,
 }: {
   href: string;
   label: string;
   title: string;
   description: string;
   openLabel: string;
+  locale: Locale;
 }) {
   return (
     <Link
@@ -62,7 +64,7 @@ function CommunityRow({
       </div>
 
       <span className="text-sm font-black text-gray-500 md:text-right rtl:md:text-left">
-        {openLabel} →
+        {openLabel} {locale === "ar" ? "←" : "→"}
       </span>
     </Link>
   );
@@ -227,6 +229,7 @@ export default async function CommunityPage() {
                   title={link.title}
                   description={link.description}
                   openLabel={messages.directory.open}
+                  locale={locale}
                 />
               ))}
             </div>
