@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-
+import AdminConfirmSubmitButton from "@/components/AdminConfirmSubmitButton";
 import {
   cleanupOldBotEventsMaintenanceInline,
   cleanupOldCommandLogsMaintenanceInline,
@@ -114,16 +114,19 @@ function MaintenanceActionCard({
           <DaysSelect defaultValue={defaultDays} />
         </label>
 
-        <button
-          type="submit"
-          className={
-            danger
-              ? "rounded-2xl border border-red-400/25 bg-red-500/10 px-5 py-3 text-sm font-black text-red-200 transition hover:bg-red-500/15 hover:text-white"
-              : "rounded-2xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
+        <AdminConfirmSubmitButton
+          label={buttonLabel}
+          danger={danger}
+          confirmTitle={
+            danger ? "Delete old failed events?" : "Run maintenance cleanup?"
           }
-        >
-          {buttonLabel}
-        </button>
+          confirmDescription={
+            danger
+              ? "This will permanently delete old failed bot events based on the selected number of days. Use this only after reviewing old errors."
+              : "This will permanently delete old maintenance data based on the selected number of days. This action cannot be undone."
+          }
+          confirmLabel={danger ? "Delete" : "Clean"}
+        />
       </div>
     </form>
   );

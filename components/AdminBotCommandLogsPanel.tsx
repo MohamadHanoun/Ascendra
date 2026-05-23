@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import Link from "next/link";
-
+import AdminConfirmSubmitButton from "@/components/AdminConfirmSubmitButton";
 import {
   deleteFailedSlashCommandLogsInline,
   deleteOldSlashCommandLogsInline,
@@ -234,21 +234,24 @@ export default async function AdminBotCommandLogsPanel({
             <form action={deleteOldSlashCommandLogsInline}>
               <input type="hidden" name="days" value="30" />
 
-              <button
-                type="submit"
+              <AdminConfirmSubmitButton
+                label="Clean 30+ days"
+                confirmTitle="Clean old command logs?"
+                confirmDescription="This will permanently delete command logs older than 30 days. Recent logs will remain available."
+                confirmLabel="Clean"
                 className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
-              >
-                Clean 30+ days
-              </button>
+              />
             </form>
 
             <form action={deleteFailedSlashCommandLogsInline}>
-              <button
-                type="submit"
+              <AdminConfirmSubmitButton
+                label="Delete failed logs"
+                danger
+                confirmTitle="Delete failed command logs?"
+                confirmDescription="This will permanently delete all failed command logs. Use this only if you already reviewed the errors."
+                confirmLabel="Delete"
                 className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm font-black text-red-200 transition hover:bg-red-500/15 hover:text-white"
-              >
-                Delete failed logs
-              </button>
+              />
             </form>
           </div>
         </div>
