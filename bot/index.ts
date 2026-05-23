@@ -1427,6 +1427,81 @@ async function processTeamAccessRemove(event: BotEvent) {
   };
 }
 
+async function processSendMessageCommand(event: BotEvent) {
+  const payload = event.payload || {};
+  const channelId = pickFirstNonEmpty(payload.channelId);
+  const title = pickFirstNonEmpty(payload.title);
+  const message = pickFirstNonEmpty(payload.message);
+  const buttonLabel = pickFirstNonEmpty(payload.buttonLabel);
+  const buttonUrl = pickFirstNonEmpty(payload.buttonUrl);
+  const imageUrl = pickFirstNonEmpty(payload.imageUrl);
+
+  if (!channelId) {
+    throw new Error("Missing channel ID.");
+  }
+
+  if (!title && !message) {
+    throw new Error("Missing message content.");
+  }
+
+  const channel = await withTimeout(
+    client.channels.fetch(channelId),
+    API_TIMEOUT_MS,
+    "Message channel timeout.",
+  );
+
+  if (!channel || !channel.isSendable()) {
+    throw new Error("Message channel unavailable.");
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor(COLORS.premium)
+    .setTimestamp()
+    .setFooter({
+      text: "Ascendra Bot",
+    });
+
+  if (title) {
+    embed.setTitle(title.slice(0, 256));
+  }
+
+  if (message) {
+    embed.setDescription(message.slice(0, 3900));
+  }
+
+  if (isValidHttpUrl(imageUrl)) {
+    embed.setImage(imageUrl);
+  }
+
+  const components: ActionRowBuilder<ButtonBuilder>[] = [];
+
+  if (buttonLabel && isValidHttpUrl(buttonUrl)) {
+    components.push(
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setLabel(buttonLabel.slice(0, 80))
+          .setStyle(ButtonStyle.Link)
+          .setURL(buttonUrl),
+      ),
+    );
+  }
+
+  const sentMessage = await withTimeout<DiscordMessage>(
+    channel.send({
+      embeds: [embed],
+      components,
+    }) as unknown as Promise<DiscordMessage>,
+    API_TIMEOUT_MS,
+    "Message send timeout.",
+  );
+
+  return {
+    channelId: sentMessage.channelId,
+    messageId: sentMessage.id,
+    messageUrl: sentMessage.url,
+  };
+}
+
 async function processHealthCheck() {
   const config = await getBotConfig(true);
   const guild = await getGuild();
@@ -1474,6 +1549,9 @@ async function processEventOperation(event: BotEvent) {
     case "bot_command_refresh_config":
       botConfigCache = null;
       return getBotConfig(true);
+
+    case "bot_command_send_message":
+      return processSendMessageCommand(event);
 
     case "bot_command_restart":
       return {

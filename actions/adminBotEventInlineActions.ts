@@ -14,7 +14,8 @@ export type AdminBotEventActionResult = {
 type BotCommandType =
   | "bot_command_health_check"
   | "bot_command_refresh_config"
-  | "bot_command_restart";
+  | "bot_command_restart"
+  | "bot_command_send_message";
 
 function success(message: string): AdminBotEventActionResult {
   return {
@@ -53,6 +54,10 @@ async function requireAdmin(): Promise<AdminBotEventActionResult | null> {
 
 function getEventId(formData: FormData) {
   return String(formData.get("eventId") || "").trim();
+}
+
+function getFormValue(formData: FormData, name: string) {
+  return String(formData.get(name) || "").trim();
 }
 
 function revalidateBotViews() {
@@ -95,7 +100,11 @@ async function publishBotRuntimeUpdate(type: string, payload = {}) {
   });
 }
 
-async function queueBotCommand(type: BotCommandType, priority = 90) {
+async function queueBotCommand(
+  type: BotCommandType,
+  priority = 90,
+  payload: Record<string, unknown> = {},
+) {
   const event = await prisma.botEvent.create({
     data: {
       type,
@@ -103,6 +112,7 @@ async function queueBotCommand(type: BotCommandType, priority = 90) {
       entityId: "runtime",
       priority,
       payload: {
+        ...payload,
         requestedAt: new Date().toISOString(),
         source: "admin_dashboard",
       },
@@ -373,6 +383,50 @@ export async function queueBotRestartInline(): Promise<AdminBotEventActionResult
   await queueBotCommand("bot_command_restart", 120);
 
   return success("Restart queued.");
+}
+
+export async function queueBotSendMessageInline(
+  formData: FormData,
+): Promise<AdminBotEventActionResult> {
+  const authError = await requireAdmin();
+
+  if (authError) {
+    return authError;
+  }
+
+  const channelId = getFormValue(formData, "channelId");
+  const title = getFormValue(formData, "title");
+  const message = getFormValue(formData, "message");
+  const buttonLabel = getFormValue(formData, "buttonLabel");
+  const buttonUrl = getFormValue(formData, "buttonUrl");
+  const imageUrl = getFormValue(formData, "imageUrl");
+
+  if (!channelId) {
+    return fail("Channel ID is required.");
+  }
+
+  if (!title && !message) {
+    return fail("Title or message is required.");
+  }
+
+  if (title.length > 256) {
+    return fail("Title is too long.");
+  }
+
+  if (message.length > 3900) {
+    return fail("Message is too long.");
+  }
+
+  await queueBotCommand("bot_command_send_message", 110, {
+    channelId,
+    title,
+    message,
+    buttonLabel,
+    buttonUrl,
+    imageUrl,
+  });
+
+  return success("Message queued.");
 }
 
 export async function cleanupCompletedBotEventsInline(
