@@ -3,7 +3,9 @@ import type { Prisma } from "@prisma/client";
 
 import {
   cancelBotEventInline,
+  cancelPendingBotEventsInline,
   cleanupCompletedBotEventsInline,
+  resetProcessingBotEventsInline,
   retryBotEventInline,
 } from "@/actions/adminBotEventInlineActions";
 import AdminBotAutoRefresh from "@/components/AdminBotAutoRefresh";
@@ -228,11 +230,23 @@ async function cleanupBotEventsFormAction(formData: FormData) {
 
   await cleanupCompletedBotEventsInline(formData);
 }
+async function resetProcessingBotEventsFormAction() {
+  "use server";
+
+  await resetProcessingBotEventsInline();
+}
+
+async function cancelPendingBotEventsFormAction() {
+  "use server";
+
+  await cancelPendingBotEventsInline();
+}
 
 function RetryButton({ eventId, status }: { eventId: string; status: string }) {
-  if (status !== "failed") {
-    return null;
-  }
+  if (!["failed", "cancelled"].includes(status)) {
+  return null;
+}
+  
 
   return (
     <form action={retryBotEventFormAction}>
@@ -255,7 +269,7 @@ function CancelButton({
   eventId: string;
   status: string;
 }) {
-  if (!["queued", "failed"].includes(status)) {
+  if (!["queued", "failed", "processing"].includes(status)) {
     return null;
   }
 
@@ -419,6 +433,44 @@ export default async function AdminBotEventsPanel({
           </p>
         </div>
       </div>
+
+      <section className="grid gap-4 rounded-3xl border border-violet-400/20 bg-violet-500/[0.06] p-5 shadow-2xl shadow-black/20 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+            Bot controls
+          </p>
+
+          <h3 className="mt-1 text-xl font-black text-white">
+            Queue recovery tools
+          </h3>
+
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-400">
+            Use these controls when the bot is stuck, when processing events are
+            frozen, or when you want to clear pending work before restarting the
+            bot.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <form action={resetProcessingBotEventsFormAction}>
+            <button
+              type="submit"
+              className="rounded-xl border border-blue-400/25 bg-blue-500/10 px-4 py-3 text-sm font-black text-blue-200 transition hover:bg-blue-500/15"
+            >
+              Reset processing
+            </button>
+          </form>
+
+          <form action={cancelPendingBotEventsFormAction}>
+            <button
+              type="submit"
+              className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm font-black text-red-200 transition hover:bg-red-500/15"
+            >
+              Cancel pending queue
+            </button>
+          </form>
+        </div>
+      </section>
 
       <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
         <div className="border-b border-white/10 px-5 py-4">

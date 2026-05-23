@@ -63,6 +63,18 @@ async function publishBotEventUpdate(eventId: string, status: string) {
   });
 }
 
+async function publishBotBulkUpdate(type: string, count: number) {
+  await createRealtimeEvent({
+    type,
+    audience: "admin",
+    entityType: "botEvent",
+    entityId: "bulk",
+    payload: {
+      count,
+    },
+  });
+}
+
 function revalidateBotViews() {
   revalidatePath("/admin");
   revalidatePath("/admin/bot");
@@ -93,8 +105,8 @@ export async function retryBotEventInline(
     return fail("Bot event was not found.");
   }
 
-  if (event.status !== "failed") {
-    return fail("Only failed bot events can be retried.");
+  if (!["failed", "cancelled"].includes(event.status)) {
+    return fail("Only failed or cancelled bot events can be retried.");
   }
 
   await prisma.botEvent.update({
@@ -142,8 +154,10 @@ export async function cancelBotEventInline(
     return fail("Bot event was not found.");
   }
 
-  if (!["queued", "failed"].includes(event.status)) {
-    return fail("Only queued or failed bot events can be cancelled.");
+  if (!["queued", "failed", "processing"].includes(event.status)) {
+    return fail(
+      "Only queued, processing, or failed bot events can be cancelled.",
+    );
   }
 
   await prisma.botEvent.update({
@@ -152,7 +166,10 @@ export async function cancelBotEventInline(
     },
     data: {
       status: "cancelled",
-      error: null,
+      error:
+        event.status === "processing"
+          ? "Cancelled manually while processing."
+          : null,
       lockedAt: null,
       processedAt: new Date(),
     },
@@ -164,6 +181,61 @@ export async function cancelBotEventInline(
 
   return success("Bot event cancelled.");
 }
+
+export async function resetProcessingBotEventsInline(): Promise<AdminBotEventActionResult> {
+  const authError = await requireAdmin();
+
+  if (authError) {
+    return authError;
+  }
+
+  const result = await prisma.botEvent.updateMany({
+    where: {
+      status: "processing",
+    },
+    data: {
+      status: "queued",
+      lockedAt: null,
+      error: "Reset manually from stuck processing state.",
+      processedAt: null,
+    },
+  });
+
+  await publishBotBulkUpdate("bot.events.processing.reset", result.count);
+
+  revalidateBotViews();
+
+  return success(`Reset ${result.count} processing bot event(s).`);
+}
+
+export async function cancelPendingBotEventsInline(): Promise<AdminBotEventActionResult> {
+  const authError = await requireAdmin();
+
+  if (authError) {
+    return authError;
+  }
+
+  const result = await prisma.botEvent.updateMany({
+    where: {
+      status: {
+        in: ["queued", "failed", "processing"],
+      },
+    },
+    data: {
+      status: "cancelled",
+      lockedAt: null,
+      processedAt: new Date(),
+      error: "Cancelled manually from bot dashboard.",
+    },
+  });
+
+  await publishBotBulkUpdate("bot.events.pending.cancelled", result.count);
+
+  revalidateBotViews();
+
+  return success(`Cancelled ${result.count} pending bot event(s).`);
+}
+
 export async function cleanupCompletedBotEventsInline(
   formData: FormData,
 ): Promise<AdminBotEventActionResult> {
