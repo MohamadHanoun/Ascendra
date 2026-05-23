@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { Prisma } from "@prisma/client";
+import Link from "next/link";
 
 import {
   cancelBotEventInline,
@@ -8,10 +8,9 @@ import {
   resetProcessingBotEventsInline,
   retryBotEventInline,
 } from "@/actions/adminBotEventInlineActions";
+import AdminConfirmSubmitButton from "@/components/AdminConfirmSubmitButton";
 import EmptyState from "@/components/EmptyState";
 import { prisma } from "@/lib/prisma";
-
-type BotEventStatus = "queued" | "processing" | "completed" | "failed";
 
 type AdminBotEventsPanelProps = {
   statusFilter?: string;
@@ -29,11 +28,13 @@ const allowedBotStatuses = [
 type BotStatusFilter = (typeof allowedBotStatuses)[number] | "all";
 
 const statusStyles: Record<string, string> = {
-  queued: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
+  queued: "border-violet-400/25 bg-violet-500/10 text-violet-200",
   processing: "border-blue-400/25 bg-blue-500/10 text-blue-300",
   completed: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
   failed: "border-red-400/25 bg-red-500/10 text-red-300",
   cancelled: "border-white/10 bg-white/5 text-gray-300",
+  online: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+  offline: "border-red-400/25 bg-red-500/10 text-red-300",
 };
 
 function normalizeStatusFilter(value?: string): BotStatusFilter {
@@ -229,6 +230,7 @@ async function cleanupBotEventsFormAction(formData: FormData) {
 
   await cleanupCompletedBotEventsInline(formData);
 }
+
 async function resetProcessingBotEventsFormAction() {
   "use server";
 
@@ -243,20 +245,20 @@ async function cancelPendingBotEventsFormAction() {
 
 function RetryButton({ eventId, status }: { eventId: string; status: string }) {
   if (!["failed", "cancelled"].includes(status)) {
-  return null;
-}
-  
+    return null;
+  }
 
   return (
     <form action={retryBotEventFormAction}>
       <input type="hidden" name="eventId" value={eventId} />
 
-      <button
-        type="submit"
+      <AdminConfirmSubmitButton
+        label="Retry"
+        confirmTitle="Retry bot event?"
+        confirmDescription="This will move the selected bot event back to the queue and allow the bot to process it again."
+        confirmLabel="Retry"
         className="rounded-xl border border-violet-400/35 bg-violet-500/15 px-4 py-2 text-xs font-black text-violet-100 transition hover:bg-violet-500/25"
-      >
-        Retry
-      </button>
+      />
     </form>
   );
 }
@@ -276,12 +278,14 @@ function CancelButton({
     <form action={cancelBotEventFormAction}>
       <input type="hidden" name="eventId" value={eventId} />
 
-      <button
-        type="submit"
+      <AdminConfirmSubmitButton
+        label="Cancel"
+        danger
+        confirmTitle="Cancel bot event?"
+        confirmDescription="This will cancel the selected bot event. The bot will not process it unless you retry it later."
+        confirmLabel="Cancel event"
         className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-2 text-xs font-black text-red-200 transition hover:bg-red-500/15"
-      >
-        Cancel
-      </button>
+      />
     </form>
   );
 }
@@ -402,7 +406,13 @@ export default async function AdminBotEventsPanel({
             </p>
           </div>
 
-          <StatusBadge status={botStatus.label.toLowerCase()} />
+          <div className="grid gap-2 justify-items-start lg:justify-items-end">
+            <StatusBadge status={botStatus.label.toLowerCase()} />
+
+            <p className="text-xs font-bold text-gray-500">
+              {botStatus.description}
+            </p>
+          </div>
         </div>
 
         <div className="grid gap-5 border-b border-white/10 p-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -450,21 +460,24 @@ export default async function AdminBotEventsPanel({
 
         <div className="flex flex-wrap gap-3">
           <form action={resetProcessingBotEventsFormAction}>
-            <button
-              type="submit"
+            <AdminConfirmSubmitButton
+              label="Reset processing"
+              confirmTitle="Reset processing events?"
+              confirmDescription="This will move all currently processing bot events back to the queue. Use it only if the bot was stuck or restarted while processing."
+              confirmLabel="Reset"
               className="rounded-xl border border-blue-400/25 bg-blue-500/10 px-4 py-3 text-sm font-black text-blue-200 transition hover:bg-blue-500/15"
-            >
-              Reset processing
-            </button>
+            />
           </form>
 
           <form action={cancelPendingBotEventsFormAction}>
-            <button
-              type="submit"
+            <AdminConfirmSubmitButton
+              label="Cancel pending queue"
+              danger
+              confirmTitle="Cancel pending queue?"
+              confirmDescription="This will cancel all queued, failed, and processing bot events. Use this only when you want to clear the current queue before restarting or recovering the bot."
+              confirmLabel="Cancel queue"
               className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm font-black text-red-200 transition hover:bg-red-500/15"
-            >
-              Cancel pending queue
-            </button>
+            />
           </form>
         </div>
       </section>
@@ -523,12 +536,13 @@ export default async function AdminBotEventsPanel({
         <form action={cleanupBotEventsFormAction}>
           <input type="hidden" name="days" value="30" />
 
-          <button
-            type="submit"
+          <AdminConfirmSubmitButton
+            label="Clean old events"
+            confirmTitle="Clean old bot events?"
+            confirmDescription="This will permanently delete completed and cancelled bot events older than 30 days. Failed, queued, and processing events will remain."
+            confirmLabel="Clean"
             className="rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
-          >
-            Clean old events
-          </button>
+          />
         </form>
       </section>
 
