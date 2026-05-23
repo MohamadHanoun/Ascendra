@@ -15,6 +15,7 @@ type CustomSelectProps = {
   placeholder: string;
   defaultValue?: string;
   required?: boolean;
+  emptyLabel?: string;
 };
 
 type DropdownPosition = {
@@ -24,12 +25,38 @@ type DropdownPosition = {
   maxHeight: number;
 };
 
+function getCookieValue(name: string) {
+  const cookies = document.cookie
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .filter(Boolean);
+
+  const targetCookie = cookies.find((cookie) => cookie.startsWith(`${name}=`));
+
+  if (!targetCookie) {
+    return "";
+  }
+
+  return decodeURIComponent(targetCookie.split("=").slice(1).join("="));
+}
+
+function getDefaultEmptyLabel() {
+  if (typeof document === "undefined") {
+    return "No options available";
+  }
+
+  const locale = getCookieValue("ascendra_locale");
+
+  return locale === "ar" ? "لا توجد خيارات متاحة" : "No options available";
+}
+
 export default function CustomSelect({
   name,
   options,
   placeholder,
   defaultValue = "",
   required = false,
+  emptyLabel,
 }: CustomSelectProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -148,7 +175,7 @@ export default function CustomSelect({
             >
               {options.length === 0 ? (
                 <div className="rounded-xl px-4 py-3 text-sm font-bold text-gray-500">
-                  No options available
+                  {emptyLabel || getDefaultEmptyLabel()}
                 </div>
               ) : (
                 options.map((option) => {

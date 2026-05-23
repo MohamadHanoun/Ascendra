@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+import { getLocale } from "@/lib/i18nServer";
+
 type EmptyStateProps = {
   title: string;
   description: string;
@@ -7,12 +9,24 @@ type EmptyStateProps = {
   actionHref?: string;
 };
 
-export default function EmptyState({
+const emptyStateMessages = {
+  en: {
+    label: "No data yet",
+  },
+  ar: {
+    label: "لا توجد بيانات حاليًا",
+  },
+};
+
+export default async function EmptyState({
   title,
   description,
   actionLabel,
   actionHref,
 }: EmptyStateProps) {
+  const locale = await getLocale();
+  const messages = emptyStateMessages[locale];
+
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-10 text-center shadow-2xl shadow-black/20">
       <div className="relative mx-auto mb-6 grid h-20 w-20 place-items-center rounded-3xl border border-violet-400/25 bg-[radial-gradient(circle_at_center,rgba(139,92,246,0.22),rgba(255,255,255,0.04))] shadow-2xl shadow-violet-950/30">
@@ -28,7 +42,7 @@ export default function EmptyState({
       </div>
 
       <p className="mb-3 text-sm font-black uppercase tracking-[0.16em] text-violet-300">
-        No data yet
+        {messages.label}
       </p>
 
       <h2 className="mb-3 text-2xl font-black text-white">{title}</h2>
@@ -46,3 +60,4 @@ export default function EmptyState({
     </div>
   );
 }
+
