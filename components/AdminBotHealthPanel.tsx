@@ -62,6 +62,10 @@ function getHealthValue(result: unknown, key: string) {
   return result[key];
 }
 
+function getHealthBool(result: unknown, key: string) {
+  return getHealthValue(result, key) === true;
+}
+
 function getBotStatus(lastHeartbeatAt?: string) {
   if (!lastHeartbeatAt) {
     return {
@@ -134,6 +138,24 @@ function HealthCard({
   );
 }
 
+function PermissionCard({
+  label,
+  ready,
+  checked,
+}: {
+  label: string;
+  ready: boolean;
+  checked: boolean;
+}) {
+  return (
+    <HealthCard
+      label={label}
+      value={!checked ? "-" : ready ? "OK" : "Missing"}
+      ok={checked ? ready : undefined}
+    />
+  );
+}
+
 export default async function AdminBotHealthPanel() {
   const [
     settings,
@@ -189,13 +211,8 @@ export default async function AdminBotHealthPanel() {
   const queuePaused = queuePausedSetting?.value === "true";
 
   const healthResult = lastHealthCheck?.result;
-  const healthGuildName = getHealthValue(healthResult, "guildName");
-  const healthAnnouncementChannel = Boolean(
-    getHealthValue(healthResult, "announcementChannel"),
-  );
-  const healthBotLogChannel = Boolean(
-    getHealthValue(healthResult, "botLogChannel"),
-  );
+  const checked = Boolean(lastHealthCheck);
+  const guildName = getHealthValue(healthResult, "guildName");
 
   return (
     <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
@@ -230,28 +247,62 @@ export default async function AdminBotHealthPanel() {
           ok={processingCount === 0}
         />
         <HealthCard label="Failed" value={failedCount} ok={failedCount === 0} />
-        <HealthCard label="Guild" value={String(healthGuildName || guildId)} />
+        <HealthCard label="Guild" value={String(guildName || guildId)} />
       </div>
 
-      <div className="grid gap-4 border-t border-white/10 p-5 sm:grid-cols-2 xl:grid-cols-3">
-        <HealthCard
-          label="Announcement channel"
-          value={
-            lastHealthCheck
-              ? healthAnnouncementChannel
-                ? "OK"
-                : "Missing"
-              : "-"
+      <div className="grid gap-4 border-t border-white/10 p-5 sm:grid-cols-2 xl:grid-cols-4">
+        <PermissionCard
+          label="Announcements"
+          ready={
+            getHealthBool(healthResult, "announcementChannel") &&
+            getHealthBool(healthResult, "announcementChannelPermissions")
           }
-          ok={lastHealthCheck ? healthAnnouncementChannel : undefined}
+          checked={checked}
         />
 
-        <HealthCard
-          label="Bot log channel"
-          value={
-            lastHealthCheck ? (healthBotLogChannel ? "OK" : "Missing") : "-"
+        <PermissionCard
+          label="Bot logs"
+          ready={
+            getHealthBool(healthResult, "botLogChannel") &&
+            getHealthBool(healthResult, "botLogChannelPermissions")
           }
-          ok={lastHealthCheck ? healthBotLogChannel : undefined}
+          checked={checked}
+        />
+
+        <PermissionCard
+          label="Tournament logs"
+          ready={
+            getHealthBool(healthResult, "tournamentLogChannel") &&
+            getHealthBool(healthResult, "tournamentLogChannelPermissions")
+          }
+          checked={checked}
+        />
+
+        <PermissionCard
+          label="Invite channel"
+          ready={
+            getHealthBool(healthResult, "inviteChannel") &&
+            getHealthBool(healthResult, "inviteChannelPermissions")
+          }
+          checked={checked}
+        />
+
+        <PermissionCard
+          label="Tournament category"
+          ready={getHealthBool(healthResult, "tournamentCategory")}
+          checked={checked}
+        />
+
+        <PermissionCard
+          label="Manage roles"
+          ready={getHealthBool(healthResult, "manageRoles")}
+          checked={checked}
+        />
+
+        <PermissionCard
+          label="Manage channels"
+          ready={getHealthBool(healthResult, "manageChannels")}
+          checked={checked}
         />
 
         <HealthCard

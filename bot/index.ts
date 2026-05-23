@@ -1606,19 +1606,51 @@ async function recreateTournamentAnnouncementMessage(event: BotEvent) {
   };
 }
 
+function canSendToChannel(channel: any, botMember: any) {
+  if (!channel || !botMember || !channel.isSendable?.()) {
+    return false;
+  }
+
+  const permissions = channel.permissionsFor?.(botMember);
+
+  if (!permissions) {
+    return false;
+  }
+
+  return (
+    permissions.has(PermissionFlagsBits.ViewChannel) &&
+    permissions.has(PermissionFlagsBits.SendMessages) &&
+    permissions.has(PermissionFlagsBits.EmbedLinks)
+  );
+}
+
+async function fetchDiscordChannel(channelId: string) {
+  if (!channelId) {
+    return null;
+  }
+
+  return client.channels.fetch(channelId).catch(() => null);
+}
+
 async function processHealthCheck() {
   const config = await getBotConfig(true);
   const guild = await getGuild();
 
-  const announcementChannel = config.announcementChannelId
-    ? await client.channels
-        .fetch(config.announcementChannelId)
-        .catch(() => null)
+  const botMember = client.user?.id
+    ? await guild.members.fetch(client.user.id).catch(() => null)
     : null;
 
-  const botLogChannel = config.botLogChannelId
-    ? await client.channels.fetch(config.botLogChannelId).catch(() => null)
-    : null;
+  const announcementChannel = await fetchDiscordChannel(
+    config.announcementChannelId,
+  );
+  const botLogChannel = await fetchDiscordChannel(config.botLogChannelId);
+  const tournamentLogChannel = await fetchDiscordChannel(
+    config.tournamentLogChannelId,
+  );
+  const inviteChannel = await fetchDiscordChannel(config.inviteChannelId);
+  const tournamentCategory = await fetchDiscordChannel(
+    config.tournamentCategoryId,
+  );
 
   return {
     botTag: client.user?.tag || "Unknown",
@@ -1626,10 +1658,41 @@ async function processHealthCheck() {
     guildName: guild.name,
     uptimeMs: Math.floor(process.uptime() * 1000),
     siteUrl: SITE_URL,
+
     announcementChannel: Boolean(
-      announcementChannel && announcementChannel.isSendable(),
+      announcementChannel && announcementChannel.isSendable?.(),
     ),
-    botLogChannel: Boolean(botLogChannel && botLogChannel.isSendable()),
+    announcementChannelPermissions: canSendToChannel(
+      announcementChannel,
+      botMember,
+    ),
+
+    botLogChannel: Boolean(botLogChannel && botLogChannel.isSendable?.()),
+    botLogChannelPermissions: canSendToChannel(botLogChannel, botMember),
+
+    tournamentLogChannel: Boolean(
+      tournamentLogChannel && tournamentLogChannel.isSendable?.(),
+    ),
+    tournamentLogChannelPermissions: canSendToChannel(
+      tournamentLogChannel,
+      botMember,
+    ),
+
+    inviteChannel: Boolean(inviteChannel && inviteChannel.isSendable?.()),
+    inviteChannelPermissions: canSendToChannel(inviteChannel, botMember),
+
+    tournamentCategory: Boolean(
+      tournamentCategory &&
+      tournamentCategory.type === ChannelType.GuildCategory,
+    ),
+
+    manageRoles: Boolean(
+      botMember?.permissions.has(PermissionFlagsBits.ManageRoles),
+    ),
+    manageChannels: Boolean(
+      botMember?.permissions.has(PermissionFlagsBits.ManageChannels),
+    ),
+
     announcementsEnabled: config.enableAnnouncements,
     discordAccessEnabled: config.enableDiscordAccess,
   };
