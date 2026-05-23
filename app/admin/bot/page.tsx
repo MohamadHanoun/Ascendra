@@ -3,7 +3,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
+import AdminBotAutoRefresh from "@/components/AdminBotAutoRefresh";
 import AdminBotControlsPanel from "@/components/AdminBotControlsPanel";
+import AdminBotDashboardTabs, {
+  type AdminBotDashboardSection,
+} from "@/components/AdminBotDashboardTabs";
 import AdminBotEventsPanel from "@/components/AdminBotEventsPanel";
 import AdminBotHealthPanel from "@/components/AdminBotHealthPanel";
 import AdminBotMessagePanel from "@/components/AdminBotMessagePanel";
@@ -27,8 +31,25 @@ type AdminBotPageProps = {
     type?: string;
     botStatus?: string;
     botType?: string;
+    botSection?: string;
   }>;
 };
+
+const sections: AdminBotDashboardSection[] = [
+  "overview",
+  "messages",
+  "tournaments",
+  "events",
+  "settings",
+];
+
+function getActiveSection(value?: string): AdminBotDashboardSection {
+  if (sections.includes(value as AdminBotDashboardSection)) {
+    return value as AdminBotDashboardSection;
+  }
+
+  return "overview";
+}
 
 export default async function AdminBotPage({
   searchParams,
@@ -45,6 +66,7 @@ export default async function AdminBotPage({
   }
 
   const toastType = params.type === "error" ? "error" : "success";
+  const activeSection = getActiveSection(params.botSection);
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
@@ -52,6 +74,8 @@ export default async function AdminBotPage({
 
       <div className="relative z-10">
         <Navbar />
+
+        <AdminBotAutoRefresh />
 
         <section className="relative min-h-[360px] overflow-hidden">
           <div
@@ -91,20 +115,29 @@ export default async function AdminBotPage({
         )}
 
         <section className="relative -mt-14 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
-          <AdminBotHealthPanel />
+          <AdminBotDashboardTabs activeSection={activeSection} />
 
-          <AdminBotControlsPanel />
+          {activeSection === "overview" && (
+            <>
+              <AdminBotHealthPanel />
+              <AdminBotControlsPanel />
+            </>
+          )}
 
-          <AdminBotMessagePanel />
+          {activeSection === "messages" && <AdminBotMessagePanel />}
 
-          <AdminBotTournamentMessagesPanel />
+          {activeSection === "tournaments" && (
+            <AdminBotTournamentMessagesPanel />
+          )}
 
-          <AdminBotSettingsPanel />
+          {activeSection === "events" && (
+            <AdminBotEventsPanel
+              statusFilter={params.botStatus}
+              eventTypeFilter={params.botType}
+            />
+          )}
 
-          <AdminBotEventsPanel
-            statusFilter={params.botStatus}
-            eventTypeFilter={params.botType}
-          />
+          {activeSection === "settings" && <AdminBotSettingsPanel />}
         </section>
 
         <Footer />

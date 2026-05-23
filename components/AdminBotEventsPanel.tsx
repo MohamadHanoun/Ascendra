@@ -8,7 +8,6 @@ import {
   resetProcessingBotEventsInline,
   retryBotEventInline,
 } from "@/actions/adminBotEventInlineActions";
-import AdminBotAutoRefresh from "@/components/AdminBotAutoRefresh";
 import EmptyState from "@/components/EmptyState";
 import { prisma } from "@/lib/prisma";
 
@@ -55,6 +54,8 @@ function normalizeTypeFilter(value?: string) {
 function buildBotFilterHref(status: string, botType: string) {
   const params = new URLSearchParams();
 
+  params.set("botSection", "events");
+
   if (status !== "all") {
     params.set("botStatus", status);
   }
@@ -63,9 +64,7 @@ function buildBotFilterHref(status: string, botType: string) {
     params.set("botType", botType);
   }
 
-  const query = params.toString();
-
-  return query ? `/admin/bot?${query}` : "/admin/bot";
+  return `/admin/bot?${params.toString()}`;
 }
 
 function formatDate(date: Date | null) {
@@ -387,8 +386,6 @@ export default async function AdminBotEventsPanel({
 
   return (
     <section className="grid gap-6">
-      <AdminBotAutoRefresh />
-
       <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
         <div className="grid gap-5 border-b border-white/10 px-5 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div>
