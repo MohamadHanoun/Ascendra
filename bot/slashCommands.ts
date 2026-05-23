@@ -38,6 +38,57 @@ type LeaderboardEntry = {
   bestPlacement: number | null;
 };
 
+type PlayerProfileTeam = {
+  id: string;
+  name: string;
+  game: string;
+  status: string;
+  role: string;
+  membersCount: number;
+  registrationsCount: number;
+  resultsCount: number;
+  tournamentPoints: number;
+  bestPlacement: number | null;
+  latestRegistration: {
+    status: string;
+    tournamentTitle: string;
+    tournamentGame: string;
+    tournamentStatus: string;
+    registrationStatus: string;
+    tournamentDate: string;
+  } | null;
+};
+
+type PlayerProfile = {
+  id: string;
+  discordId: string;
+  username: string;
+  avatar: string | null;
+  role: string;
+  isGuildMember: boolean;
+  createdAt: string;
+  totals: {
+    teams: number;
+    registrations: number;
+    results: number;
+    tournamentPoints: number;
+    bestPlacement: number | null;
+  };
+  teams: PlayerProfileTeam[];
+  registrations: Array<{
+    id: string;
+    status: string;
+    teamId: string;
+    teamName: string;
+    tournamentId: string;
+    tournamentTitle: string;
+    tournamentGame: string;
+    tournamentStatus: string;
+    registrationStatus: string;
+    tournamentDate: string;
+  }>;
+};
+
 const COLORS = {
   success: 0x10b981,
   error: 0xef4444,
@@ -63,6 +114,30 @@ function getSiteLink(ctx: SlashCommandContext, path = "") {
   return `${ctx.siteUrl}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+function truncate(value: string, maxLength: number) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 3)}...`;
+}
+
+function formatUptime(value: number) {
+  if (!Number.isFinite(value) || value <= 0) {
+    return "-";
+  }
+
+  const totalSeconds = Math.floor(value / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  return `${minutes}m`;
+}
+
 function isValidHttpUrl(value: unknown) {
   const raw = String(value || "").trim();
 
@@ -85,22 +160,6 @@ function buildLinkRow(label: string, url: string) {
   );
 }
 
-function formatUptime(value: number) {
-  if (!Number.isFinite(value) || value <= 0) {
-    return "-";
-  }
-
-  const totalSeconds = Math.floor(value / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-
-  return `${minutes}m`;
-}
-
 async function fetchJsonWithTimeout(url: string, timeoutMs: number) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -109,6 +168,33 @@ async function fetchJsonWithTimeout(url: string, timeoutMs: number) {
     const response = await fetch(url, {
       signal: controller.signal,
     });
+
+    if (!response.ok) {
+      throw new Error(`${response.status}`);
+    }
+
+    return response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchBotJsonWithTimeout(url: string, timeoutMs: number) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const botApiToken = process.env.BOT_API_TOKEN || "";
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${botApiToken}`,
+      },
+    });
+
+    if (response.status === 404) {
+      return null;
+    }
 
     if (!response.ok) {
       throw new Error(`${response.status}`);
@@ -142,6 +228,25 @@ function formatTournamentStatus(status: string) {
   if (normalized === "cancelled") return "Cancelled";
 
   return status || "-";
+}
+
+function formatPlacement(value: number | null) {
+  if (!value) {
+    return "-";
+  }
+
+  return `#${value}`;
+}
+
+function formatTeamStatus(value: string) {
+  const normalized = String(value || "").toLowerCase();
+
+  if (normalized === "approved") return "Approved";
+  if (normalized === "pending") return "Pending";
+  if (normalized === "draft") return "Draft";
+  if (normalized === "rejected") return "Rejected";
+
+  return value || "-";
 }
 
 async function fetchPublicTournaments(ctx: SlashCommandContext) {
@@ -203,7 +308,7 @@ function buildTournamentRows(
     for (const tournament of visibleTournaments) {
       row.addComponents(
         new ButtonBuilder()
-          .setLabel(tournament.title.slice(0, 80))
+          .setLabel(truncate(tournament.title, 80))
           .setStyle(ButtonStyle.Link)
           .setURL(getSiteLink(ctx, `/tournaments/${tournament.id}`)),
       );
@@ -249,14 +354,6 @@ async function fetchLeaderboard(
   };
 }
 
-function formatPlacement(value: number | null) {
-  if (!value) {
-    return "-";
-  }
-
-  return `#${value}`;
-}
-
 function buildLeaderboardTitle(type: LeaderboardType, game: string) {
   const label = type === "teams" ? "Teams" : "Players";
 
@@ -295,6 +392,58 @@ function buildLeaderboardDescription(
       ].join("\n");
     })
     .join("\n\n");
+}
+
+async function fetchPlayerProfile(ctx: SlashCommandContext, discordId: string) {
+  const query = new URLSearchParams({
+    discordId,
+  });
+
+  const data = await fetchBotJsonWithTimeout(
+    `${ctx.siteUrl}/api/bot/player-profile?${query.toString()}`,
+    ctx.apiTimeoutMs,
+  );
+
+  if (!data?.success || !data.profile) {
+    return null;
+  }
+
+  return data.profile as PlayerProfile;
+}
+
+function buildProfileDescription(profile: PlayerProfile) {
+  return [
+    `Role: **${profile.role}**`,
+    `Guild member: **${profile.isGuildMember ? "Yes" : "No"}**`,
+    "",
+    `Teams: **${profile.totals.teams}**`,
+    `Tournament results: **${profile.totals.results}**`,
+    `Tournament points: **${profile.totals.tournamentPoints}**`,
+    `Best placement: **${formatPlacement(profile.totals.bestPlacement)}**`,
+  ].join("\n");
+}
+
+function buildTeamsDescription(teams: PlayerProfileTeam[]) {
+  if (teams.length === 0) {
+    return "No teams found for this player.";
+  }
+
+  return teams
+    .slice(0, 8)
+    .map((team, index) => {
+      return [
+        `**${index + 1}. ${team.name}**`,
+        `${team.game} · ${formatTeamStatus(team.status)} · ${team.role}`,
+        `Members: ${team.membersCount} · Points: ${team.tournamentPoints} · Best: ${formatPlacement(
+          team.bestPlacement,
+        )}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function getTargetDiscordUser(interaction: any) {
+  return interaction.options?.getUser("user") || interaction.user;
 }
 
 async function replyToCommand(interaction: any, payload: any) {
@@ -364,6 +513,30 @@ export function getSlashCommands() {
             name: game,
             value: game,
           })),
+        },
+      ],
+    },
+    {
+      name: "profile",
+      description: "Show an Ascendra player profile.",
+      options: [
+        {
+          name: "user",
+          description: "Discord user.",
+          type: ApplicationCommandOptionType.User,
+          required: false,
+        },
+      ],
+    },
+    {
+      name: "teams",
+      description: "Show a player's Ascendra teams.",
+      options: [
+        {
+          name: "user",
+          description: "Discord user.",
+          type: ApplicationCommandOptionType.User,
+          required: false,
         },
       ],
     },
@@ -485,6 +658,88 @@ export async function handleSlashCommand(
     return;
   }
 
+  if (commandName === "profile") {
+    const targetUser = getTargetDiscordUser(interaction);
+    const profile = await fetchPlayerProfile(ctx, targetUser.id);
+
+    if (!profile) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("Profile not found")
+        .setDescription("This Discord user does not have an Ascendra profile.")
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed],
+        components: [
+          buildLinkRow("Open Profile", getSiteLink(ctx, "/profile")),
+        ],
+      });
+
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.premium)
+      .setTitle(`${profile.username} · Ascendra Profile`)
+      .setDescription(buildProfileDescription(profile))
+      .setTimestamp();
+
+    if (profile.avatar && isValidHttpUrl(profile.avatar)) {
+      embed.setThumbnail(profile.avatar);
+    }
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [buildLinkRow("Open Profile", getSiteLink(ctx, "/profile"))],
+    });
+
+    return;
+  }
+
+  if (commandName === "teams") {
+    const targetUser = getTargetDiscordUser(interaction);
+    const profile = await fetchPlayerProfile(ctx, targetUser.id);
+
+    if (!profile) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("Teams not found")
+        .setDescription("This Discord user does not have an Ascendra profile.")
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed],
+        components: [
+          buildLinkRow("Open Profile", getSiteLink(ctx, "/profile")),
+        ],
+      });
+
+      return;
+    }
+
+    const visibleTeams = profile.teams.slice(0, 8);
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.tournament)
+      .setTitle(`${profile.username} · Teams`)
+      .setDescription(buildTeamsDescription(visibleTeams))
+      .setFooter({
+        text:
+          profile.teams.length > visibleTeams.length
+            ? `${visibleTeams.length} of ${profile.teams.length} shown`
+            : `${visibleTeams.length} shown`,
+      })
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [buildLinkRow("Open Profile", getSiteLink(ctx, "/profile"))],
+    });
+
+    return;
+  }
+
   if (commandName === "rules") {
     const embed = new EmbedBuilder()
       .setColor(COLORS.deepPurple)
@@ -560,6 +815,8 @@ export async function handleSlashCommand(
           "`/ascendra` — Website",
           "`/tournaments` — Tournaments",
           "`/leaderboard` — Leaderboard",
+          "`/profile` — Player profile",
+          "`/teams` — Player teams",
           "`/rules` — Rules",
           "`/community` — Community",
           "`/status` — Bot status",
