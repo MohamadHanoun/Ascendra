@@ -7,6 +7,7 @@ import AdminBotControlsPanel from "@/components/AdminBotControlsPanel";
 import AdminBotEventsPanel from "@/components/AdminBotEventsPanel";
 import AdminBotMessagePanel from "@/components/AdminBotMessagePanel";
 import AdminBotSettingsPanel from "@/components/AdminBotSettingsPanel";
+import AdminBotTournamentMessagesPanel from "@/components/AdminBotTournamentMessagesPanel";
 import AdminToast from "@/components/AdminToast";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
@@ -92,6 +93,8 @@ export default async function AdminBotPage({
           <AdminBotControlsPanel />
 
           <AdminBotMessagePanel />
+
+          <AdminBotTournamentMessagesPanel />
 
           <AdminBotSettingsPanel />
 

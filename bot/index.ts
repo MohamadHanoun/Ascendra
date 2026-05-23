@@ -1502,6 +1502,110 @@ async function processSendMessageCommand(event: BotEvent) {
   };
 }
 
+async function deleteTournamentAnnouncementMessage(event: BotEvent) {
+  const payload = event.payload || {};
+  const channelId = pickFirstNonEmpty(
+    payload.announcementChannelId,
+    payload.discordAnnouncementChannelId,
+  );
+  const messageId = pickFirstNonEmpty(
+    payload.announcementMessageId,
+    payload.discordAnnouncementMessageId,
+  );
+
+  if (!channelId || !messageId) {
+    throw new Error("No Discord message stored.");
+  }
+
+  const message = await fetchAnnouncementMessage({
+    channelId,
+    messageId,
+  });
+
+  if (!message) {
+    return {
+      deleted: false,
+      channelId,
+      messageId,
+      messageUrl: "",
+      reason: "Message not found.",
+    };
+  }
+
+  await withTimeout(
+    message.delete(),
+    API_TIMEOUT_MS,
+    "Announcement delete timeout.",
+  );
+
+  await sendTournamentLog({
+    title: "Tournament announcement deleted",
+    fields: [
+      { name: "Tournament", value: cleanLogValue(payload.title) },
+      { name: "Game", value: cleanLogValue(payload.game) },
+      { name: "Message ID", value: messageId, inline: false },
+      { name: "Event ID", value: event.id, inline: false },
+    ],
+    color: COLORS.warning,
+  });
+
+  return {
+    deleted: true,
+    channelId,
+    messageId,
+    messageUrl: "",
+  };
+}
+
+async function recreateTournamentAnnouncementMessage(event: BotEvent) {
+  const payload = event.payload || {};
+  const channelId = pickFirstNonEmpty(
+    payload.announcementChannelId,
+    payload.discordAnnouncementChannelId,
+  );
+  const messageId = pickFirstNonEmpty(
+    payload.announcementMessageId,
+    payload.discordAnnouncementMessageId,
+  );
+
+  let deletedOldMessage = false;
+
+  if (channelId && messageId) {
+    const message = await fetchAnnouncementMessage({
+      channelId,
+      messageId,
+    });
+
+    if (message) {
+      await withTimeout(
+        message.delete(),
+        API_TIMEOUT_MS,
+        "Old announcement delete timeout.",
+      );
+
+      deletedOldMessage = true;
+    }
+  }
+
+  const nextEvent: BotEvent = {
+    ...event,
+    payload: {
+      ...payload,
+      announcementMessageId: "",
+      discordAnnouncementMessageId: "",
+      announcementUrl: "",
+    },
+  };
+
+  const result = await upsertTournamentAnnouncementMessage(nextEvent);
+
+  return {
+    ...result,
+    mode: "created",
+    deletedOldMessage,
+  };
+}
+
 async function processHealthCheck() {
   const config = await getBotConfig(true);
   const guild = await getGuild();
@@ -1536,6 +1640,12 @@ async function processEventOperation(event: BotEvent) {
     case "tournament_announcement_create":
     case "tournament_announcement_update":
       return upsertTournamentAnnouncementMessage(event);
+
+    case "tournament_announcement_recreate":
+      return recreateTournamentAnnouncementMessage(event);
+
+    case "tournament_announcement_delete":
+      return deleteTournamentAnnouncementMessage(event);
 
     case "team_discord_access_create":
       return processTeamAccessCreate(event);

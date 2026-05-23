@@ -49,10 +49,14 @@ async function syncTournamentAnnouncementStatus(params: {
 }) {
   const { eventType, tournamentId, status, result, error } = params;
 
-  if (
-    eventType !== "tournament_announcement_create" &&
-    eventType !== "tournament_announcement_update"
-  ) {
+  const announcementEventTypes = [
+    "tournament_announcement_create",
+    "tournament_announcement_update",
+    "tournament_announcement_recreate",
+    "tournament_announcement_delete",
+  ];
+
+  if (!announcementEventTypes.includes(eventType)) {
     return;
   }
 
@@ -71,6 +75,33 @@ async function syncTournamentAnnouncementStatus(params: {
 
   if (status === "completed") {
     const resultData = isRecord(result) ? result : {};
+
+      if (eventType === "tournament_announcement_delete") {
+        await prisma.tournament.update({
+          where: {
+            id: tournamentId,
+          },
+          data: {
+            discordAnnouncementChannelId: null,
+            discordAnnouncementMessageId: null,
+            discordAnnouncementUrl: null,
+            discordAnnouncementSyncedAt: new Date(),
+            discordAnnouncementLastError: null,
+          },
+        });
+
+        await createRealtimeEvent({
+          type: "tournament.discordAnnouncement.deleted",
+          audience: "admin",
+          entityType: "tournament",
+          entityId: tournamentId,
+          payload: {
+            tournamentId,
+          },
+        });
+
+        return;
+      }
 
     await prisma.tournament.update({
       where: {
@@ -301,7 +332,9 @@ export async function POST(request: Request) {
     event.entityType === "tournament" &&
     event.entityId &&
     (event.type === "tournament_announcement_create" ||
-      event.type === "tournament_announcement_update")
+      event.type === "tournament_announcement_update" ||
+      event.type === "tournament_announcement_recreate" ||
+      event.type === "tournament_announcement_delete")
   ) {
     await syncTournamentAnnouncementStatus({
       eventType: event.type,

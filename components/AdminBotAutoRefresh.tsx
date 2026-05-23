@@ -16,6 +16,9 @@ const refreshEventTypes = new Set([
   "bot.events.cleaned",
   "bot.queue.paused",
   "bot.queue.resumed",
+  "tournament.discordAnnouncement.synced",
+  "tournament.discordAnnouncement.failed",
+  "tournament.discordAnnouncement.deleted",
 ]);
 
 export default function AdminBotAutoRefresh() {
