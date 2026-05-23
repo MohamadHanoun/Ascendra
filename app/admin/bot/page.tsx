@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import AdminBotAutoRefresh from "@/components/AdminBotAutoRefresh";
+import AdminBotCommandLogsPanel from "@/components/AdminBotCommandLogsPanel";
 import AdminBotControlsPanel from "@/components/AdminBotControlsPanel";
 import AdminBotDashboardTabs, {
   type AdminBotDashboardSection,
@@ -41,6 +42,7 @@ const sections: AdminBotDashboardSection[] = [
   "messages",
   "tournaments",
   "events",
+  "commands",
   "settings",
   "invite",
 ];
@@ -138,6 +140,8 @@ export default async function AdminBotPage({
               eventTypeFilter={params.botType}
             />
           )}
+
+          {activeSection === "commands" && <AdminBotCommandLogsPanel />}
 
           {activeSection === "settings" && <AdminBotSettingsPanel />}
 

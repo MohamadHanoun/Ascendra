@@ -16,6 +16,8 @@ const refreshEventTypes = new Set([
   "bot.events.cleaned",
   "bot.queue.paused",
   "bot.queue.resumed",
+  "slashCommand.used",
+  "slashCommand.failed",
   "tournament.discordAnnouncement.synced",
   "tournament.discordAnnouncement.failed",
   "tournament.discordAnnouncement.deleted",
