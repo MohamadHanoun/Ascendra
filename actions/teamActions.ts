@@ -4,10 +4,143 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
 
+type TeamActionMessages = {
+  joinDiscord: string;
+  teamNotFound: string;
+  onlyLeaderCanManage: string;
+  teamLocked: string;
+  cannotDeleteWithHistory: string;
+  teamNameGameRequired: string;
+  teamIdNameGameRequired: string;
+  invalidGame: string;
+  duplicateTeamName: string;
+  teamCreated: string;
+  teamUpdated: string;
+  teamPlayerRequired: string;
+  playerNotFound: string;
+  playerMustJoinDiscord: string;
+  alreadyLeader: string;
+  alreadyInTeam: string;
+  alreadyPendingInvite: string;
+  inviteSent: string;
+  inviteIdMissing: string;
+  invitationNotFound: string;
+  onlyLeaderCanCancelInvites: string;
+  invitationCancelled: string;
+  invalidInvitationResponse: string;
+  invitationDoesNotBelong: string;
+  invitationAlreadyHandled: string;
+  invitationAccepted: string;
+  invitationDeclined: string;
+  teamIdMemberIdRequired: string;
+  memberNotFound: string;
+  leaderCannotBeRemoved: string;
+  memberRemoved: string;
+  teamIdMissing: string;
+  teamActive: string;
+  teamDeleted: string;
+};
+
 const allowedGames = ["Valorant", "League of Legends", "CS2", "Dota2"];
+
+const actionMessages: Record<Locale, TeamActionMessages> = {
+  en: {
+    joinDiscord: "Join the Ascendra Discord server to use team features.",
+    teamNotFound: "Team was not found.",
+    onlyLeaderCanManage: "Only the team leader can manage this team.",
+    teamLocked: 'This team is locked while registered for "{title}".',
+    cannotDeleteWithHistory:
+      "Team cannot be deleted because it has tournament history.",
+    teamNameGameRequired: "Team name and game are required.",
+    teamIdNameGameRequired: "Team ID, name, and game are required.",
+    invalidGame: "Invalid game selected.",
+    duplicateTeamName: "You already have a team with this name.",
+    teamCreated: "Team created successfully.",
+    teamUpdated: "Team updated successfully.",
+    teamPlayerRequired: "Team and player are required.",
+    playerNotFound:
+      "Player was not found. They must login to the website first.",
+    playerMustJoinDiscord:
+      "This player must join the Ascendra Discord server first.",
+    alreadyLeader: "You are already the leader of this team.",
+    alreadyInTeam: "This player is already in the team.",
+    alreadyPendingInvite: "This player already has a pending invitation.",
+    inviteSent: "Invitation sent successfully.",
+    inviteIdMissing: "Invite ID is missing.",
+    invitationNotFound: "Invitation was not found.",
+    onlyLeaderCanCancelInvites: "Only the team leader can cancel invitations.",
+    invitationCancelled: "Invitation cancelled.",
+    invalidInvitationResponse: "Invalid invitation response.",
+    invitationDoesNotBelong: "This invitation does not belong to you.",
+    invitationAlreadyHandled: "This invitation has already been handled.",
+    invitationAccepted: "Invitation accepted.",
+    invitationDeclined: "Invitation declined.",
+    teamIdMemberIdRequired: "Team ID and member ID are required.",
+    memberNotFound: "Team member was not found.",
+    leaderCannotBeRemoved: "The team leader cannot be removed.",
+    memberRemoved: "Team member removed.",
+    teamIdMissing: "Team ID is missing.",
+    teamActive: "Team is active.",
+    teamDeleted: "Team deleted.",
+  },
+
+  ar: {
+    joinDiscord: "انضم إلى Discord الخاص بـ Ascendra لاستخدام ميزات الفرق.",
+    teamNotFound: "لم يتم العثور على الفريق.",
+    onlyLeaderCanManage: "يمكن لقائد الفريق فقط إدارة هذا الفريق.",
+    teamLocked: 'هذا الفريق مقفل أثناء تسجيله في بطولة "{title}".',
+    cannotDeleteWithHistory: "لا يمكن حذف الفريق لأنه يملك سجلًا في البطولات.",
+    teamNameGameRequired: "اسم الفريق واللعبة مطلوبان.",
+    teamIdNameGameRequired: "معرّف الفريق والاسم واللعبة مطلوبة.",
+    invalidGame: "تم اختيار لعبة غير صالحة.",
+    duplicateTeamName: "لديك بالفعل فريق بهذا الاسم.",
+    teamCreated: "تم إنشاء الفريق بنجاح.",
+    teamUpdated: "تم تحديث الفريق بنجاح.",
+    teamPlayerRequired: "الفريق واللاعب مطلوبان.",
+    playerNotFound:
+      "لم يتم العثور على اللاعب. يجب أن يسجل الدخول إلى الموقع أولًا.",
+    playerMustJoinDiscord:
+      "يجب على هذا اللاعب الانضمام إلى Discord الخاص بـ Ascendra أولًا.",
+    alreadyLeader: "أنت بالفعل قائد هذا الفريق.",
+    alreadyInTeam: "هذا اللاعب موجود بالفعل في الفريق.",
+    alreadyPendingInvite: "هذا اللاعب لديه دعوة معلقة بالفعل.",
+    inviteSent: "تم إرسال الدعوة بنجاح.",
+    inviteIdMissing: "معرّف الدعوة مفقود.",
+    invitationNotFound: "لم يتم العثور على الدعوة.",
+    onlyLeaderCanCancelInvites: "يمكن لقائد الفريق فقط إلغاء الدعوات.",
+    invitationCancelled: "تم إلغاء الدعوة.",
+    invalidInvitationResponse: "رد الدعوة غير صالح.",
+    invitationDoesNotBelong: "هذه الدعوة لا تخصك.",
+    invitationAlreadyHandled: "تم التعامل مع هذه الدعوة مسبقًا.",
+    invitationAccepted: "تم قبول الدعوة.",
+    invitationDeclined: "تم رفض الدعوة.",
+    teamIdMemberIdRequired: "معرّف الفريق ومعرّف العضو مطلوبان.",
+    memberNotFound: "لم يتم العثور على عضو الفريق.",
+    leaderCannotBeRemoved: "لا يمكن إزالة قائد الفريق.",
+    memberRemoved: "تمت إزالة عضو الفريق.",
+    teamIdMissing: "معرّف الفريق مفقود.",
+    teamActive: "الفريق نشط الآن.",
+    teamDeleted: "تم حذف الفريق.",
+  },
+};
+
+function formatMessage(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{${key}}`, value),
+    template,
+  );
+}
+
+async function getMessages() {
+  const locale = await getLocale();
+
+  return actionMessages[locale];
+}
 
 function profileRedirect(message: string): never {
   redirect(`/profile?message=${encodeURIComponent(message)}`);
@@ -81,13 +214,20 @@ async function requireUser() {
   return user;
 }
 
-function requireGuildMember(user: { isGuildMember: boolean }) {
+function requireGuildMember(
+  user: { isGuildMember: boolean },
+  messages: TeamActionMessages,
+) {
   if (!user.isGuildMember) {
-    profileError("Join the Ascendra Discord server to use team features.");
+    profileError(messages.joinDiscord);
   }
 }
 
-async function requireTeamLeader(teamId: string, userId: string) {
+async function requireTeamLeader(
+  teamId: string,
+  userId: string,
+  messages: TeamActionMessages,
+) {
   const team = await prisma.team.findUnique({
     where: {
       id: teamId,
@@ -99,11 +239,11 @@ async function requireTeamLeader(teamId: string, userId: string) {
   });
 
   if (!team) {
-    profileError("Team was not found.");
+    profileError(messages.teamNotFound);
   }
 
   if (team.leaderId !== userId) {
-    profileError("Only the team leader can manage this team.");
+    profileError(messages.onlyLeaderCanManage);
   }
 
   return team;
@@ -135,12 +275,17 @@ async function getActiveTeamRegistration(teamId: string) {
   });
 }
 
-async function requireTeamNotInActiveRegistration(teamId: string) {
+async function requireTeamNotInActiveRegistration(
+  teamId: string,
+  messages: TeamActionMessages,
+) {
   const activeRegistration = await getActiveTeamRegistration(teamId);
 
   if (activeRegistration) {
     profileError(
-      `This team is locked while registered for "${activeRegistration.tournament.title}".`,
+      formatMessage(messages.teamLocked, {
+        title: activeRegistration.tournament.title,
+      }),
     );
   }
 }
@@ -162,27 +307,31 @@ async function hasTournamentHistory(teamId: string) {
   return registrationsCount > 0 || resultsCount > 0;
 }
 
-async function requireTeamWithoutTournamentHistory(teamId: string) {
+async function requireTeamWithoutTournamentHistory(
+  teamId: string,
+  messages: TeamActionMessages,
+) {
   const hasHistory = await hasTournamentHistory(teamId);
 
   if (hasHistory) {
-    profileError("Team cannot be deleted because it has tournament history.");
+    profileError(messages.cannotDeleteWithHistory);
   }
 }
 
 export async function createTeam(formData: FormData) {
+  const messages = await getMessages();
   const user = await requireUser();
-  requireGuildMember(user);
+  requireGuildMember(user, messages);
 
   const name = String(formData.get("name") || "").trim();
   const game = String(formData.get("game") || "").trim();
 
   if (!name || !game) {
-    profileError("Team name and game are required.");
+    profileError(messages.teamNameGameRequired);
   }
 
   if (!allowedGames.includes(game)) {
-    profileError("Invalid game selected.");
+    profileError(messages.invalidGame);
   }
 
   const existingTeam = await prisma.team.findFirst({
@@ -196,7 +345,7 @@ export async function createTeam(formData: FormData) {
   });
 
   if (existingTeam) {
-    profileError("You already have a team with this name.");
+    profileError(messages.duplicateTeamName);
   }
 
   const team = await prisma.$transaction(async (tx) => {
@@ -232,27 +381,28 @@ export async function createTeam(formData: FormData) {
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
-  teamRedirect(team.id, "Team created successfully.");
+  teamRedirect(team.id, messages.teamCreated);
 }
 
 export async function updateTeam(formData: FormData) {
+  const messages = await getMessages();
   const user = await requireUser();
-  requireGuildMember(user);
+  requireGuildMember(user, messages);
 
   const teamId = String(formData.get("teamId") || "").trim();
   const name = String(formData.get("name") || "").trim();
   const game = String(formData.get("game") || "").trim();
 
   if (!teamId || !name || !game) {
-    profileError("Team ID, name, and game are required.");
+    profileError(messages.teamIdNameGameRequired);
   }
 
   if (!allowedGames.includes(game)) {
-    profileError("Invalid game selected.");
+    profileError(messages.invalidGame);
   }
 
-  const team = await requireTeamLeader(teamId, user.id);
-  await requireTeamNotInActiveRegistration(team.id);
+  const team = await requireTeamLeader(teamId, user.id, messages);
+  await requireTeamNotInActiveRegistration(team.id, messages);
 
   await prisma.team.update({
     where: {
@@ -277,22 +427,23 @@ export async function updateTeam(formData: FormData) {
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
-  teamRedirect(team.id, "Team updated successfully.");
+  teamRedirect(team.id, messages.teamUpdated);
 }
 
 export async function invitePlayerToTeam(formData: FormData) {
+  const messages = await getMessages();
   const user = await requireUser();
-  requireGuildMember(user);
+  requireGuildMember(user, messages);
 
   const teamId = String(formData.get("teamId") || "").trim();
   const player = String(formData.get("player") || "").trim();
 
   if (!teamId || !player) {
-    profileError("Team and player are required.");
+    profileError(messages.teamPlayerRequired);
   }
 
-  const team = await requireTeamLeader(teamId, user.id);
-  await requireTeamNotInActiveRegistration(team.id);
+  const team = await requireTeamLeader(teamId, user.id, messages);
+  await requireTeamNotInActiveRegistration(team.id, messages);
 
   const invitedUser = await prisma.user.findFirst({
     where: {
@@ -311,15 +462,15 @@ export async function invitePlayerToTeam(formData: FormData) {
   });
 
   if (!invitedUser) {
-    profileError("Player was not found. They must login to the website first.");
+    profileError(messages.playerNotFound);
   }
 
   if (!invitedUser.isGuildMember) {
-    profileError("This player must join the Ascendra Discord server first.");
+    profileError(messages.playerMustJoinDiscord);
   }
 
   if (invitedUser.id === user.id) {
-    profileError("You are already the leader of this team.");
+    profileError(messages.alreadyLeader);
   }
 
   const existingMember = await prisma.teamMember.findUnique({
@@ -332,7 +483,7 @@ export async function invitePlayerToTeam(formData: FormData) {
   });
 
   if (existingMember) {
-    profileError("This player is already in the team.");
+    profileError(messages.alreadyInTeam);
   }
 
   const existingInvite = await prisma.teamInvite.findUnique({
@@ -345,7 +496,7 @@ export async function invitePlayerToTeam(formData: FormData) {
   });
 
   if (existingInvite?.status === "pending") {
-    profileError("This player already has a pending invitation.");
+    profileError(messages.alreadyPendingInvite);
   }
 
   const invite = existingInvite
@@ -379,16 +530,17 @@ export async function invitePlayerToTeam(formData: FormData) {
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
-  teamRedirect(team.id, "Invitation sent successfully.");
+  teamRedirect(team.id, messages.inviteSent);
 }
 
 export async function cancelTeamInvite(formData: FormData) {
+  const messages = await getMessages();
   const user = await requireUser();
 
   const inviteId = String(formData.get("inviteId") || "").trim();
 
   if (!inviteId) {
-    profileError("Invite ID is missing.");
+    profileError(messages.inviteIdMissing);
   }
 
   const invite = await prisma.teamInvite.findUnique({
@@ -405,14 +557,14 @@ export async function cancelTeamInvite(formData: FormData) {
   });
 
   if (!invite) {
-    profileError("Invitation was not found.");
+    profileError(messages.invitationNotFound);
   }
 
   if (invite.team.leaderId !== user.id) {
-    profileError("Only the team leader can cancel invitations.");
+    profileError(messages.onlyLeaderCanCancelInvites);
   }
 
-  await requireTeamNotInActiveRegistration(invite.teamId);
+  await requireTeamNotInActiveRegistration(invite.teamId, messages);
 
   await prisma.teamInvite.delete({
     where: {
@@ -430,18 +582,19 @@ export async function cancelTeamInvite(formData: FormData) {
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${invite.teamId}`);
 
-  teamRedirect(invite.teamId, "Invitation cancelled.");
+  teamRedirect(invite.teamId, messages.invitationCancelled);
 }
 
 export async function respondToTeamInvite(formData: FormData) {
+  const messages = await getMessages();
   const user = await requireUser();
-  requireGuildMember(user);
+  requireGuildMember(user, messages);
 
   const inviteId = String(formData.get("inviteId") || "").trim();
   const response = String(formData.get("response") || "").trim();
 
   if (!inviteId || !["accepted", "rejected"].includes(response)) {
-    profileError("Invalid invitation response.");
+    profileError(messages.invalidInvitationResponse);
   }
 
   const invite = await prisma.teamInvite.findUnique({
@@ -458,19 +611,19 @@ export async function respondToTeamInvite(formData: FormData) {
   });
 
   if (!invite) {
-    profileError("Invitation was not found.");
+    profileError(messages.invitationNotFound);
   }
 
   if (invite.invitedUserId !== user.id) {
-    profileError("This invitation does not belong to you.");
+    profileError(messages.invitationDoesNotBelong);
   }
 
   if (invite.status !== "pending") {
-    profileError("This invitation has already been handled.");
+    profileError(messages.invitationAlreadyHandled);
   }
 
   if (response === "accepted") {
-    await requireTeamNotInActiveRegistration(invite.teamId);
+    await requireTeamNotInActiveRegistration(invite.teamId, messages);
 
     await prisma.$transaction(async (tx) => {
       await tx.teamMember.upsert({
@@ -513,7 +666,7 @@ export async function respondToTeamInvite(formData: FormData) {
     revalidatePath("/profile");
     revalidatePath(`/profile/teams/${invite.teamId}`);
 
-    teamRedirect(invite.teamId, "Invitation accepted.");
+    teamRedirect(invite.teamId, messages.invitationAccepted);
   }
 
   await prisma.teamInvite.update({
@@ -536,21 +689,22 @@ export async function respondToTeamInvite(formData: FormData) {
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${invite.teamId}`);
 
-  profileRedirect("Invitation declined.");
+  profileRedirect(messages.invitationDeclined);
 }
 
 export async function removeTeamMember(formData: FormData) {
+  const messages = await getMessages();
   const user = await requireUser();
 
   const teamId = String(formData.get("teamId") || "").trim();
   const memberId = String(formData.get("memberId") || "").trim();
 
   if (!teamId || !memberId) {
-    profileError("Team ID and member ID are required.");
+    profileError(messages.teamIdMemberIdRequired);
   }
 
-  const team = await requireTeamLeader(teamId, user.id);
-  await requireTeamNotInActiveRegistration(team.id);
+  const team = await requireTeamLeader(teamId, user.id, messages);
+  await requireTeamNotInActiveRegistration(team.id, messages);
 
   const member = await prisma.teamMember.findUnique({
     where: {
@@ -559,11 +713,11 @@ export async function removeTeamMember(formData: FormData) {
   });
 
   if (!member || member.teamId !== team.id) {
-    profileError("Team member was not found.");
+    profileError(messages.memberNotFound);
   }
 
   if (member.userId === user.id || member.role === "leader") {
-    profileError("The team leader cannot be removed.");
+    profileError(messages.leaderCannotBeRemoved);
   }
 
   await prisma.teamMember.delete({
@@ -584,20 +738,21 @@ export async function removeTeamMember(formData: FormData) {
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
-  teamRedirect(team.id, "Team member removed.");
+  teamRedirect(team.id, messages.memberRemoved);
 }
 
 export async function submitTeamForReview(formData: FormData) {
+  const messages = await getMessages();
   const user = await requireUser();
-  requireGuildMember(user);
+  requireGuildMember(user, messages);
 
   const teamId = String(formData.get("teamId") || "").trim();
 
   if (!teamId) {
-    profileError("Team ID is missing.");
+    profileError(messages.teamIdMissing);
   }
 
-  const team = await requireTeamLeader(teamId, user.id);
+  const team = await requireTeamLeader(teamId, user.id, messages);
 
   await prisma.team.update({
     where: {
@@ -620,10 +775,11 @@ export async function submitTeamForReview(formData: FormData) {
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
-  teamRedirect(team.id, "Team is active.");
+  teamRedirect(team.id, messages.teamActive);
 }
 
 export async function deleteTeam(formData: FormData) {
+  const messages = await getMessages();
   const user = await requireUser();
 
   const teamId =
@@ -631,13 +787,13 @@ export async function deleteTeam(formData: FormData) {
     String(formData.get("id") || "").trim();
 
   if (!teamId) {
-    profileError("Team ID is missing.");
+    profileError(messages.teamIdMissing);
   }
 
-  const team = await requireTeamLeader(teamId, user.id);
+  const team = await requireTeamLeader(teamId, user.id, messages);
 
-  await requireTeamNotInActiveRegistration(team.id);
-  await requireTeamWithoutTournamentHistory(team.id);
+  await requireTeamNotInActiveRegistration(team.id, messages);
+  await requireTeamWithoutTournamentHistory(team.id, messages);
 
   const memberUserIds = team.members.map((member) => member.userId);
 
@@ -669,5 +825,5 @@ export async function deleteTeam(formData: FormData) {
 
   revalidatePath("/profile");
 
-  profileRedirect("Team deleted.");
+  profileRedirect(messages.teamDeleted);
 }
