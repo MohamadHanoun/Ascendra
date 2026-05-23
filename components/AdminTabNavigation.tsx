@@ -82,7 +82,14 @@ export default function AdminTabNavigation({
           ))}
         </div>
 
-        <div className="mt-4 border-t border-white/10 pt-4">
+        <div className="mt-4 flex flex-wrap gap-3 border-t border-white/10 pt-4">
+          <Link
+            href="/admin/games"
+            className="inline-flex rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-2 text-sm font-black text-violet-200 transition hover:border-violet-300/40 hover:bg-violet-500/15 hover:text-white"
+          >
+            Games
+          </Link>
+
           <Link
             href="/admin/bot"
             className="inline-flex rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-2 text-sm font-black text-emerald-200 transition hover:border-emerald-300/40 hover:bg-emerald-500/15 hover:text-white"
