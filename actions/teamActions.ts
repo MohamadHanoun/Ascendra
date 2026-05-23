@@ -333,7 +333,7 @@ export async function createTeam(formData: FormData) {
     where: { slug: gameSlug },
   });
 
-  if (!selectedGame) {
+  if (!selectedGame || !selectedGame.isActive) {
     profileError(messages.invalidGame);
   }
 
@@ -404,7 +404,7 @@ export async function updateTeam(formData: FormData) {
     where: { slug: gameSlug },
   });
 
-  if (!selectedGame) {
+  if (!selectedGame || !selectedGame.isActive) {
     profileError(messages.invalidGame);
   }
 
