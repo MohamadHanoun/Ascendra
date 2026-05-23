@@ -114,6 +114,25 @@ async function queueTournamentAnnouncementEvent(
   type: "tournament_announcement_create" | "tournament_announcement_update",
   tournament: TournamentForAnnouncement,
 ) {
+  if (type === "tournament_announcement_update") {
+    await prisma.botEvent.updateMany({
+      where: {
+        type: "tournament_announcement_update",
+        entityType: "tournament",
+        entityId: tournament.id,
+        status: {
+          in: ["queued", "failed"],
+        },
+      },
+      data: {
+        status: "cancelled",
+        lockedAt: null,
+        processedAt: new Date(),
+        error: "Replaced by a newer tournament announcement update.",
+      },
+    });
+  }
+
   await prisma.botEvent.create({
     data: {
       type,
