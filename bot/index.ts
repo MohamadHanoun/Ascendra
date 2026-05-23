@@ -1655,6 +1655,104 @@ function buildLinkRow(label: string, url: string) {
   );
 }
 
+type PublicTournament = {
+  id: string;
+  title: string;
+  game: string;
+  date: string;
+  prize: string;
+  status: string;
+  description?: string;
+};
+
+async function fetchPublicTournaments() {
+  const response = await fetchWithTimeout(
+    `${SITE_URL}/api/tournaments`,
+    {},
+    API_TIMEOUT_MS,
+  );
+
+  if (!response.ok) {
+    throw new Error(`Tournaments ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (!data?.success || !Array.isArray(data.data)) {
+    return [];
+  }
+
+  return data.data as PublicTournament[];
+}
+
+function formatTournamentStatus(status: string) {
+  const normalized = String(status || "").toLowerCase();
+
+  if (normalized === "open") {
+    return "Open";
+  }
+
+  if (normalized === "upcoming") {
+    return "Upcoming";
+  }
+
+  if (normalized === "closed") {
+    return "Closed";
+  }
+
+  if (normalized === "ended") {
+    return "Ended";
+  }
+
+  if (normalized === "cancelled") {
+    return "Cancelled";
+  }
+
+  return status || "-";
+}
+
+function buildTournamentListDescription(tournaments: PublicTournament[]) {
+  if (tournaments.length === 0) {
+    return "No tournaments available right now.";
+  }
+
+  return tournaments
+    .slice(0, 5)
+    .map((tournament, index) => {
+      return [
+        `**${index + 1}. ${tournament.title}**`,
+        `${tournament.game} · ${formatTournamentStatus(tournament.status)}`,
+        `Date: ${tournament.date || "-"}`,
+        `Prize: ${tournament.prize || "-"}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildTournamentRows(tournaments: PublicTournament[]) {
+  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+  const visibleTournaments = tournaments.slice(0, 4);
+
+  if (visibleTournaments.length > 0) {
+    const row = new ActionRowBuilder<ButtonBuilder>();
+
+    for (const tournament of visibleTournaments) {
+      row.addComponents(
+        new ButtonBuilder()
+          .setLabel(tournament.title.slice(0, 80))
+          .setStyle(ButtonStyle.Link)
+          .setURL(getSiteLink(`/tournaments/${tournament.id}`)),
+      );
+    }
+
+    rows.push(row);
+  }
+
+  rows.push(buildLinkRow("Open Tournaments", getSiteLink("/tournaments")));
+
+  return rows;
+}
+
 function getSlashCommands() {
   return [
     {
@@ -1748,17 +1846,24 @@ async function handleSlashCommand(interaction: any) {
   }
 
   if (commandName === "tournaments") {
+    const tournaments = await fetchPublicTournaments();
+    const visibleTournaments = tournaments.slice(0, 5);
+
     const embed = new EmbedBuilder()
       .setColor(COLORS.tournament)
-      .setTitle("Tournaments")
-      .setDescription("Open current and upcoming Ascendra tournaments.")
+      .setTitle("Ascendra Tournaments")
+      .setDescription(buildTournamentListDescription(visibleTournaments))
+      .setFooter({
+        text:
+          tournaments.length > visibleTournaments.length
+            ? `${visibleTournaments.length} of ${tournaments.length} shown`
+            : `${visibleTournaments.length} shown`,
+      })
       .setTimestamp();
 
     await replyToCommand(interaction, {
       embeds: [embed],
-      components: [
-        buildLinkRow("Open Tournaments", getSiteLink("/tournaments")),
-      ],
+      components: buildTournamentRows(visibleTournaments),
     });
 
     return;
