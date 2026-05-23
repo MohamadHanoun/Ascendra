@@ -34,6 +34,9 @@ type AdminBotPageProps = {
     botStatus?: string;
     botType?: string;
     botSection?: string;
+    commandStatus?: string;
+    commandName?: string;
+    commandUser?: string;
   }>;
 };
 
@@ -141,7 +144,13 @@ export default async function AdminBotPage({
             />
           )}
 
-          {activeSection === "commands" && <AdminBotCommandLogsPanel />}
+          {activeSection === "commands" && (
+            <AdminBotCommandLogsPanel
+              statusFilter={params.commandStatus}
+              commandFilter={params.commandName}
+              userFilter={params.commandUser}
+            />
+          )}
 
           {activeSection === "settings" && <AdminBotSettingsPanel />}
 
