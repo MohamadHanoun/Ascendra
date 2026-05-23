@@ -18,6 +18,7 @@ import {
   getSlashCommands as getEnhancedSlashCommands,
   handleSlashCommand as handleEnhancedSlashCommand,
 } from "./slashCommands";
+import { handleAutocompleteInteraction } from "./autocomplete";
 
 loadEnvConfig(process.cwd());
 
@@ -2237,11 +2238,20 @@ client.once(Events.ClientReady, async () => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isChatInputCommand()) {
-    return;
-  }
-
   try {
+    if (interaction.isAutocomplete()) {
+      await handleAutocompleteInteraction(interaction, {
+        siteUrl: SITE_URL,
+        apiTimeoutMs: API_TIMEOUT_MS,
+      });
+
+      return;
+    }
+
+    if (!interaction.isChatInputCommand()) {
+      return;
+    }
+
     await handleEnhancedSlashCommand(interaction, {
       siteUrl: SITE_URL,
       apiTimeoutMs: API_TIMEOUT_MS,
@@ -2252,9 +2262,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
   } catch (error) {
     console.error("[SlashCommands] Interaction failed:", error);
 
-    await replyToCommand(interaction, {
-      content: "Command failed.",
-    }).catch(() => null);
+    if (interaction.isChatInputCommand()) {
+      await replyToCommand(interaction, {
+        content: "Command failed.",
+      }).catch(() => null);
+    }
   }
 });
 

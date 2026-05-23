@@ -1,0 +1,153 @@
+import { NextRequest, NextResponse } from "next/server";
+
+import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type AutocompleteOption = {
+  name: string;
+  value: string;
+};
+
+function isAuthorized(request: Request) {
+  const authHeader = request.headers.get("authorization");
+
+  if (!authHeader?.startsWith("Bearer ")) {
+    return false;
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+
+  return token === process.env.BOT_API_TOKEN;
+}
+
+function normalizeQuery(value: string | null) {
+  return String(value || "").trim();
+}
+
+function compactLabel(value: string, maxLength = 100) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 3)}...`;
+}
+
+export async function GET(request: NextRequest) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Unauthorized",
+      },
+      {
+        status: 401,
+      },
+    );
+  }
+
+  const entity = normalizeQuery(request.nextUrl.searchParams.get("entity"));
+  const query = normalizeQuery(request.nextUrl.searchParams.get("query"));
+
+  if (entity === "tournament") {
+    const tournaments = await prisma.tournament.findMany({
+      where: query
+        ? {
+            OR: [
+              {
+                title: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+              {
+                game: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+            ],
+          }
+        : {},
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 25,
+      select: {
+        id: true,
+        title: true,
+        game: true,
+        status: true,
+      },
+    });
+
+    const options: AutocompleteOption[] = tournaments.map((tournament) => ({
+      name: compactLabel(
+        `${tournament.title} · ${tournament.game} · ${tournament.status}`,
+      ),
+      value: tournament.title,
+    }));
+
+    return NextResponse.json({
+      success: true,
+      entity,
+      options,
+    });
+  }
+
+  if (entity === "team") {
+    const teams = await prisma.team.findMany({
+      where: query
+        ? {
+            OR: [
+              {
+                name: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+              {
+                game: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+            ],
+          }
+        : {},
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 25,
+      select: {
+        id: true,
+        name: true,
+        game: true,
+        status: true,
+      },
+    });
+
+    const options: AutocompleteOption[] = teams.map((team) => ({
+      name: compactLabel(`${team.name} · ${team.game} · ${team.status}`),
+      value: team.name,
+    }));
+
+    return NextResponse.json({
+      success: true,
+      entity,
+      options,
+    });
+  }
+
+  return NextResponse.json(
+    {
+      success: false,
+      message: "Unsupported autocomplete entity.",
+      options: [],
+    },
+    {
+      status: 400,
+    },
+  );
+}

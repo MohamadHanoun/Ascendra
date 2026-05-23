@@ -1163,6 +1163,7 @@ export function getSlashCommands() {
       options: [
         {
           name: "query",
+          autocomplete: true,
           description: "Tournament title, game, or ID.",
           type: ApplicationCommandOptionType.String,
           required: true,
@@ -1175,6 +1176,7 @@ export function getSlashCommands() {
       options: [
         {
           name: "query",
+          autocomplete: true,
           description: "Tournament title, game, or ID.",
           type: ApplicationCommandOptionType.String,
           required: true,
@@ -1241,6 +1243,7 @@ export function getSlashCommands() {
       options: [
         {
           name: "query",
+          autocomplete: true,
           description: "Team name, game, or ID.",
           type: ApplicationCommandOptionType.String,
           required: true,
@@ -1253,6 +1256,7 @@ export function getSlashCommands() {
       options: [
         {
           name: "query",
+          autocomplete: true,
           description: "Team name, game, or ID.",
           type: ApplicationCommandOptionType.String,
           required: true,
@@ -1265,6 +1269,7 @@ export function getSlashCommands() {
       options: [
         {
           name: "query",
+          autocomplete: true,
           description: "Team name, game, or ID.",
           type: ApplicationCommandOptionType.String,
           required: true,
