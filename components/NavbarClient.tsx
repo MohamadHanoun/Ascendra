@@ -94,10 +94,12 @@ function NavLink({
 function UserAvatar({
   userName,
   userImage,
+  fallbackName,
   small = false,
 }: {
   userName: string | null;
   userImage: string | null;
+  fallbackName: string;
   small?: boolean;
 }) {
   const size = small ? 30 : 36;
@@ -106,7 +108,7 @@ function UserAvatar({
     return (
       <Image
         src={userImage}
-        alt={userName || "User"}
+        alt={userName || fallbackName}
         width={size}
         height={size}
         className="rounded-full"
@@ -213,7 +215,12 @@ export default function NavbarClient({
                   onClick={() => setIsProfileOpen((value) => !value)}
                   className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 transition hover:bg-white/10"
                 >
-                  <UserAvatar userName={userName} userImage={userImage} small />
+                  <UserAvatar
+                    userName={userName}
+                    userImage={userImage}
+                    fallbackName={labels.account.fallbackName}
+                    small
+                  />
 
                   <span className="max-w-[120px] truncate text-sm font-bold text-white">
                     {labels.links.profile}
@@ -223,7 +230,11 @@ export default function NavbarClient({
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-white/10 bg-[#11121d] p-3 shadow-2xl shadow-black/40">
                     <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/[0.04] p-3">
-                      <UserAvatar userName={userName} userImage={userImage} />
+                      <UserAvatar
+                        userName={userName}
+                        userImage={userImage}
+                        fallbackName={labels.account.fallbackName}
+                      />
 
                       <div className="min-w-0">
                         <p className="truncate text-sm font-bold text-white">
@@ -335,6 +346,7 @@ export default function NavbarClient({
                       <UserAvatar
                         userName={userName}
                         userImage={userImage}
+                        fallbackName={labels.account.fallbackName}
                         small
                       />
 
