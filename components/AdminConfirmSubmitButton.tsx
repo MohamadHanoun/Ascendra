@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState } from "react";
 
 type AdminConfirmSubmitButtonProps = {
   label: string;
@@ -21,22 +21,33 @@ export default function AdminConfirmSubmitButton({
   danger = false,
   className,
 }: AdminConfirmSubmitButtonProps) {
+  const formRef = useRef<HTMLFormElement | null>(null);
   const [open, setOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function confirmSubmit() {
-    const button = document.activeElement as HTMLButtonElement | null;
-    const form = button?.form;
+  function openConfirm(event: React.MouseEvent<HTMLButtonElement>) {
+    formRef.current = event.currentTarget.form;
+    setOpen(true);
+  }
 
-    setOpen(false);
-
-    if (!form) {
+  function closeConfirm() {
+    if (isSubmitting) {
       return;
     }
 
-    startTransition(() => {
-      form.requestSubmit();
-    });
+    setOpen(false);
+  }
+
+  function confirmSubmit() {
+    if (!formRef.current) {
+      setOpen(false);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setOpen(false);
+
+    formRef.current.requestSubmit();
   }
 
   const defaultClass = danger
@@ -47,11 +58,11 @@ export default function AdminConfirmSubmitButton({
     <>
       <button
         type="button"
-        disabled={isPending}
-        onClick={() => setOpen(true)}
+        disabled={isSubmitting}
+        onClick={openConfirm}
         className={className || defaultClass}
       >
-        {isPending ? "Working..." : label}
+        {isSubmitting ? "Working..." : label}
       </button>
 
       {open && (
@@ -66,22 +77,24 @@ export default function AdminConfirmSubmitButton({
             <div className="mt-6 grid gap-3 sm:flex sm:justify-end">
               <button
                 type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-xl border border-white/10 px-5 py-3 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
+                disabled={isSubmitting}
+                onClick={closeConfirm}
+                className="rounded-xl border border-white/10 px-5 py-3 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {cancelLabel}
               </button>
 
               <button
                 type="button"
+                disabled={isSubmitting}
                 onClick={confirmSubmit}
                 className={
                   danger
-                    ? "rounded-xl bg-red-500 px-5 py-3 text-sm font-black text-white transition hover:bg-red-400"
-                    : "rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white transition hover:bg-violet-500"
+                    ? "rounded-xl bg-red-500 px-5 py-3 text-sm font-black text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    : "rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
                 }
               >
-                {confirmLabel}
+                {isSubmitting ? "Working..." : confirmLabel}
               </button>
             </div>
           </div>
