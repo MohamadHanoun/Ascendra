@@ -5,7 +5,8 @@ export type AdminBotDashboardSection =
   | "messages"
   | "tournaments"
   | "events"
-  | "settings";
+  | "settings"
+  | "invite";
 
 const tabs: Array<{
   id: AdminBotDashboardSection;
@@ -30,6 +31,10 @@ const tabs: Array<{
   {
     id: "settings",
     label: "Settings",
+  },
+  {
+    id: "invite",
+    label: "Invite",
   },
 ];
 
