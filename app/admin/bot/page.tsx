@@ -35,6 +35,7 @@ type AdminBotPageProps = {
     type?: string;
     botStatus?: string;
     botType?: string;
+    botEventSearch?: string;
     botSection?: string;
     botEventPage?: string;
     commandStatus?: string;
@@ -146,6 +147,7 @@ export default async function AdminBotPage({
             <AdminBotEventsPanel
               statusFilter={params.botStatus}
               eventTypeFilter={params.botType}
+              searchFilter={params.botEventSearch}
               page={params.botEventPage}
             />
           )}

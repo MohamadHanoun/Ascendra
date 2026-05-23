@@ -15,6 +15,7 @@ import { prisma } from "@/lib/prisma";
 type AdminBotEventsPanelProps = {
   statusFilter?: string;
   eventTypeFilter?: string;
+  searchFilter?: string;
   page?: string;
 };
 
@@ -50,7 +51,13 @@ function normalizeStatusFilter(value?: string): BotStatusFilter {
 }
 
 function normalizeTypeFilter(value?: string) {
-  return value && value !== "all" ? value : "all";
+  return value && value !== "all" ? value.slice(0, 120) : "all";
+}
+
+function normalizeSearchFilter(value?: string) {
+  return String(value || "")
+    .trim()
+    .slice(0, 120);
 }
 
 function normalizePage(value?: string) {
@@ -63,7 +70,7 @@ function normalizePage(value?: string) {
   return Math.floor(page);
 }
 
-function buildBotFilterHref(status: string, botType: string) {
+function buildBotFilterHref(status: string, botType: string, search: string) {
   const params = new URLSearchParams();
 
   params.set("botSection", "events");
@@ -76,12 +83,17 @@ function buildBotFilterHref(status: string, botType: string) {
     params.set("botType", botType);
   }
 
+  if (search) {
+    params.set("botEventSearch", search);
+  }
+
   return `/admin/bot?${params.toString()}`;
 }
 
 function buildBotEventsPageHref(params: {
   statusFilter: string;
   typeFilter: string;
+  searchFilter: string;
   page: number;
 }) {
   const searchParams = new URLSearchParams();
@@ -96,6 +108,10 @@ function buildBotEventsPageHref(params: {
     searchParams.set("botType", params.typeFilter);
   }
 
+  if (params.searchFilter) {
+    searchParams.set("botEventSearch", params.searchFilter);
+  }
+
   if (params.page > 1) {
     searchParams.set("botEventPage", String(params.page));
   }
@@ -106,6 +122,7 @@ function buildBotEventsPageHref(params: {
 function buildBotEventsExportHref(params: {
   statusFilter: string;
   typeFilter: string;
+  searchFilter: string;
 }) {
   const searchParams = new URLSearchParams();
 
@@ -117,11 +134,80 @@ function buildBotEventsExportHref(params: {
     searchParams.set("botType", params.typeFilter);
   }
 
+  if (params.searchFilter) {
+    searchParams.set("botEventSearch", params.searchFilter);
+  }
+
   const query = searchParams.toString();
 
   return query
     ? `/api/admin/bot/events/export?${query}`
     : "/api/admin/bot/events/export";
+}
+
+function buildEventWhere(params: {
+  statusFilter: BotStatusFilter;
+  typeFilter: string;
+  searchFilter: string;
+}): Prisma.BotEventWhereInput {
+  const filters: Prisma.BotEventWhereInput[] = [];
+
+  if (params.typeFilter !== "all") {
+    filters.push({
+      type: params.typeFilter,
+    });
+  }
+
+  if (params.statusFilter !== "all") {
+    filters.push({
+      status: params.statusFilter,
+    });
+  }
+
+  if (params.searchFilter) {
+    filters.push({
+      OR: [
+        {
+          id: {
+            contains: params.searchFilter,
+            mode: "insensitive",
+          },
+        },
+        {
+          type: {
+            contains: params.searchFilter,
+            mode: "insensitive",
+          },
+        },
+        {
+          entityType: {
+            contains: params.searchFilter,
+            mode: "insensitive",
+          },
+        },
+        {
+          entityId: {
+            contains: params.searchFilter,
+            mode: "insensitive",
+          },
+        },
+        {
+          error: {
+            contains: params.searchFilter,
+            mode: "insensitive",
+          },
+        },
+      ],
+    });
+  }
+
+  if (filters.length === 0) {
+    return {};
+  }
+
+  return {
+    AND: filters,
+  };
 }
 
 function formatDate(date: Date | null) {
@@ -352,12 +438,14 @@ function EventsPagination({
   eventCount,
   statusFilter,
   typeFilter,
+  searchFilter,
 }: {
   currentPage: number;
   totalPages: number;
   eventCount: number;
   statusFilter: string;
   typeFilter: string;
+  searchFilter: string;
 }) {
   const hasPreviousPage = currentPage > 1;
   const hasNextPage = currentPage < totalPages;
@@ -367,7 +455,7 @@ function EventsPagination({
   }
 
   return (
-    <div className="mt-6 flex flex-col gap-3 border-t border-white/10 px-5 pt-5 pb-5 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mt-6 flex flex-col gap-3 border-t border-white/10 px-5 pb-5 pt-5 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm font-bold text-gray-400">
         Page {currentPage} of {totalPages} · {eventCount} event
         {eventCount === 1 ? "" : "s"}
@@ -379,6 +467,7 @@ function EventsPagination({
             href={buildBotEventsPageHref({
               statusFilter,
               typeFilter,
+              searchFilter,
               page: currentPage - 1,
             })}
             scroll={false}
@@ -397,6 +486,7 @@ function EventsPagination({
             href={buildBotEventsPageHref({
               statusFilter,
               typeFilter,
+              searchFilter,
               page: currentPage + 1,
             })}
             scroll={false}
@@ -417,10 +507,12 @@ function EventsPagination({
 export default async function AdminBotEventsPanel({
   statusFilter,
   eventTypeFilter,
+  searchFilter,
   page,
 }: AdminBotEventsPanelProps) {
   const activeStatusFilter = normalizeStatusFilter(statusFilter);
   const activeTypeFilter = normalizeTypeFilter(eventTypeFilter);
+  const activeSearchFilter = normalizeSearchFilter(searchFilter);
   const requestedPage = normalizePage(page);
   const pageSize = 30;
 
@@ -431,14 +523,11 @@ export default async function AdminBotEventsPanel({
         }
       : {};
 
-  const eventWhere: Prisma.BotEventWhereInput = {
-    ...typeWhere,
-    ...(activeStatusFilter !== "all"
-      ? {
-          status: activeStatusFilter,
-        }
-      : {}),
-  };
+  const eventWhere = buildEventWhere({
+    statusFilter: activeStatusFilter,
+    typeFilter: activeTypeFilter,
+    searchFilter: activeSearchFilter,
+  });
 
   const [
     queuedCount,
@@ -627,12 +716,70 @@ export default async function AdminBotEventsPanel({
           <h3 className="mt-1 text-xl font-black text-white">Event filters</h3>
         </div>
 
-        <div className="grid gap-4 p-5">
+        <div className="grid gap-5 p-5">
+          <form
+            className="grid gap-4 lg:grid-cols-[1fr_auto_auto]"
+            action="/admin/bot"
+          >
+            <input type="hidden" name="botSection" value="events" />
+
+            {activeStatusFilter !== "all" && (
+              <input
+                type="hidden"
+                name="botStatus"
+                value={activeStatusFilter}
+              />
+            )}
+
+            {activeTypeFilter !== "all" && (
+              <input type="hidden" name="botType" value={activeTypeFilter} />
+            )}
+
+            <label className="grid gap-2">
+              <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                Search Events
+              </span>
+
+              <input
+                name="botEventSearch"
+                defaultValue={activeSearchFilter}
+                placeholder="event type, id, entity, error..."
+                className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-bold text-white outline-none transition placeholder:text-gray-600 focus:border-violet-400"
+              />
+            </label>
+
+            <div className="flex items-end">
+              <button
+                type="submit"
+                className="w-full rounded-2xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
+              >
+                Search
+              </button>
+            </div>
+
+            <div className="flex items-end">
+              <Link
+                href={buildBotFilterHref(
+                  activeStatusFilter,
+                  activeTypeFilter,
+                  "",
+                )}
+                className="w-full rounded-2xl border border-white/10 px-5 py-3 text-center text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
+              >
+                Clear
+              </Link>
+            </div>
+          </form>
+
           <div className="flex flex-wrap gap-2">
             {["all", ...allowedBotStatuses].map((status) => (
               <FilterPill
                 key={status}
-                href={buildBotFilterHref(status, activeTypeFilter)}
+                href={buildBotFilterHref(
+                  status,
+                  activeTypeFilter,
+                  activeSearchFilter,
+                )}
                 label={status}
                 active={activeStatusFilter === status}
               />
@@ -641,7 +788,11 @@ export default async function AdminBotEventsPanel({
 
           <div className="flex flex-wrap gap-2">
             <FilterPill
-              href={buildBotFilterHref(activeStatusFilter, "all")}
+              href={buildBotFilterHref(
+                activeStatusFilter,
+                "all",
+                activeSearchFilter,
+              )}
               label="All types"
               active={activeTypeFilter === "all"}
             />
@@ -649,7 +800,11 @@ export default async function AdminBotEventsPanel({
             {eventTypes.map((eventType) => (
               <FilterPill
                 key={eventType.type}
-                href={buildBotFilterHref(activeStatusFilter, eventType.type)}
+                href={buildBotFilterHref(
+                  activeStatusFilter,
+                  eventType.type,
+                  activeSearchFilter,
+                )}
                 label={eventType.type}
                 active={activeTypeFilter === eventType.type}
               />
@@ -698,6 +853,7 @@ export default async function AdminBotEventsPanel({
             href={buildBotEventsExportHref({
               statusFilter: activeStatusFilter,
               typeFilter: activeTypeFilter,
+              searchFilter: activeSearchFilter,
             })}
             className="w-fit rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-2 text-sm font-black text-violet-200 transition hover:bg-violet-500/15 hover:text-white"
           >
@@ -803,6 +959,7 @@ export default async function AdminBotEventsPanel({
             eventCount={eventCount}
             statusFilter={activeStatusFilter}
             typeFilter={activeTypeFilter}
+            searchFilter={activeSearchFilter}
           />
         </section>
       )}

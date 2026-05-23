@@ -32,21 +32,74 @@ function normalizeTypeFilter(value?: string | null) {
   return value && value !== "all" ? value.slice(0, 120) : "all";
 }
 
+function normalizeSearchFilter(value?: string | null) {
+  return String(value || "")
+    .trim()
+    .slice(0, 120);
+}
+
 function buildEventWhere(params: {
   statusFilter: BotStatusFilter;
   typeFilter: string;
+  searchFilter: string;
 }): Prisma.BotEventWhereInput {
+  const filters: Prisma.BotEventWhereInput[] = [];
+
+  if (params.typeFilter !== "all") {
+    filters.push({
+      type: params.typeFilter,
+    });
+  }
+
+  if (params.statusFilter !== "all") {
+    filters.push({
+      status: params.statusFilter,
+    });
+  }
+
+  if (params.searchFilter) {
+    filters.push({
+      OR: [
+        {
+          id: {
+            contains: params.searchFilter,
+            mode: "insensitive",
+          },
+        },
+        {
+          type: {
+            contains: params.searchFilter,
+            mode: "insensitive",
+          },
+        },
+        {
+          entityType: {
+            contains: params.searchFilter,
+            mode: "insensitive",
+          },
+        },
+        {
+          entityId: {
+            contains: params.searchFilter,
+            mode: "insensitive",
+          },
+        },
+        {
+          error: {
+            contains: params.searchFilter,
+            mode: "insensitive",
+          },
+        },
+      ],
+    });
+  }
+
+  if (filters.length === 0) {
+    return {};
+  }
+
   return {
-    ...(params.typeFilter !== "all"
-      ? {
-          type: params.typeFilter,
-        }
-      : {}),
-    ...(params.statusFilter !== "all"
-      ? {
-          status: params.statusFilter,
-        }
-      : {}),
+    AND: filters,
   };
 }
 
@@ -94,11 +147,15 @@ export async function GET(request: NextRequest) {
   const typeFilter = normalizeTypeFilter(
     request.nextUrl.searchParams.get("botType"),
   );
+  const searchFilter = normalizeSearchFilter(
+    request.nextUrl.searchParams.get("botEventSearch"),
+  );
 
   const events = await prisma.botEvent.findMany({
     where: buildEventWhere({
       statusFilter,
       typeFilter,
+      searchFilter,
     }),
     orderBy: {
       createdAt: "desc",
