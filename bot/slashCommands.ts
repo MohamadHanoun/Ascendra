@@ -207,6 +207,14 @@ function getSiteLink(ctx: SlashCommandContext, path = "") {
   return `${ctx.siteUrl}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+function getDiscordInviteUrl() {
+  return (
+    process.env.BOT_DISCORD_INVITE_URL ||
+    process.env.NEXT_PUBLIC_DISCORD_INVITE_URL ||
+    ""
+  ).trim();
+}
+
 function truncate(value: string, maxLength: number) {
   if (value.length <= maxLength) {
     return value;
@@ -251,6 +259,26 @@ function buildLinkRow(label: string, url: string) {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setLabel(label).setStyle(ButtonStyle.Link).setURL(url),
   );
+}
+
+function buildButtonRow(
+  links: Array<{
+    label: string;
+    url: string;
+  }>,
+) {
+  const row = new ActionRowBuilder<ButtonBuilder>();
+
+  for (const link of links.slice(0, 5)) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setLabel(link.label)
+        .setStyle(ButtonStyle.Link)
+        .setURL(link.url),
+    );
+  }
+
+  return row;
 }
 
 function buildTwoLinkRow(
@@ -869,8 +897,21 @@ function getTargetDiscordUser(interaction: any) {
   return interaction.options?.getUser("user") || interaction.user;
 }
 
+async function deferCommand(interaction: any) {
+  if (!interaction.deferred && !interaction.replied) {
+    await interaction.deferReply({
+      ephemeral: true,
+    });
+  }
+}
+
 async function replyToCommand(interaction: any, payload: any) {
-  if (interaction.deferred || interaction.replied) {
+  if (interaction.deferred) {
+    await interaction.editReply(payload);
+    return;
+  }
+
+  if (interaction.replied) {
     await interaction.followUp({
       ...payload,
       ephemeral: true,
@@ -890,6 +931,22 @@ export function getSlashCommands() {
     {
       name: "ascendra",
       description: "Open AscendraHub.",
+    },
+    {
+      name: "about",
+      description: "Show Ascendra overview.",
+    },
+    {
+      name: "links",
+      description: "Show Ascendra quick links.",
+    },
+    {
+      name: "invite",
+      description: "Get the Ascendra Discord invite.",
+    },
+    {
+      name: "ping",
+      description: "Check bot response.",
     },
     {
       name: "tournaments",
@@ -988,6 +1045,10 @@ export function getSlashCommands() {
       ],
     },
     {
+      name: "games",
+      description: "Show Ascendra game stats.",
+    },
+    {
       name: "profile",
       description: "Show an Ascendra player profile.",
       options: [
@@ -1075,7 +1136,114 @@ export async function handleSlashCommand(
     return;
   }
 
+  if (commandName === "about") {
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.premium)
+      .setTitle("Ascendra")
+      .setDescription(
+        [
+          "Ascendra is a competitive gaming hub for tournaments, teams, rankings, and community events.",
+          "",
+          "Track tournaments, explore leaderboards, manage teams, and follow community updates from one place.",
+        ].join("\n"),
+      )
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [
+        buildButtonRow([
+          { label: "Website", url: getSiteLink(ctx) },
+          { label: "Tournaments", url: getSiteLink(ctx, "/tournaments") },
+          { label: "Leaderboard", url: getSiteLink(ctx, "/leaderboard") },
+        ]),
+      ],
+    });
+
+    return;
+  }
+
+  if (commandName === "links") {
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.deepPurple)
+      .setTitle("Ascendra Links")
+      .setDescription("Quick access to AscendraHub.")
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [
+        buildButtonRow([
+          { label: "Website", url: getSiteLink(ctx) },
+          { label: "Tournaments", url: getSiteLink(ctx, "/tournaments") },
+          { label: "Leaderboard", url: getSiteLink(ctx, "/leaderboard") },
+          { label: "Rules", url: getSiteLink(ctx, "/rules") },
+        ]),
+        buildButtonRow([
+          { label: "Community", url: getSiteLink(ctx, "/community") },
+          { label: "Announcements", url: getSiteLink(ctx, "/announcements") },
+          { label: "Staff", url: getSiteLink(ctx, "/staff") },
+          { label: "Stats", url: getSiteLink(ctx, "/stats") },
+        ]),
+      ],
+    });
+
+    return;
+  }
+
+  if (commandName === "invite") {
+    const inviteUrl = getDiscordInviteUrl();
+    const targetUrl = isValidHttpUrl(inviteUrl)
+      ? inviteUrl
+      : getSiteLink(ctx, "/community");
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.premium)
+      .setTitle("Ascendra Discord")
+      .setDescription("Join the Ascendra community.")
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [
+        buildLinkRow(
+          isValidHttpUrl(inviteUrl) ? "Join Discord" : "Open Community",
+          targetUrl,
+        ),
+      ],
+    });
+
+    return;
+  }
+
+  if (commandName === "ping") {
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.success)
+      .setTitle("Pong")
+      .addFields(
+        {
+          name: "Status",
+          value: "Online",
+          inline: true,
+        },
+        {
+          name: "Uptime",
+          value: formatUptime(ctx.uptimeMs),
+          inline: true,
+        },
+      )
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+    });
+
+    return;
+  }
+
   if (commandName === "tournaments") {
+    await deferCommand(interaction);
+
     const selectedGame = normalizeGame(
       interaction.options?.getString("game") || null,
     );
@@ -1122,6 +1290,8 @@ export async function handleSlashCommand(
   }
 
   if (commandName === "schedule") {
+    await deferCommand(interaction);
+
     const selectedGame = normalizeGame(
       interaction.options?.getString("game") || null,
     );
@@ -1161,6 +1331,8 @@ export async function handleSlashCommand(
   }
 
   if (commandName === "tournament") {
+    await deferCommand(interaction);
+
     const query = String(interaction.options?.getString("query") || "").trim();
     const tournaments = await fetchTournamentLookup(ctx, query);
     const tournament = tournaments[0];
@@ -1227,6 +1399,8 @@ export async function handleSlashCommand(
   }
 
   if (commandName === "results") {
+    await deferCommand(interaction);
+
     const query = String(interaction.options?.getString("query") || "").trim();
     const tournaments = await fetchTournamentLookup(ctx, query);
     const tournament = tournaments[0];
@@ -1268,6 +1442,8 @@ export async function handleSlashCommand(
   }
 
   if (commandName === "leaderboard") {
+    await deferCommand(interaction);
+
     const selectedType = normalizeLeaderboardType(
       interaction.options?.getString("type") || null,
     );
@@ -1309,7 +1485,43 @@ export async function handleSlashCommand(
     return;
   }
 
+  if (commandName === "games") {
+    await deferCommand(interaction);
+
+    const stats = await fetchStats(ctx);
+
+    if (!stats) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("Games unavailable")
+        .setDescription("Game stats are not available right now.")
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed],
+        components: [buildLinkRow("Open Stats", getSiteLink(ctx, "/stats"))],
+      });
+
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.tournament)
+      .setTitle("Ascendra Games")
+      .setDescription(buildGameStatsDescription(stats))
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [buildLinkRow("Open Stats", getSiteLink(ctx, "/stats"))],
+    });
+
+    return;
+  }
+
   if (commandName === "profile") {
+    await deferCommand(interaction);
+
     const targetUser = getTargetDiscordUser(interaction);
     const profile = await fetchPlayerProfile(ctx, targetUser.id);
 
@@ -1349,6 +1561,8 @@ export async function handleSlashCommand(
   }
 
   if (commandName === "teams") {
+    await deferCommand(interaction);
+
     const targetUser = getTargetDiscordUser(interaction);
     const profile = await fetchPlayerProfile(ctx, targetUser.id);
 
@@ -1392,6 +1606,8 @@ export async function handleSlashCommand(
   }
 
   if (commandName === "registrations") {
+    await deferCommand(interaction);
+
     const targetUser = getTargetDiscordUser(interaction);
     const profile = await fetchPlayerProfile(ctx, targetUser.id);
 
@@ -1446,6 +1662,8 @@ export async function handleSlashCommand(
   }
 
   if (commandName === "announcements") {
+    await deferCommand(interaction);
+
     const announcements = await fetchAnnouncements(ctx);
     const visibleAnnouncements = announcements.slice(0, 5);
 
@@ -1472,6 +1690,8 @@ export async function handleSlashCommand(
   }
 
   if (commandName === "stats") {
+    await deferCommand(interaction);
+
     const stats = await fetchStats(ctx);
 
     if (!stats) {
@@ -1510,6 +1730,8 @@ export async function handleSlashCommand(
   }
 
   if (commandName === "staff") {
+    await deferCommand(interaction);
+
     const staff = await fetchStaff(ctx);
     const visibleStaff = staff.slice(0, 10);
 
@@ -1534,6 +1756,8 @@ export async function handleSlashCommand(
   }
 
   if (commandName === "rules") {
+    await deferCommand(interaction);
+
     const rules = await fetchRules(ctx);
     const visibleRules = rules.slice(0, 10);
 
@@ -1615,11 +1839,16 @@ export async function handleSlashCommand(
       .setDescription(
         [
           "`/ascendra` — Website",
+          "`/about` — Overview",
+          "`/links` — Quick links",
+          "`/invite` — Discord invite",
+          "`/ping` — Bot response",
           "`/tournaments` — Tournament list",
           "`/schedule` — Upcoming tournaments",
           "`/tournament` — Tournament details",
           "`/results` — Tournament results",
           "`/leaderboard` — Leaderboard",
+          "`/games` — Game stats",
           "`/profile` — Player profile",
           "`/teams` — Player teams",
           "`/registrations` — Tournament registrations",
