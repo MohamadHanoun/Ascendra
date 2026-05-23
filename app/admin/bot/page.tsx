@@ -116,7 +116,7 @@ export default async function AdminBotPage({
           <AdminToast message={params.message} type={toastType} />
         )}
 
-        <section className="relative z-30 -mt-14 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
+        <section className="relative z-[999] mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 pt-8 lg:px-10">
           <AdminBotDashboardTabs activeSection={activeSection} />
 
           {activeSection === "overview" && (

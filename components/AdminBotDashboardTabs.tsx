@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 
 export type AdminBotDashboardSection =
   | "overview"
@@ -39,15 +41,11 @@ const tabs: Array<{
 ];
 
 function getTabHref(section: AdminBotDashboardSection) {
-  const params = new URLSearchParams();
-
-  if (section !== "overview") {
-    params.set("botSection", section);
+  if (section === "overview") {
+    return "/admin/bot";
   }
 
-  const query = params.toString();
-
-  return query ? `/admin/bot?${query}` : "/admin/bot";
+  return `/admin/bot?botSection=${section}`;
 }
 
 export default function AdminBotDashboardTabs({
@@ -55,26 +53,31 @@ export default function AdminBotDashboardTabs({
 }: {
   activeSection: AdminBotDashboardSection;
 }) {
+  const router = useRouter();
+
+  function goToSection(section: AdminBotDashboardSection) {
+    router.push(getTabHref(section));
+  }
+
   return (
-    <nav className="relative z-40 pointer-events-auto overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-2 shadow-2xl shadow-black/20 backdrop-blur-xl">
-      <div className="relative z-10 flex flex-wrap gap-2">
+    <nav className="relative z-[9999] rounded-3xl border border-white/10 bg-[#11121d]/95 p-2 shadow-2xl shadow-black/30 backdrop-blur-xl">
+      <div className="flex flex-wrap gap-2">
         {tabs.map((tab) => {
           const active = activeSection === tab.id;
 
           return (
-            <Link
+            <button
               key={tab.id}
-              href={getTabHref(tab.id)}
-              prefetch={false}
-              scroll={false}
-              className={`relative z-10 inline-flex rounded-2xl px-4 py-3 text-sm font-black transition ${
+              type="button"
+              onClick={() => goToSection(tab.id)}
+              className={`relative z-[9999] inline-flex cursor-pointer rounded-2xl px-4 py-3 text-sm font-black transition ${
                 active
                   ? "bg-violet-600 text-white shadow-lg shadow-violet-950/30"
                   : "text-gray-400 hover:bg-white/10 hover:text-white"
               }`}
             >
               {tab.label}
-            </Link>
+            </button>
           );
         })}
       </div>
