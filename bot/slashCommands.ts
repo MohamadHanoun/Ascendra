@@ -321,6 +321,11 @@ function formatRegistrationStatus(status: string) {
   if (normalized === "open") return "Open";
   if (normalized === "upcoming") return "Upcoming";
   if (normalized === "closed") return "Closed";
+  if (normalized === "approved") return "Approved";
+  if (normalized === "registered") return "Registered";
+  if (normalized === "pending") return "Pending";
+  if (normalized === "rejected") return "Rejected";
+  if (normalized === "cancelled") return "Cancelled";
 
   return status || "-";
 }
@@ -342,6 +347,51 @@ function formatTeamStatus(value: string) {
   if (normalized === "rejected") return "Rejected";
 
   return value || "-";
+}
+
+function parseFlexibleDate(value: string) {
+  if (!value) {
+    return null;
+  }
+
+  const direct = new Date(value);
+
+  if (!Number.isNaN(direct.getTime())) {
+    return direct;
+  }
+
+  const match = value.trim().match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, day, month, year] = match;
+  const parsed = new Date(
+    Date.UTC(Number(year), Number(month) - 1, Number(day), 18, 0, 0),
+  );
+
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function getDateSortValue(value: string) {
+  const date = parseFlexibleDate(value);
+
+  if (!date) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  return date.getTime();
+}
+
+function isUpcomingScheduleStatus(status: string) {
+  const normalized = String(status || "").toLowerCase();
+
+  return normalized === "open" || normalized === "upcoming";
 }
 
 async function fetchPublicTournaments(ctx: SlashCommandContext) {
@@ -389,6 +439,23 @@ function buildTournamentListDescription(tournaments: PublicTournament[]) {
         `${tournament.game} · ${formatTournamentStatus(tournament.status)}`,
         `Date: ${tournament.date || "-"}`,
         `Prize: ${tournament.prize || "-"}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildScheduleDescription(tournaments: PublicTournament[]) {
+  if (tournaments.length === 0) {
+    return "No upcoming tournaments found.";
+  }
+
+  return tournaments
+    .slice(0, 8)
+    .map((tournament, index) => {
+      return [
+        `**${index + 1}. ${tournament.title}**`,
+        `${tournament.game} · ${formatTournamentStatus(tournament.status)}`,
+        `Date: ${tournament.date || "-"}`,
       ].join("\n");
     })
     .join("\n\n");
@@ -617,6 +684,19 @@ function buildTournamentTeamsDescription(tournament: BotTournamentDetails) {
     .join("\n\n");
 }
 
+function buildTournamentResultsDescription(tournament: BotTournamentDetails) {
+  if (tournament.results.length === 0) {
+    return "No results have been published for this tournament.";
+  }
+
+  return tournament.results
+    .slice(0, 8)
+    .map((result) => {
+      return `**#${result.placement} — ${result.teamName}**\n${result.points} pts`;
+    })
+    .join("\n\n");
+}
+
 function getTargetDiscordUser(interaction: any) {
   return interaction.options?.getUser("user") || interaction.user;
 }
@@ -663,37 +743,47 @@ export function getSlashCommands() {
           type: ApplicationCommandOptionType.String,
           required: false,
           choices: [
-            {
-              name: "All",
-              value: "all",
-            },
-            {
-              name: "Open",
-              value: "open",
-            },
-            {
-              name: "Upcoming",
-              value: "upcoming",
-            },
-            {
-              name: "Closed",
-              value: "closed",
-            },
-            {
-              name: "Ended",
-              value: "ended",
-            },
-            {
-              name: "Cancelled",
-              value: "cancelled",
-            },
+            { name: "All", value: "all" },
+            { name: "Open", value: "open" },
+            { name: "Upcoming", value: "upcoming" },
+            { name: "Closed", value: "closed" },
+            { name: "Ended", value: "ended" },
+            { name: "Cancelled", value: "cancelled" },
           ],
+        },
+      ],
+    },
+    {
+      name: "schedule",
+      description: "Show upcoming Ascendra tournaments.",
+      options: [
+        {
+          name: "game",
+          description: "Game filter.",
+          type: ApplicationCommandOptionType.String,
+          required: false,
+          choices: games.map((game) => ({
+            name: game,
+            value: game,
+          })),
         },
       ],
     },
     {
       name: "tournament",
       description: "Show tournament details.",
+      options: [
+        {
+          name: "query",
+          description: "Tournament title, game, or ID.",
+          type: ApplicationCommandOptionType.String,
+          required: true,
+        },
+      ],
+    },
+    {
+      name: "results",
+      description: "Show tournament results.",
       options: [
         {
           name: "query",
@@ -713,14 +803,8 @@ export function getSlashCommands() {
           type: ApplicationCommandOptionType.String,
           required: false,
           choices: [
-            {
-              name: "Players",
-              value: "players",
-            },
-            {
-              name: "Teams",
-              value: "teams",
-            },
+            { name: "Players", value: "players" },
+            { name: "Teams", value: "teams" },
           ],
         },
         {
@@ -857,6 +941,45 @@ export async function handleSlashCommand(
     return;
   }
 
+  if (commandName === "schedule") {
+    const selectedGame = normalizeGame(
+      interaction.options?.getString("game") || null,
+    );
+
+    const tournaments = filterTournaments(
+      await fetchPublicTournaments(ctx),
+      selectedGame,
+      "all",
+    )
+      .filter((tournament) => isUpcomingScheduleStatus(tournament.status))
+      .sort((a, b) => getDateSortValue(a.date) - getDateSortValue(b.date));
+
+    const visibleTournaments = tournaments.slice(0, 8);
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.tournament)
+      .setTitle(
+        selectedGame === "Overall"
+          ? "Ascendra Schedule"
+          : `Ascendra Schedule · ${selectedGame}`,
+      )
+      .setDescription(buildScheduleDescription(visibleTournaments))
+      .setFooter({
+        text:
+          tournaments.length > visibleTournaments.length
+            ? `${visibleTournaments.length} of ${tournaments.length} shown`
+            : `${visibleTournaments.length} shown`,
+      })
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: buildTournamentRows(ctx, visibleTournaments),
+    });
+
+    return;
+  }
+
   if (commandName === "tournament") {
     const query = String(interaction.options?.getString("query") || "").trim();
     const tournaments = await fetchTournamentLookup(ctx, query);
@@ -916,6 +1039,47 @@ export async function handleSlashCommand(
                 url: tournament.discordAnnouncementUrl,
               }
             : undefined,
+        ),
+      ],
+    });
+
+    return;
+  }
+
+  if (commandName === "results") {
+    const query = String(interaction.options?.getString("query") || "").trim();
+    const tournaments = await fetchTournamentLookup(ctx, query);
+    const tournament = tournaments[0];
+
+    if (!tournament) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("Tournament not found")
+        .setDescription("No tournament matched your search.")
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed],
+        components: [
+          buildLinkRow("Open Tournaments", getSiteLink(ctx, "/tournaments")),
+        ],
+      });
+
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.info)
+      .setTitle(`${tournament.title} · Results`)
+      .setDescription(buildTournamentResultsDescription(tournament))
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [
+        buildLinkRow(
+          "Open Tournament",
+          getSiteLink(ctx, `/tournaments/${tournament.id}`),
         ),
       ],
     });
@@ -1175,7 +1339,9 @@ export async function handleSlashCommand(
         [
           "`/ascendra` — Website",
           "`/tournaments` — Tournament list",
+          "`/schedule` — Upcoming tournaments",
           "`/tournament` — Tournament details",
+          "`/results` — Tournament results",
           "`/leaderboard` — Leaderboard",
           "`/profile` — Player profile",
           "`/teams` — Player teams",
