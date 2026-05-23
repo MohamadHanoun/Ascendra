@@ -37,9 +37,10 @@ const POLL_INTERVAL_MS = 15000;
 const COLORS = {
   success: 0x10b981,
   error: 0xef4444,
-  warning: 0xf97316,
+  warning: 0xf59e0b,
   info: 0x8b5cf6,
   tournament: 0x7c3aed,
+  premium: 0x6d28d9,
 };
 
 const BRAND_LOGO_URL = `${SITE_URL}/images/brand/ascendra-logo-mark.png`;
@@ -78,6 +79,13 @@ type LogField = {
   name: string;
   value: string;
   inline?: boolean;
+};
+
+type RegistrationPresentation = {
+  label: string;
+  badge: string;
+  color: number;
+  footerStatus: string;
 };
 
 let botConfigCache: {
@@ -137,15 +145,45 @@ function pickFirstNonEmpty(...values: unknown[]) {
   return "";
 }
 
+function parseFlexibleDate(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const raw = String(value).trim();
+
+  const direct = new Date(raw);
+
+  if (!Number.isNaN(direct.getTime())) {
+    return direct;
+  }
+
+  const match = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+
+  if (match) {
+    const [, day, month, year] = match;
+
+    const parsed = new Date(
+      Date.UTC(Number(year), Number(month) - 1, Number(day), 18, 0, 0),
+    );
+
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
 function formatTournamentDate(value: unknown) {
   if (value === null || value === undefined || value === "") {
     return "-";
   }
 
   const raw = String(value).trim();
-  const parsed = new Date(raw);
+  const parsed = parseFlexibleDate(raw);
 
-  if (Number.isNaN(parsed.getTime())) {
+  if (!parsed) {
     return raw;
   }
 
@@ -154,7 +192,31 @@ function formatTournamentDate(value: unknown) {
   return `<t:${unix}:F>\n<t:${unix}:R>`;
 }
 
-function getRegistrationPresentation(value: unknown) {
+function formatTeamSize(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
+
+  return `${value} Players`;
+}
+
+function formatSlots(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
+
+  return `${value} Teams`;
+}
+
+function formatPrize(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return "Not announced";
+  }
+
+  return String(value);
+}
+
+function getRegistrationPresentation(value: unknown): RegistrationPresentation {
   const normalized = String(value || "")
     .trim()
     .toLowerCase();
@@ -163,6 +225,7 @@ function getRegistrationPresentation(value: unknown) {
     case "open":
       return {
         label: "Open",
+        badge: "🟢 OPEN",
         color: COLORS.success,
         footerStatus: "Registration Open",
       };
@@ -170,6 +233,7 @@ function getRegistrationPresentation(value: unknown) {
     case "upcoming":
       return {
         label: "Upcoming",
+        badge: "🟡 UPCOMING",
         color: COLORS.warning,
         footerStatus: "Registration Coming Soon",
       };
@@ -177,6 +241,7 @@ function getRegistrationPresentation(value: unknown) {
     case "closed":
       return {
         label: "Closed",
+        badge: "🔴 CLOSED",
         color: COLORS.error,
         footerStatus: "Registration Closed",
       };
@@ -184,7 +249,8 @@ function getRegistrationPresentation(value: unknown) {
     default:
       return {
         label: cleanLogValue(value),
-        color: COLORS.tournament,
+        badge: "🟣 TOURNAMENT",
+        color: COLORS.premium,
         footerStatus: "Tournament Update",
       };
   }
@@ -198,20 +264,20 @@ function buildTournamentDescription(payload: Record<string, any>) {
   );
 
   if (description) {
-    return description.slice(0, 2000);
+    return description.slice(0, 1200);
   }
 
-  return "A new Ascendra tournament is now live. Open the tournament page to review the details, registration status, team requirements, and updates.";
+  return "A new Ascendra tournament is now live. Review the details, register your team, and follow all upcoming updates from the tournament page.";
 }
 
-function buildTournamentButtons(url: string) {
+function buildTournamentButtons(tournamentUrl: string) {
   const row = new ActionRowBuilder<ButtonBuilder>();
 
   row.addComponents(
     new ButtonBuilder()
       .setLabel("Open Tournament")
       .setStyle(ButtonStyle.Link)
-      .setURL(url),
+      .setURL(tournamentUrl),
   );
 
   if (DISCORD_INVITE_URL) {
@@ -499,13 +565,14 @@ async function processTournamentAnnouncement(event: BotEvent) {
   }
 
   const payload = event.payload;
+
   const tournamentUrl = String(payload.websiteUrl || SITE_URL);
   const title = pickFirstNonEmpty(payload.title, "Ascendra Tournament");
   const game = cleanLogValue(payload.game);
-  const teamSize = cleanLogValue(payload.teamSize);
-  const slots = cleanLogValue(payload.maxSlots);
-  const prize = cleanLogValue(payload.prize);
   const date = formatTournamentDate(payload.date);
+  const teamSize = formatTeamSize(payload.teamSize);
+  const slots = formatSlots(payload.maxSlots);
+  const prize = formatPrize(payload.prize);
   const description = buildTournamentDescription(payload);
 
   const heroImageUrl = pickFirstNonEmpty(
@@ -517,45 +584,53 @@ async function processTournamentAnnouncement(event: BotEvent) {
 
   const registration = getRegistrationPresentation(payload.registrationStatus);
 
-  const embed = new EmbedBuilder()
+  const mainEmbed = new EmbedBuilder()
     .setColor(registration.color)
     .setAuthor({
       name: "Ascendra Tournaments",
       iconURL: BRAND_LOGO_URL,
       url: SITE_URL,
     })
-    .setTitle(title)
+    .setTitle(`🏆 ${title}`)
     .setURL(tournamentUrl)
-    .setDescription(description)
+    .setDescription(
+      [
+        `${registration.badge}`,
+        "",
+        description,
+        "",
+        `> Compete with your team, secure your slot, and follow all tournament updates through Ascendra.`,
+      ].join("\n"),
+    )
     .setThumbnail(BRAND_LOGO_URL)
     .addFields(
       {
-        name: "Game",
+        name: "🎮 Game",
         value: `**${game}**`,
         inline: true,
       },
       {
-        name: "Team Size",
+        name: "👥 Team Size",
         value: `**${teamSize}**`,
         inline: true,
       },
       {
-        name: "Slots",
+        name: "📦 Slots",
         value: `**${slots}**`,
         inline: true,
       },
       {
-        name: "Date",
+        name: "🗓️ Tournament Date",
         value: date,
         inline: false,
       },
       {
-        name: "Prize",
+        name: "💰 Prize",
         value: `**${prize}**`,
         inline: true,
       },
       {
-        name: "Registration",
+        name: "📍 Registration",
         value: `**${registration.label}**`,
         inline: true,
       },
@@ -567,13 +642,28 @@ async function processTournamentAnnouncement(event: BotEvent) {
     .setTimestamp();
 
   if (heroImageUrl) {
-    embed.setImage(heroImageUrl);
+    mainEmbed.setImage(heroImageUrl);
   }
+
+  const infoEmbed = new EmbedBuilder()
+    .setColor(COLORS.premium)
+    .setDescription(
+      [
+        "**Why join this tournament?**",
+        "• Structured competitive environment",
+        "• Team-based participation",
+        "• Organized updates and tournament flow",
+        "• Community-driven Ascendra experience",
+      ].join("\n"),
+    )
+    .setFooter({
+      text: "Open the tournament page for full rules, updates, and registration details.",
+    });
 
   const row = buildTournamentButtons(tournamentUrl);
 
   await channel.send({
-    embeds: [embed],
+    embeds: [mainEmbed, infoEmbed],
     components: [row],
   });
 
