@@ -179,6 +179,78 @@ type BotTournamentDetails = {
   }>;
 };
 
+type BotTeamLookup = {
+  success: boolean;
+  count: number;
+  teams: BotTeamDetails[];
+};
+
+type BotTeamDetails = {
+  id: string;
+  name: string;
+  game: string;
+  status: string;
+  createdAt: string;
+  submittedAt: string | null;
+  approvedAt: string | null;
+  rejectedAt: string | null;
+  membersCount: number;
+  resultsCount: number;
+  registrationsCount: number;
+  tournamentPoints: number;
+  bestPlacement: number | null;
+  leader: {
+    id: string;
+    discordId: string;
+    username: string;
+    avatar: string | null;
+    role: string;
+  };
+  members: Array<{
+    id: string;
+    role: string;
+    joinedAt: string;
+    user: {
+      id: string;
+      discordId: string;
+      username: string;
+      avatar: string | null;
+      role: string;
+    };
+  }>;
+  registrations: Array<{
+    id: string;
+    status: string;
+    rejectionReason: string | null;
+    createdAt: string;
+    approvedAt: string | null;
+    cancelledAt: string | null;
+    reviewedAt: string | null;
+    tournament: {
+      id: string;
+      title: string;
+      game: string;
+      date: string;
+      status: string;
+      registrationStatus: string;
+    };
+  }>;
+  results: Array<{
+    id: string;
+    placement: number;
+    points: number;
+    note: string | null;
+    awardedAt: string;
+    tournament: {
+      id: string;
+      title: string;
+      game: string;
+      date: string;
+      status: string;
+    };
+  }>;
+};
+
 const COLORS = {
   success: 0x10b981,
   error: 0xef4444,
@@ -790,6 +862,97 @@ async function fetchTournamentLookup(ctx: SlashCommandContext, query: string) {
   return (data as BotTournamentLookup).tournaments;
 }
 
+async function fetchTeamLookup(ctx: SlashCommandContext, query: string) {
+  const params = new URLSearchParams({
+    query,
+  });
+
+  const data = await fetchBotJsonWithTimeout(
+    `${ctx.siteUrl}/api/bot/team-lookup?${params.toString()}`,
+    ctx.apiTimeoutMs,
+  );
+
+  if (!data?.success || !Array.isArray(data.teams)) {
+    return [] as BotTeamDetails[];
+  }
+
+  return (data as BotTeamLookup).teams;
+}
+
+function getTeamLeaderboardUrl(ctx: SlashCommandContext, team: BotTeamDetails) {
+  const url = new URL(getSiteLink(ctx, "/leaderboard"));
+
+  url.searchParams.set("type", "teams");
+  url.searchParams.set("game", team.game);
+
+  return url.toString();
+}
+
+function buildTeamDetailsDescription(team: BotTeamDetails) {
+  return [
+    `Game: **${team.game}**`,
+    `Status: **${formatTeamStatus(team.status)}**`,
+    `Leader: **${team.leader.username}**`,
+    `Members: **${team.membersCount}**`,
+    "",
+    `Tournament registrations: **${team.registrationsCount}**`,
+    `Tournament results: **${team.resultsCount}**`,
+    `Tournament points: **${team.tournamentPoints}**`,
+    `Best placement: **${formatPlacement(team.bestPlacement)}**`,
+  ].join("\n");
+}
+
+function buildTeamRosterDescription(team: BotTeamDetails) {
+  if (team.members.length === 0) {
+    return "No members found for this team.";
+  }
+
+  return team.members
+    .slice(0, 10)
+    .map((member, index) => {
+      return [
+        `**${index + 1}. ${member.user.username}**`,
+        `Team role: ${member.role} · Site role: ${member.user.role}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildTeamRegistrationsDescription(team: BotTeamDetails) {
+  if (team.registrations.length === 0) {
+    return "No tournament registrations found for this team.";
+  }
+
+  return team.registrations
+    .slice(0, 6)
+    .map((registration, index) => {
+      return [
+        `**${index + 1}. ${registration.tournament.title}**`,
+        `${registration.tournament.game} · ${formatTournamentStatus(
+          registration.tournament.status,
+        )}`,
+        `Registration: ${formatRegistrationStatus(registration.status)}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildTeamResultsDescription(team: BotTeamDetails) {
+  if (team.results.length === 0) {
+    return "No tournament results found for this team.";
+  }
+
+  return team.results
+    .slice(0, 8)
+    .map((result) => {
+      return [
+        `**#${result.placement} — ${result.tournament.title}**`,
+        `${result.tournament.game} · ${result.points} pts`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
 function buildProfileDescription(profile: PlayerProfile) {
   return [
     `Role: **${profile.role}**`,
@@ -1069,6 +1232,42 @@ export function getSlashCommands() {
           description: "Discord user.",
           type: ApplicationCommandOptionType.User,
           required: false,
+        },
+      ],
+    },
+    {
+      name: "team",
+      description: "Show Ascendra team details.",
+      options: [
+        {
+          name: "query",
+          description: "Team name, game, or ID.",
+          type: ApplicationCommandOptionType.String,
+          required: true,
+        },
+      ],
+    },
+    {
+      name: "roster",
+      description: "Show an Ascendra team roster.",
+      options: [
+        {
+          name: "query",
+          description: "Team name, game, or ID.",
+          type: ApplicationCommandOptionType.String,
+          required: true,
+        },
+      ],
+    },
+    {
+      name: "teamresults",
+      description: "Show Ascendra team results.",
+      options: [
+        {
+          name: "query",
+          description: "Team name, game, or ID.",
+          type: ApplicationCommandOptionType.String,
+          required: true,
         },
       ],
     },
@@ -1583,6 +1782,187 @@ export async function handleSlashCommand(
       return;
     }
 
+    if (commandName === "team") {
+      await deferCommand(interaction);
+
+      const query = String(
+        interaction.options?.getString("query") || "",
+      ).trim();
+      const teams = await fetchTeamLookup(ctx, query);
+      const team = teams[0];
+
+      if (!team) {
+        const embed = new EmbedBuilder()
+          .setColor(COLORS.error)
+          .setTitle("Team not found")
+          .setDescription("No team matched your search.")
+          .setTimestamp();
+
+        await replyToCommand(interaction, {
+          embeds: [embed],
+          components: [
+            buildLinkRow("Open Profile", getSiteLink(ctx, "/profile")),
+          ],
+        });
+
+        return;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.tournament)
+        .setTitle(`${team.name} · Team Details`)
+        .setDescription(buildTeamDetailsDescription(team))
+        .setFooter({
+          text:
+            teams.length > 1
+              ? `Showing best match · ${teams.length} matches found`
+              : "Team details",
+        })
+        .setTimestamp();
+
+      if (team.leader.avatar && isValidHttpUrl(team.leader.avatar)) {
+        embed.setThumbnail(team.leader.avatar);
+      }
+
+      const registrationsEmbed = new EmbedBuilder()
+        .setColor(COLORS.deepPurple)
+        .setTitle("Recent registrations")
+        .setDescription(buildTeamRegistrationsDescription(team))
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed, registrationsEmbed],
+        components: [
+          buildTwoLinkRow(
+            {
+              label: "Team Leaderboard",
+              url: getTeamLeaderboardUrl(ctx, team),
+            },
+            {
+              label: "Open Tournaments",
+              url: getSiteLink(ctx, "/tournaments"),
+            },
+          ),
+        ],
+      });
+
+      return;
+    }
+
+    if (commandName === "roster") {
+      await deferCommand(interaction);
+
+      const query = String(
+        interaction.options?.getString("query") || "",
+      ).trim();
+      const teams = await fetchTeamLookup(ctx, query);
+      const team = teams[0];
+
+      if (!team) {
+        const embed = new EmbedBuilder()
+          .setColor(COLORS.error)
+          .setTitle("Team not found")
+          .setDescription("No team matched your search.")
+          .setTimestamp();
+
+        await replyToCommand(interaction, {
+          embeds: [embed],
+          components: [
+            buildLinkRow("Open Profile", getSiteLink(ctx, "/profile")),
+          ],
+        });
+
+        return;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.deepPurple)
+        .setTitle(`${team.name} · Roster`)
+        .setDescription(buildTeamRosterDescription(team))
+        .setFooter({
+          text:
+            team.members.length > 10
+              ? `10 of ${team.members.length} shown`
+              : `${team.members.length} shown`,
+        })
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed],
+        components: [
+          buildTwoLinkRow(
+            {
+              label: "Team Leaderboard",
+              url: getTeamLeaderboardUrl(ctx, team),
+            },
+            {
+              label: "Open Profile",
+              url: getSiteLink(ctx, "/profile"),
+            },
+          ),
+        ],
+      });
+
+      return;
+    }
+
+    if (commandName === "teamresults") {
+      await deferCommand(interaction);
+
+      const query = String(
+        interaction.options?.getString("query") || "",
+      ).trim();
+      const teams = await fetchTeamLookup(ctx, query);
+      const team = teams[0];
+
+      if (!team) {
+        const embed = new EmbedBuilder()
+          .setColor(COLORS.error)
+          .setTitle("Team not found")
+          .setDescription("No team matched your search.")
+          .setTimestamp();
+
+        await replyToCommand(interaction, {
+          embeds: [embed],
+          components: [
+            buildLinkRow("Open Leaderboard", getSiteLink(ctx, "/leaderboard")),
+          ],
+        });
+
+        return;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.info)
+        .setTitle(`${team.name} · Team Results`)
+        .setDescription(buildTeamResultsDescription(team))
+        .setFooter({
+          text:
+            team.results.length > 8
+              ? `8 of ${team.results.length} shown`
+              : `${team.results.length} shown`,
+        })
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed],
+        components: [
+          buildTwoLinkRow(
+            {
+              label: "Team Leaderboard",
+              url: getTeamLeaderboardUrl(ctx, team),
+            },
+            {
+              label: "Open Leaderboard",
+              url: getSiteLink(ctx, "/leaderboard"),
+            },
+          ),
+        ],
+      });
+
+      return;
+    }
+
     const visibleTeams = profile.teams.slice(0, 8);
 
     const embed = new EmbedBuilder()
@@ -1851,6 +2231,9 @@ export async function handleSlashCommand(
           "`/games` — Game stats",
           "`/profile` — Player profile",
           "`/teams` — Player teams",
+          "`/team` — Team details",
+          "`/roster` — Team roster",
+          "`/teamresults` — Team results",
           "`/registrations` — Tournament registrations",
           "`/announcements` — Announcements",
           "`/stats` — Community stats",
