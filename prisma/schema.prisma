@@ -44,11 +44,19 @@ model Tournament {
   registrationStatus String @default("closed")
   endedAt            DateTime?
 
+  discordAnnouncementChannelId String?
+  discordAnnouncementMessageId String?
+  discordAnnouncementUrl       String?
+  discordAnnouncementSyncedAt  DateTime?
+  discordAnnouncementLastError String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   registrations TournamentRegistration[]
   results       TournamentResult[]
+
+  @@index([discordAnnouncementMessageId])
 }
 
 model Team {

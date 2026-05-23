@@ -15,6 +15,23 @@ export type AdminTournamentActionResult = {
 
 const allowedGames = ["Valorant", "League of Legends", "CS2", "Dota2"];
 
+type TournamentForAnnouncement = {
+  id: string;
+  title: string;
+  game: string;
+  description: string;
+  date: string;
+  prize: string;
+  imageUrl: string | null;
+  maxSlots: number;
+  teamSize: number;
+  status: string;
+  registrationStatus: string;
+  discordAnnouncementChannelId: string | null;
+  discordAnnouncementMessageId: string | null;
+  discordAnnouncementUrl: string | null;
+};
+
 function success(message: string): AdminTournamentActionResult {
   return {
     ok: true,
@@ -68,6 +85,50 @@ function normalizeImageUrl(imageUrl: string) {
   }
 
   return "invalid";
+}
+
+function buildTournamentAnnouncementPayload(
+  tournament: TournamentForAnnouncement,
+) {
+  return {
+    tournamentId: tournament.id,
+    title: tournament.title,
+    game: tournament.game,
+    description: tournament.description,
+    date: tournament.date,
+    prize: tournament.prize,
+    imageUrl: tournament.imageUrl,
+    maxSlots: tournament.maxSlots,
+    teamSize: tournament.teamSize,
+    status: tournament.status,
+    registrationStatus: tournament.registrationStatus,
+    websiteUrl: `${getSiteUrl()}/tournaments/${tournament.id}`,
+
+    announcementChannelId: tournament.discordAnnouncementChannelId,
+    announcementMessageId: tournament.discordAnnouncementMessageId,
+    announcementUrl: tournament.discordAnnouncementUrl,
+  };
+}
+
+async function queueTournamentAnnouncementEvent(
+  type: "tournament_announcement_create" | "tournament_announcement_update",
+  tournament: TournamentForAnnouncement,
+) {
+  await prisma.botEvent.create({
+    data: {
+      type,
+      entityType: "tournament",
+      entityId: tournament.id,
+      priority: type === "tournament_announcement_create" ? 30 : 20,
+      payload: buildTournamentAnnouncementPayload(tournament),
+    },
+  });
+}
+
+function revalidateTournamentViews(tournamentId: string) {
+  revalidatePath("/admin");
+  revalidatePath("/tournaments");
+  revalidatePath(`/tournaments/${tournamentId}`);
 }
 
 async function requireAdmin(): Promise<AdminTournamentActionResult | null> {
@@ -298,27 +359,10 @@ export async function createTournamentInline(
     data: validation.data,
   });
 
-  await prisma.botEvent.create({
-    data: {
-      type: "tournament_announcement_create",
-      entityType: "tournament",
-      entityId: tournament.id,
-      payload: {
-        tournamentId: tournament.id,
-        title: tournament.title,
-        game: tournament.game,
-        description: tournament.description,
-        date: tournament.date,
-        prize: tournament.prize,
-        imageUrl: tournament.imageUrl,
-        maxSlots: tournament.maxSlots,
-        teamSize: tournament.teamSize,
-        status: tournament.status,
-        registrationStatus: tournament.registrationStatus,
-        websiteUrl: `${getSiteUrl()}/tournaments/${tournament.id}`,
-      },
-    },
-  });
+  await queueTournamentAnnouncementEvent(
+    "tournament_announcement_create",
+    tournament,
+  );
 
   await createRealtimeEvent({
     type: "tournament.created",
@@ -332,8 +376,7 @@ export async function createTournamentInline(
     },
   });
 
-  revalidatePath("/admin");
-  revalidatePath("/tournaments");
+  revalidateTournamentViews(tournament.id);
 
   return success("Tournament created successfully.");
 }
@@ -381,12 +424,17 @@ export async function updateTournamentInline(
     return fail("Max slots cannot be lower than approved teams.");
   }
 
-  await prisma.tournament.update({
+  const updatedTournament = await prisma.tournament.update({
     where: {
       id: tournament.id,
     },
     data: validation.data,
   });
+
+  await queueTournamentAnnouncementEvent(
+    "tournament_announcement_update",
+    updatedTournament,
+  );
 
   await createRealtimeEvent({
     type: "tournament.updated",
@@ -398,9 +446,7 @@ export async function updateTournamentInline(
     },
   });
 
-  revalidatePath("/admin");
-  revalidatePath("/tournaments");
-  revalidatePath(`/tournaments/${tournament.id}`);
+  revalidateTournamentViews(tournament.id);
 
   return success("Tournament updated successfully.");
 }
@@ -501,7 +547,7 @@ async function setTournamentRegistrationStatus(
     return fail("Ended tournaments cannot reopen registration.");
   }
 
-  await prisma.tournament.update({
+  const updatedTournament = await prisma.tournament.update({
     where: {
       id: tournament.id,
     },
@@ -509,6 +555,11 @@ async function setTournamentRegistrationStatus(
       registrationStatus,
     },
   });
+
+  await queueTournamentAnnouncementEvent(
+    "tournament_announcement_update",
+    updatedTournament,
+  );
 
   await createRealtimeEvent({
     type: "tournament.registrationStatus.updated",
@@ -521,9 +572,7 @@ async function setTournamentRegistrationStatus(
     },
   });
 
-  revalidatePath("/admin");
-  revalidatePath("/tournaments");
-  revalidatePath(`/tournaments/${tournament.id}`);
+  revalidateTournamentViews(tournament.id);
 
   return success(
     registrationStatus === "open"
@@ -589,12 +638,12 @@ async function setTournamentStatus(
     return fail("Tournament was not found.");
   }
 
-  await prisma.$transaction(async (tx) => {
+  const updatedTournament = await prisma.$transaction(async (tx) => {
     if (status === "ended") {
       await snapshotTournament(tx, tournament.id);
     }
 
-    await tx.tournament.update({
+    return tx.tournament.update({
       where: {
         id: tournament.id,
       },
@@ -607,6 +656,11 @@ async function setTournamentStatus(
     });
   });
 
+  await queueTournamentAnnouncementEvent(
+    "tournament_announcement_update",
+    updatedTournament,
+  );
+
   await createRealtimeEvent({
     type: "tournament.status.updated",
     audience: "public",
@@ -618,9 +672,7 @@ async function setTournamentStatus(
     },
   });
 
-  revalidatePath("/admin");
-  revalidatePath("/tournaments");
-  revalidatePath(`/tournaments/${tournament.id}`);
+  revalidateTournamentViews(tournament.id);
 
   return success(`Tournament status changed to ${status}.`);
 }

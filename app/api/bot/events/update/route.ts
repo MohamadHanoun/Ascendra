@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+
 import { createRealtimeEvent } from "@/lib/realtime";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+type JsonRecord = Record<string, unknown>;
 
 function isAuthorized(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -21,6 +24,106 @@ function isFinalStatus(status: string) {
   return (
     status === "completed" || status === "failed" || status === "cancelled"
   );
+}
+
+function isRecord(value: unknown): value is JsonRecord {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function getOptionalString(value: unknown) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+
+  return trimmed || undefined;
+}
+
+async function syncTournamentAnnouncementStatus(params: {
+  eventType: string;
+  tournamentId: string;
+  status: string;
+  result?: unknown;
+  error?: string | null;
+}) {
+  const { eventType, tournamentId, status, result, error } = params;
+
+  if (
+    eventType !== "tournament_announcement_create" &&
+    eventType !== "tournament_announcement_update"
+  ) {
+    return;
+  }
+
+  const tournament = await prisma.tournament.findUnique({
+    where: {
+      id: tournamentId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!tournament) {
+    return;
+  }
+
+  if (status === "completed") {
+    const resultData = isRecord(result) ? result : {};
+
+    await prisma.tournament.update({
+      where: {
+        id: tournamentId,
+      },
+      data: {
+        discordAnnouncementChannelId: getOptionalString(resultData.channelId),
+        discordAnnouncementMessageId: getOptionalString(resultData.messageId),
+        discordAnnouncementUrl: getOptionalString(resultData.messageUrl),
+        discordAnnouncementSyncedAt: new Date(),
+        discordAnnouncementLastError: null,
+      },
+    });
+
+    await createRealtimeEvent({
+      type: "tournament.discordAnnouncement.synced",
+      audience: "admin",
+      entityType: "tournament",
+      entityId: tournamentId,
+      payload: {
+        tournamentId,
+        channelId: getOptionalString(resultData.channelId),
+        messageId: getOptionalString(resultData.messageId),
+        messageUrl: getOptionalString(resultData.messageUrl),
+      },
+    });
+
+    return;
+  }
+
+  if (status === "failed") {
+    await prisma.tournament.update({
+      where: {
+        id: tournamentId,
+      },
+      data: {
+        discordAnnouncementLastError:
+          error || "Discord announcement sync failed.",
+        discordAnnouncementSyncedAt: new Date(),
+      },
+    });
+
+    await createRealtimeEvent({
+      type: "tournament.discordAnnouncement.failed",
+      audience: "admin",
+      entityType: "tournament",
+      entityId: tournamentId,
+      payload: {
+        tournamentId,
+        error: error || "Discord announcement sync failed.",
+      },
+    });
+  }
 }
 
 async function syncRegistrationStatus(params: {
@@ -184,8 +287,28 @@ export async function POST(request: Request) {
       eventType: event.type,
       registrationId: event.entityId,
       status,
-      result,
+      result: isRecord(result)
+        ? {
+            roleId: getOptionalString(result.roleId),
+            channelId: getOptionalString(result.channelId),
+          }
+        : undefined,
       error: error || undefined,
+    });
+  }
+
+  if (
+    event.entityType === "tournament" &&
+    event.entityId &&
+    (event.type === "tournament_announcement_create" ||
+      event.type === "tournament_announcement_update")
+  ) {
+    await syncTournamentAnnouncementStatus({
+      eventType: event.type,
+      tournamentId: event.entityId,
+      status,
+      result,
+      error,
     });
   }
 
