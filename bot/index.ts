@@ -1688,25 +1688,11 @@ async function fetchPublicTournaments() {
 function formatTournamentStatus(status: string) {
   const normalized = String(status || "").toLowerCase();
 
-  if (normalized === "open") {
-    return "Open";
-  }
-
-  if (normalized === "upcoming") {
-    return "Upcoming";
-  }
-
-  if (normalized === "closed") {
-    return "Closed";
-  }
-
-  if (normalized === "ended") {
-    return "Ended";
-  }
-
-  if (normalized === "cancelled") {
-    return "Cancelled";
-  }
+  if (normalized === "open") return "Open";
+  if (normalized === "upcoming") return "Upcoming";
+  if (normalized === "closed") return "Closed";
+  if (normalized === "ended") return "Ended";
+  if (normalized === "cancelled") return "Cancelled";
 
   return status || "-";
 }
