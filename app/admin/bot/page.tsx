@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import AdminBotAutoRefresh from "@/components/AdminBotAutoRefresh";
-import AdminBotCommandLogsPanel from "@/components/AdminBotCommandLogsPanel";
 import AdminBotCommandInsightsPanel from "@/components/AdminBotCommandInsightsPanel";
+import AdminBotCommandLogsPanel from "@/components/AdminBotCommandLogsPanel";
 import AdminBotControlsPanel from "@/components/AdminBotControlsPanel";
 import AdminBotDashboardTabs, {
   type AdminBotDashboardSection,
@@ -36,6 +36,7 @@ type AdminBotPageProps = {
     botStatus?: string;
     botType?: string;
     botSection?: string;
+    botEventPage?: string;
     commandStatus?: string;
     commandName?: string;
     commandUser?: string;
@@ -145,6 +146,7 @@ export default async function AdminBotPage({
             <AdminBotEventsPanel
               statusFilter={params.botStatus}
               eventTypeFilter={params.botType}
+              page={params.botEventPage}
             />
           )}
 

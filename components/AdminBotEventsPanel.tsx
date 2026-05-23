@@ -15,6 +15,7 @@ import { prisma } from "@/lib/prisma";
 type AdminBotEventsPanelProps = {
   statusFilter?: string;
   eventTypeFilter?: string;
+  page?: string;
 };
 
 const allowedBotStatuses = [
@@ -52,6 +53,16 @@ function normalizeTypeFilter(value?: string) {
   return value && value !== "all" ? value : "all";
 }
 
+function normalizePage(value?: string) {
+  const page = Number(value || 1);
+
+  if (!Number.isFinite(page) || page < 1) {
+    return 1;
+  }
+
+  return Math.floor(page);
+}
+
 function buildBotFilterHref(status: string, botType: string) {
   const params = new URLSearchParams();
 
@@ -66,6 +77,30 @@ function buildBotFilterHref(status: string, botType: string) {
   }
 
   return `/admin/bot?${params.toString()}`;
+}
+
+function buildBotEventsPageHref(params: {
+  statusFilter: string;
+  typeFilter: string;
+  page: number;
+}) {
+  const searchParams = new URLSearchParams();
+
+  searchParams.set("botSection", "events");
+
+  if (params.statusFilter !== "all") {
+    searchParams.set("botStatus", params.statusFilter);
+  }
+
+  if (params.typeFilter !== "all") {
+    searchParams.set("botType", params.typeFilter);
+  }
+
+  if (params.page > 1) {
+    searchParams.set("botEventPage", String(params.page));
+  }
+
+  return `/admin/bot?${searchParams.toString()}`;
 }
 
 function formatDate(date: Date | null) {
@@ -290,12 +325,83 @@ function CancelButton({
   );
 }
 
+function EventsPagination({
+  currentPage,
+  totalPages,
+  eventCount,
+  statusFilter,
+  typeFilter,
+}: {
+  currentPage: number;
+  totalPages: number;
+  eventCount: number;
+  statusFilter: string;
+  typeFilter: string;
+}) {
+  const hasPreviousPage = currentPage > 1;
+  const hasNextPage = currentPage < totalPages;
+
+  if (eventCount <= 30) {
+    return null;
+  }
+
+  return (
+    <div className="mt-6 flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm font-bold text-gray-400">
+        Page {currentPage} of {totalPages} · {eventCount} event
+        {eventCount === 1 ? "" : "s"}
+      </p>
+
+      <div className="flex flex-wrap gap-3">
+        {hasPreviousPage ? (
+          <Link
+            href={buildBotEventsPageHref({
+              statusFilter,
+              typeFilter,
+              page: currentPage - 1,
+            })}
+            scroll={false}
+            className="rounded-xl border border-white/10 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
+          >
+            Previous
+          </Link>
+        ) : (
+          <span className="rounded-xl border border-white/10 px-4 py-2 text-sm font-black text-gray-600">
+            Previous
+          </span>
+        )}
+
+        {hasNextPage ? (
+          <Link
+            href={buildBotEventsPageHref({
+              statusFilter,
+              typeFilter,
+              page: currentPage + 1,
+            })}
+            scroll={false}
+            className="rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-2 text-sm font-black text-violet-200 transition hover:bg-violet-500/15 hover:text-white"
+          >
+            Next
+          </Link>
+        ) : (
+          <span className="rounded-xl border border-white/10 px-4 py-2 text-sm font-black text-gray-600">
+            Next
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default async function AdminBotEventsPanel({
   statusFilter,
   eventTypeFilter,
+  page,
 }: AdminBotEventsPanelProps) {
   const activeStatusFilter = normalizeStatusFilter(statusFilter);
   const activeTypeFilter = normalizeTypeFilter(eventTypeFilter);
+  const requestedPage = normalizePage(page);
+  const pageSize = 30;
 
   const typeWhere: Prisma.BotEventWhereInput =
     activeTypeFilter !== "all"
@@ -318,7 +424,7 @@ export default async function AdminBotEventsPanel({
     processingCount,
     completedCount,
     failedCount,
-    events,
+    eventCount,
     settings,
     lastProcessedEvent,
     eventTypes,
@@ -347,12 +453,8 @@ export default async function AdminBotEventsPanel({
         status: "failed",
       },
     }),
-    prisma.botEvent.findMany({
+    prisma.botEvent.count({
       where: eventWhere,
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 30,
     }),
     prisma.serverSetting.findMany({
       where: {
@@ -381,6 +483,19 @@ export default async function AdminBotEventsPanel({
       },
     }),
   ]);
+
+  const totalPages = Math.max(1, Math.ceil(eventCount / pageSize));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const offset = (currentPage - 1) * pageSize;
+
+  const events = await prisma.botEvent.findMany({
+    where: eventWhere,
+    orderBy: {
+      createdAt: "desc",
+    },
+    skip: offset,
+    take: pageSize,
+  });
 
   const botTag = getSettingValue(settings, "bot.tag") || "Unknown";
   const guildId = getSettingValue(settings, "bot.guildId") || "-";
@@ -558,7 +673,8 @@ export default async function AdminBotEventsPanel({
         </div>
 
         <p className="text-sm text-gray-500">
-          Showing {events.length} event{events.length === 1 ? "" : "s"}
+          Showing {events.length} of {eventCount} event
+          {eventCount === 1 ? "" : "s"} · Page {currentPage} of {totalPages}
         </p>
       </div>
 
@@ -647,6 +763,14 @@ export default async function AdminBotEventsPanel({
               </article>
             ))}
           </div>
+
+          <EventsPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            eventCount={eventCount}
+            statusFilter={activeStatusFilter}
+            typeFilter={activeTypeFilter}
+          />
         </section>
       )}
     </section>
