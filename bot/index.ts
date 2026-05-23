@@ -1,6 +1,7 @@
 import { loadEnvConfig } from "@next/env";
 import {
   ActionRowBuilder,
+  ActivityType,
   ButtonBuilder,
   ButtonStyle,
   ChannelType,
@@ -21,8 +22,19 @@ const SITE_URL = (
 
 const BOT_API_TOKEN = process.env.BOT_API_TOKEN;
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
-
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
+
+const CONFIG_CACHE_MS = 30000;
+const HEARTBEAT_INTERVAL_MS = 60000;
+const POLL_INTERVAL_MS = 15000;
+
+const COLORS = {
+  success: 0x10b981,
+  error: 0xef4444,
+  warning: 0xf97316,
+  info: 0x8b5cf6,
+  tournament: 0x7c3aed,
+};
 
 if (!BOT_API_TOKEN) {
   throw new Error("Missing BOT_API_TOKEN");
@@ -59,12 +71,15 @@ type LogField = {
   inline?: boolean;
 };
 
-const CONFIG_CACHE_MS = 30000;
-
 let botConfigCache: {
   value: BotRuntimeConfig;
   expiresAt: number;
 } | null = null;
+
+let heartbeatInterval: NodeJS.Timeout | null = null;
+let pollingInterval: NodeJS.Timeout | null = null;
+let isPolling = false;
+let isShuttingDown = false;
 
 function parseRoleIds(value: string | undefined | null) {
   return String(value || "")
@@ -83,6 +98,18 @@ function parseBoolean(value: unknown, fallback: boolean) {
   }
 
   return fallback;
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Unknown bot operation error";
+}
+
+function cleanLogValue(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
+
+  return String(value).slice(0, 900);
 }
 
 function getEnvBotConfig(): BotRuntimeConfig {
@@ -177,19 +204,12 @@ async function getBotConfig(force = false): Promise<BotRuntimeConfig> {
   }
 }
 
-function cleanLogValue(value: unknown) {
-  if (value === null || value === undefined || value === "") {
-    return "-";
-  }
-
-  return String(value).slice(0, 900);
-}
-
 async function sendDiscordLog(params: {
   channelId?: string;
   title: string;
   description?: string;
   fields?: LogField[];
+  color?: number;
 }) {
   if (!params.channelId) {
     return;
@@ -203,9 +223,13 @@ async function sendDiscordLog(params: {
     }
 
     const embed = new EmbedBuilder()
+      .setColor(params.color || COLORS.info)
       .setTitle(params.title)
       .setDescription(params.description || null)
-      .setTimestamp();
+      .setTimestamp()
+      .setFooter({
+        text: "Ascendra Bot",
+      });
 
     if (params.fields?.length) {
       embed.addFields(
@@ -229,11 +253,13 @@ async function sendBotLog(params: {
   title: string;
   description?: string;
   fields?: LogField[];
+  color?: number;
 }) {
   const config = await getBotConfig();
 
   await sendDiscordLog({
     channelId: config.botLogChannelId,
+    color: params.color || COLORS.info,
     ...params,
   });
 }
@@ -242,16 +268,22 @@ async function sendTournamentLog(params: {
   title: string;
   description?: string;
   fields?: LogField[];
+  color?: number;
 }) {
   const config = await getBotConfig();
 
   await sendDiscordLog({
     channelId: config.tournamentLogChannelId || config.botLogChannelId,
+    color: params.color || COLORS.tournament,
     ...params,
   });
 }
 
 async function sendHeartbeat() {
+  if (isShuttingDown) {
+    return;
+  }
+
   try {
     const response = await fetch(`${SITE_URL}/api/bot/heartbeat`, {
       method: "POST",
@@ -313,6 +345,21 @@ async function updateEvent(
   }
 }
 
+async function safeUpdateEvent(
+  eventId: string,
+  data: {
+    status: "completed" | "failed";
+    result?: unknown;
+    error?: string;
+  },
+) {
+  try {
+    await updateEvent(eventId, data);
+  } catch (error) {
+    console.error(`[BotEvent] Failed to update event ${eventId}:`, error);
+  }
+}
+
 async function processTournamentAnnouncement(event: BotEvent) {
   const config = await getBotConfig();
 
@@ -321,6 +368,7 @@ async function processTournamentAnnouncement(event: BotEvent) {
       title: "Tournament announcement skipped",
       description: "Announcements are disabled from admin bot settings.",
       fields: [{ name: "Event ID", value: event.id, inline: false }],
+      color: COLORS.warning,
     });
 
     return;
@@ -339,47 +387,55 @@ async function processTournamentAnnouncement(event: BotEvent) {
   const payload = event.payload;
 
   const embed = new EmbedBuilder()
+    .setColor(COLORS.tournament)
     .setTitle("New Tournament")
-    .setDescription(payload.title || "Tournament")
+    .setDescription(String(payload.title || "Tournament"))
     .addFields(
       {
         name: "Game",
-        value: payload.game || "-",
+        value: cleanLogValue(payload.game),
         inline: true,
       },
       {
         name: "Date",
-        value: payload.date || "-",
+        value: cleanLogValue(payload.date),
         inline: true,
       },
       {
         name: "Team Size",
-        value: String(payload.teamSize || "-"),
+        value: cleanLogValue(payload.teamSize),
         inline: true,
       },
       {
         name: "Slots",
-        value: String(payload.maxSlots || "-"),
+        value: cleanLogValue(payload.maxSlots),
         inline: true,
       },
       {
         name: "Prize",
-        value: payload.prize || "-",
+        value: cleanLogValue(payload.prize),
         inline: true,
       },
       {
         name: "Registration",
-        value: payload.registrationStatus || "-",
+        value: cleanLogValue(payload.registrationStatus),
         inline: true,
       },
     )
-    .setTimestamp();
+    .setTimestamp()
+    .setFooter({
+      text: "Ascendra Tournaments",
+    });
+
+  if (payload.websiteUrl || SITE_URL) {
+    embed.setURL(String(payload.websiteUrl || SITE_URL));
+  }
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setLabel("View Tournament")
       .setStyle(ButtonStyle.Link)
-      .setURL(payload.websiteUrl || SITE_URL),
+      .setURL(String(payload.websiteUrl || SITE_URL)),
   );
 
   await channel.send({
@@ -390,10 +446,11 @@ async function processTournamentAnnouncement(event: BotEvent) {
   await sendTournamentLog({
     title: "Tournament announcement sent",
     fields: [
-      { name: "Tournament", value: payload.title },
-      { name: "Game", value: payload.game },
+      { name: "Tournament", value: cleanLogValue(payload.title) },
+      { name: "Game", value: cleanLogValue(payload.game) },
       { name: "Event ID", value: event.id, inline: false },
     ],
+    color: COLORS.success,
   });
 }
 
@@ -421,6 +478,7 @@ async function findOrCreateRole(roleName: string) {
   const role = await guild.roles.create({
     name: roleName,
     mentionable: false,
+    hoist: false,
     reason: "Tournament team access",
   });
 
@@ -715,11 +773,11 @@ async function processTeamAccessCreate(event: BotEvent) {
   await sendTournamentLog({
     title: "Team Discord access created",
     fields: [
-      { name: "Team", value: payload.teamName },
-      { name: "Game", value: payload.game },
-      { name: "Role", value: payload.roleName },
+      { name: "Team", value: cleanLogValue(payload.teamName) },
+      { name: "Game", value: cleanLogValue(payload.game) },
+      { name: "Role", value: cleanLogValue(payload.roleName) },
       { name: "Role Created", value: roleResult.created ? "Yes" : "No" },
-      { name: "Voice Room", value: payload.channelName },
+      { name: "Voice Room", value: cleanLogValue(payload.channelName) },
       { name: "Room Created", value: channelResult.created ? "Yes" : "No" },
       {
         name: "Assigned Members",
@@ -731,6 +789,7 @@ async function processTeamAccessCreate(event: BotEvent) {
       },
       { name: "Event ID", value: event.id, inline: false },
     ],
+    color: roleAssignments.failed.length > 0 ? COLORS.warning : COLORS.success,
   });
 
   return {
@@ -771,21 +830,28 @@ async function processTeamAccessRemove(event: BotEvent) {
   await sendTournamentLog({
     title: "Team Discord access removed",
     fields: [
-      { name: "Team", value: payload.teamName },
-      { name: "Action", value: payload.action || "removed" },
+      { name: "Team", value: cleanLogValue(payload.teamName) },
+      { name: "Action", value: cleanLogValue(payload.action || "removed") },
       {
         name: "Reason",
-        value: payload.rejectionReason || "-",
+        value: cleanLogValue(payload.rejectionReason),
         inline: false,
       },
-      { name: "Role", value: payload.roleName || payload.roleId },
-      { name: "Voice Room", value: payload.channelName || payload.channelId },
+      {
+        name: "Role",
+        value: cleanLogValue(payload.roleName || payload.roleId),
+      },
+      {
+        name: "Voice Room",
+        value: cleanLogValue(payload.channelName || payload.channelId),
+      },
       { name: "Members Removed", value: String(roleRemoval.removed.length) },
       { name: "Failed Removals", value: String(roleRemoval.failed.length) },
       { name: "Room Deleted", value: channelDeletion.deleted ? "Yes" : "No" },
       { name: "Role Deleted", value: roleDeletion.deleted ? "Yes" : "No" },
       { name: "Event ID", value: event.id, inline: false },
     ],
+    color: roleRemoval.failed.length > 0 ? COLORS.warning : COLORS.success,
   });
 
   return {
@@ -821,7 +887,7 @@ async function processEvent(event: BotEvent) {
         throw new Error(`Unsupported event type: ${event.type}`);
     }
 
-    await updateEvent(event.id, {
+    await safeUpdateEvent(event.id, {
       status: "completed",
       result,
     });
@@ -834,16 +900,16 @@ async function processEvent(event: BotEvent) {
         { name: "Type", value: event.type },
         { name: "Event ID", value: event.id, inline: false },
       ],
+      color: COLORS.success,
     });
 
     console.log(`[BotEvent] Completed ${event.type}`);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown bot operation error";
+    const message = getErrorMessage(error);
 
     console.error(`[BotEvent] Failed ${event.type}:`, error);
 
-    await updateEvent(event.id, {
+    await safeUpdateEvent(event.id, {
       status: "failed",
       error: message,
     });
@@ -857,39 +923,104 @@ async function processEvent(event: BotEvent) {
         { name: "Type", value: event.type },
         { name: "Event ID", value: event.id, inline: false },
       ],
+      color: COLORS.error,
     });
   }
 }
 
 async function pollEvents() {
+  if (isShuttingDown) {
+    return;
+  }
+
+  if (isPolling) {
+    console.log(
+      "[BotEvent] Poll skipped because previous poll is still running.",
+    );
+    return;
+  }
+
+  isPolling = true;
+
   try {
     const data = await fetchPendingEvents();
     const events: BotEvent[] = data.events || [];
 
+    if (events.length > 0) {
+      console.log(`[BotEvent] Processing ${events.length} event(s).`);
+    }
+
     for (const event of events) {
+      if (isShuttingDown) {
+        break;
+      }
+
       await processEvent(event);
     }
   } catch (error) {
+    const message = getErrorMessage(error);
+
     console.error("[BotEvent] Poll failed:", error);
 
     await sendBotLog({
       title: "Bot polling failed",
-      description:
-        error instanceof Error ? error.message : "Unknown polling error",
+      description: message,
+      color: COLORS.error,
     });
+  } finally {
+    isPolling = false;
   }
+}
+
+async function shutdown(reason: string) {
+  if (isShuttingDown) {
+    return;
+  }
+
+  isShuttingDown = true;
+
+  console.log(`[Bot] Shutting down: ${reason}`);
+
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+
+  await sendBotLog({
+    title: "Bot shutting down",
+    description: reason,
+    color: COLORS.warning,
+  });
+
+  client.destroy();
+
+  process.exit(0);
 }
 
 client.once(Events.ClientReady, async () => {
   console.log(`Bot logged in as ${client.user?.tag}`);
 
-  await getBotConfig(true);
+  client.user?.setPresence({
+    activities: [
+      {
+        name: "Ascendra tournaments",
+        type: ActivityType.Watching,
+      },
+    ],
+    status: "online",
+  });
 
+  await getBotConfig(true);
   await sendHeartbeat();
 
-  setInterval(async () => {
+  heartbeatInterval = setInterval(async () => {
     await sendHeartbeat();
-  }, 60000);
+  }, HEARTBEAT_INTERVAL_MS);
 
   await sendBotLog({
     title: "Bot online",
@@ -897,13 +1028,52 @@ client.once(Events.ClientReady, async () => {
       { name: "Bot", value: client.user?.tag || "Unknown" },
       { name: "Site", value: SITE_URL },
     ],
+    color: COLORS.success,
   });
 
   await pollEvents();
 
-  setInterval(async () => {
+  pollingInterval = setInterval(async () => {
     await pollEvents();
-  }, 15000);
+  }, POLL_INTERVAL_MS);
+});
+
+client.on(Events.Error, (error) => {
+  console.error("[Discord] Client error:", error);
+});
+
+client.on(Events.Warn, (message) => {
+  console.warn("[Discord] Warning:", message);
+});
+
+process.on("SIGINT", () => {
+  void shutdown("SIGINT received");
+});
+
+process.on("SIGTERM", () => {
+  void shutdown("SIGTERM received");
+});
+
+process.on("unhandledRejection", async (reason) => {
+  console.error("[Process] Unhandled rejection:", reason);
+
+  await sendBotLog({
+    title: "Unhandled rejection",
+    description: getErrorMessage(reason),
+    color: COLORS.error,
+  });
+});
+
+process.on("uncaughtException", async (error) => {
+  console.error("[Process] Uncaught exception:", error);
+
+  await sendBotLog({
+    title: "Uncaught exception",
+    description: getErrorMessage(error),
+    color: COLORS.error,
+  });
+
+  await shutdown("Uncaught exception");
 });
 
 client.login(DISCORD_BOT_TOKEN);
