@@ -158,6 +158,32 @@ function matchesUserFilter(
   );
 }
 
+function buildExportHref(params: {
+  statusFilter: string;
+  commandFilter: string;
+  userFilter: string;
+}) {
+  const searchParams = new URLSearchParams();
+
+  if (params.statusFilter !== "all") {
+    searchParams.set("commandStatus", params.statusFilter);
+  }
+
+  if (params.commandFilter) {
+    searchParams.set("commandName", params.commandFilter);
+  }
+
+  if (params.userFilter) {
+    searchParams.set("commandUser", params.userFilter);
+  }
+
+  const query = searchParams.toString();
+
+  return query
+    ? `/api/admin/bot/command-logs/export?${query}`
+    : "/api/admin/bot/command-logs/export";
+}
+
 export default async function AdminBotCommandLogsPanel({
   statusFilter,
   commandFilter,
@@ -231,6 +257,16 @@ export default async function AdminBotCommandLogsPanel({
           </div>
 
           <div className="flex flex-wrap gap-3">
+            <Link
+              href={buildExportHref({
+                statusFilter: normalizedStatus,
+                commandFilter: normalizedCommand,
+                userFilter: normalizedUser,
+              })}
+              className="rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-3 text-sm font-black text-violet-200 transition hover:bg-violet-500/15 hover:text-white"
+            >
+              Export CSV
+            </Link>
             <form action={deleteOldSlashCommandLogsInline}>
               <input type="hidden" name="days" value="30" />
 
