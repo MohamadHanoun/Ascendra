@@ -16,6 +16,7 @@ const refreshEventTypes = new Set([
   "bot.events.cleaned",
   "bot.queue.paused",
   "bot.queue.resumed",
+  "bot.maintenance.cleaned",
   "slashCommand.used",
   "slashCommand.failed",
   "slashCommand.logs.cleaned",

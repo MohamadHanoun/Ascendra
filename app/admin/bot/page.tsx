@@ -13,6 +13,7 @@ import AdminBotDashboardTabs, {
 import AdminBotEventsPanel from "@/components/AdminBotEventsPanel";
 import AdminBotHealthPanel from "@/components/AdminBotHealthPanel";
 import AdminBotInvitePanel from "@/components/AdminBotInvitePanel";
+import AdminBotMaintenancePanel from "@/components/AdminBotMaintenancePanel";
 import AdminBotMessagePanel from "@/components/AdminBotMessagePanel";
 import AdminBotSettingsPanel from "@/components/AdminBotSettingsPanel";
 import AdminBotTournamentMessagesPanel from "@/components/AdminBotTournamentMessagesPanel";
@@ -47,6 +48,7 @@ const sections: AdminBotDashboardSection[] = [
   "tournaments",
   "events",
   "commands",
+  "maintenance",
   "settings",
   "invite",
 ];
@@ -156,6 +158,8 @@ export default async function AdminBotPage({
               />
             </>
           )}
+
+          {activeSection === "maintenance" && <AdminBotMaintenancePanel />}
 
           {activeSection === "settings" && <AdminBotSettingsPanel />}
 
