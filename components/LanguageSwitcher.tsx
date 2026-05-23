@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+
 import type { Locale, NavigationMessages } from "@/lib/i18n";
 import { localeCookieName } from "@/lib/i18n";
 
@@ -18,6 +19,7 @@ export default function LanguageSwitcher({
   const router = useRouter();
   const nextLocale: Locale = locale === "ar" ? "en" : "ar";
   const buttonLabel = locale === "ar" ? labels.english : labels.arabic;
+  const shortLabel = locale === "ar" ? "EN" : "AR";
   const ariaLabel =
     locale === "ar" ? labels.switchToEnglish : labels.switchToArabic;
 
@@ -36,11 +38,13 @@ export default function LanguageSwitcher({
       onClick={switchLanguage}
       aria-label={ariaLabel}
       title={ariaLabel}
-      className={`rounded-xl border border-white/10 bg-white/[0.04] font-black text-gray-300 transition hover:bg-white/10 hover:text-white ${
-        compact ? "px-4 py-3 text-sm" : "px-4 py-2 text-sm"
-      }`}
+      className={
+        compact
+          ? "flex w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-black text-gray-300 transition hover:border-violet-400/30 hover:bg-violet-500/10 hover:text-white"
+          : "inline-flex h-10 min-w-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] px-3 text-xs font-black uppercase tracking-[0.12em] text-gray-300 transition hover:border-violet-400/30 hover:bg-violet-500/10 hover:text-white"
+      }
     >
-      {buttonLabel}
+      {compact ? buttonLabel : shortLabel}
     </button>
   );
 }

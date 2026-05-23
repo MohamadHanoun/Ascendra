@@ -205,9 +205,7 @@ export default function NavbarClient({
             ))}
           </div>
 
-          <div className="ml-auto hidden items-center gap-3 lg:flex">
-            <LanguageSwitcher locale={locale} labels={labels.language} />
-
+          <div className="hidden items-center gap-3 ltr:ml-auto rtl:mr-auto lg:flex">
             {isLoggedIn ? (
               <div ref={profileMenuRef} className="relative">
                 <button
@@ -228,7 +226,7 @@ export default function NavbarClient({
                 </button>
 
                 {isProfileOpen && (
-                  <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-white/10 bg-[#11121d] p-3 shadow-2xl shadow-black/40">
+                  <div className="absolute mt-3 w-64 rounded-2xl border border-white/10 bg-[#11121d] p-3 shadow-2xl shadow-black/40 ltr:right-0 rtl:left-0">
                     <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/[0.04] p-3">
                       <UserAvatar
                         userName={userName}
@@ -305,13 +303,15 @@ export default function NavbarClient({
                 {labels.actions.joinDiscord}
               </a>
             )}
+
+            <LanguageSwitcher locale={locale} labels={labels.language} />
           </div>
 
           <button
             type="button"
             onClick={() => setIsMenuOpen((value) => !value)}
             aria-expanded={isMenuOpen}
-            className="ml-auto rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10 lg:hidden"
+            className="rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10 ltr:ml-auto rtl:mr-auto lg:hidden"
           >
             {isMenuOpen ? labels.actions.close : labels.actions.menu}
           </button>
@@ -330,12 +330,6 @@ export default function NavbarClient({
               ))}
 
               <div className="mt-3 grid gap-2 border-t border-white/10 pt-4">
-                <LanguageSwitcher
-                  locale={locale}
-                  labels={labels.language}
-                  compact
-                />
-
                 {isLoggedIn ? (
                   <>
                     <Link
@@ -403,6 +397,12 @@ export default function NavbarClient({
                     {labels.actions.joinDiscord}
                   </a>
                 )}
+
+                <LanguageSwitcher
+                  locale={locale}
+                  labels={labels.language}
+                  compact
+                />
               </div>
             </div>
           </div>
