@@ -89,6 +89,51 @@ type PlayerProfile = {
   }>;
 };
 
+type BotTournamentLookup = {
+  success: boolean;
+  count: number;
+  tournaments: BotTournamentDetails[];
+};
+
+type BotTournamentDetails = {
+  id: string;
+  title: string;
+  game: string;
+  description: string;
+  date: string;
+  prize: string;
+  imageUrl: string | null;
+  maxSlots: number;
+  teamSize: number;
+  status: string;
+  registrationStatus: string;
+  discordAnnouncementUrl: string | null;
+  registrationsSummary: {
+    total: number;
+    active: number;
+    approved: number;
+    pending: number;
+    rejected: number;
+    cancelled: number;
+  };
+  teams: Array<{
+    id: string;
+    name: string;
+    game: string;
+    status: string;
+    registrationStatus: string;
+    leaderName: string;
+    membersCount: number;
+  }>;
+  results: Array<{
+    id: string;
+    teamId: string;
+    teamName: string;
+    placement: number;
+    points: number;
+  }>;
+};
+
 const COLORS = {
   success: 0x10b981,
   error: 0xef4444,
@@ -98,12 +143,15 @@ const COLORS = {
   deepPurple: 0x4c1d95,
 };
 
-const leaderboardGames = [
-  "Overall",
-  "Valorant",
-  "League of Legends",
-  "CS2",
-  "Dota2",
+const games = ["Overall", "Valorant", "League of Legends", "CS2", "Dota2"];
+
+const tournamentStatuses = [
+  "all",
+  "open",
+  "upcoming",
+  "closed",
+  "ended",
+  "cancelled",
 ];
 
 function getSiteLink(ctx: SlashCommandContext, path = "") {
@@ -160,6 +208,35 @@ function buildLinkRow(label: string, url: string) {
   );
 }
 
+function buildTwoLinkRow(
+  first: {
+    label: string;
+    url: string;
+  },
+  second?: {
+    label: string;
+    url: string;
+  },
+) {
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setLabel(first.label)
+      .setStyle(ButtonStyle.Link)
+      .setURL(first.url),
+  );
+
+  if (second) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setLabel(second.label)
+        .setStyle(ButtonStyle.Link)
+        .setURL(second.url),
+    );
+  }
+
+  return row;
+}
+
 async function fetchJsonWithTimeout(url: string, timeoutMs: number) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -211,11 +288,19 @@ function normalizeLeaderboardType(value: string | null): LeaderboardType {
 }
 
 function normalizeGame(value: string | null) {
-  if (value && leaderboardGames.includes(value)) {
+  if (value && games.includes(value)) {
     return value;
   }
 
   return "Overall";
+}
+
+function normalizeTournamentStatus(value: string | null) {
+  if (value && tournamentStatuses.includes(value)) {
+    return value;
+  }
+
+  return "all";
 }
 
 function formatTournamentStatus(status: string) {
@@ -226,6 +311,16 @@ function formatTournamentStatus(status: string) {
   if (normalized === "closed") return "Closed";
   if (normalized === "ended") return "Ended";
   if (normalized === "cancelled") return "Cancelled";
+
+  return status || "-";
+}
+
+function formatRegistrationStatus(status: string) {
+  const normalized = String(status || "").toLowerCase();
+
+  if (normalized === "open") return "Open";
+  if (normalized === "upcoming") return "Upcoming";
+  if (normalized === "closed") return "Closed";
 
   return status || "-";
 }
@@ -262,19 +357,23 @@ async function fetchPublicTournaments(ctx: SlashCommandContext) {
   return data.data as PublicTournament[];
 }
 
-function filterTournamentsByGame(
+function filterTournaments(
   tournaments: PublicTournament[],
   selectedGame: string,
+  selectedStatus: string,
 ) {
-  if (selectedGame === "Overall") {
-    return tournaments;
-  }
-
-  return tournaments.filter(
-    (tournament) =>
+  return tournaments.filter((tournament) => {
+    const gameMatches =
+      selectedGame === "Overall" ||
       String(tournament.game || "").toLowerCase() ===
-      selectedGame.toLowerCase(),
-  );
+        selectedGame.toLowerCase();
+
+    const statusMatches =
+      selectedStatus === "all" ||
+      String(tournament.status || "").toLowerCase() === selectedStatus;
+
+    return gameMatches && statusMatches;
+  });
 }
 
 function buildTournamentListDescription(tournaments: PublicTournament[]) {
@@ -411,6 +510,23 @@ async function fetchPlayerProfile(ctx: SlashCommandContext, discordId: string) {
   return data.profile as PlayerProfile;
 }
 
+async function fetchTournamentLookup(ctx: SlashCommandContext, query: string) {
+  const params = new URLSearchParams({
+    query,
+  });
+
+  const data = await fetchBotJsonWithTimeout(
+    `${ctx.siteUrl}/api/bot/tournament-lookup?${params.toString()}`,
+    ctx.apiTimeoutMs,
+  );
+
+  if (!data?.success || !Array.isArray(data.tournaments)) {
+    return [] as BotTournamentDetails[];
+  }
+
+  return (data as BotTournamentLookup).tournaments;
+}
+
 function buildProfileDescription(profile: PlayerProfile) {
   return [
     `Role: **${profile.role}**`,
@@ -437,6 +553,65 @@ function buildTeamsDescription(teams: PlayerProfileTeam[]) {
         `Members: ${team.membersCount} · Points: ${team.tournamentPoints} · Best: ${formatPlacement(
           team.bestPlacement,
         )}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildRegistrationsDescription(profile: PlayerProfile) {
+  if (profile.registrations.length === 0) {
+    return "No tournament registrations found.";
+  }
+
+  return profile.registrations
+    .slice(0, 5)
+    .map((registration, index) => {
+      return [
+        `**${index + 1}. ${registration.tournamentTitle}**`,
+        `${registration.tournamentGame} · ${formatTournamentStatus(
+          registration.tournamentStatus,
+        )}`,
+        `Team: ${registration.teamName}`,
+        `Registration: ${formatRegistrationStatus(registration.status)}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildTournamentDetailsDescription(tournament: BotTournamentDetails) {
+  const summary = tournament.registrationsSummary;
+
+  return [
+    tournament.description ? truncate(tournament.description, 500) : "",
+    "",
+    `Game: **${tournament.game}**`,
+    `Date: **${tournament.date || "-"}**`,
+    `Status: **${formatTournamentStatus(tournament.status)}**`,
+    `Registration: **${formatRegistrationStatus(
+      tournament.registrationStatus,
+    )}**`,
+    `Team size: **${tournament.teamSize}**`,
+    `Slots: **${summary.active}/${tournament.maxSlots}**`,
+    `Prize: **${tournament.prize || "-"}**`,
+    "",
+    `Approved: **${summary.approved}** · Pending: **${summary.pending}** · Total: **${summary.total}**`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function buildTournamentTeamsDescription(tournament: BotTournamentDetails) {
+  if (tournament.teams.length === 0) {
+    return "No registered teams found.";
+  }
+
+  return tournament.teams
+    .slice(0, 8)
+    .map((team, index) => {
+      return [
+        `**${index + 1}. ${team.name}**`,
+        `Leader: ${team.leaderName} · Members: ${team.membersCount}`,
+        `Status: ${formatRegistrationStatus(team.registrationStatus)}`,
       ].join("\n");
     })
     .join("\n\n");
@@ -477,10 +652,54 @@ export function getSlashCommands() {
           description: "Game filter.",
           type: ApplicationCommandOptionType.String,
           required: false,
-          choices: leaderboardGames.map((game) => ({
+          choices: games.map((game) => ({
             name: game,
             value: game,
           })),
+        },
+        {
+          name: "status",
+          description: "Status filter.",
+          type: ApplicationCommandOptionType.String,
+          required: false,
+          choices: [
+            {
+              name: "All",
+              value: "all",
+            },
+            {
+              name: "Open",
+              value: "open",
+            },
+            {
+              name: "Upcoming",
+              value: "upcoming",
+            },
+            {
+              name: "Closed",
+              value: "closed",
+            },
+            {
+              name: "Ended",
+              value: "ended",
+            },
+            {
+              name: "Cancelled",
+              value: "cancelled",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: "tournament",
+      description: "Show tournament details.",
+      options: [
+        {
+          name: "query",
+          description: "Tournament title, game, or ID.",
+          type: ApplicationCommandOptionType.String,
+          required: true,
         },
       ],
     },
@@ -509,7 +728,7 @@ export function getSlashCommands() {
           description: "Game filter.",
           type: ApplicationCommandOptionType.String,
           required: false,
-          choices: leaderboardGames.map((game) => ({
+          choices: games.map((game) => ({
             name: game,
             value: game,
           })),
@@ -531,6 +750,18 @@ export function getSlashCommands() {
     {
       name: "teams",
       description: "Show a player's Ascendra teams.",
+      options: [
+        {
+          name: "user",
+          description: "Discord user.",
+          type: ApplicationCommandOptionType.User,
+          required: false,
+        },
+      ],
+    },
+    {
+      name: "registrations",
+      description: "Show a player's tournament registrations.",
       options: [
         {
           name: "user",
@@ -584,21 +815,31 @@ export async function handleSlashCommand(
     const selectedGame = normalizeGame(
       interaction.options?.getString("game") || null,
     );
+    const selectedStatus = normalizeTournamentStatus(
+      interaction.options?.getString("status") || null,
+    );
 
-    const tournaments = filterTournamentsByGame(
+    const tournaments = filterTournaments(
       await fetchPublicTournaments(ctx),
       selectedGame,
+      selectedStatus,
     );
 
     const visibleTournaments = tournaments.slice(0, 5);
 
+    const titleParts = ["Ascendra Tournaments"];
+
+    if (selectedGame !== "Overall") {
+      titleParts.push(selectedGame);
+    }
+
+    if (selectedStatus !== "all") {
+      titleParts.push(formatTournamentStatus(selectedStatus));
+    }
+
     const embed = new EmbedBuilder()
       .setColor(COLORS.tournament)
-      .setTitle(
-        selectedGame === "Overall"
-          ? "Ascendra Tournaments"
-          : `Ascendra Tournaments · ${selectedGame}`,
-      )
+      .setTitle(titleParts.join(" · "))
       .setDescription(buildTournamentListDescription(visibleTournaments))
       .setFooter({
         text:
@@ -611,6 +852,72 @@ export async function handleSlashCommand(
     await replyToCommand(interaction, {
       embeds: [embed],
       components: buildTournamentRows(ctx, visibleTournaments),
+    });
+
+    return;
+  }
+
+  if (commandName === "tournament") {
+    const query = String(interaction.options?.getString("query") || "").trim();
+    const tournaments = await fetchTournamentLookup(ctx, query);
+    const tournament = tournaments[0];
+
+    if (!tournament) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("Tournament not found")
+        .setDescription("No tournament matched your search.")
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed],
+        components: [
+          buildLinkRow("Open Tournaments", getSiteLink(ctx, "/tournaments")),
+        ],
+      });
+
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.tournament)
+      .setTitle(tournament.title)
+      .setDescription(buildTournamentDetailsDescription(tournament))
+      .setFooter({
+        text:
+          tournaments.length > 1
+            ? `Showing best match · ${tournaments.length} matches found`
+            : "Tournament details",
+      })
+      .setTimestamp();
+
+    if (tournament.imageUrl && isValidHttpUrl(tournament.imageUrl)) {
+      embed.setImage(tournament.imageUrl);
+    }
+
+    const teamEmbed = new EmbedBuilder()
+      .setColor(COLORS.deepPurple)
+      .setTitle("Registered teams")
+      .setDescription(buildTournamentTeamsDescription(tournament))
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed, teamEmbed],
+      components: [
+        buildTwoLinkRow(
+          {
+            label: "Open Tournament",
+            url: getSiteLink(ctx, `/tournaments/${tournament.id}`),
+          },
+          tournament.discordAnnouncementUrl &&
+            isValidHttpUrl(tournament.discordAnnouncementUrl)
+            ? {
+                label: "Discord Message",
+                url: tournament.discordAnnouncementUrl,
+              }
+            : undefined,
+        ),
+      ],
     });
 
     return;
@@ -740,6 +1047,60 @@ export async function handleSlashCommand(
     return;
   }
 
+  if (commandName === "registrations") {
+    const targetUser = getTargetDiscordUser(interaction);
+    const profile = await fetchPlayerProfile(ctx, targetUser.id);
+
+    if (!profile) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("Registrations not found")
+        .setDescription("This Discord user does not have an Ascendra profile.")
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed],
+        components: [
+          buildLinkRow("Open Profile", getSiteLink(ctx, "/profile")),
+        ],
+      });
+
+      return;
+    }
+
+    const visibleRegistrations = profile.registrations.slice(0, 5);
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.info)
+      .setTitle(`${profile.username} · Registrations`)
+      .setDescription(buildRegistrationsDescription(profile))
+      .setFooter({
+        text:
+          profile.registrations.length > visibleRegistrations.length
+            ? `${visibleRegistrations.length} of ${profile.registrations.length} shown`
+            : `${visibleRegistrations.length} shown`,
+      })
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [
+        buildTwoLinkRow(
+          {
+            label: "Open Profile",
+            url: getSiteLink(ctx, "/profile"),
+          },
+          {
+            label: "Open Tournaments",
+            url: getSiteLink(ctx, "/tournaments"),
+          },
+        ),
+      ],
+    });
+
+    return;
+  }
+
   if (commandName === "rules") {
     const embed = new EmbedBuilder()
       .setColor(COLORS.deepPurple)
@@ -813,10 +1174,12 @@ export async function handleSlashCommand(
       .setDescription(
         [
           "`/ascendra` — Website",
-          "`/tournaments` — Tournaments",
+          "`/tournaments` — Tournament list",
+          "`/tournament` — Tournament details",
           "`/leaderboard` — Leaderboard",
           "`/profile` — Player profile",
           "`/teams` — Player teams",
+          "`/registrations` — Tournament registrations",
           "`/rules` — Rules",
           "`/community` — Community",
           "`/status` — Bot status",
