@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import AdminBotAutoRefresh from "@/components/AdminBotAutoRefresh";
 import AdminBotCommandLogsPanel from "@/components/AdminBotCommandLogsPanel";
+import AdminBotCommandInsightsPanel from "@/components/AdminBotCommandInsightsPanel";
 import AdminBotControlsPanel from "@/components/AdminBotControlsPanel";
 import AdminBotDashboardTabs, {
   type AdminBotDashboardSection,
@@ -145,11 +146,15 @@ export default async function AdminBotPage({
           )}
 
           {activeSection === "commands" && (
-            <AdminBotCommandLogsPanel
-              statusFilter={params.commandStatus}
-              commandFilter={params.commandName}
-              userFilter={params.commandUser}
-            />
+            <>
+              <AdminBotCommandInsightsPanel />
+
+              <AdminBotCommandLogsPanel
+                statusFilter={params.commandStatus}
+                commandFilter={params.commandName}
+                userFilter={params.commandUser}
+              />
+            </>
           )}
 
           {activeSection === "settings" && <AdminBotSettingsPanel />}
