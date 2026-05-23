@@ -24,6 +24,51 @@ type PublicTournament = {
   description?: string;
 };
 
+type PublicAnnouncement = {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  important: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type PublicRule = {
+  id: string;
+  text: string;
+  order: number;
+  isActive: boolean;
+};
+
+type PublicStaffMember = {
+  id: string;
+  name: string;
+  role: string;
+  status: string;
+  avatarUrl: string | null;
+  order: number;
+  isActive: boolean;
+};
+
+type PublicStats = {
+  summary: Array<{
+    label: string;
+    value: string;
+  }>;
+  details: Array<{
+    title: string;
+    value: string;
+    description: string;
+  }>;
+  gameBreakdown: Array<{
+    game: string;
+    tournaments: number;
+    results: number;
+    points: number;
+  }>;
+};
+
 type LeaderboardType = "players" | "teams";
 
 type LeaderboardEntry = {
@@ -407,6 +452,58 @@ async function fetchPublicTournaments(ctx: SlashCommandContext) {
   return data.data as PublicTournament[];
 }
 
+async function fetchAnnouncements(ctx: SlashCommandContext) {
+  const data = await fetchJsonWithTimeout(
+    `${ctx.siteUrl}/api/announcements`,
+    ctx.apiTimeoutMs,
+  );
+
+  if (!data?.success || !Array.isArray(data.data)) {
+    return [] as PublicAnnouncement[];
+  }
+
+  return data.data as PublicAnnouncement[];
+}
+
+async function fetchRules(ctx: SlashCommandContext) {
+  const data = await fetchJsonWithTimeout(
+    `${ctx.siteUrl}/api/rules`,
+    ctx.apiTimeoutMs,
+  );
+
+  if (!data?.success || !Array.isArray(data.data)) {
+    return [] as PublicRule[];
+  }
+
+  return data.data as PublicRule[];
+}
+
+async function fetchStaff(ctx: SlashCommandContext) {
+  const data = await fetchJsonWithTimeout(
+    `${ctx.siteUrl}/api/staff`,
+    ctx.apiTimeoutMs,
+  );
+
+  if (!data?.success || !Array.isArray(data.data)) {
+    return [] as PublicStaffMember[];
+  }
+
+  return data.data as PublicStaffMember[];
+}
+
+async function fetchStats(ctx: SlashCommandContext) {
+  const data = await fetchJsonWithTimeout(
+    `${ctx.siteUrl}/api/stats`,
+    ctx.apiTimeoutMs,
+  );
+
+  if (!data?.success || !data.data) {
+    return null;
+  }
+
+  return data.data as PublicStats;
+}
+
 function filterTournaments(
   tournaments: PublicTournament[],
   selectedGame: string,
@@ -456,6 +553,77 @@ function buildScheduleDescription(tournaments: PublicTournament[]) {
         `**${index + 1}. ${tournament.title}**`,
         `${tournament.game} · ${formatTournamentStatus(tournament.status)}`,
         `Date: ${tournament.date || "-"}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildAnnouncementsDescription(announcements: PublicAnnouncement[]) {
+  if (announcements.length === 0) {
+    return "No announcements available right now.";
+  }
+
+  return announcements
+    .slice(0, 5)
+    .map((announcement, index) => {
+      return [
+        `**${index + 1}. ${announcement.title}**`,
+        `${announcement.important ? "Important" : announcement.category}`,
+        truncate(announcement.description || "-", 220),
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildRulesDescription(rules: PublicRule[]) {
+  if (rules.length === 0) {
+    return "No active rules available right now.";
+  }
+
+  return rules
+    .slice(0, 10)
+    .map((rule) => `**${rule.order}.** ${truncate(rule.text, 220)}`)
+    .join("\n\n");
+}
+
+function buildStaffDescription(staff: PublicStaffMember[]) {
+  if (staff.length === 0) {
+    return "No staff members available right now.";
+  }
+
+  return staff
+    .slice(0, 10)
+    .map((member, index) => {
+      return [
+        `**${index + 1}. ${member.name}**`,
+        `${member.role} · ${member.status}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildStatsDescription(stats: PublicStats) {
+  if (stats.summary.length === 0) {
+    return "No stats available right now.";
+  }
+
+  return stats.summary
+    .slice(0, 8)
+    .map((item) => `**${item.label}:** ${item.value}`)
+    .join("\n");
+}
+
+function buildGameStatsDescription(stats: PublicStats) {
+  if (stats.gameBreakdown.length === 0) {
+    return "No game stats available right now.";
+  }
+
+  return stats.gameBreakdown
+    .slice(0, 5)
+    .map((item) => {
+      return [
+        `**${item.game}**`,
+        `Tournaments: ${item.tournaments} · Results: ${item.results} · Points: ${item.points}`,
       ].join("\n");
     })
     .join("\n\n");
@@ -856,8 +1024,20 @@ export function getSlashCommands() {
       ],
     },
     {
+      name: "announcements",
+      description: "Show latest Ascendra announcements.",
+    },
+    {
+      name: "stats",
+      description: "Show Ascendra community stats.",
+    },
+    {
+      name: "staff",
+      description: "Show Ascendra staff.",
+    },
+    {
       name: "rules",
-      description: "Open Ascendra rules.",
+      description: "Show Ascendra rules.",
     },
     {
       name: "community",
@@ -1265,11 +1445,108 @@ export async function handleSlashCommand(
     return;
   }
 
-  if (commandName === "rules") {
+  if (commandName === "announcements") {
+    const announcements = await fetchAnnouncements(ctx);
+    const visibleAnnouncements = announcements.slice(0, 5);
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.premium)
+      .setTitle("Ascendra Announcements")
+      .setDescription(buildAnnouncementsDescription(visibleAnnouncements))
+      .setFooter({
+        text:
+          announcements.length > visibleAnnouncements.length
+            ? `${visibleAnnouncements.length} of ${announcements.length} shown`
+            : `${visibleAnnouncements.length} shown`,
+      })
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [
+        buildLinkRow("Open Announcements", getSiteLink(ctx, "/announcements")),
+      ],
+    });
+
+    return;
+  }
+
+  if (commandName === "stats") {
+    const stats = await fetchStats(ctx);
+
+    if (!stats) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("Stats unavailable")
+        .setDescription("Ascendra stats are not available right now.")
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed],
+        components: [buildLinkRow("Open Stats", getSiteLink(ctx, "/stats"))],
+      });
+
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.info)
+      .setTitle("Ascendra Stats")
+      .setDescription(buildStatsDescription(stats))
+      .setTimestamp();
+
+    const gameEmbed = new EmbedBuilder()
+      .setColor(COLORS.deepPurple)
+      .setTitle("Game Breakdown")
+      .setDescription(buildGameStatsDescription(stats))
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed, gameEmbed],
+      components: [buildLinkRow("Open Stats", getSiteLink(ctx, "/stats"))],
+    });
+
+    return;
+  }
+
+  if (commandName === "staff") {
+    const staff = await fetchStaff(ctx);
+    const visibleStaff = staff.slice(0, 10);
+
     const embed = new EmbedBuilder()
       .setColor(COLORS.deepPurple)
-      .setTitle("Rules")
-      .setDescription("Open Ascendra rules.")
+      .setTitle("Ascendra Staff")
+      .setDescription(buildStaffDescription(visibleStaff))
+      .setFooter({
+        text:
+          staff.length > visibleStaff.length
+            ? `${visibleStaff.length} of ${staff.length} shown`
+            : `${visibleStaff.length} shown`,
+      })
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [buildLinkRow("Open Staff", getSiteLink(ctx, "/staff"))],
+    });
+
+    return;
+  }
+
+  if (commandName === "rules") {
+    const rules = await fetchRules(ctx);
+    const visibleRules = rules.slice(0, 10);
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.deepPurple)
+      .setTitle("Ascendra Rules")
+      .setDescription(buildRulesDescription(visibleRules))
+      .setFooter({
+        text:
+          rules.length > visibleRules.length
+            ? `${visibleRules.length} of ${rules.length} shown`
+            : `${visibleRules.length} shown`,
+      })
       .setTimestamp();
 
     await replyToCommand(interaction, {
@@ -1346,6 +1623,9 @@ export async function handleSlashCommand(
           "`/profile` — Player profile",
           "`/teams` — Player teams",
           "`/registrations` — Tournament registrations",
+          "`/announcements` — Announcements",
+          "`/stats` — Community stats",
+          "`/staff` — Staff",
           "`/rules` — Rules",
           "`/community` — Community",
           "`/status` — Bot status",
