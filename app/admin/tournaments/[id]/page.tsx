@@ -51,6 +51,16 @@ type ResultWithTeam = Prisma.TournamentResultGetPayload<{
   include: { team: true };
 }>;
 
+const tournamentFormats = [
+  { value: "single_elimination", label: "Single Elimination" },
+  { value: "double_elimination", label: "Double Elimination" },
+  { value: "round_robin", label: "Round Robin" },
+  { value: "swiss", label: "Swiss" },
+  { value: "group_stage", label: "Group Stage" },
+];
+
+const platforms = ["PC", "Console", "Mobile", "Cross-platform"];
+
 function inputClass() {
   return "rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400";
 }
@@ -182,6 +192,11 @@ function formatDate(date: Date) {
   });
 }
 
+function formatDateTimeLocal(date: Date | null | undefined): string {
+  if (!date) return "";
+  return date.toISOString().slice(0, 16);
+}
+
 function ProgressBar({
   approvedSlots,
   maxSlots,
@@ -238,7 +253,12 @@ export default async function ManageTournamentPage({
     }),
     prisma.game.findMany({
       where: { isActive: true },
-      select: { slug: true, name: true },
+      select: {
+        slug: true,
+        name: true,
+        defaultTeamSize: true,
+        defaultSubstitutes: true,
+      },
       orderBy: { name: "asc" },
     }),
   ]);
@@ -339,7 +359,7 @@ export default async function ManageTournamentPage({
             <CollapsibleSection
               label="Details"
               title="Tournament setup"
-              meta="Edit title, game, image, prize, slots, and team size."
+              meta="Edit title, game, dates, format, slots, and visibility."
             >
               <InlineAdminTournamentForm
                 action={updateTournamentInline}
@@ -409,6 +429,20 @@ export default async function ManageTournamentPage({
                   </label>
 
                   <label className="grid gap-2">
+                    <FieldLabel>Min teams</FieldLabel>
+
+                    <input
+                      name="minTeams"
+                      type="number"
+                      min="1"
+                      defaultValue={tournament.minTeams}
+                      className={inputClass()}
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <label className="grid gap-2">
                     <FieldLabel>Team size</FieldLabel>
 
                     <input
@@ -417,6 +451,146 @@ export default async function ManageTournamentPage({
                       min="1"
                       required
                       defaultValue={tournament.teamSize}
+                      className={inputClass()}
+                    />
+                  </label>
+
+                  <label className="grid gap-2">
+                    <FieldLabel>Substitutes per team</FieldLabel>
+
+                    <input
+                      name="substitutesAllowed"
+                      type="number"
+                      min="0"
+                      defaultValue={tournament.substitutesAllowed}
+                      className={inputClass()}
+                    />
+                  </label>
+
+                  <label className="grid gap-2">
+                    <FieldLabel>Best of</FieldLabel>
+
+                    <select
+                      name="bestOf"
+                      defaultValue={String(tournament.bestOf)}
+                      className={inputClass()}
+                    >
+                      {[1, 3, 5, 7].map((n) => (
+                        <option key={n} value={n}>
+                          BO{n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <label className="grid gap-2">
+                    <FieldLabel>Format</FieldLabel>
+
+                    <select
+                      name="format"
+                      defaultValue={tournament.format}
+                      className={inputClass()}
+                    >
+                      {tournamentFormats.map((f) => (
+                        <option key={f.value} value={f.value}>
+                          {f.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="grid gap-2">
+                    <FieldLabel>Visibility</FieldLabel>
+
+                    <select
+                      name="visibility"
+                      defaultValue={tournament.visibility}
+                      className={inputClass()}
+                    >
+                      <option value="public">Public</option>
+                      <option value="private">Private</option>
+                    </select>
+                  </label>
+
+                  <label className="grid gap-2">
+                    <FieldLabel>Region</FieldLabel>
+
+                    <input
+                      name="region"
+                      defaultValue={tournament.region ?? ""}
+                      placeholder="e.g. MENA, EU, NA"
+                      className={inputClass()}
+                    />
+                  </label>
+
+                  <label className="grid gap-2">
+                    <FieldLabel>Platform</FieldLabel>
+
+                    <select
+                      name="platform"
+                      defaultValue={tournament.platform ?? ""}
+                      className={inputClass()}
+                    >
+                      <option value="">No platform</option>
+
+                      {platforms.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="grid gap-2">
+                    <FieldLabel>Start date</FieldLabel>
+
+                    <input
+                      name="startsAt"
+                      type="datetime-local"
+                      defaultValue={formatDateTimeLocal(tournament.startsAt)}
+                      className={inputClass()}
+                    />
+                  </label>
+
+                  <label className="grid gap-2">
+                    <FieldLabel>End date</FieldLabel>
+
+                    <input
+                      name="endsAt"
+                      type="datetime-local"
+                      defaultValue={formatDateTimeLocal(tournament.endsAt)}
+                      className={inputClass()}
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="grid gap-2">
+                    <FieldLabel>Registration opens</FieldLabel>
+
+                    <input
+                      name="registrationOpensAt"
+                      type="datetime-local"
+                      defaultValue={formatDateTimeLocal(
+                        tournament.registrationOpensAt,
+                      )}
+                      className={inputClass()}
+                    />
+                  </label>
+
+                  <label className="grid gap-2">
+                    <FieldLabel>Registration closes</FieldLabel>
+
+                    <input
+                      name="registrationClosesAt"
+                      type="datetime-local"
+                      defaultValue={formatDateTimeLocal(
+                        tournament.registrationClosesAt,
+                      )}
                       className={inputClass()}
                     />
                   </label>

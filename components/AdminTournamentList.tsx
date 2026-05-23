@@ -85,6 +85,14 @@ function ProgressBar({
   );
 }
 
+function formatDate(date: Date) {
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 function getSortPriority(status: string) {
   const priorities: Record<string, number> = {
     open: 0,
@@ -241,6 +249,8 @@ export default async function AdminTournamentList() {
                     <p className="mt-1 text-sm text-gray-400">
                       {tournament.game?.name ?? "—"} ·{" "}
                       {tournament.teamSize}v{tournament.teamSize}
+                      {tournament.startsAt &&
+                        ` · ${formatDate(tournament.startsAt)}`}
                     </p>
                   </div>
 

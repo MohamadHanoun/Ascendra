@@ -4,12 +4,18 @@ import { useMemo, useState } from "react";
 
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
-type GameOption = { slug: string; name: string };
+type GameOption = {
+  slug: string;
+  name: string;
+  defaultTeamSize: number;
+  defaultSubstitutes: number;
+};
 
 type AdminTournamentImageFieldsProps = {
   games: GameOption[];
   defaultGameSlug?: string;
   defaultImageUrl?: string | null;
+  onGameChange?: (game: GameOption | undefined) => void;
 };
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -34,6 +40,7 @@ export default function AdminTournamentImageFields({
   games,
   defaultGameSlug = "",
   defaultImageUrl = "",
+  onGameChange,
 }: AdminTournamentImageFieldsProps) {
   const [gameSlug, setGameSlug] = useState(defaultGameSlug);
   const [imageUrl, setImageUrl] = useState(defaultImageUrl || "");
@@ -63,7 +70,11 @@ export default function AdminTournamentImageFields({
             name="gameSlug"
             required
             value={gameSlug}
-            onChange={(event) => setGameSlug(event.target.value)}
+            onChange={(event) => {
+              const slug = event.target.value;
+              setGameSlug(slug);
+              onGameChange?.(games.find((g) => g.slug === slug));
+            }}
             className={inputClass()}
           >
             <option value="" disabled>

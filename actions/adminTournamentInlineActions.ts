@@ -55,6 +55,13 @@ function getNumber(formData: FormData, name: string) {
   return value;
 }
 
+function getDate(formData: FormData, name: string): Date | null {
+  const value = getValue(formData, name);
+  if (!value) return null;
+  const date = new Date(value);
+  return isNaN(date.getTime()) ? null : date;
+}
+
 function getSiteUrl() {
   return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(
     /\/$/,
@@ -161,7 +168,18 @@ async function validateTournamentForm(formData: FormData) {
   const status = getValue(formData, "status") || "upcoming";
   const registrationStatus = getValue(formData, "registrationStatus") || "open";
   const maxTeams = getNumber(formData, "maxTeams");
+  const minTeams = getNumber(formData, "minTeams");
   const teamSize = getNumber(formData, "teamSize");
+  const substitutesAllowed = getNumber(formData, "substitutesAllowed");
+  const format = getValue(formData, "format") || "single_elimination";
+  const bestOf = getNumber(formData, "bestOf");
+  const region = getValue(formData, "region") || null;
+  const platform = getValue(formData, "platform") || null;
+  const visibility = getValue(formData, "visibility") || "public";
+  const startsAt = getDate(formData, "startsAt");
+  const endsAt = getDate(formData, "endsAt");
+  const registrationOpensAt = getDate(formData, "registrationOpensAt");
+  const registrationClosesAt = getDate(formData, "registrationClosesAt");
 
   if (!title) {
     return { ok: false as const, message: "Tournament title is required." };
@@ -173,7 +191,7 @@ async function validateTournamentForm(formData: FormData) {
 
   const game = await prisma.game.findUnique({ where: { slug: gameSlug } });
 
-  if (!game) {
+  if (!game || !game.isActive) {
     return { ok: false as const, message: "Invalid game selected." };
   }
 
@@ -205,9 +223,20 @@ async function validateTournamentForm(formData: FormData) {
       prize: prize || null,
       imageUrl,
       maxTeams,
+      minTeams: minTeams ?? 2,
       teamSize,
+      substitutesAllowed: substitutesAllowed ?? 0,
+      format,
+      bestOf: bestOf ?? 1,
+      region: region || null,
+      platform: platform || null,
+      visibility,
       status,
       registrationStatus,
+      startsAt,
+      endsAt,
+      registrationOpensAt,
+      registrationClosesAt,
     },
   };
 }

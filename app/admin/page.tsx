@@ -253,7 +253,12 @@ async function renderAdminTab(
   if (activeTab === "tournaments") {
     const games = await prisma.game.findMany({
       where: { isActive: true },
-      select: { slug: true, name: true },
+      select: {
+        slug: true,
+        name: true,
+        defaultTeamSize: true,
+        defaultSubstitutes: true,
+      },
       orderBy: { name: "asc" },
     });
 
