@@ -1766,21 +1766,36 @@ function getSlashCommands() {
       description: "Show Ascendra bot commands.",
     },
   ];
+} 
+
+function getResolvedApplicationId() {
+  return APPLICATION_ID || client.application?.id || client.user?.id || "";
 }
 
+function getResolvedGuildId() {
+  return GUILD_ID || client.guilds.cache.first()?.id || "";
+} 
+
 async function registerSlashCommands() {
-  if (!APPLICATION_ID || !GUILD_ID || !DISCORD_BOT_TOKEN) {
+  const applicationId = getResolvedApplicationId();
+  const guildId = getResolvedGuildId();
+  const botToken = DISCORD_BOT_TOKEN || "";
+
+  if (!applicationId || !guildId || !botToken) {
     slashCommandsReady = false;
     slashCommandError = "Missing application ID, guild ID, or bot token.";
+
     console.warn(
       "[SlashCommands] Missing application ID, guild ID, or bot token.",
+      {
+        hasApplicationId: Boolean(applicationId),
+        hasGuildId: Boolean(guildId),
+        hasBotToken: Boolean(botToken),
+      },
     );
+
     return;
   }
-
-  const applicationId: string = APPLICATION_ID;
-  const guildId: string = GUILD_ID;
-  const botToken: string = DISCORD_BOT_TOKEN;
 
   try {
     const rest = new REST({ version: "10" }).setToken(botToken);
@@ -1993,7 +2008,7 @@ async function processHealthCheck() {
     discordAccessEnabled: config.enableDiscordAccess,
     slashCommandsReady,
     slashCommandError,
-    applicationId: APPLICATION_ID || "",
+    applicationId: getResolvedApplicationId(),
   };
 }
 
