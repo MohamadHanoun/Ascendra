@@ -33,9 +33,7 @@ export const metadata: Metadata = {
 };
 
 type ManageTournamentPageProps = {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
 };
 
 type TournamentAction = (formData: FormData) => Promise<{
@@ -43,8 +41,6 @@ type TournamentAction = (formData: FormData) => Promise<{
   message: string;
   redirectTo?: string;
 }>;
-
-const games = ["Valorant", "League of Legends", "CS2", "Dota2"];
 
 function inputClass() {
   return "rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400";
@@ -200,9 +196,7 @@ function ProgressBar({
       <div className="h-2 overflow-hidden rounded-full bg-white/10">
         <div
           className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25"
-          style={{
-            width: `${progress}%`,
-          }}
+          style={{ width: `${progress}%` }}
         />
       </div>
     </div>
@@ -215,69 +209,55 @@ export default async function ManageTournamentPage({
   const session = await auth();
   const { id } = await params;
 
-  if (!session?.user) {
-    redirect("/login");
-  }
+  if (!session?.user) redirect("/login");
+  if (!session.user.isAdmin) redirect("/admin");
 
-  if (!session.user.isAdmin) {
-    redirect("/admin");
-  }
-
-  const tournament = await prisma.tournament.findUnique({
-    where: {
-      id,
-    },
-    include: {
-      registrations: {
-        include: {
-          team: true,
+  const [tournament, games] = await Promise.all([
+    prisma.tournament.findUnique({
+      where: { id },
+      include: {
+        game: true,
+        registrations: {
+          include: { team: true },
+          orderBy: { createdAt: "desc" },
         },
-        orderBy: {
-          createdAt: "desc",
+        results: {
+          include: { team: true },
+          orderBy: [{ placement: "asc" }, { awardedAt: "desc" }],
         },
       },
-      results: {
-        include: {
-          team: true,
-        },
-        orderBy: [
-          {
-            placement: "asc",
-          },
-          {
-            awardedAt: "desc",
-          },
-        ],
-      },
-    },
-  });
+    }),
+    prisma.game.findMany({
+      where: { isActive: true },
+      select: { slug: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
-  if (!tournament) {
-    notFound();
-  }
+  if (!tournament) notFound();
 
   const approvedRegistrations = tournament.registrations.filter(
-    (registration) => registration.status === "approved",
+    (r) => r.status === "approved",
   );
 
   const pendingRegistrations = tournament.registrations.filter(
-    (registration) => registration.status === "registered",
+    (r) => r.status === "registered",
   );
 
   const rejectedRegistrations = tournament.registrations.filter(
-    (registration) => registration.status === "rejected",
+    (r) => r.status === "rejected",
   );
 
   const approvedSlots = approvedRegistrations.length;
-  const remainingSlots = Math.max(tournament.maxSlots - approvedSlots, 0);
+  const remainingSlots = Math.max(tournament.maxTeams - approvedSlots, 0);
 
   const tournamentPoints = tournament.results.reduce(
-    (total, result) => total + result.points,
+    (total, r) => total + r.points,
     0,
   );
 
   const tournamentImage = getTournamentImageUrl(
-    tournament.game,
+    tournament.game?.slug ?? null,
     tournament.imageUrl,
   );
 
@@ -294,9 +274,7 @@ export default async function ManageTournamentPage({
         <section className="relative min-h-[480px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: `url("${tournamentImage}")`,
-            }}
+            style={{ backgroundImage: `url("${tournamentImage}")` }}
           />
 
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.62)_48%,rgba(7,8,17,0.82)_100%)]" />
@@ -324,7 +302,9 @@ export default async function ManageTournamentPage({
                   <div className="mt-5 flex flex-wrap gap-2">
                     <StatusBadge status={tournament.status} />
                     <StatusBadge status={tournament.registrationStatus} />
-                    <Pill tone="violet">{tournament.game}</Pill>
+                    {tournament.game && (
+                      <Pill tone="violet">{tournament.game.name}</Pill>
+                    )}
                   </div>
                 </div>
 
@@ -350,7 +330,7 @@ export default async function ManageTournamentPage({
             <CollapsibleSection
               label="Details"
               title="Tournament setup"
-              meta="Edit title, game, image, date, prize, slots, and team size."
+              meta="Edit title, game, image, prize, slots, and team size."
             >
               <InlineAdminTournamentForm
                 action={updateTournamentInline}
@@ -358,11 +338,7 @@ export default async function ManageTournamentPage({
                 pendingLabel="Saving..."
                 className="grid gap-5"
               >
-                <input
-                  type="hidden"
-                  name="tournamentId"
-                  value={tournament.id}
-                />
+                <input type="hidden" name="tournamentId" value={tournament.id} />
                 <input type="hidden" name="status" value={tournament.status} />
                 <input
                   type="hidden"
@@ -383,7 +359,7 @@ export default async function ManageTournamentPage({
 
                 <AdminTournamentImageFields
                   games={games}
-                  defaultGame={tournament.game}
+                  defaultGameSlug={tournament.game?.slug ?? ""}
                   defaultImageUrl={tournament.imageUrl}
                 />
 
@@ -398,38 +374,27 @@ export default async function ManageTournamentPage({
                   />
                 </label>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  <label className="grid gap-2">
-                    <FieldLabel>Date</FieldLabel>
-
-                    <input
-                      name="date"
-                      required
-                      defaultValue={tournament.date}
-                      className={inputClass()}
-                    />
-                  </label>
-
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   <label className="grid gap-2">
                     <FieldLabel>Prize</FieldLabel>
 
                     <input
                       name="prize"
-                      required
-                      defaultValue={tournament.prize}
+                      defaultValue={tournament.prize ?? ""}
+                      placeholder="Optional"
                       className={inputClass()}
                     />
                   </label>
 
                   <label className="grid gap-2">
-                    <FieldLabel>Max slots</FieldLabel>
+                    <FieldLabel>Max teams</FieldLabel>
 
                     <input
-                      name="maxSlots"
+                      name="maxTeams"
                       type="number"
                       min="1"
                       required
-                      defaultValue={tournament.maxSlots}
+                      defaultValue={tournament.maxTeams}
                       className={inputClass()}
                     />
                   </label>
@@ -453,7 +418,7 @@ export default async function ManageTournamentPage({
             <CollapsibleSection
               label="Registrations"
               title="Applications"
-              meta={`${tournament.registrations.length} total applications · ${approvedRegistrations.length} approved · ${pendingRegistrations.length} pending`}
+              meta={`${tournament.registrations.length} total · ${approvedRegistrations.length} approved · ${pendingRegistrations.length} pending`}
             >
               {tournament.registrations.length === 0 ? (
                 <div className="text-sm text-gray-400">
@@ -474,8 +439,7 @@ export default async function ManageTournamentPage({
                           </p>
 
                           <p className="mt-1 text-sm text-gray-400">
-                            {registration.snapshotTeamGame ||
-                              registration.team.game}
+                            {registration.snapshotTeamGame ?? "—"}
                           </p>
 
                           {registration.rejectionReason && (
@@ -520,7 +484,7 @@ export default async function ManageTournamentPage({
               <div className="mt-4">
                 <ProgressBar
                   approvedSlots={approvedSlots}
-                  maxSlots={tournament.maxSlots}
+                  maxSlots={tournament.maxTeams}
                 />
               </div>
 

@@ -152,25 +152,25 @@ function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
 }
 
 function getReadinessIssues({
-  teamGame,
-  tournamentGame,
+  teamGameId,
+  tournamentGameId,
   teamMembersCount,
   teamSize,
   pendingInvitesCount,
   tournamentStatus,
   isApproved,
   approvedCount,
-  maxSlots,
+  maxTeams,
 }: {
-  teamGame: string;
-  tournamentGame: string;
+  teamGameId: string | null;
+  tournamentGameId: string | null;
   teamMembersCount: number;
   teamSize: number;
   pendingInvitesCount: number;
   tournamentStatus: string;
   isApproved: boolean;
   approvedCount: number;
-  maxSlots: number;
+  maxTeams: number;
 }) {
   const issues: string[] = [];
 
@@ -178,7 +178,7 @@ function getReadinessIssues({
     issues.push("Tournament not active");
   }
 
-  if (teamGame !== tournamentGame) {
+  if (teamGameId !== tournamentGameId) {
     issues.push("Wrong game");
   }
 
@@ -194,7 +194,7 @@ function getReadinessIssues({
     issues.push("Pending invites");
   }
 
-  if (!isApproved && approvedCount >= maxSlots) {
+  if (!isApproved && approvedCount >= maxTeams) {
     issues.push("No slots left");
   }
 
@@ -328,11 +328,12 @@ export default async function AdminRegistrationList({
           select: {
             id: true,
             title: true,
-            date: true,
-            game: true,
+            startsAt: true,
+            gameId: true,
+            game: { select: { name: true } },
             status: true,
             teamSize: true,
-            maxSlots: true,
+            maxTeams: true,
           },
         },
         registeredBy: {
@@ -344,7 +345,8 @@ export default async function AdminRegistrationList({
           select: {
             id: true,
             name: true,
-            game: true,
+            gameId: true,
+            game: { select: { name: true } },
             leaderId: true,
             leader: {
               select: {
@@ -490,7 +492,7 @@ export default async function AdminRegistrationList({
                 registration.snapshotTeamName || registration.team.name;
 
               const displayedTeamGame =
-                registration.snapshotTeamGame || registration.team.game;
+                registration.snapshotTeamGame || registration.team.game?.name || "—";
 
               const displayedMembers =
                 snapshotMembers.length > 0
@@ -512,15 +514,15 @@ export default async function AdminRegistrationList({
                     }));
 
               const readinessIssues = getReadinessIssues({
-                teamGame: registration.team.game,
-                tournamentGame: registration.tournament.game,
+                teamGameId: registration.team.gameId,
+                tournamentGameId: registration.tournament.gameId,
                 teamMembersCount: registration.team.members.length,
                 teamSize: registration.tournament.teamSize,
                 pendingInvitesCount: registration.team.invites.length,
                 tournamentStatus: registration.tournament.status,
                 isApproved: registration.status === "approved",
                 approvedCount: approvedTournamentCount,
-                maxSlots: registration.tournament.maxSlots,
+                maxTeams: registration.tournament.maxTeams,
               });
 
               const isReady = readinessIssues.length === 0;
@@ -578,9 +580,9 @@ export default async function AdminRegistrationList({
                       </p>
 
                       <p className="mt-1 text-sm text-gray-400">
-                        {registration.tournament.date} ·{" "}
+                        {registration.tournament.startsAt?.toLocaleDateString() ?? "—"} ·{" "}
                         {approvedTournamentCount}/
-                        {registration.tournament.maxSlots} approved
+                        {registration.tournament.maxTeams} approved
                       </p>
                     </div>
 

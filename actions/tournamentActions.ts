@@ -46,17 +46,16 @@ export async function createTournament(formData: FormData) {
   await requireAdmin();
 
   const title = getRequiredText(formData, "title");
-  const game = getRequiredText(formData, "game");
-  const date = getRequiredText(formData, "date");
+  const gameSlug = getRequiredText(formData, "gameSlug");
   const prize = getRequiredText(formData, "prize");
   const description = getRequiredText(formData, "description");
   const status = getRequiredText(formData, "status");
   const registrationStatus = getRequiredText(formData, "registrationStatus");
 
-  const maxSlots = getRequiredNumber(formData, "maxSlots");
+  const maxTeams = getRequiredNumber(formData, "maxTeams");
   const teamSize = getRequiredNumber(formData, "teamSize");
 
-  if (!title || !game || !date || !prize || !description) {
+  if (!title || !gameSlug || !prize || !description) {
     adminError("All tournament fields are required.");
   }
 
@@ -68,14 +67,19 @@ export async function createTournament(formData: FormData) {
     adminError("Invalid registration status.");
   }
 
+  const game = await prisma.game.findUnique({ where: { slug: gameSlug } });
+
+  if (!game) {
+    adminError("Invalid game selected.");
+  }
+
   await prisma.tournament.create({
     data: {
       title,
-      game,
-      date,
+      gameId: game.id,
       prize,
       description,
-      maxSlots,
+      maxTeams,
       teamSize,
       status,
       registrationStatus,
@@ -93,8 +97,7 @@ export async function updateTournament(formData: FormData) {
 
   const id = getRequiredText(formData, "id");
   const title = getRequiredText(formData, "title");
-  const game = getRequiredText(formData, "game");
-  const date = getRequiredText(formData, "date");
+  const gameSlug = getRequiredText(formData, "gameSlug");
   const prize = getRequiredText(formData, "prize");
   const description = getRequiredText(formData, "description");
   const status = getRequiredText(formData, "status");
@@ -102,7 +105,7 @@ export async function updateTournament(formData: FormData) {
   const registrationStatus =
     getRequiredText(formData, "registrationStatus") || "closed";
 
-  const maxSlots = getRequiredNumber(formData, "maxSlots");
+  const maxTeams = getRequiredNumber(formData, "maxTeams");
 
   const rawTeamSize = formData.get("teamSize");
   const teamSize =
@@ -114,7 +117,7 @@ export async function updateTournament(formData: FormData) {
     adminError("Tournament ID is missing.");
   }
 
-  if (!title || !game || !date || !prize || !description) {
+  if (!title || !gameSlug || !prize || !description) {
     adminError("All tournament fields are required.");
   }
 
@@ -126,17 +129,20 @@ export async function updateTournament(formData: FormData) {
     adminError("Invalid registration status.");
   }
 
+  const game = await prisma.game.findUnique({ where: { slug: gameSlug } });
+
+  if (!game) {
+    adminError("Invalid game selected.");
+  }
+
   await prisma.tournament.update({
-    where: {
-      id,
-    },
+    where: { id },
     data: {
       title,
-      game,
-      date,
+      gameId: game.id,
       prize,
       description,
-      maxSlots,
+      maxTeams,
       teamSize,
       status,
       registrationStatus,
@@ -159,11 +165,7 @@ export async function deleteTournament(formData: FormData) {
     adminError("Tournament ID is missing.");
   }
 
-  await prisma.tournament.delete({
-    where: {
-      id,
-    },
-  });
+  await prisma.tournament.delete({ where: { id } });
 
   revalidatePath("/admin");
   revalidatePath("/tournaments");

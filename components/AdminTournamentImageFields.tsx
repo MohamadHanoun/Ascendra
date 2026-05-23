@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
+type GameOption = { slug: string; name: string };
+
 type AdminTournamentImageFieldsProps = {
-  games: string[];
-  defaultGame?: string;
+  games: GameOption[];
+  defaultGameSlug?: string;
   defaultImageUrl?: string | null;
 };
 
@@ -19,9 +21,7 @@ function inputClass() {
 }
 
 function isValidImageUrl(imageUrl: string) {
-  if (!imageUrl) {
-    return true;
-  }
+  if (!imageUrl) return true;
 
   return (
     imageUrl.startsWith("https://") ||
@@ -32,10 +32,10 @@ function isValidImageUrl(imageUrl: string) {
 
 export default function AdminTournamentImageFields({
   games,
-  defaultGame = "",
+  defaultGameSlug = "",
   defaultImageUrl = "",
 }: AdminTournamentImageFieldsProps) {
-  const [game, setGame] = useState(defaultGame);
+  const [gameSlug, setGameSlug] = useState(defaultGameSlug);
   const [imageUrl, setImageUrl] = useState(defaultImageUrl || "");
 
   const trimmedImageUrl = imageUrl.trim();
@@ -43,13 +43,15 @@ export default function AdminTournamentImageFields({
   const hasInvalidImageUrl =
     Boolean(trimmedImageUrl) && !isValidImageUrl(trimmedImageUrl);
 
+  const selectedGame = games.find((g) => g.slug === gameSlug);
+
   const previewImageUrl = useMemo(() => {
     if (trimmedImageUrl && isValidImageUrl(trimmedImageUrl)) {
       return trimmedImageUrl;
     }
 
-    return getTournamentImageUrl(game, null);
-  }, [game, trimmedImageUrl]);
+    return getTournamentImageUrl(gameSlug || null, null);
+  }, [gameSlug, trimmedImageUrl]);
 
   return (
     <div className="grid gap-4">
@@ -58,19 +60,19 @@ export default function AdminTournamentImageFields({
           <FieldLabel>Game</FieldLabel>
 
           <select
-            name="game"
+            name="gameSlug"
             required
-            value={game}
-            onChange={(event) => setGame(event.target.value)}
+            value={gameSlug}
+            onChange={(event) => setGameSlug(event.target.value)}
             className={inputClass()}
           >
             <option value="" disabled>
               Select game
             </option>
 
-            {games.map((gameName) => (
-              <option key={gameName} value={gameName}>
-                {gameName}
+            {games.map((game) => (
+              <option key={game.slug} value={game.slug}>
+                {game.name}
               </option>
             ))}
           </select>
@@ -103,7 +105,7 @@ export default function AdminTournamentImageFields({
           </p>
 
           <p className="mt-1 font-black text-white">
-            {game || "Select a game"}
+            {selectedGame?.name || "Select a game"}
           </p>
 
           <p className="mt-1 text-sm leading-6 text-gray-400">

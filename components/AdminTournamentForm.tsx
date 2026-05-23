@@ -4,7 +4,11 @@ import { createTournamentInline } from "@/actions/adminTournamentInlineActions";
 import AdminTournamentImageFields from "@/components/AdminTournamentImageFields";
 import InlineAdminTournamentForm from "@/components/InlineAdminTournamentForm";
 
-const games = ["Valorant", "League of Legends", "CS2", "Dota2"];
+type GameOption = { slug: string; name: string };
+
+type AdminTournamentFormProps = {
+  games: GameOption[];
+};
 
 const tournamentStatuses = [
   { value: "upcoming", label: "Upcoming" },
@@ -26,7 +30,7 @@ function inputClass() {
   return "rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400";
 }
 
-export default function AdminTournamentForm() {
+export default function AdminTournamentForm({ games }: AdminTournamentFormProps) {
   return (
     <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
       <div className="border-b border-white/10 px-5 py-4">
@@ -71,38 +75,26 @@ export default function AdminTournamentForm() {
             />
           </label>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <label className="grid gap-2">
-              <FieldLabel>Date</FieldLabel>
-
-              <input
-                name="date"
-                required
-                placeholder="Example: 20/06/2026, 19:00"
-                className={inputClass()}
-              />
-            </label>
-
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <label className="grid gap-2">
               <FieldLabel>Prize</FieldLabel>
 
               <input
                 name="prize"
-                required
                 placeholder="Example: 500 SEK"
                 className={inputClass()}
               />
             </label>
 
             <label className="grid gap-2">
-              <FieldLabel>Max slots</FieldLabel>
+              <FieldLabel>Max teams</FieldLabel>
 
               <input
-                name="maxSlots"
+                name="maxTeams"
                 type="number"
                 min="1"
                 required
-                placeholder="8"
+                placeholder="16"
                 className={inputClass()}
               />
             </label>

@@ -37,7 +37,7 @@ export async function GET() {
           points: true,
           tournament: {
             select: {
-              game: true,
+              game: { select: { name: true } },
             },
           },
         },
@@ -47,10 +47,12 @@ export async function GET() {
           points: true,
         },
       }),
-      prisma.tournament.groupBy({
-        by: ["game"],
-        _count: {
-          id: true,
+      prisma.tournament.findMany({
+        select: {
+          game: { select: { name: true } },
+        },
+        where: {
+          gameId: { not: null },
         },
       }),
     ]);
@@ -59,7 +61,7 @@ export async function GET() {
 
     const gameBreakdown = games.map((game) => {
       const gameResults = tournamentResults.filter(
-        (result) => result.tournament.game === game,
+        (result) => result.tournament.game?.name === game,
       );
 
       const gamePoints = gameResults.reduce(
@@ -67,8 +69,9 @@ export async function GET() {
         0,
       );
 
-      const gameTournamentCount =
-        tournamentsByGame.find((item) => item.game === game)?._count.id || 0;
+      const gameTournamentCount = tournamentsByGame.filter(
+        (item) => item.game?.name === game,
+      ).length;
 
       return {
         game,

@@ -268,7 +268,7 @@ export async function approveRegistrationInline(
     return fail("This tournament cannot approve new teams.");
   }
 
-  if (registration.team.game !== registration.tournament.game) {
+  if (registration.team.gameId !== registration.tournament.gameId) {
     return fail("Team game no longer matches this tournament.");
   }
 
@@ -294,7 +294,7 @@ export async function approveRegistrationInline(
     },
   });
 
-  if (approvedRegistrationsCount >= registration.tournament.maxSlots) {
+  if (approvedRegistrationsCount >= registration.tournament.maxTeams) {
     return fail("No approved slots are available for this tournament.");
   }
 
@@ -306,9 +306,10 @@ export async function approveRegistrationInline(
             id: registration.id,
           },
           include: {
-            tournament: true,
+            tournament: { include: { game: true } },
             team: {
               include: {
+                game: { select: { name: true } },
                 invites: {
                   where: {
                     status: "pending",
@@ -346,7 +347,7 @@ export async function approveRegistrationInline(
           throw new Error("TOURNAMENT_NOT_ACTIVE");
         }
 
-        if (freshRegistration.team.game !== freshRegistration.tournament.game) {
+        if (freshRegistration.team.gameId !== freshRegistration.tournament.gameId) {
           throw new Error("TEAM_GAME_MISMATCH");
         }
 
@@ -374,18 +375,18 @@ export async function approveRegistrationInline(
 
         if (
           approvedCountInsideTransaction >=
-          freshRegistration.tournament.maxSlots
+          freshRegistration.tournament.maxTeams
         ) {
           throw new Error("NO_APPROVED_SLOTS_AVAILABLE");
         }
 
         const roleName = buildRoleName(
-          freshRegistration.tournament.game,
+          freshRegistration.tournament.game?.name ?? "Game",
           freshRegistration.team.name,
         );
 
         const channelName = buildChannelName(
-          freshRegistration.tournament.game,
+          freshRegistration.tournament.game?.name ?? "game",
           freshRegistration.team.name,
         );
 
@@ -404,7 +405,7 @@ export async function approveRegistrationInline(
             reviewedAt: new Date(),
 
             snapshotTeamName: freshRegistration.team.name,
-            snapshotTeamGame: freshRegistration.team.game,
+            snapshotTeamGame: freshRegistration.team.game?.name ?? null,
             snapshotMembers: buildSnapshotMembers(
               freshRegistration.team.members,
             ),
@@ -429,7 +430,7 @@ export async function approveRegistrationInline(
               tournamentId: freshRegistration.tournament.id,
               tournamentTitle: freshRegistration.tournament.title,
 
-              game: freshRegistration.tournament.game,
+              game: freshRegistration.tournament.game?.name ?? null,
 
               teamId: freshRegistration.team.id,
               teamName: freshRegistration.team.name,

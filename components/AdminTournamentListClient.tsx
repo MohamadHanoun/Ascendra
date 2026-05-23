@@ -6,11 +6,11 @@ import ConfirmDeleteForm from "@/components/ConfirmDeleteForm";
 type TournamentItem = {
   id: string;
   title: string;
-  game: string;
-  date: string;
-  prize: string;
+  gameName: string | null;
+  startsAt: string | null;
+  prize: string | null;
   description: string;
-  maxSlots: number;
+  maxTeams: number;
   teamSize: number;
   status: string;
   registrationStatus: string;
@@ -62,9 +62,9 @@ export default function AdminTournamentListClient({
       const matchesSearch =
         !searchValue ||
         tournament.title.toLowerCase().includes(searchValue) ||
-        tournament.game.toLowerCase().includes(searchValue) ||
-        tournament.date.toLowerCase().includes(searchValue) ||
-        tournament.prize.toLowerCase().includes(searchValue) ||
+        (tournament.gameName ?? "").toLowerCase().includes(searchValue) ||
+        (tournament.startsAt ?? "").toLowerCase().includes(searchValue) ||
+        (tournament.prize ?? "").toLowerCase().includes(searchValue) ||
         tournament.description.toLowerCase().includes(searchValue);
 
       return matchesStatus && matchesSearch;
@@ -147,7 +147,7 @@ export default function AdminTournamentListClient({
                   <div>
                     <h3 className="text-2xl font-black">{tournament.title}</h3>
 
-                    <p className="mt-2 text-gray-300">{tournament.game}</p>
+                    <p className="mt-2 text-gray-300">{tournament.gameName ?? "—"}</p>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -183,41 +183,19 @@ export default function AdminTournamentListClient({
                     <label className="grid gap-2">
                       <span className="font-semibold text-gray-200">Game</span>
 
-                      <select
-                        name="game"
-                        defaultValue={tournament.game}
-                        required
-                        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                      >
-                        <option value="Valorant">Valorant</option>
-                        <option value="League of Legends">
-                          League of Legends
-                        </option>
-                        <option value="CS2">CS2</option>
-                        <option value="Dota2">Dota2</option>
-                      </select>
+                      <p className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-gray-400">
+                        {tournament.gameName ?? "Not set"} — edit via Admin panel
+                      </p>
                     </label>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-4">
-                    <label className="grid gap-2">
-                      <span className="font-semibold text-gray-200">Date</span>
-
-                      <input
-                        name="date"
-                        defaultValue={tournament.date}
-                        required
-                        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                      />
-                    </label>
-
+                  <div className="grid gap-4 md:grid-cols-3">
                     <label className="grid gap-2">
                       <span className="font-semibold text-gray-200">Prize</span>
 
                       <input
                         name="prize"
-                        defaultValue={tournament.prize}
-                        required
+                        defaultValue={tournament.prize ?? ""}
                         className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
                       />
                     </label>
@@ -228,10 +206,10 @@ export default function AdminTournamentListClient({
                       </span>
 
                       <input
-                        name="maxSlots"
+                        name="maxTeams"
                         type="number"
                         min="1"
-                        defaultValue={tournament.maxSlots}
+                        defaultValue={tournament.maxTeams}
                         required
                         className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
                       />

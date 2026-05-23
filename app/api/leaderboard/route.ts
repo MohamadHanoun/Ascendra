@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
               username: true,
             },
           },
+          game: { select: { name: true } },
           members: {
             select: {
               id: true,
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
               placement: true,
               tournament: {
                 select: {
-                  game: true,
+                  game: { select: { name: true } },
                 },
               },
             },
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
               return true;
             }
 
-            return result.tournament.game === selectedGame;
+            return result.tournament.game?.name === selectedGame;
           });
 
           const tournamentResults = teamResults.length;
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
           return {
             id: team.id,
             name: team.name,
-            game: team.game,
+            game: team.game?.name ?? null,
             leaderName: team.leader.username,
             membersCount: team.members.length,
             tournamentResults,
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest) {
                     placement: true,
                     tournament: {
                       select: {
-                        game: true,
+                        game: { select: { name: true } },
                       },
                     },
                   },
@@ -137,7 +138,7 @@ export async function GET(request: NextRequest) {
               return true;
             }
 
-            return result.tournament.game === selectedGame;
+            return result.tournament.game?.name === selectedGame;
           }),
         );
 

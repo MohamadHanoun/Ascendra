@@ -21,14 +21,14 @@ import type { TournamentDetailsMessages } from "@/lib/i18n";
 type AvailableTeam = {
   id: string;
   name: string;
-  game: string;
+  game: string | null;
   memberCount: number;
 };
 
 type UnavailableTeam = {
   id: string;
   name: string;
-  game: string;
+  game: string | null;
   memberCount: number;
   reason: string;
 };

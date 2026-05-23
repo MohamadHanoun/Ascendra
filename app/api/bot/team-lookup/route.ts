@@ -58,8 +58,10 @@ export async function GET(request: NextRequest) {
           },
           {
             game: {
-              contains: query,
-              mode: "insensitive" as const,
+              name: {
+                contains: query,
+                mode: "insensitive" as const,
+              },
             },
           },
         ],
@@ -75,7 +77,7 @@ export async function GET(request: NextRequest) {
     select: {
       id: true,
       name: true,
-      game: true,
+      game: { select: { name: true, slug: true } },
       status: true,
       submittedAt: true,
       approvedAt: true,
@@ -125,8 +127,8 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               title: true,
-              game: true,
-              date: true,
+              game: { select: { name: true } },
+              startsAt: true,
               status: true,
               registrationStatus: true,
             },
@@ -147,8 +149,8 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               title: true,
-              game: true,
-              date: true,
+              game: { select: { name: true } },
+              startsAt: true,
               status: true,
             },
           },
@@ -167,7 +169,8 @@ export async function GET(request: NextRequest) {
       return {
         id: team.id,
         name: team.name,
-        game: team.game,
+        game: team.game?.name ?? null,
+        gameSlug: team.game?.slug ?? null,
         status: team.status,
         submittedAt: team.submittedAt,
         approvedAt: team.approvedAt,
@@ -193,7 +196,14 @@ export async function GET(request: NextRequest) {
           approvedAt: registration.approvedAt,
           cancelledAt: registration.cancelledAt,
           reviewedAt: registration.reviewedAt,
-          tournament: registration.tournament,
+          tournament: {
+            id: registration.tournament.id,
+            title: registration.tournament.title,
+            game: registration.tournament.game?.name ?? null,
+            startsAt: registration.tournament.startsAt?.toISOString() ?? null,
+            status: registration.tournament.status,
+            registrationStatus: registration.tournament.registrationStatus,
+          },
         })),
         results: team.results.slice(0, 8).map((result) => ({
           id: result.id,
@@ -201,7 +211,13 @@ export async function GET(request: NextRequest) {
           points: result.points,
           note: result.note,
           awardedAt: result.awardedAt,
-          tournament: result.tournament,
+          tournament: {
+            id: result.tournament.id,
+            title: result.tournament.title,
+            game: result.tournament.game?.name ?? null,
+            startsAt: result.tournament.startsAt?.toISOString() ?? null,
+            status: result.tournament.status,
+          },
         })),
       };
     }),

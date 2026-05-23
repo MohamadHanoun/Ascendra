@@ -7,7 +7,6 @@ import { announcements } from "../data/announcements";
 import { serverRoles } from "../data/roles";
 import { basicRules } from "../data/rules";
 import { staffMembers } from "../data/staff";
-import { tournaments } from "../data/tournaments";
 
 dotenv.config({ path: ".env.local" });
 
@@ -17,15 +16,44 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is missing in .env.local");
 }
 
-const pool = new Pool({
-  connectionString,
-});
-
+const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
-const prisma = new PrismaClient({
-  adapter,
-});
+const coreGames = [
+  {
+    name: "Valorant",
+    slug: "valorant",
+    shortName: "VAL",
+    platform: "PC",
+    defaultTeamSize: 5,
+    defaultSubstitutes: 0,
+  },
+  {
+    name: "League of Legends",
+    slug: "league-of-legends",
+    shortName: "LoL",
+    platform: "PC",
+    defaultTeamSize: 5,
+    defaultSubstitutes: 0,
+  },
+  {
+    name: "CS2",
+    slug: "cs2",
+    shortName: "CS2",
+    platform: "PC",
+    defaultTeamSize: 5,
+    defaultSubstitutes: 0,
+  },
+  {
+    name: "Dota 2",
+    slug: "dota-2",
+    shortName: "Dota2",
+    platform: "PC",
+    defaultTeamSize: 5,
+    defaultSubstitutes: 0,
+  },
+];
 
 async function main() {
   console.log("Start seeding Ascendra database...");
@@ -42,6 +70,65 @@ async function main() {
   await prisma.tournament.deleteMany();
   await prisma.announcement.deleteMany();
   await prisma.serverSetting.deleteMany();
+  await prisma.game.deleteMany();
+
+  // Seed games
+  for (const game of coreGames) {
+    await prisma.game.upsert({
+      where: { slug: game.slug },
+      update: {},
+      create: { ...game, isActive: true },
+    });
+  }
+
+  console.log("Games seeded.");
+
+  // Seed placeholder tournaments (no gameId — admins will set them)
+  await prisma.tournament.createMany({
+    data: [
+      {
+        title: "Ascendra Community Cup",
+        description:
+          "A future Ascendra tournament designed for players from different electronic games. Registration will later require Discord login.",
+        prize: "To be announced",
+        maxTeams: 16,
+        teamSize: 5,
+        status: "open",
+        registrationStatus: "open",
+      },
+      {
+        title: "Ascendra Ranked Night",
+        description:
+          "A planned event for competitive players who want to join organized matches and community challenges.",
+        prize: "Community rewards",
+        maxTeams: 16,
+        teamSize: 5,
+        status: "upcoming",
+        registrationStatus: "closed",
+      },
+      {
+        title: "Ascendra Casual Event",
+        description:
+          "A casual event for members who want to play, meet others, and enjoy the community without pressure.",
+        prize: "Fun rewards",
+        maxTeams: 16,
+        teamSize: 5,
+        status: "upcoming",
+        registrationStatus: "closed",
+      },
+      {
+        title: "Ascendra Test Bracket",
+        description:
+          "A placeholder tournament used to prepare the future registration, brackets, results, and admin tools.",
+        maxTeams: 16,
+        teamSize: 5,
+        status: "closed",
+        registrationStatus: "closed",
+      },
+    ],
+  });
+
+  console.log("Tournaments seeded.");
 
   await prisma.rule.createMany({
     data: basicRules.map((rule: string, index: number) => ({
@@ -54,11 +141,7 @@ async function main() {
   await prisma.role.createMany({
     data: serverRoles.map(
       (
-        role: {
-          name: string;
-          color: string;
-          description: string;
-        },
+        role: { name: string; color: string; description: string },
         index: number,
       ) => ({
         name: role.name,
@@ -73,11 +156,7 @@ async function main() {
   await prisma.staffMember.createMany({
     data: staffMembers.map(
       (
-        member: {
-          name: string;
-          role: string;
-          status: string;
-        },
+        member: { name: string; role: string; status: string },
         index: number,
       ) => ({
         name: member.name,
@@ -85,29 +164,6 @@ async function main() {
         status: member.status,
         order: index + 1,
         isActive: true,
-      }),
-    ),
-  });
-
-  await prisma.tournament.createMany({
-    data: tournaments.map(
-      (tournament: {
-        title: string;
-        game: string;
-        description: string;
-        date: string;
-        prize: string;
-        status: string;
-      }) => ({
-        title: tournament.title,
-        game: tournament.game,
-        description: tournament.description,
-        date: tournament.date,
-        prize: tournament.prize,
-        maxSlots: 16,
-        teamSize: 5,
-        status: tournament.status,
-        registrationStatus: "open",
       }),
     ),
   });

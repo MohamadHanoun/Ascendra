@@ -6,6 +6,30 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── NEW ─────────────────────────────────────────────────────────────────────
+
+model Game {
+  id            String  @id @default(cuid())
+  name          String
+  slug          String  @unique
+  shortName     String?
+  description   String?
+  iconUrl       String?
+  coverImageUrl String?
+  platform      String?
+  defaultTeamSize    Int @default(5)
+  defaultSubstitutes Int @default(0)
+  isActive      Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tournaments Tournament[]
+  teams       Team[]
+}
+
+// ─── UNCHANGED ───────────────────────────────────────────────────────────────
+
 model User {
   id        String  @id @default(cuid())
   discordId String  @unique
@@ -29,21 +53,44 @@ model User {
   tournamentRegistrations TournamentRegistration[] @relation("TournamentRegisteredBy")
 }
 
+// ─── MODIFIED ────────────────────────────────────────────────────────────────
+
 model Tournament {
   id          String  @id @default(cuid())
   title       String
-  game        String
   description String
-  date        String
-  prize       String
-  imageUrl    String?
-  maxSlots    Int
-  teamSize    Int     @default(1)
+  gameId      String?
 
-  status             String @default("upcoming")
-  registrationStatus String @default("closed")
+  // Schedule
+  startsAt             DateTime?
+  endsAt               DateTime?
+  registrationOpensAt  DateTime?
+  registrationClosesAt DateTime?
+
+  // Slots & roster
+  maxTeams           Int @default(16)
+  minTeams           Int @default(2)
+  teamSize           Int @default(5)
+  substitutesAllowed Int @default(0)
+
+  // Format
+  format String @default("single_elimination")
+  bestOf Int    @default(1)
+
+  // Info
+  prize      String?
+  imageUrl   String?
+  rules      String?
+  region     String?
+  platform   String?
+  visibility String @default("public")
+
+  // Status
+  status             String    @default("draft")
+  registrationStatus String    @default("closed")
   endedAt            DateTime?
 
+  // Discord
   discordAnnouncementChannelId String?
   discordAnnouncementMessageId String?
   discordAnnouncementUrl       String?
@@ -53,16 +100,19 @@ model Tournament {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  game          Game?                    @relation(fields: [gameId], references: [id])
   registrations TournamentRegistration[]
   results       TournamentResult[]
 
   @@index([discordAnnouncementMessageId])
+  @@index([gameId])
+  @@index([status])
 }
 
 model Team {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   name     String
-  game     String
+  gameId   String?
   leaderId String
 
   status          String    @default("draft")
@@ -76,7 +126,8 @@ model Team {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  leader User @relation("TeamLeader", fields: [leaderId], references: [id], onDelete: Cascade)
+  leader User  @relation("TeamLeader", fields: [leaderId], references: [id], onDelete: Cascade)
+  game   Game? @relation(fields: [gameId], references: [id])
 
   members       TeamMember[]
   invites       TeamInvite[]
@@ -84,7 +135,10 @@ model Team {
   results       TournamentResult[]
 
   @@unique([name, leaderId])
+  @@index([gameId])
 }
+
+// ─── UNCHANGED ───────────────────────────────────────────────────────────────
 
 model TeamMember {
   id       String   @id @default(cuid())
@@ -258,7 +312,7 @@ model RealtimeEvent {
   id String @id @default(cuid())
 
   type       String
-  audience   String @default("public")
+  audience   String  @default("public")
   entityType String?
   entityId   String?
 

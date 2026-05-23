@@ -251,9 +251,15 @@ async function renderAdminTab(
   }
 
   if (activeTab === "tournaments") {
+    const games = await prisma.game.findMany({
+      where: { isActive: true },
+      select: { slug: true, name: true },
+      orderBy: { name: "asc" },
+    });
+
     return (
       <section className="mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
-        <AdminTournamentForm />
+        <AdminTournamentForm games={games} />
         <AdminTournamentList />
       </section>
     );

@@ -13,17 +13,15 @@ export type AdminTournamentActionResult = {
   redirectTo?: string;
 };
 
-const allowedGames = ["Valorant", "League of Legends", "CS2", "Dota2"];
-
 type TournamentForAnnouncement = {
   id: string;
   title: string;
-  game: string;
+  game: { name: string; slug: string } | null;
   description: string;
-  date: string;
-  prize: string;
+  startsAt: Date | null;
+  prize: string | null;
   imageUrl: string | null;
-  maxSlots: number;
+  maxTeams: number;
   teamSize: number;
   status: string;
   registrationStatus: string;
@@ -33,21 +31,14 @@ type TournamentForAnnouncement = {
 };
 
 function success(message: string): AdminTournamentActionResult {
-  return {
-    ok: true,
-    message,
-  };
+  return { ok: true, message };
 }
 
 function fail(
   message: string,
   redirectTo?: string,
 ): AdminTournamentActionResult {
-  return {
-    ok: false,
-    message,
-    redirectTo,
-  };
+  return { ok: false, message, redirectTo };
 }
 
 function getValue(formData: FormData, name: string) {
@@ -72,17 +63,13 @@ function getSiteUrl() {
 }
 
 function normalizeImageUrl(imageUrl: string) {
-  if (!imageUrl) {
-    return null;
-  }
+  if (!imageUrl) return null;
 
   if (imageUrl.startsWith("https://") || imageUrl.startsWith("http://")) {
     return imageUrl;
   }
 
-  if (imageUrl.startsWith("/")) {
-    return imageUrl;
-  }
+  if (imageUrl.startsWith("/")) return imageUrl;
 
   return "invalid";
 }
@@ -93,17 +80,16 @@ function buildTournamentAnnouncementPayload(
   return {
     tournamentId: tournament.id,
     title: tournament.title,
-    game: tournament.game,
+    game: tournament.game?.name ?? null,
     description: tournament.description,
-    date: tournament.date,
+    startsAt: tournament.startsAt?.toISOString() ?? null,
     prize: tournament.prize,
     imageUrl: tournament.imageUrl,
-    maxSlots: tournament.maxSlots,
+    maxTeams: tournament.maxTeams,
     teamSize: tournament.teamSize,
     status: tournament.status,
     registrationStatus: tournament.registrationStatus,
     websiteUrl: `${getSiteUrl()}/tournaments/${tournament.id}`,
-
     announcementChannelId: tournament.discordAnnouncementChannelId,
     announcementMessageId: tournament.discordAnnouncementMessageId,
     announcementUrl: tournament.discordAnnouncementUrl,
@@ -120,9 +106,7 @@ async function queueTournamentAnnouncementEvent(
         type: "tournament_announcement_update",
         entityType: "tournament",
         entityId: tournament.id,
-        status: {
-          in: ["queued", "failed"],
-        },
+        status: { in: ["queued", "failed"] },
       },
       data: {
         status: "cancelled",
@@ -154,10 +138,7 @@ async function requireAdmin(): Promise<AdminTournamentActionResult | null> {
   const session = await auth();
 
   const sessionUser = session?.user as
-    | {
-        databaseId?: string;
-        isAdmin?: boolean;
-      }
+    | { databaseId?: string; isAdmin?: boolean }
     | undefined;
 
   if (!sessionUser?.databaseId) {
@@ -171,51 +152,33 @@ async function requireAdmin(): Promise<AdminTournamentActionResult | null> {
   return null;
 }
 
-function validateTournamentForm(formData: FormData) {
+async function validateTournamentForm(formData: FormData) {
   const title = getValue(formData, "title");
-  const game = getValue(formData, "game");
+  const gameSlug = getValue(formData, "gameSlug");
   const description = getValue(formData, "description");
-  const date = getValue(formData, "date");
   const prize = getValue(formData, "prize");
   const imageUrl = normalizeImageUrl(getValue(formData, "imageUrl"));
   const status = getValue(formData, "status") || "upcoming";
   const registrationStatus = getValue(formData, "registrationStatus") || "open";
-  const maxSlots = getNumber(formData, "maxSlots");
+  const maxTeams = getNumber(formData, "maxTeams");
   const teamSize = getNumber(formData, "teamSize");
 
   if (!title) {
-    return {
-      ok: false as const,
-      message: "Tournament title is required.",
-    };
+    return { ok: false as const, message: "Tournament title is required." };
   }
 
-  if (!allowedGames.includes(game)) {
-    return {
-      ok: false as const,
-      message: "Invalid game selected.",
-    };
+  if (!gameSlug) {
+    return { ok: false as const, message: "Game is required." };
+  }
+
+  const game = await prisma.game.findUnique({ where: { slug: gameSlug } });
+
+  if (!game) {
+    return { ok: false as const, message: "Invalid game selected." };
   }
 
   if (!description) {
-    return {
-      ok: false as const,
-      message: "Description is required.",
-    };
-  }
-
-  if (!date) {
-    return {
-      ok: false as const,
-      message: "Date is required.",
-    };
-  }
-
-  if (!prize) {
-    return {
-      ok: false as const,
-      message: "Prize is required.",
-    };
+    return { ok: false as const, message: "Description is required." };
   }
 
   if (imageUrl === "invalid") {
@@ -225,30 +188,23 @@ function validateTournamentForm(formData: FormData) {
     };
   }
 
-  if (!maxSlots || maxSlots < 1) {
-    return {
-      ok: false as const,
-      message: "Max slots must be at least 1.",
-    };
+  if (!maxTeams || maxTeams < 1) {
+    return { ok: false as const, message: "Max teams must be at least 1." };
   }
 
   if (!teamSize || teamSize < 1) {
-    return {
-      ok: false as const,
-      message: "Team size must be at least 1.",
-    };
+    return { ok: false as const, message: "Team size must be at least 1." };
   }
 
   return {
     ok: true as const,
     data: {
       title,
-      game,
+      gameId: game.id,
       description,
-      date,
-      prize,
+      prize: prize || null,
       imageUrl,
-      maxSlots,
+      maxTeams,
       teamSize,
       status,
       registrationStatus,
@@ -285,19 +241,14 @@ async function snapshotTournament(
   tournamentId: string,
 ) {
   const registrations = await tx.tournamentRegistration.findMany({
-    where: {
-      tournamentId,
-    },
+    where: { tournamentId },
     include: {
       team: {
         include: {
+          game: true,
           members: {
-            include: {
-              user: true,
-            },
-            orderBy: {
-              joinedAt: "asc",
-            },
+            include: { user: true },
+            orderBy: { joinedAt: "asc" },
           },
         },
       },
@@ -305,36 +256,27 @@ async function snapshotTournament(
   });
 
   for (const registration of registrations) {
-    if (registration.snapshotTeamName) {
-      continue;
-    }
+    if (registration.snapshotTeamName) continue;
 
     await tx.tournamentRegistration.update({
-      where: {
-        id: registration.id,
-      },
+      where: { id: registration.id },
       data: {
         snapshotTeamName: registration.team.name,
-        snapshotTeamGame: registration.team.game,
+        snapshotTeamGame: registration.team.game?.name ?? null,
         snapshotMembers: buildSnapshotMembers(registration.team.members),
       },
     });
   }
 
   const results = await tx.tournamentResult.findMany({
-    where: {
-      tournamentId,
-    },
+    where: { tournamentId },
     include: {
       team: {
         include: {
+          game: true,
           members: {
-            include: {
-              user: true,
-            },
-            orderBy: {
-              joinedAt: "asc",
-            },
+            include: { user: true },
+            orderBy: { joinedAt: "asc" },
           },
         },
       },
@@ -342,17 +284,13 @@ async function snapshotTournament(
   });
 
   for (const result of results) {
-    if (result.snapshotTeamName) {
-      continue;
-    }
+    if (result.snapshotTeamName) continue;
 
     await tx.tournamentResult.update({
-      where: {
-        id: result.id,
-      },
+      where: { id: result.id },
       data: {
         snapshotTeamName: result.team.name,
-        snapshotTeamGame: result.team.game,
+        snapshotTeamGame: result.team.game?.name ?? null,
         snapshotMembers: buildSnapshotMembers(result.team.members),
       },
     });
@@ -364,18 +302,15 @@ export async function createTournamentInline(
 ): Promise<AdminTournamentActionResult> {
   const authError = await requireAdmin();
 
-  if (authError) {
-    return authError;
-  }
+  if (authError) return authError;
 
-  const validation = validateTournamentForm(formData);
+  const validation = await validateTournamentForm(formData);
 
-  if (!validation.ok) {
-    return fail(validation.message);
-  }
+  if (!validation.ok) return fail(validation.message);
 
   const tournament = await prisma.tournament.create({
     data: validation.data,
+    include: { game: true },
   });
 
   await queueTournamentAnnouncementEvent(
@@ -391,7 +326,7 @@ export async function createTournamentInline(
     payload: {
       tournamentId: tournament.id,
       title: tournament.title,
-      game: tournament.game,
+      game: tournament.game?.name ?? null,
     },
   });
 
@@ -405,49 +340,35 @@ export async function updateTournamentInline(
 ): Promise<AdminTournamentActionResult> {
   const authError = await requireAdmin();
 
-  if (authError) {
-    return authError;
-  }
+  if (authError) return authError;
 
   const tournamentId =
     getValue(formData, "tournamentId") || getValue(formData, "id");
 
-  if (!tournamentId) {
-    return fail("Tournament ID is missing.");
-  }
+  if (!tournamentId) return fail("Tournament ID is missing.");
 
-  const validation = validateTournamentForm(formData);
+  const validation = await validateTournamentForm(formData);
 
-  if (!validation.ok) {
-    return fail(validation.message);
-  }
+  if (!validation.ok) return fail(validation.message);
 
   const tournament = await prisma.tournament.findUnique({
-    where: {
-      id: tournamentId,
-    },
+    where: { id: tournamentId },
   });
 
-  if (!tournament) {
-    return fail("Tournament was not found.");
-  }
+  if (!tournament) return fail("Tournament was not found.");
 
-  const approvedRegistrationsCount = await prisma.tournamentRegistration.count({
-    where: {
-      tournamentId: tournament.id,
-      status: "approved",
-    },
+  const approvedCount = await prisma.tournamentRegistration.count({
+    where: { tournamentId: tournament.id, status: "approved" },
   });
 
-  if (validation.data.maxSlots < approvedRegistrationsCount) {
-    return fail("Max slots cannot be lower than approved teams.");
+  if (validation.data.maxTeams < approvedCount) {
+    return fail("Max teams cannot be lower than approved teams.");
   }
 
   const updatedTournament = await prisma.tournament.update({
-    where: {
-      id: tournament.id,
-    },
+    where: { id: tournament.id },
     data: validation.data,
+    include: { game: true },
   });
 
   await queueTournamentAnnouncementEvent(
@@ -460,9 +381,7 @@ export async function updateTournamentInline(
     audience: "public",
     entityType: "tournament",
     entityId: tournament.id,
-    payload: {
-      tournamentId: tournament.id,
-    },
+    payload: { tournamentId: tournament.id },
   });
 
   revalidateTournamentViews(tournament.id);
@@ -475,42 +394,27 @@ export async function deleteTournamentInline(
 ): Promise<AdminTournamentActionResult> {
   const authError = await requireAdmin();
 
-  if (authError) {
-    return authError;
-  }
+  if (authError) return authError;
 
   const tournamentId =
     getValue(formData, "tournamentId") || getValue(formData, "id");
 
-  if (!tournamentId) {
-    return fail("Tournament ID is missing.");
-  }
+  if (!tournamentId) return fail("Tournament ID is missing.");
 
   const tournament = await prisma.tournament.findUnique({
-    where: {
-      id: tournamentId,
-    },
+    where: { id: tournamentId },
   });
 
-  if (!tournament) {
-    return fail("Tournament was not found.");
-  }
+  if (!tournament) return fail("Tournament was not found.");
 
-  await prisma.tournament.delete({
-    where: {
-      id: tournament.id,
-    },
-  });
+  await prisma.tournament.delete({ where: { id: tournament.id } });
 
   await createRealtimeEvent({
     type: "tournament.deleted",
     audience: "public",
     entityType: "tournament",
     entityId: tournament.id,
-    payload: {
-      tournamentId: tournament.id,
-      title: tournament.title,
-    },
+    payload: { tournamentId: tournament.id, title: tournament.title },
   });
 
   revalidatePath("/admin");
@@ -541,38 +445,27 @@ async function setTournamentRegistrationStatus(
 ): Promise<AdminTournamentActionResult> {
   const authError = await requireAdmin();
 
-  if (authError) {
-    return authError;
-  }
+  if (authError) return authError;
 
   const tournamentId =
     getValue(formData, "tournamentId") || getValue(formData, "id");
 
-  if (!tournamentId) {
-    return fail("Tournament ID is missing.");
-  }
+  if (!tournamentId) return fail("Tournament ID is missing.");
 
   const tournament = await prisma.tournament.findUnique({
-    where: {
-      id: tournamentId,
-    },
+    where: { id: tournamentId },
   });
 
-  if (!tournament) {
-    return fail("Tournament was not found.");
-  }
+  if (!tournament) return fail("Tournament was not found.");
 
   if (tournament.status === "ended") {
     return fail("Ended tournaments cannot reopen registration.");
   }
 
   const updatedTournament = await prisma.tournament.update({
-    where: {
-      id: tournament.id,
-    },
-    data: {
-      registrationStatus,
-    },
+    where: { id: tournament.id },
+    data: { registrationStatus },
+    include: { game: true },
   });
 
   await queueTournamentAnnouncementEvent(
@@ -585,10 +478,7 @@ async function setTournamentRegistrationStatus(
     audience: "public",
     entityType: "tournament",
     entityId: tournament.id,
-    payload: {
-      tournamentId: tournament.id,
-      registrationStatus,
-    },
+    payload: { tournamentId: tournament.id, registrationStatus },
   });
 
   revalidateTournamentViews(tournament.id);
@@ -636,26 +526,18 @@ async function setTournamentStatus(
 ): Promise<AdminTournamentActionResult> {
   const authError = await requireAdmin();
 
-  if (authError) {
-    return authError;
-  }
+  if (authError) return authError;
 
   const tournamentId =
     getValue(formData, "tournamentId") || getValue(formData, "id");
 
-  if (!tournamentId) {
-    return fail("Tournament ID is missing.");
-  }
+  if (!tournamentId) return fail("Tournament ID is missing.");
 
   const tournament = await prisma.tournament.findUnique({
-    where: {
-      id: tournamentId,
-    },
+    where: { id: tournamentId },
   });
 
-  if (!tournament) {
-    return fail("Tournament was not found.");
-  }
+  if (!tournament) return fail("Tournament was not found.");
 
   const updatedTournament = await prisma.$transaction(async (tx) => {
     if (status === "ended") {
@@ -663,15 +545,14 @@ async function setTournamentStatus(
     }
 
     return tx.tournament.update({
-      where: {
-        id: tournament.id,
-      },
+      where: { id: tournament.id },
       data: {
         status,
         registrationStatus:
           status === "ended" ? "closed" : tournament.registrationStatus,
         endedAt: status === "ended" ? tournament.endedAt || new Date() : null,
       },
+      include: { game: true },
     });
   });
 
@@ -685,10 +566,7 @@ async function setTournamentStatus(
     audience: "public",
     entityType: "tournament",
     entityId: tournament.id,
-    payload: {
-      tournamentId: tournament.id,
-      status,
-    },
+    payload: { tournamentId: tournament.id, status },
   });
 
   revalidateTournamentViews(tournament.id);

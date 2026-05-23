@@ -23,9 +23,7 @@ async function requireUser() {
   }
 
   const user = await prisma.user.findUnique({
-    where: {
-      id: session.user.databaseId,
-    },
+    where: { id: session.user.databaseId },
   });
 
   if (!user) {
@@ -52,16 +50,10 @@ export async function registerTeamForTournament(formData: FormData) {
   }
 
   const tournament = await prisma.tournament.findUnique({
-    where: {
-      id: tournamentId,
-    },
+    where: { id: tournamentId },
     include: {
       registrations: {
-        where: {
-          status: {
-            in: activeRegistrationStatuses,
-          },
-        },
+        where: { status: { in: activeRegistrationStatuses } },
       },
     },
   });
@@ -77,17 +69,13 @@ export async function registerTeamForTournament(formData: FormData) {
     tournamentError("Registration is not open for this tournament.");
   }
 
-  if (tournament.registrations.length >= tournament.maxSlots) {
+  if (tournament.registrations.length >= tournament.maxTeams) {
     tournamentError("This tournament is already full.");
   }
 
   const team = await prisma.team.findUnique({
-    where: {
-      id: teamId,
-    },
-    include: {
-      members: true,
-    },
+    where: { id: teamId },
+    include: { members: true },
   });
 
   if (!team) {
@@ -102,7 +90,7 @@ export async function registerTeamForTournament(formData: FormData) {
     tournamentError("Only approved teams can register for tournaments.");
   }
 
-  if (team.game !== tournament.game) {
+  if (team.gameId !== tournament.gameId) {
     tournamentError("This team does not match the tournament game.");
   }
 
@@ -116,12 +104,8 @@ export async function registerTeamForTournament(formData: FormData) {
     await prisma.tournamentRegistration.findFirst({
       where: {
         tournamentId: tournament.id,
-        status: {
-          in: activeRegistrationStatuses,
-        },
-        team: {
-          leaderId: user.id,
-        },
+        status: { in: activeRegistrationStatuses },
+        team: { leaderId: user.id },
       },
     });
 
@@ -144,13 +128,8 @@ export async function registerTeamForTournament(formData: FormData) {
     }
 
     await prisma.tournamentRegistration.update({
-      where: {
-        id: existingRegistration.id,
-      },
-      data: {
-        status: "registered",
-        registeredById: user.id,
-      },
+      where: { id: existingRegistration.id },
+      data: { status: "registered", registeredById: user.id },
     });
   } else {
     await prisma.tournamentRegistration.create({
@@ -173,19 +152,17 @@ export async function registerTeamForTournament(formData: FormData) {
 export async function cancelTournamentRegistration(formData: FormData) {
   const user = await requireUser();
 
-  const registrationId = String(formData.get("registrationId") || "").trim();
+  const registrationId = String(
+    formData.get("registrationId") || "",
+  ).trim();
 
   if (!registrationId) {
     tournamentError("Registration ID is missing.");
   }
 
   const registration = await prisma.tournamentRegistration.findUnique({
-    where: {
-      id: registrationId,
-    },
-    include: {
-      team: true,
-    },
+    where: { id: registrationId },
+    include: { team: true },
   });
 
   if (!registration) {
@@ -201,12 +178,8 @@ export async function cancelTournamentRegistration(formData: FormData) {
   }
 
   await prisma.tournamentRegistration.update({
-    where: {
-      id: registration.id,
-    },
-    data: {
-      status: "cancelled",
-    },
+    where: { id: registration.id },
+    data: { status: "cancelled" },
   });
 
   revalidatePath("/tournaments");

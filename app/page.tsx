@@ -250,10 +250,10 @@ function TournamentMiniCard({
   tournament: {
     id: string;
     title: string;
-    game: string;
-    date: string;
+    game: { name: string; slug: string } | null;
+    startsAt: Date | null;
     imageUrl: string | null;
-    maxSlots: number;
+    maxTeams: number;
     teamSize: number;
     status: string;
     registrationStatus: string;
@@ -270,7 +270,7 @@ function TournamentMiniCard({
   ).length;
 
   const applications = tournament.registrations.length;
-  const imageSrc = getTournamentImageUrl(tournament.game, tournament.imageUrl);
+  const imageSrc = getTournamentImageUrl(tournament.game?.slug ?? null, tournament.imageUrl);
 
   return (
     <article className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 transition hover:bg-white/[0.06]">
@@ -302,7 +302,7 @@ function TournamentMiniCard({
 
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
-            {tournament.game}
+            {tournament.game?.name ?? "—"}
           </p>
 
           <h3 className="mt-2 text-2xl font-black text-white">
@@ -310,13 +310,13 @@ function TournamentMiniCard({
           </h3>
 
           <p className="mt-2 text-sm text-gray-400">
-            {tournament.date} · {tournament.teamSize}v{tournament.teamSize}
+            {tournament.startsAt?.toLocaleDateString() ?? "—"} · {tournament.teamSize}v{tournament.teamSize}
           </p>
         </div>
 
         <ProgressBar
           approvedSlots={approvedSlots}
-          maxSlots={tournament.maxSlots}
+          maxSlots={tournament.maxTeams}
           approvedLabel={messages.tournaments.approved}
         />
 
@@ -559,10 +559,10 @@ export default async function HomePage() {
       select: {
         id: true,
         title: true,
-        game: true,
-        date: true,
+        game: { select: { name: true, slug: true } },
+        startsAt: true,
         imageUrl: true,
-        maxSlots: true,
+        maxTeams: true,
         teamSize: true,
         status: true,
         registrationStatus: true,

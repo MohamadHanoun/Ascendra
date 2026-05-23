@@ -81,15 +81,15 @@ export async function GET(request: Request) {
         select: {
           id: true,
           title: true,
-          game: true,
-          date: true,
+          game: { select: { name: true } },
+          startsAt: true,
         },
       },
       team: {
         select: {
           id: true,
           name: true,
-          game: true,
+          game: { select: { name: true } },
           leaderId: true,
           members: {
             select: {
@@ -130,11 +130,16 @@ export async function GET(request: Request) {
       discordRoleError: registration.discordRoleError,
       discordRoleRequestedAt: registration.discordRoleRequestedAt,
       discordRoleSyncedAt: registration.discordRoleSyncedAt,
-      tournament: registration.tournament,
+      tournament: {
+        id: registration.tournament.id,
+        title: registration.tournament.title,
+        game: registration.tournament.game?.name ?? null,
+        startsAt: registration.tournament.startsAt?.toISOString() ?? null,
+      },
       team: {
         id: registration.team.id,
         name: registration.team.name,
-        game: registration.team.game,
+        game: registration.team.game?.name ?? null,
         leaderId: registration.team.leaderId,
         members: registration.team.members.map((member) => ({
           id: member.id,

@@ -49,7 +49,6 @@ type TeamInlineActionMessages = {
   teamDeleted: string;
 };
 
-const allowedGames = ["Valorant", "League of Legends", "CS2", "Dota2"];
 
 const actionMessages: Record<Locale, TeamInlineActionMessages> = {
   en: {
@@ -331,13 +330,17 @@ export async function updateTeamInline(
 
   const teamId = getTeamId(formData);
   const name = String(formData.get("name") || "").trim();
-  const game = String(formData.get("game") || "").trim();
+  const gameSlug = String(formData.get("gameSlug") || "").trim();
 
-  if (!teamId || !name || !game) {
+  if (!teamId || !name || !gameSlug) {
     return fail(messages.teamIdNameGameRequired);
   }
 
-  if (!allowedGames.includes(game)) {
+  const selectedGame = await prisma.game.findUnique({
+    where: { slug: gameSlug, isActive: true },
+  });
+
+  if (!selectedGame) {
     return fail(messages.invalidGame);
   }
 
@@ -362,7 +365,7 @@ export async function updateTeamInline(
     },
     data: {
       name,
-      game,
+      gameId: selectedGame.id,
       status: team.status === "rejected" ? "draft" : team.status,
       rejectedAt: null,
       rejectionReason: null,

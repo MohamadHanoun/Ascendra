@@ -168,7 +168,7 @@ async function getPlayerLeaderboard(
       snapshotMembers: true,
       tournament: {
         select: {
-          game: true,
+          game: { select: { name: true } },
         },
       },
       team: {
@@ -235,7 +235,7 @@ async function getPlayerLeaderboard(
   >();
 
   for (const result of results) {
-    if (selectedGame !== "Overall" && result.tournament.game !== selectedGame) {
+    if (selectedGame !== "Overall" && result.tournament.game?.name !== selectedGame) {
       continue;
     }
 
@@ -310,14 +310,14 @@ async function getTeamLeaderboard(
       snapshotMembers: true,
       tournament: {
         select: {
-          game: true,
+          game: { select: { name: true } },
         },
       },
       team: {
         select: {
           id: true,
           name: true,
-          game: true,
+          game: { select: { name: true } },
           leader: {
             select: {
               username: true,
@@ -338,7 +338,7 @@ async function getTeamLeaderboard(
     {
       id: string;
       name: string;
-      game: string;
+      game: string | null;
       leaderName: string;
       membersCount: number;
       tournamentPoints: number;
@@ -348,7 +348,7 @@ async function getTeamLeaderboard(
   >();
 
   for (const result of results) {
-    if (selectedGame !== "Overall" && result.tournament.game !== selectedGame) {
+    if (selectedGame !== "Overall" && result.tournament.game?.name !== selectedGame) {
       continue;
     }
 
@@ -356,7 +356,7 @@ async function getTeamLeaderboard(
     const existing = leaderboard.get(result.teamId) || {
       id: result.teamId,
       name: result.snapshotTeamName || result.team.name,
-      game: result.snapshotTeamGame || result.team.game,
+      game: (result.snapshotTeamGame || result.team.game?.name) ?? null,
       leaderName: result.team.leader.username,
       membersCount:
         snapshotMembers.length > 0

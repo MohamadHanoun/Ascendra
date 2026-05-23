@@ -71,12 +71,12 @@ function revalidateBotViews() {
 function buildTournamentAnnouncementPayload(tournament: {
   id: string;
   title: string;
-  game: string;
+  game: { name: string } | null;
   description: string;
-  date: string;
-  prize: string;
+  startsAt: Date | null;
+  prize: string | null;
   imageUrl: string | null;
-  maxSlots: number;
+  maxTeams: number;
   teamSize: number;
   status: string;
   registrationStatus: string;
@@ -89,12 +89,12 @@ function buildTournamentAnnouncementPayload(tournament: {
   return {
     id: tournament.id,
     title: tournament.title,
-    game: tournament.game,
+    game: tournament.game?.name ?? null,
     description: tournament.description,
-    date: tournament.date,
+    startsAt: tournament.startsAt?.toISOString() ?? null,
     prize: tournament.prize,
     imageUrl: tournament.imageUrl,
-    maxSlots: tournament.maxSlots,
+    maxTeams: tournament.maxTeams,
     teamSize: tournament.teamSize,
     status: tournament.status,
     registrationStatus: tournament.registrationStatus,
@@ -107,18 +107,16 @@ function buildTournamentAnnouncementPayload(tournament: {
 
 async function getTournament(tournamentId: string) {
   return prisma.tournament.findUnique({
-    where: {
-      id: tournamentId,
-    },
+    where: { id: tournamentId },
     select: {
       id: true,
       title: true,
-      game: true,
+      game: { select: { name: true } },
       description: true,
-      date: true,
+      startsAt: true,
       prize: true,
       imageUrl: true,
-      maxSlots: true,
+      maxTeams: true,
       teamSize: true,
       status: true,
       registrationStatus: true,

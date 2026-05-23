@@ -78,9 +78,7 @@ function ProgressBar({
       <div className="h-2 overflow-hidden rounded-full bg-white/10">
         <div
           className="h-full rounded-full bg-violet-500 shadow-lg shadow-violet-500/25"
-          style={{
-            width: `${progress}%`,
-          }}
+          style={{ width: `${progress}%` }}
         />
       </div>
     </div>
@@ -104,30 +102,20 @@ export default async function AdminTournamentList() {
     select: {
       id: true,
       title: true,
-      game: true,
-      date: true,
+      game: { select: { name: true, slug: true } },
+      startsAt: true,
       imageUrl: true,
-      maxSlots: true,
+      maxTeams: true,
       teamSize: true,
       status: true,
       registrationStatus: true,
       createdAt: true,
       registrations: {
-        where: {
-          status: {
-            in: ["registered", "approved", "rejected"],
-          },
-        },
-        select: {
-          id: true,
-          status: true,
-        },
+        where: { status: { in: ["registered", "approved", "rejected"] } },
+        select: { id: true, status: true },
       },
       results: {
-        select: {
-          id: true,
-          points: true,
-        },
+        select: { id: true, points: true },
       },
     },
   });
@@ -136,37 +124,30 @@ export default async function AdminTournamentList() {
     const statusA = getSortPriority(a.status);
     const statusB = getSortPriority(b.status);
 
-    if (statusA !== statusB) {
-      return statusA - statusB;
-    }
+    if (statusA !== statusB) return statusA - statusB;
 
     return b.createdAt.getTime() - a.createdAt.getTime();
   });
 
   const openTournaments = tournaments.filter(
-    (tournament) => tournament.status === "open",
+    (t) => t.status === "open",
   ).length;
 
   const pendingApplications = tournaments.reduce(
-    (total, tournament) =>
+    (total, t) =>
       total +
-      tournament.registrations.filter(
-        (registration) => registration.status === "registered",
-      ).length,
+      t.registrations.filter((r) => r.status === "registered").length,
     0,
   );
 
   const totalApproved = tournaments.reduce(
-    (total, tournament) =>
-      total +
-      tournament.registrations.filter(
-        (registration) => registration.status === "approved",
-      ).length,
+    (total, t) =>
+      total + t.registrations.filter((r) => r.status === "approved").length,
     0,
   );
 
   const totalResults = tournaments.reduce(
-    (total, tournament) => total + tournament.results.length,
+    (total, t) => total + t.results.length,
     0,
   );
 
@@ -213,30 +194,30 @@ export default async function AdminTournamentList() {
           <div className="divide-y divide-white/10">
             {sortedTournaments.map((tournament) => {
               const approvedSlots = tournament.registrations.filter(
-                (registration) => registration.status === "approved",
+                (r) => r.status === "approved",
               ).length;
 
               const pendingCount = tournament.registrations.filter(
-                (registration) => registration.status === "registered",
+                (r) => r.status === "registered",
               ).length;
 
               const rejectedCount = tournament.registrations.filter(
-                (registration) => registration.status === "rejected",
+                (r) => r.status === "rejected",
               ).length;
 
               const applications = tournament.registrations.length;
               const remainingSlots = Math.max(
-                tournament.maxSlots - approvedSlots,
+                tournament.maxTeams - approvedSlots,
                 0,
               );
 
               const tournamentImage = getTournamentImageUrl(
-                tournament.game,
+                tournament.game?.slug ?? null,
                 tournament.imageUrl,
               );
 
               const tournamentPoints = tournament.results.reduce(
-                (total, result) => total + result.points,
+                (total, r) => total + r.points,
                 0,
               );
 
@@ -258,7 +239,7 @@ export default async function AdminTournamentList() {
                     </h3>
 
                     <p className="mt-1 text-sm text-gray-400">
-                      {tournament.game} · {tournament.date} ·{" "}
+                      {tournament.game?.name ?? "—"} ·{" "}
                       {tournament.teamSize}v{tournament.teamSize}
                     </p>
                   </div>
@@ -271,7 +252,7 @@ export default async function AdminTournamentList() {
                   <div className="grid gap-2">
                     <ProgressBar
                       approvedSlots={approvedSlots}
-                      maxSlots={tournament.maxSlots}
+                      maxSlots={tournament.maxTeams}
                     />
 
                     <p className="text-xs font-bold text-gray-500">

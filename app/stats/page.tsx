@@ -155,7 +155,7 @@ async function getStatsData(messages: StatsMessages) {
         points: true,
         tournament: {
           select: {
-            game: true,
+            game: { select: { name: true } },
           },
         },
       },
@@ -165,10 +165,12 @@ async function getStatsData(messages: StatsMessages) {
         points: true,
       },
     }),
-    prisma.tournament.groupBy({
-      by: ["game"],
-      _count: {
-        id: true,
+    prisma.tournament.findMany({
+      select: {
+        game: { select: { name: true } },
+      },
+      where: {
+        gameId: { not: null },
       },
     }),
   ]);
@@ -176,7 +178,7 @@ async function getStatsData(messages: StatsMessages) {
   const totalPoints = tournamentPoints._sum.points || 0;
 
   const activeGamesCount = games.filter((game) =>
-    tournamentsByGame.some((item) => item.game === game && item._count.id > 0),
+    tournamentsByGame.some((item) => item.game?.name === game),
   ).length;
 
   const overviewStats = [
@@ -189,7 +191,7 @@ async function getStatsData(messages: StatsMessages) {
 
   const gameStats = games.map((game) => {
     const gameResults = tournamentResults.filter(
-      (result) => result.tournament.game === game,
+      (result) => result.tournament.game?.name === game,
     );
 
     const points = gameResults.reduce(
@@ -197,8 +199,9 @@ async function getStatsData(messages: StatsMessages) {
       0,
     );
 
-    const tournaments =
-      tournamentsByGame.find((item) => item.game === game)?._count.id || 0;
+    const tournaments = tournamentsByGame.filter(
+      (item) => item.game?.name === game,
+    ).length;
 
     return {
       game,

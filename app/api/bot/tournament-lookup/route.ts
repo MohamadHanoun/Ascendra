@@ -83,8 +83,10 @@ export async function GET(request: NextRequest) {
           },
           {
             game: {
-              contains: query,
-              mode: "insensitive" as const,
+              name: {
+                contains: query,
+                mode: "insensitive" as const,
+              },
             },
           },
         ],
@@ -102,12 +104,12 @@ export async function GET(request: NextRequest) {
     select: {
       id: true,
       title: true,
-      game: true,
+      game: { select: { name: true, slug: true } },
       description: true,
-      date: true,
+      startsAt: true,
       prize: true,
       imageUrl: true,
-      maxSlots: true,
+      maxTeams: true,
       teamSize: true,
       status: true,
       registrationStatus: true,
@@ -125,7 +127,7 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               name: true,
-              game: true,
+              game: { select: { name: true } },
               status: true,
               leader: {
                 select: {
@@ -169,12 +171,13 @@ export async function GET(request: NextRequest) {
       return {
         id: tournament.id,
         title: tournament.title,
-        game: tournament.game,
+        game: tournament.game?.name ?? null,
+        gameSlug: tournament.game?.slug ?? null,
         description: tournament.description,
-        date: tournament.date,
+        startsAt: tournament.startsAt?.toISOString() ?? null,
         prize: tournament.prize,
         imageUrl: tournament.imageUrl,
-        maxSlots: tournament.maxSlots,
+        maxTeams: tournament.maxTeams,
         teamSize: tournament.teamSize,
         status: tournament.status,
         registrationStatus: tournament.registrationStatus,
@@ -184,7 +187,7 @@ export async function GET(request: NextRequest) {
         teams: tournament.registrations.slice(0, 8).map((registration) => ({
           id: registration.team.id,
           name: registration.team.name,
-          game: registration.team.game,
+          game: registration.team.game?.name ?? null,
           status: registration.team.status,
           registrationStatus: registration.status,
           leaderName: registration.team.leader.username,

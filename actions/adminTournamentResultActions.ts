@@ -170,6 +170,7 @@ export async function saveTournamentResultInline(
       tournament: true,
       team: {
         include: {
+          game: { select: { name: true } },
           members: {
             include: {
               user: true,
@@ -233,9 +234,9 @@ export async function saveTournamentResultInline(
     registration.team.name;
 
   const snapshotTeamGame =
-    existingResult?.snapshotTeamGame ||
-    registration.snapshotTeamGame ||
-    registration.team.game;
+    (existingResult?.snapshotTeamGame ||
+      registration.snapshotTeamGame ||
+      registration.team.game?.name) ?? null;
 
   const snapshotMembers =
     existingResult?.snapshotMembers ||

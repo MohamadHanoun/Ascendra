@@ -277,12 +277,8 @@ export default async function TournamentDetailsPage({
             include: {
               members: true,
               invites: {
-                where: {
-                  status: "pending",
-                },
-                select: {
-                  id: true,
-                },
+                where: { status: "pending" },
+                select: { id: true },
               },
             },
             orderBy: {
@@ -300,12 +296,13 @@ export default async function TournamentDetailsPage({
     select: {
       id: true,
       title: true,
-      game: true,
+      game: { select: { name: true, slug: true } },
+      gameId: true,
       description: true,
-      date: true,
+      startsAt: true,
       prize: true,
       imageUrl: true,
-      maxSlots: true,
+      maxTeams: true,
       teamSize: true,
       status: true,
       registrationStatus: true,
@@ -322,7 +319,7 @@ export default async function TournamentDetailsPage({
             select: {
               id: true,
               name: true,
-              game: true,
+              gameId: true,
               members: {
                 include: {
                   user: true,
@@ -361,7 +358,7 @@ export default async function TournamentDetailsPage({
             select: {
               id: true,
               name: true,
-              game: true,
+              gameId: true,
               members: {
                 include: {
                   user: true,
@@ -385,7 +382,7 @@ export default async function TournamentDetailsPage({
   }
 
   const tournamentImage = getTournamentImageUrl(
-    tournament.game,
+    tournament.game?.slug ?? null,
     tournament.imageUrl,
   );
 
@@ -420,7 +417,7 @@ export default async function TournamentDetailsPage({
 
   const approvedSlots = approvedRegistrations.length;
   const totalApplications = submittedRegistrations.length;
-  const remainingSlots = Math.max(tournament.maxSlots - approvedSlots, 0);
+  const remainingSlots = Math.max(tournament.maxTeams - approvedSlots, 0);
 
   const openRegistrationTeamIds = new Set(
     userTournamentRegistrations
@@ -437,7 +434,7 @@ export default async function TournamentDetailsPage({
 
   const availableTeams = registerableOwnedTeams
     .filter((team) => {
-      const gameMatches = team.game === tournament.game;
+      const gameMatches = team.gameId === tournament.gameId;
       const hasEnoughPlayers = team.members.length >= tournament.teamSize;
       const hasNoPendingInvites = team.invites.length === 0;
 
@@ -447,13 +444,13 @@ export default async function TournamentDetailsPage({
     .map((team) => ({
       id: team.id,
       name: team.name,
-      game: team.game,
+      game: tournament.game?.name ?? null,
       memberCount: team.members.length,
     }));
 
   const unavailableTeams = registerableOwnedTeams
     .filter((team) => {
-      const gameMatches = team.game === tournament.game;
+      const gameMatches = team.gameId === tournament.gameId;
       const hasEnoughPlayers = team.members.length >= tournament.teamSize;
       const hasNoPendingInvites = team.invites.length === 0;
 
@@ -463,11 +460,11 @@ export default async function TournamentDetailsPage({
     .map((team) => ({
       id: team.id,
       name: team.name,
-      game: team.game,
+      game: tournament.game?.name ?? null,
       memberCount: team.members.length,
       reason: getUnavailableTeamReason({
-        teamGame: team.game,
-        tournamentGame: tournament.game,
+        teamGame: team.gameId ?? "",
+        tournamentGame: tournament.gameId ?? "",
         memberCount: team.members.length,
         teamSize: tournament.teamSize,
         pendingInvites: team.invites.length,
@@ -528,7 +525,9 @@ export default async function TournamentDetailsPage({
                         messages.statuses,
                       )}
                     />
-                    <Pill tone="violet">{tournament.game}</Pill>
+                    {tournament.game && (
+                      <Pill tone="violet">{tournament.game.name}</Pill>
+                    )}
                   </div>
 
                   <h1 className="mt-5 max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
@@ -546,11 +545,15 @@ export default async function TournamentDetailsPage({
                   <div className="grid grid-cols-2 gap-5">
                     <Stat
                       label={messages.labels.date}
-                      value={tournament.date}
+                      value={
+                        tournament.startsAt
+                          ? tournament.startsAt.toLocaleDateString()
+                          : "—"
+                      }
                     />
                     <Stat
                       label={messages.labels.prize}
-                      value={tournament.prize}
+                      value={tournament.prize ?? "—"}
                     />
                     <Stat
                       label={messages.labels.team}
@@ -564,7 +567,7 @@ export default async function TournamentDetailsPage({
 
                   <ProgressBar
                     approvedSlots={approvedSlots}
-                    maxSlots={tournament.maxSlots}
+                    maxSlots={tournament.maxTeams}
                     approvedLabel={messages.labels.approved}
                   />
 
@@ -635,7 +638,7 @@ export default async function TournamentDetailsPage({
                     const teamName =
                       registration.snapshotTeamName || registration.team.name;
                     const teamGame =
-                      registration.snapshotTeamGame || registration.team.game;
+                      registration.snapshotTeamGame ?? tournament.game?.name ?? "—";
                     const memberCount = getSnapshotMemberCount(
                       registration.snapshotMembers,
                       registration.team.members.length,
@@ -684,7 +687,7 @@ export default async function TournamentDetailsPage({
               <div className="divide-y divide-white/10">
                 {tournament.results.map((result) => {
                   const teamName = result.snapshotTeamName || result.team.name;
-                  const teamGame = result.snapshotTeamGame || result.team.game;
+                  const teamGame = result.snapshotTeamGame ?? tournament.game?.name ?? "—";
                   const memberCount = getSnapshotMemberCount(
                     result.snapshotMembers,
                     result.team.members.length,

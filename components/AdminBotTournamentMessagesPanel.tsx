@@ -106,7 +106,7 @@ export default async function AdminBotTournamentMessagesPanel() {
     select: {
       id: true,
       title: true,
-      game: true,
+      game: { select: { name: true } },
       status: true,
       registrationStatus: true,
       discordAnnouncementUrl: true,
@@ -150,7 +150,7 @@ export default async function AdminBotTournamentMessagesPanel() {
                     </p>
 
                     <p className="mt-1 text-sm text-gray-500">
-                      {tournament.game} · {tournament.status} ·{" "}
+                      {tournament.game?.name ?? "—"} · {tournament.status} ·{" "}
                       {tournament.registrationStatus}
                     </p>
                   </div>

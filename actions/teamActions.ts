@@ -46,7 +46,6 @@ type TeamActionMessages = {
   teamDeleted: string;
 };
 
-const allowedGames = ["Valorant", "League of Legends", "CS2", "Dota2"];
 
 const actionMessages: Record<Locale, TeamActionMessages> = {
   en: {
@@ -324,13 +323,17 @@ export async function createTeam(formData: FormData) {
   requireGuildMember(user, messages);
 
   const name = String(formData.get("name") || "").trim();
-  const game = String(formData.get("game") || "").trim();
+  const gameSlug = String(formData.get("gameSlug") || "").trim();
 
-  if (!name || !game) {
+  if (!name || !gameSlug) {
     profileError(messages.teamNameGameRequired);
   }
 
-  if (!allowedGames.includes(game)) {
+  const selectedGame = await prisma.game.findUnique({
+    where: { slug: gameSlug },
+  });
+
+  if (!selectedGame) {
     profileError(messages.invalidGame);
   }
 
@@ -352,7 +355,7 @@ export async function createTeam(formData: FormData) {
     const createdTeam = await tx.team.create({
       data: {
         name,
-        game,
+        gameId: selectedGame.id,
         leaderId: user.id,
         status: "approved",
         submittedAt: null,
@@ -391,13 +394,17 @@ export async function updateTeam(formData: FormData) {
 
   const teamId = String(formData.get("teamId") || "").trim();
   const name = String(formData.get("name") || "").trim();
-  const game = String(formData.get("game") || "").trim();
+  const gameSlug = String(formData.get("gameSlug") || "").trim();
 
-  if (!teamId || !name || !game) {
+  if (!teamId || !name || !gameSlug) {
     profileError(messages.teamIdNameGameRequired);
   }
 
-  if (!allowedGames.includes(game)) {
+  const selectedGame = await prisma.game.findUnique({
+    where: { slug: gameSlug },
+  });
+
+  if (!selectedGame) {
     profileError(messages.invalidGame);
   }
 
@@ -405,12 +412,10 @@ export async function updateTeam(formData: FormData) {
   await requireTeamNotInActiveRegistration(team.id, messages);
 
   await prisma.team.update({
-    where: {
-      id: team.id,
-    },
+    where: { id: team.id },
     data: {
       name,
-      game,
+      gameId: selectedGame.id,
       status: team.status === "rejected" ? "draft" : team.status,
       submittedAt: null,
       rejectedAt: null,

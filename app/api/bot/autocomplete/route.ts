@@ -63,8 +63,10 @@ export async function GET(request: NextRequest) {
               },
               {
                 game: {
-                  contains: query,
-                  mode: "insensitive",
+                  name: {
+                    contains: query,
+                    mode: "insensitive",
+                  },
                 },
               },
             ],
@@ -77,14 +79,14 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         title: true,
-        game: true,
+        game: { select: { name: true } },
         status: true,
       },
     });
 
     const options: AutocompleteOption[] = tournaments.map((tournament) => ({
       name: compactLabel(
-        `${tournament.title} · ${tournament.game} · ${tournament.status}`,
+        `${tournament.title} · ${tournament.game?.name ?? "—"} · ${tournament.status}`,
       ),
       value: tournament.title,
     }));
@@ -109,8 +111,10 @@ export async function GET(request: NextRequest) {
               },
               {
                 game: {
-                  contains: query,
-                  mode: "insensitive",
+                  name: {
+                    contains: query,
+                    mode: "insensitive",
+                  },
                 },
               },
             ],
@@ -123,13 +127,13 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         name: true,
-        game: true,
+        game: { select: { name: true } },
         status: true,
       },
     });
 
     const options: AutocompleteOption[] = teams.map((team) => ({
-      name: compactLabel(`${team.name} · ${team.game} · ${team.status}`),
+      name: compactLabel(`${team.name} · ${team.game?.name ?? "—"} · ${team.status}`),
       value: team.name,
     }));
 

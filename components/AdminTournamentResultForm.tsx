@@ -15,7 +15,6 @@ type TournamentRegistrationItem = {
   team: {
     id: string;
     name: string;
-    game: string;
   };
 };
 
@@ -132,7 +131,7 @@ export default function AdminTournamentResultForm({
   const options = registrations.map((registration) => {
     const alreadyHasResult = existingResultTeamIds.has(registration.teamId);
     const teamName = registration.snapshotTeamName || registration.team.name;
-    const teamGame = registration.snapshotTeamGame || registration.team.game;
+    const teamGame = registration.snapshotTeamGame || null;
 
     return {
       value: registration.teamId,

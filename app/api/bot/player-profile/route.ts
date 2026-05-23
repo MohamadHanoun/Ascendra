@@ -32,7 +32,7 @@ function getTotalPoints(results: Array<{ points: number }>) {
 const teamSelect = {
   id: true,
   name: true,
-  game: true,
+  game: { select: { name: true, slug: true } },
   status: true,
   createdAt: true,
   leaderId: true,
@@ -53,10 +53,10 @@ const teamSelect = {
         select: {
           id: true,
           title: true,
-          game: true,
+          game: { select: { name: true } },
           status: true,
           registrationStatus: true,
-          date: true,
+          startsAt: true,
         },
       },
     },
@@ -70,7 +70,7 @@ const teamSelect = {
         select: {
           id: true,
           title: true,
-          game: true,
+          game: { select: { name: true } },
         },
       },
     },
@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
     return {
       id: item.team.id,
       name: item.team.name,
-      game: item.team.game,
+      game: item.team.game?.name ?? null,
       status: item.team.status,
       role: item.role,
       membersCount: item.team.members.length,
@@ -197,11 +197,11 @@ export async function GET(request: NextRequest) {
             status: latestRegistration.status,
             tournamentId: latestRegistration.tournament.id,
             tournamentTitle: latestRegistration.tournament.title,
-            tournamentGame: latestRegistration.tournament.game,
+            tournamentGame: latestRegistration.tournament.game?.name ?? null,
             tournamentStatus: latestRegistration.tournament.status,
             registrationStatus:
               latestRegistration.tournament.registrationStatus,
-            tournamentDate: latestRegistration.tournament.date,
+            tournamentDate: latestRegistration.tournament.startsAt?.toISOString() ?? null,
           }
         : null,
     };
@@ -220,10 +220,10 @@ export async function GET(request: NextRequest) {
         teamName: item.team.name,
         tournamentId: registration.tournament.id,
         tournamentTitle: registration.tournament.title,
-        tournamentGame: registration.tournament.game,
+        tournamentGame: registration.tournament.game?.name ?? null,
         tournamentStatus: registration.tournament.status,
         registrationStatus: registration.tournament.registrationStatus,
-        tournamentDate: registration.tournament.date,
+        tournamentDate: registration.tournament.startsAt?.toISOString() ?? null,
         createdAt: registration.createdAt,
       })),
     )

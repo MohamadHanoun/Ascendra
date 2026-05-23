@@ -11,7 +11,7 @@ export type LeaderboardUser = {
 export type LeaderboardTeam = {
   id: number | string;
   name: string;
-  game: string;
+  game: string | null;
   leaderName: string;
   membersCount: number;
   tournamentPoints: number;

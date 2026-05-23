@@ -44,7 +44,7 @@ export default async function AdminTournamentRegistrations({
       createdAt: "desc",
     },
     include: {
-      tournament: true,
+      tournament: { include: { game: true } },
       team: {
         include: {
           members: {
@@ -151,7 +151,7 @@ export default async function AdminTournamentRegistrations({
                     </span>
 
                     <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-1 text-sm font-bold text-cyan-300">
-                      {registration.tournament.game}
+                      {registration.tournament.game?.name ?? "—"}
                     </span>
                   </div>
 

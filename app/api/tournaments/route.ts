@@ -3,37 +3,32 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-type DatabaseTournament = {
-  id: string;
-  title: string;
-  game: string;
-  date: string;
-  prize: string;
-  maxSlots: number;
-  status: string;
-  description: string;
-};
-
 export async function GET() {
   try {
     const tournaments = await prisma.tournament.findMany({
-      orderBy: {
-        createdAt: "asc",
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        title: true,
+        game: { select: { name: true, slug: true } },
+        startsAt: true,
+        prize: true,
+        maxTeams: true,
+        status: true,
+        description: true,
       },
     });
 
-    const formattedTournaments = tournaments.map(
-      (tournament: DatabaseTournament) => ({
-        id: tournament.id,
-        title: tournament.title,
-        game: tournament.game,
-        date: tournament.date,
-        prize: tournament.prize,
-        teams: `${tournament.maxSlots} slots`,
-        status: tournament.status,
-        description: tournament.description,
-      }),
-    );
+    const formattedTournaments = tournaments.map((tournament) => ({
+      id: tournament.id,
+      title: tournament.title,
+      game: tournament.game?.name ?? null,
+      startsAt: tournament.startsAt?.toISOString() ?? null,
+      prize: tournament.prize ?? null,
+      teams: `${tournament.maxTeams} slots`,
+      status: tournament.status,
+      description: tournament.description,
+    }));
 
     return NextResponse.json({
       success: true,
@@ -44,10 +39,7 @@ export async function GET() {
     console.error("Failed to fetch tournaments:", error);
 
     return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch tournaments",
-      },
+      { success: false, message: "Failed to fetch tournaments" },
       { status: 500 },
     );
   }

@@ -1,9 +1,9 @@
-const fallbackTournamentImages: Record<string, string> = {
-  Overall: "/images/games/overall.webp",
-  Valorant: "/images/games/valorant.webp",
-  "League of Legends": "/images/games/league-of-legends.webp",
-  CS2: "/images/games/cs2.webp",
-  Dota2: "/images/games/dota2.webp",
+const fallbackImages: Record<string, string> = {
+  valorant: "/images/games/valorant.webp",
+  "league-of-legends": "/images/games/league-of-legends.webp",
+  cs2: "/images/games/cs2.webp",
+  "dota-2": "/images/games/dota2.webp",
+  overall: "/images/games/overall.webp",
 };
 
 function isLocalImageUrl(url: string) {
@@ -17,7 +17,10 @@ function isAllowedExternalImageUrl(url: string) {
   );
 }
 
-export function getTournamentImageUrl(game: string, imageUrl?: string | null) {
+export function getTournamentImageUrl(
+  gameSlug: string | null | undefined,
+  imageUrl?: string | null,
+) {
   const cleanImageUrl = imageUrl?.trim();
 
   if (cleanImageUrl) {
@@ -29,9 +32,14 @@ export function getTournamentImageUrl(game: string, imageUrl?: string | null) {
     }
   }
 
-  return fallbackTournamentImages[game] || "/images/games/default.webp";
+  if (gameSlug) {
+    return fallbackImages[gameSlug.toLowerCase()] ?? "/images/games/default.webp";
+  }
+
+  return "/images/games/default.webp";
 }
 
-export function getGameImageUrl(game: string) {
-  return fallbackTournamentImages[game] || "/images/games/default.webp";
+export function getGameImageUrl(gameSlug: string | null | undefined) {
+  if (!gameSlug) return "/images/games/default.webp";
+  return fallbackImages[gameSlug.toLowerCase()] ?? "/images/games/default.webp";
 }

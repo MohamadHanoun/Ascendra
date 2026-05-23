@@ -118,7 +118,7 @@ export default async function AdminTeamReview({
     select: {
       id: true,
       name: true,
-      game: true,
+      game: { select: { name: true } },
       status: true,
       leaderId: true,
       createdAt: true,
@@ -283,7 +283,7 @@ export default async function AdminTeamReview({
                       </h2>
 
                       <StatusBadge status={team.status} />
-                      <Pill tone="violet">{team.game}</Pill>
+                      <Pill tone="violet">{team.game?.name ?? "—"}</Pill>
                     </div>
 
                     <p className="mt-1 text-sm text-gray-500">
@@ -330,7 +330,7 @@ export default async function AdminTeamReview({
                       </p>
 
                       <InfoRow label="Team name" value={team.name} />
-                      <InfoRow label="Game" value={team.game} />
+                      <InfoRow label="Game" value={team.game?.name ?? "—"} />
                       <InfoRow label="Status" value={team.status} />
                       <InfoRow label="Leader" value={team.leader.username} />
                       <InfoRow

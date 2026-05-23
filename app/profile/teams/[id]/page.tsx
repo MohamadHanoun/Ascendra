@@ -327,7 +327,6 @@ const teamPageMessages: Record<Locale, TeamPageMessages> = {
   },
 };
 
-const games = ["Valorant", "League of Legends", "CS2", "Dota2"];
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -493,6 +492,7 @@ export default async function TeamDetailsPage({
     },
     include: {
       leader: true,
+      game: { select: { name: true, slug: true } },
       members: {
         include: {
           user: true,
@@ -519,8 +519,8 @@ export default async function TeamDetailsPage({
             select: {
               id: true,
               title: true,
-              game: true,
-              date: true,
+              game: { select: { name: true } },
+              startsAt: true,
             },
           },
         },
@@ -562,6 +562,12 @@ export default async function TeamDetailsPage({
     notFound();
   }
 
+  const dbGames = await prisma.game.findMany({
+    where: { isActive: true },
+    select: { slug: true, name: true },
+    orderBy: { name: "asc" },
+  });
+
   const currentMembership = team.members.find(
     (member) => member.userId === session.user.databaseId,
   );
@@ -585,7 +591,7 @@ export default async function TeamDetailsPage({
       ? Math.min(...team.results.map((result) => result.placement))
       : null;
 
-  const teamImage = getGameImageUrl(team.game);
+  const teamImage = getGameImageUrl(team.game?.slug ?? null);
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
@@ -632,7 +638,7 @@ export default async function TeamDetailsPage({
 
                   <div className="mt-4 flex flex-wrap gap-2">
                     <StatusBadge status={team.status} messages={messages} />
-                    <Pill label={team.game} />
+                    <Pill label={team.game?.name ?? "—"} />
                     <Pill
                       label={`${team.members.length} ${getCountLabel(
                         team.members.length,
@@ -744,13 +750,13 @@ export default async function TeamDetailsPage({
                         </span>
 
                         <CustomSelect
-                          name="game"
+                          name="gameSlug"
                           required
                           placeholder={messages.settings.selectGame}
-                          defaultValue={team.game}
-                          options={games.map((game) => ({
-                            value: game,
-                            label: game,
+                          defaultValue={team.game?.slug ?? ""}
+                          options={dbGames.map((g) => ({
+                            value: g.slug,
+                            label: g.name,
                             description: messages.settings.teamGame,
                           }))}
                         />
@@ -887,7 +893,7 @@ export default async function TeamDetailsPage({
                         </Link>
 
                         <p className="mt-1 text-sm text-gray-400">
-                          {result.tournament.game} · {result.tournament.date}
+                          {result.tournament.game?.name ?? "—"} · {result.tournament.startsAt?.toLocaleDateString() ?? "—"}
                         </p>
 
                         {result.note && (

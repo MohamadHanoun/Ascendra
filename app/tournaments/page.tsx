@@ -201,11 +201,11 @@ export default async function TournamentsPage({
     select: {
       id: true,
       title: true,
-      game: true,
-      date: true,
+      game: { select: { name: true, slug: true } },
+      startsAt: true,
       prize: true,
       imageUrl: true,
-      maxSlots: true,
+      maxTeams: true,
       teamSize: true,
       status: true,
       registrationStatus: true,
@@ -301,12 +301,12 @@ export default async function TournamentsPage({
 
             const applications = tournament.registrations.length;
             const remainingSlots = Math.max(
-              tournament.maxSlots - approvedSlots,
+              tournament.maxTeams - approvedSlots,
               0,
             );
 
             const tournamentImage = getTournamentImageUrl(
-              tournament.game,
+              tournament.game?.slug ?? null,
               tournament.imageUrl,
             );
 
@@ -354,11 +354,14 @@ export default async function TournamentsPage({
 
                   <div className="mt-3 grid gap-1">
                     <DetailLine>
-                      {tournament.game} · {tournament.date}
+                      {tournament.game?.name ?? "—"}
+                      {tournament.startsAt
+                        ? ` · ${tournament.startsAt.toLocaleDateString()}`
+                        : ""}
                     </DetailLine>
 
                     <DetailLine>
-                      {messages.labels.prize}: {tournament.prize} ·{" "}
+                      {messages.labels.prize}: {tournament.prize ?? "—"} ·{" "}
                       {messages.labels.team}: {tournament.teamSize}v
                       {tournament.teamSize}
                     </DetailLine>
@@ -368,7 +371,7 @@ export default async function TournamentsPage({
                 <div className="grid gap-3">
                   <ProgressBar
                     approvedSlots={approvedSlots}
-                    maxSlots={tournament.maxSlots}
+                    maxSlots={tournament.maxTeams}
                     approvedLabel={messages.labels.approved}
                   />
 

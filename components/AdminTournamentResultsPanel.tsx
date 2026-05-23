@@ -11,7 +11,6 @@ type TournamentRegistrationItem = {
   team: {
     id: string;
     name: string;
-    game: string;
   };
 };
 
@@ -25,7 +24,6 @@ type TournamentResultItem = {
   snapshotTeamGame?: string | null;
   team: {
     name: string;
-    game?: string;
   };
 };
 
@@ -195,7 +193,7 @@ export default function AdminTournamentResultsPanel({
           <div className="divide-y divide-white/10">
             {sortedResults.map((result) => {
               const teamName = result.snapshotTeamName || result.team.name;
-              const teamGame = result.snapshotTeamGame || result.team.game;
+              const teamGame = result.snapshotTeamGame || null;
 
               return (
                 <article

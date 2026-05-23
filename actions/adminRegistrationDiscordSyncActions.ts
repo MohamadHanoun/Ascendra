@@ -117,7 +117,7 @@ export async function forceSyncRegistrationDiscordAccess(
       id: registrationId,
     },
     include: {
-      tournament: true,
+      tournament: { include: { game: true } },
       team: {
         include: {
           members: {
@@ -139,12 +139,12 @@ export async function forceSyncRegistrationDiscordAccess(
   }
 
   const roleName = buildRoleName(
-    registration.tournament.game,
+    registration.tournament.game?.name ?? "Game",
     registration.team.name,
   );
 
   const channelName = buildChannelName(
-    registration.tournament.game,
+    registration.tournament.game?.name ?? "Game",
     registration.team.name,
   );
 
@@ -177,7 +177,7 @@ export async function forceSyncRegistrationDiscordAccess(
           tournamentId: registration.tournament.id,
           tournamentTitle: registration.tournament.title,
 
-          game: registration.tournament.game,
+          game: registration.tournament.game?.name ?? null,
 
           teamId: registration.team.id,
           teamName: registration.team.name,

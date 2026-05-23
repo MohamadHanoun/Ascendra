@@ -259,7 +259,7 @@ async function registerTeamForTournament(
     return fail(messages.tournamentUnavailable);
   }
 
-  if (tournament.registrations.length >= tournament.maxSlots) {
+  if (tournament.registrations.length >= tournament.maxTeams) {
     return fail(messages.slotsFull);
   }
 
@@ -268,6 +268,7 @@ async function registerTeamForTournament(
       id: teamId,
     },
     include: {
+      game: { select: { name: true } },
       members: {
         include: {
           user: true,
@@ -295,7 +296,7 @@ async function registerTeamForTournament(
     return fail(messages.onlyLeaderCanRegister);
   }
 
-  if (team.game !== tournament.game) {
+  if (team.gameId !== tournament.gameId) {
     return fail(messages.wrongGame);
   }
 
@@ -343,7 +344,7 @@ async function registerTeamForTournament(
         reviewedAt: null,
 
         snapshotTeamName: team.name,
-        snapshotTeamGame: team.game,
+        snapshotTeamGame: team.game?.name ?? null,
         snapshotMembers,
 
         discordRoleStatus: "not_needed",
@@ -365,7 +366,7 @@ async function registerTeamForTournament(
         status: "registered",
 
         snapshotTeamName: team.name,
-        snapshotTeamGame: team.game,
+        snapshotTeamGame: team.game?.name ?? null,
         snapshotMembers,
 
         discordRoleStatus: "not_needed",

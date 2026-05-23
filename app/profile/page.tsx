@@ -226,7 +226,6 @@ const profileMessages: Record<Locale, ProfileMessages> = {
   },
 };
 
-const games = ["Valorant", "League of Legends", "CS2", "Dota2"];
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -414,7 +413,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     redirect("/login");
   }
 
-  const [teams, invitations, allTournamentResults] = await Promise.all([
+  const [teams, invitations, allTournamentResults, dbGames] = await Promise.all([
     prisma.team.findMany({
       where: {
         members: {
@@ -424,6 +423,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         },
       },
       include: {
+        game: { select: { name: true } },
         members: true,
       },
       orderBy: {
@@ -439,6 +439,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       include: {
         team: {
           include: {
+            game: { select: { name: true } },
             members: true,
           },
         },
@@ -462,7 +463,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         team: {
           select: {
             name: true,
-            game: true,
+            game: { select: { name: true } },
             members: {
               select: {
                 userId: true,
@@ -474,13 +475,19 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           select: {
             id: true,
             title: true,
-            game: true,
+            game: { select: { name: true } },
           },
         },
       },
       orderBy: {
         awardedAt: "desc",
       },
+    }),
+
+    prisma.game.findMany({
+      where: { isActive: true },
+      select: { slug: true, name: true },
+      orderBy: { name: "asc" },
     }),
   ]);
 
@@ -615,7 +622,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                         </p>
 
                         <p className="mt-1 text-sm text-gray-400">
-                          {invite.team.game} · {invite.team.members.length}{" "}
+                          {invite.team.game?.name ?? "—"} · {invite.team.members.length}{" "}
                           {getCountLabel(
                             invite.team.members.length,
                             messages.labels.member,
@@ -711,7 +718,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                           </p>
 
                           <p className="mt-1 text-sm text-gray-400">
-                            {team.game} · {team.members.length}{" "}
+                            {team.game?.name ?? "—"} · {team.members.length}{" "}
                             {getCountLabel(
                               team.members.length,
                               messages.labels.member,
@@ -778,12 +785,12 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                       </span>
 
                       <CustomSelect
-                        name="game"
+                        name="gameSlug"
                         required
                         placeholder={messages.labels.selectGame}
-                        options={games.map((game) => ({
-                          value: game,
-                          label: game,
+                        options={dbGames.map((g) => ({
+                          value: g.slug,
+                          label: g.name,
                           description: messages.labels.teamGame,
                         }))}
                       />
@@ -846,7 +853,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     const teamName =
                       result.snapshotTeamName || result.team.name;
                     const teamGame =
-                      result.snapshotTeamGame || result.team.game;
+                      (result.snapshotTeamGame || result.team.game?.name) ?? null;
 
                     return (
                       <Link
