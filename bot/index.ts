@@ -41,6 +41,9 @@ const COLORS = {
   info: 0x8b5cf6,
   tournament: 0x7c3aed,
   premium: 0x6d28d9,
+  deepPurple: 0x4c1d95,
+  blue: 0x2563eb,
+  ended: 0x64748b,
 };
 
 const BRAND_LOGO_URL = `${SITE_URL}/images/brand/ascendra-logo-mark.png`;
@@ -86,6 +89,18 @@ type RegistrationPresentation = {
   badge: string;
   color: number;
   footerStatus: string;
+};
+
+type TournamentStatusPresentation = {
+  label: string;
+  badge: string;
+};
+
+type TournamentAnnouncementMessageResult = {
+  channelId: string;
+  messageId: string;
+  messageUrl: string;
+  mode: "created" | "edited";
 };
 
 let botConfigCache: {
@@ -145,13 +160,30 @@ function pickFirstNonEmpty(...values: unknown[]) {
   return "";
 }
 
+function getAbsoluteUrl(value: unknown) {
+  const raw = pickFirstNonEmpty(value);
+
+  if (!raw) {
+    return "";
+  }
+
+  if (raw.startsWith("https://") || raw.startsWith("http://")) {
+    return raw;
+  }
+
+  if (raw.startsWith("/")) {
+    return `${SITE_URL}${raw}`;
+  }
+
+  return "";
+}
+
 function parseFlexibleDate(value: unknown) {
   if (value === null || value === undefined || value === "") {
     return null;
   }
 
   const raw = String(value).trim();
-
   const direct = new Date(raw);
 
   if (!Number.isNaN(direct.getTime())) {
@@ -197,7 +229,7 @@ function formatTeamSize(value: unknown) {
     return "-";
   }
 
-  return `${value} Players`;
+  return `${value} player${String(value) === "1" ? "" : "s"}`;
 }
 
 function formatSlots(value: unknown) {
@@ -205,12 +237,12 @@ function formatSlots(value: unknown) {
     return "-";
   }
 
-  return `${value} Teams`;
+  return `${value} team${String(value) === "1" ? "" : "s"}`;
 }
 
 function formatPrize(value: unknown) {
   if (value === null || value === undefined || value === "") {
-    return "Not announced";
+    return "To be announced";
   }
 
   return String(value);
@@ -225,7 +257,7 @@ function getRegistrationPresentation(value: unknown): RegistrationPresentation {
     case "open":
       return {
         label: "Open",
-        badge: "🟢 OPEN",
+        badge: "🟢 REGISTRATION OPEN",
         color: COLORS.success,
         footerStatus: "Registration Open",
       };
@@ -233,15 +265,15 @@ function getRegistrationPresentation(value: unknown): RegistrationPresentation {
     case "upcoming":
       return {
         label: "Upcoming",
-        badge: "🟡 UPCOMING",
-        color: COLORS.warning,
+        badge: "🟣 REGISTRATION COMING SOON",
+        color: COLORS.premium,
         footerStatus: "Registration Coming Soon",
       };
 
     case "closed":
       return {
         label: "Closed",
-        badge: "🔴 CLOSED",
+        badge: "🔴 REGISTRATION CLOSED",
         color: COLORS.error,
         footerStatus: "Registration Closed",
       };
@@ -249,9 +281,55 @@ function getRegistrationPresentation(value: unknown): RegistrationPresentation {
     default:
       return {
         label: cleanLogValue(value),
-        badge: "🟣 TOURNAMENT",
+        badge: "🟣 TOURNAMENT UPDATE",
         color: COLORS.premium,
         footerStatus: "Tournament Update",
+      };
+  }
+}
+
+function getTournamentStatusPresentation(
+  value: unknown,
+): TournamentStatusPresentation {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+
+  switch (normalized) {
+    case "open":
+      return {
+        label: "Live",
+        badge: "⚔️ LIVE",
+      };
+
+    case "upcoming":
+      return {
+        label: "Upcoming",
+        badge: "🗓️ UPCOMING",
+      };
+
+    case "closed":
+      return {
+        label: "Closed",
+        badge: "🔒 CLOSED",
+      };
+
+    case "cancelled":
+      return {
+        label: "Cancelled",
+        badge: "⛔ CANCELLED",
+      };
+
+    case "ended":
+      return {
+        label: "Ended",
+        badge: "🏁 ENDED",
+      };
+
+    default:
+      return {
+        label: cleanLogValue(value),
+        badge: "🟣 TOURNAMENT",
       };
   }
 }
@@ -267,7 +345,7 @@ function buildTournamentDescription(payload: Record<string, any>) {
     return description.slice(0, 1200);
   }
 
-  return "A new Ascendra tournament is now live. Review the details, register your team, and follow all upcoming updates from the tournament page.";
+  return "A new Ascendra tournament is now live. Review the details, prepare your team, and follow all updates through the official tournament page.";
 }
 
 function buildTournamentButtons(tournamentUrl: string) {
@@ -290,6 +368,113 @@ function buildTournamentButtons(tournamentUrl: string) {
   }
 
   return row;
+}
+
+function buildTournamentAnnouncementContent(payload: Record<string, any>) {
+  const tournamentUrl = String(payload.websiteUrl || SITE_URL);
+  const title = pickFirstNonEmpty(payload.title, "Ascendra Tournament");
+  const game = cleanLogValue(payload.game);
+  const date = formatTournamentDate(payload.date);
+  const teamSize = formatTeamSize(payload.teamSize);
+  const slots = formatSlots(payload.maxSlots);
+  const prize = formatPrize(payload.prize);
+  const description = buildTournamentDescription(payload);
+  const registration = getRegistrationPresentation(payload.registrationStatus);
+  const tournamentStatus = getTournamentStatusPresentation(payload.status);
+
+  const heroImageUrl = getAbsoluteUrl(
+    pickFirstNonEmpty(
+      payload.bannerImageUrl,
+      payload.coverImageUrl,
+      payload.imageUrl,
+      payload.thumbnailUrl,
+    ),
+  );
+
+  const mainEmbed = new EmbedBuilder()
+    .setColor(registration.color)
+    .setAuthor({
+      name: "Ascendra Tournaments",
+      iconURL: BRAND_LOGO_URL,
+      url: SITE_URL,
+    })
+    .setTitle(`🏆 ${title}`)
+    .setURL(tournamentUrl)
+    .setDescription(
+      [
+        `${registration.badge}  •  ${tournamentStatus.badge}`,
+        "",
+        "━━━━━━━━━━━━━━━━━━━━",
+        "",
+        description,
+        "",
+        "> Prepare your squad, secure your slot, and rise beyond limits.",
+      ].join("\n"),
+    )
+    .setThumbnail(BRAND_LOGO_URL)
+    .addFields(
+      {
+        name: "🎮 Game",
+        value: `**${game}**`,
+        inline: true,
+      },
+      {
+        name: "👥 Team Size",
+        value: `**${teamSize}**`,
+        inline: true,
+      },
+      {
+        name: "📦 Slots",
+        value: `**${slots}**`,
+        inline: true,
+      },
+      {
+        name: "🗓️ Tournament Date",
+        value: date,
+        inline: false,
+      },
+      {
+        name: "💎 Prize",
+        value: `**${prize}**`,
+        inline: true,
+      },
+      {
+        name: "📍 Registration",
+        value: `**${registration.label}**`,
+        inline: true,
+      },
+      {
+        name: "⚔️ Status",
+        value: `**${tournamentStatus.label}**`,
+        inline: true,
+      },
+    )
+    .setFooter({
+      text: `${BRAND_FOOTER_TEXT} • ${registration.footerStatus}`,
+      iconURL: BRAND_LOGO_URL,
+    })
+    .setTimestamp();
+
+  if (heroImageUrl) {
+    mainEmbed.setImage(heroImageUrl);
+  }
+
+  const detailsEmbed = new EmbedBuilder()
+    .setColor(COLORS.deepPurple)
+    .setDescription(
+      [
+        "**Tournament Brief**",
+        "• Competitive team-based event",
+        "• Official Ascendra tournament tracking",
+        "• Registration and updates handled through AscendraHub",
+        "• Follow the tournament page for rules, slots, and status changes",
+      ].join("\n"),
+    );
+
+  return {
+    embeds: [mainEmbed, detailsEmbed],
+    components: [buildTournamentButtons(tournamentUrl)],
+  };
 }
 
 function getEnvBotConfig(): BotRuntimeConfig {
@@ -540,7 +725,42 @@ async function safeUpdateEvent(
   }
 }
 
-async function processTournamentAnnouncement(event: BotEvent) {
+async function getAnnouncementChannel(channelId: string) {
+  const channel = await client.channels.fetch(channelId);
+
+  if (!channel || !channel.isSendable()) {
+    throw new Error("Announcement channel was not found or is not sendable.");
+  }
+
+  return channel;
+}
+
+async function fetchAnnouncementMessage(params: {
+  channelId?: string | null;
+  messageId?: string | null;
+}) {
+  if (!params.channelId || !params.messageId) {
+    return null;
+  }
+
+  const channel = await client.channels
+    .fetch(params.channelId)
+    .catch(() => null);
+
+  if (!channel || !channel.isTextBased()) {
+    return null;
+  }
+
+  const message = await (channel as any).messages
+    .fetch(params.messageId)
+    .catch(() => null);
+
+  return message;
+}
+
+async function upsertTournamentAnnouncementMessage(
+  event: BotEvent,
+): Promise<TournamentAnnouncementMessageResult> {
   const config = await getBotConfig();
 
   if (!config.enableAnnouncements) {
@@ -551,131 +771,71 @@ async function processTournamentAnnouncement(event: BotEvent) {
       color: COLORS.warning,
     });
 
-    return;
-  }
-
-  if (!config.announcementChannelId) {
-    throw new Error("Missing announcement channel ID");
-  }
-
-  const channel = await client.channels.fetch(config.announcementChannelId);
-
-  if (!channel || !channel.isSendable()) {
-    throw new Error("Announcement channel was not found or is not sendable.");
+    throw new Error("Tournament announcements are disabled.");
   }
 
   const payload = event.payload;
+  const existingChannelId = pickFirstNonEmpty(payload.announcementChannelId);
+  const existingMessageId = pickFirstNonEmpty(payload.announcementMessageId);
 
-  const tournamentUrl = String(payload.websiteUrl || SITE_URL);
-  const title = pickFirstNonEmpty(payload.title, "Ascendra Tournament");
-  const game = cleanLogValue(payload.game);
-  const date = formatTournamentDate(payload.date);
-  const teamSize = formatTeamSize(payload.teamSize);
-  const slots = formatSlots(payload.maxSlots);
-  const prize = formatPrize(payload.prize);
-  const description = buildTournamentDescription(payload);
+  const targetChannelId = existingChannelId || config.announcementChannelId;
 
-  const heroImageUrl = pickFirstNonEmpty(
-    payload.bannerImageUrl,
-    payload.coverImageUrl,
-    payload.imageUrl,
-    payload.thumbnailUrl,
-  );
-
-  const registration = getRegistrationPresentation(payload.registrationStatus);
-
-  const mainEmbed = new EmbedBuilder()
-    .setColor(registration.color)
-    .setAuthor({
-      name: "Ascendra Tournaments",
-      iconURL: BRAND_LOGO_URL,
-      url: SITE_URL,
-    })
-    .setTitle(`🏆 ${title}`)
-    .setURL(tournamentUrl)
-    .setDescription(
-      [
-        `${registration.badge}`,
-        "",
-        description,
-        "",
-        `> Compete with your team, secure your slot, and follow all tournament updates through Ascendra.`,
-      ].join("\n"),
-    )
-    .setThumbnail(BRAND_LOGO_URL)
-    .addFields(
-      {
-        name: "🎮 Game",
-        value: `**${game}**`,
-        inline: true,
-      },
-      {
-        name: "👥 Team Size",
-        value: `**${teamSize}**`,
-        inline: true,
-      },
-      {
-        name: "📦 Slots",
-        value: `**${slots}**`,
-        inline: true,
-      },
-      {
-        name: "🗓️ Tournament Date",
-        value: date,
-        inline: false,
-      },
-      {
-        name: "💰 Prize",
-        value: `**${prize}**`,
-        inline: true,
-      },
-      {
-        name: "📍 Registration",
-        value: `**${registration.label}**`,
-        inline: true,
-      },
-    )
-    .setFooter({
-      text: `${BRAND_FOOTER_TEXT} • ${registration.footerStatus}`,
-      iconURL: BRAND_LOGO_URL,
-    })
-    .setTimestamp();
-
-  if (heroImageUrl) {
-    mainEmbed.setImage(heroImageUrl);
+  if (!targetChannelId) {
+    throw new Error("Missing announcement channel ID");
   }
 
-  const infoEmbed = new EmbedBuilder()
-    .setColor(COLORS.premium)
-    .setDescription(
-      [
-        "**Why join this tournament?**",
-        "• Structured competitive environment",
-        "• Team-based participation",
-        "• Organized updates and tournament flow",
-        "• Community-driven Ascendra experience",
-      ].join("\n"),
-    )
-    .setFooter({
-      text: "Open the tournament page for full rules, updates, and registration details.",
-    });
+  const messageContent = buildTournamentAnnouncementContent(payload);
 
-  const row = buildTournamentButtons(tournamentUrl);
-
-  await channel.send({
-    embeds: [mainEmbed, infoEmbed],
-    components: [row],
+  const existingMessage = await fetchAnnouncementMessage({
+    channelId: existingChannelId,
+    messageId: existingMessageId,
   });
 
+  if (existingMessage) {
+    const editedMessage = await existingMessage.edit(messageContent);
+
+    await sendTournamentLog({
+      title: "Tournament announcement edited",
+      fields: [
+        { name: "Tournament", value: cleanLogValue(payload.title) },
+        { name: "Game", value: cleanLogValue(payload.game) },
+        { name: "Message", value: editedMessage.url, inline: false },
+        { name: "Event ID", value: event.id, inline: false },
+      ],
+      color: COLORS.success,
+    });
+
+    return {
+      channelId: editedMessage.channelId,
+      messageId: editedMessage.id,
+      messageUrl: editedMessage.url,
+      mode: "edited",
+    };
+  }
+
+  const channel = await getAnnouncementChannel(targetChannelId);
+  const sentMessage = await channel.send(messageContent);
+
   await sendTournamentLog({
-    title: "Tournament announcement sent",
+    title:
+      event.type === "tournament_announcement_update"
+        ? "Tournament announcement recreated"
+        : "Tournament announcement sent",
     fields: [
       { name: "Tournament", value: cleanLogValue(payload.title) },
       { name: "Game", value: cleanLogValue(payload.game) },
+      { name: "Message", value: sentMessage.url, inline: false },
       { name: "Event ID", value: event.id, inline: false },
     ],
     color: COLORS.success,
   });
+
+  return {
+    channelId: sentMessage.channelId,
+    messageId: sentMessage.id,
+    messageUrl: sentMessage.url,
+    mode: "created",
+  };
 }
 
 async function getGuild() {
@@ -1096,7 +1256,8 @@ async function processEvent(event: BotEvent) {
 
     switch (event.type) {
       case "tournament_announcement_create":
-        await processTournamentAnnouncement(event);
+      case "tournament_announcement_update":
+        result = await upsertTournamentAnnouncementMessage(event);
         break;
 
       case "team_discord_access_create":
