@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import AdminBotControlsPanel from "@/components/AdminBotControlsPanel";
 import AdminBotEventsPanel from "@/components/AdminBotEventsPanel";
+import AdminBotHealthPanel from "@/components/AdminBotHealthPanel";
 import AdminBotMessagePanel from "@/components/AdminBotMessagePanel";
 import AdminBotSettingsPanel from "@/components/AdminBotSettingsPanel";
 import AdminBotTournamentMessagesPanel from "@/components/AdminBotTournamentMessagesPanel";
@@ -90,6 +91,8 @@ export default async function AdminBotPage({
         )}
 
         <section className="relative -mt-14 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
+          <AdminBotHealthPanel />
+
           <AdminBotControlsPanel />
 
           <AdminBotMessagePanel />
