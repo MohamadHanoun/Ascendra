@@ -7,6 +7,7 @@ import { useRealtimeEvents } from "@/hooks/useRealtimeEvents";
 const refreshEventTypes = new Set([
   "bot.heartbeat",
   "bot.event.updated",
+  "bot.command.queued",
   "bot.events.locked",
   "bot.events.recovered",
   "bot.events.failed",

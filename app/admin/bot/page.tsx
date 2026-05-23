@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
+import AdminBotControlsPanel from "@/components/AdminBotControlsPanel";
 import AdminBotEventsPanel from "@/components/AdminBotEventsPanel";
 import AdminBotSettingsPanel from "@/components/AdminBotSettingsPanel";
 import AdminToast from "@/components/AdminToast";
@@ -77,8 +78,7 @@ export default async function AdminBotPage({
             </h1>
 
             <p className="mt-5 max-w-3xl text-base leading-7 text-gray-300">
-              Manage Discord bot settings, monitor queue activity, and review
-              bot operations.
+              Manage Discord bot settings, runtime controls, and queue activity.
             </p>
           </div>
         </section>
@@ -88,6 +88,8 @@ export default async function AdminBotPage({
         )}
 
         <section className="relative -mt-14 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
+          <AdminBotControlsPanel />
+
           <AdminBotSettingsPanel />
 
           <AdminBotEventsPanel

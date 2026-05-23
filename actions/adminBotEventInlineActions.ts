@@ -11,6 +11,11 @@ export type AdminBotEventActionResult = {
   message: string;
 };
 
+type BotCommandType =
+  | "bot_command_health_check"
+  | "bot_command_refresh_config"
+  | "bot_command_restart";
+
 function success(message: string): AdminBotEventActionResult {
   return {
     ok: true,
@@ -50,6 +55,11 @@ function getEventId(formData: FormData) {
   return String(formData.get("eventId") || "").trim();
 }
 
+function revalidateBotViews() {
+  revalidatePath("/admin");
+  revalidatePath("/admin/bot");
+}
+
 async function publishBotEventUpdate(eventId: string, status: string) {
   await createRealtimeEvent({
     type: "bot.event.updated",
@@ -75,9 +85,44 @@ async function publishBotBulkUpdate(type: string, count: number) {
   });
 }
 
-function revalidateBotViews() {
-  revalidatePath("/admin");
-  revalidatePath("/admin/bot");
+async function publishBotRuntimeUpdate(type: string, payload = {}) {
+  await createRealtimeEvent({
+    type,
+    audience: "admin",
+    entityType: "bot",
+    entityId: "runtime",
+    payload,
+  });
+}
+
+async function queueBotCommand(type: BotCommandType, priority = 90) {
+  const event = await prisma.botEvent.create({
+    data: {
+      type,
+      entityType: "bot",
+      entityId: "runtime",
+      priority,
+      payload: {
+        requestedAt: new Date().toISOString(),
+        source: "admin_dashboard",
+      },
+    },
+  });
+
+  await createRealtimeEvent({
+    type: "bot.command.queued",
+    audience: "admin",
+    entityType: "botEvent",
+    entityId: event.id,
+    payload: {
+      botEventId: event.id,
+      eventType: type,
+    },
+  });
+
+  revalidateBotViews();
+
+  return event;
 }
 
 export async function retryBotEventInline(
@@ -126,7 +171,7 @@ export async function retryBotEventInline(
 
   revalidateBotViews();
 
-  return success("Bot event queued again.");
+  return success("Bot event queued.");
 }
 
 export async function cancelBotEventInline(
@@ -155,9 +200,7 @@ export async function cancelBotEventInline(
   }
 
   if (!["queued", "failed", "processing"].includes(event.status)) {
-    return fail(
-      "Only queued, processing, or failed bot events can be cancelled.",
-    );
+    return fail("Only queued, processing, or failed events can be cancelled.");
   }
 
   await prisma.botEvent.update({
@@ -196,7 +239,7 @@ export async function resetProcessingBotEventsInline(): Promise<AdminBotEventAct
     data: {
       status: "queued",
       lockedAt: null,
-      error: "Reset manually from stuck processing state.",
+      error: "Reset manually from processing state.",
       processedAt: null,
     },
   });
@@ -205,7 +248,7 @@ export async function resetProcessingBotEventsInline(): Promise<AdminBotEventAct
 
   revalidateBotViews();
 
-  return success(`Reset ${result.count} processing bot event(s).`);
+  return success(`Reset ${result.count} event(s).`);
 }
 
 export async function cancelPendingBotEventsInline(): Promise<AdminBotEventActionResult> {
@@ -225,7 +268,7 @@ export async function cancelPendingBotEventsInline(): Promise<AdminBotEventActio
       status: "cancelled",
       lockedAt: null,
       processedAt: new Date(),
-      error: "Cancelled manually from bot dashboard.",
+      error: "Cancelled from bot dashboard.",
     },
   });
 
@@ -233,7 +276,103 @@ export async function cancelPendingBotEventsInline(): Promise<AdminBotEventActio
 
   revalidateBotViews();
 
-  return success(`Cancelled ${result.count} pending bot event(s).`);
+  return success(`Cancelled ${result.count} event(s).`);
+}
+
+export async function pauseBotQueueInline(): Promise<AdminBotEventActionResult> {
+  const authError = await requireAdmin();
+
+  if (authError) {
+    return authError;
+  }
+
+  await prisma.serverSetting.upsert({
+    where: {
+      key: "bot.queue.paused",
+    },
+    create: {
+      key: "bot.queue.paused",
+      value: "true",
+      description: "Controls bot event queue processing.",
+    },
+    update: {
+      value: "true",
+    },
+  });
+
+  await publishBotRuntimeUpdate("bot.queue.paused", {
+    paused: true,
+  });
+
+  revalidateBotViews();
+
+  return success("Queue paused.");
+}
+
+export async function resumeBotQueueInline(): Promise<AdminBotEventActionResult> {
+  const authError = await requireAdmin();
+
+  if (authError) {
+    return authError;
+  }
+
+  await prisma.serverSetting.upsert({
+    where: {
+      key: "bot.queue.paused",
+    },
+    create: {
+      key: "bot.queue.paused",
+      value: "false",
+      description: "Controls bot event queue processing.",
+    },
+    update: {
+      value: "false",
+    },
+  });
+
+  await publishBotRuntimeUpdate("bot.queue.resumed", {
+    paused: false,
+  });
+
+  revalidateBotViews();
+
+  return success("Queue resumed.");
+}
+
+export async function queueBotHealthCheckInline(): Promise<AdminBotEventActionResult> {
+  const authError = await requireAdmin();
+
+  if (authError) {
+    return authError;
+  }
+
+  await queueBotCommand("bot_command_health_check", 100);
+
+  return success("Health check queued.");
+}
+
+export async function queueBotRefreshConfigInline(): Promise<AdminBotEventActionResult> {
+  const authError = await requireAdmin();
+
+  if (authError) {
+    return authError;
+  }
+
+  await queueBotCommand("bot_command_refresh_config", 95);
+
+  return success("Config refresh queued.");
+}
+
+export async function queueBotRestartInline(): Promise<AdminBotEventActionResult> {
+  const authError = await requireAdmin();
+
+  if (authError) {
+    return authError;
+  }
+
+  await queueBotCommand("bot_command_restart", 120);
+
+  return success("Restart queued.");
 }
 
 export async function cleanupCompletedBotEventsInline(
@@ -278,5 +417,5 @@ export async function cleanupCompletedBotEventsInline(
 
   revalidateBotViews();
 
-  return success(`Cleaned ${result.count} old bot event(s).`);
+  return success(`Cleaned ${result.count} event(s).`);
 }
