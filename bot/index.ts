@@ -2237,6 +2237,121 @@ client.once(Events.ClientReady, async () => {
   }, POLL_INTERVAL_MS);
 });
 
+function getInteractionLocation(interaction: any) {
+  if (!interaction.guildId) {
+    return "Direct Message";
+  }
+
+  const channelName = interaction.channel?.name
+    ? `#${interaction.channel.name}`
+    : interaction.channelId || "Unknown channel";
+
+  return channelName;
+}
+
+function getInteractionUserLabel(interaction: any) {
+  const username =
+    interaction.user?.tag ||
+    interaction.user?.username ||
+    interaction.user?.id ||
+    "Unknown user";
+
+  const userId = interaction.user?.id || "Unknown ID";
+
+  return `${username} (${userId})`;
+}
+
+function getInteractionOptionsSnapshot(interaction: any) {
+  const rawOptions = interaction.options?.data || [];
+
+  if (!Array.isArray(rawOptions) || rawOptions.length === 0) {
+    return "-";
+  }
+
+  const values = rawOptions
+    .map((option: any) => {
+      const name = option.name || "unknown";
+      const value =
+        option.value ||
+        option.user?.tag ||
+        option.user?.username ||
+        option.user?.id ||
+        "-";
+
+      return `${name}: ${value}`;
+    })
+    .join("\n");
+
+  return values.slice(0, 900);
+}
+
+async function logSlashCommandUsage(interaction: any) {
+  try {
+    await sendBotLog({
+      title: "Slash command used",
+      fields: [
+        {
+          name: "Command",
+          value: `/${interaction.commandName || "unknown"}`,
+          inline: true,
+        },
+        {
+          name: "User",
+          value: getInteractionUserLabel(interaction),
+          inline: false,
+        },
+        {
+          name: "Location",
+          value: getInteractionLocation(interaction),
+          inline: true,
+        },
+        {
+          name: "Options",
+          value: getInteractionOptionsSnapshot(interaction),
+          inline: false,
+        },
+      ],
+      color: COLORS.info,
+    });
+  } catch (error) {
+    console.error("[SlashCommands] Failed to log usage:", error);
+  }
+}
+
+async function logSlashCommandFailure(interaction: any, error: unknown) {
+  try {
+    await sendBotLog({
+      title: "Slash command failed",
+      description: getErrorMessage(error),
+      fields: [
+        {
+          name: "Command",
+          value: `/${interaction.commandName || "unknown"}`,
+          inline: true,
+        },
+        {
+          name: "User",
+          value: getInteractionUserLabel(interaction),
+          inline: false,
+        },
+        {
+          name: "Location",
+          value: getInteractionLocation(interaction),
+          inline: true,
+        },
+        {
+          name: "Options",
+          value: getInteractionOptionsSnapshot(interaction),
+          inline: false,
+        },
+      ],
+      color: COLORS.error,
+    });
+  } catch (logError) {
+    console.error("[SlashCommands] Failed to log failure:", logError);
+  }
+}
+
 client.on(Events.InteractionCreate, async (interaction) => {
   try {
     if (interaction.isAutocomplete()) {
@@ -2259,10 +2374,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       slashCommandError,
       uptimeMs: Math.floor(process.uptime() * 1000),
     });
+
+    await logSlashCommandUsage(interaction);
   } catch (error) {
     console.error("[SlashCommands] Interaction failed:", error);
 
     if (interaction.isChatInputCommand()) {
+      await logSlashCommandFailure(interaction, error);
+
       await replyToCommand(interaction, {
         content: "Command failed.",
       }).catch(() => null);
