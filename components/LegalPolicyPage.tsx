@@ -1,5 +1,7 @@
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 
 export type LegalSection = {
   id: string;
@@ -18,16 +20,53 @@ type LegalPolicyPageProps = {
   sections: LegalSection[];
 };
 
-const legalPages = [
-  { href: "/terms", label: "Terms of Service" },
-  { href: "/privacy", label: "Privacy Policy" },
-  { href: "/cookies", label: "Cookie Policy" },
-];
+type LegalPolicyMessages = {
+  label: string;
+  contents: string;
+  documentInformation: string;
+  lastUpdated: string;
+  effectiveDate: string;
+  contact: string;
+  pages: {
+    href: string;
+    label: string;
+  }[];
+};
 
-function LegalPageTabs() {
+const legalPolicyMessages: Record<Locale, LegalPolicyMessages> = {
+  en: {
+    label: "AscendraHub Legal",
+    contents: "Contents",
+    documentInformation: "Document information",
+    lastUpdated: "Last updated",
+    effectiveDate: "Effective date",
+    contact: "Contact",
+    pages: [
+      { href: "/terms", label: "Terms of Service" },
+      { href: "/privacy", label: "Privacy Policy" },
+      { href: "/cookies", label: "Cookie Policy" },
+    ],
+  },
+
+  ar: {
+    label: "الشؤون القانونية في AscendraHub",
+    contents: "المحتويات",
+    documentInformation: "معلومات المستند",
+    lastUpdated: "آخر تحديث",
+    effectiveDate: "تاريخ السريان",
+    contact: "التواصل",
+    pages: [
+      { href: "/terms", label: "شروط الاستخدام" },
+      { href: "/privacy", label: "سياسة الخصوصية" },
+      { href: "/cookies", label: "سياسة ملفات تعريف الارتباط" },
+    ],
+  },
+};
+
+function LegalPageTabs({ pages }: { pages: LegalPolicyMessages["pages"] }) {
   return (
     <nav className="flex flex-wrap gap-2 border-b border-white/10 pb-5">
-      {legalPages.map((page) => (
+      {pages.map((page) => (
         <a
           key={page.href}
           href={page.href}
@@ -40,12 +79,18 @@ function LegalPageTabs() {
   );
 }
 
-function TableOfContents({ sections }: { sections: LegalSection[] }) {
+function TableOfContents({
+  sections,
+  label,
+}: {
+  sections: LegalSection[];
+  label: string;
+}) {
   return (
     <aside className="hidden xl:block">
       <div className="sticky top-24">
         <p className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-gray-500">
-          Contents
+          {label}
         </p>
 
         <div className="grid gap-1 border-l border-white/10 pl-4">
@@ -131,13 +176,16 @@ function LegalSectionBlock({
   );
 }
 
-export default function LegalPolicyPage({
+export default async function LegalPolicyPage({
   title,
   description,
   lastUpdated,
   effectiveDate,
   sections,
 }: LegalPolicyPageProps) {
+  const locale = await getLocale();
+  const messages = legalPolicyMessages[locale];
+
   return (
     <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.13)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(16,185,129,0.08)_0%,transparent_28%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
@@ -148,7 +196,7 @@ export default function LegalPolicyPage({
         <section className="border-b border-white/10">
           <div className="mx-auto max-w-[1500px] px-6 py-20 lg:px-10 2xl:px-14">
             <p className="mb-5 text-xs font-black uppercase tracking-[0.24em] text-violet-300">
-              AscendraHub Legal
+              {messages.label}
             </p>
 
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
@@ -164,13 +212,13 @@ export default function LegalPolicyPage({
 
               <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-500">
-                  Document information
+                  {messages.documentInformation}
                 </p>
 
                 <div className="mt-4 grid gap-4">
                   <div>
                     <p className="text-xs font-bold text-gray-500">
-                      Last updated
+                      {messages.lastUpdated}
                     </p>
                     <p className="mt-1 text-sm font-black text-white">
                       {lastUpdated}
@@ -179,7 +227,7 @@ export default function LegalPolicyPage({
 
                   <div>
                     <p className="text-xs font-bold text-gray-500">
-                      Effective date
+                      {messages.effectiveDate}
                     </p>
                     <p className="mt-1 text-sm font-black text-white">
                       {effectiveDate}
@@ -187,7 +235,9 @@ export default function LegalPolicyPage({
                   </div>
 
                   <div>
-                    <p className="text-xs font-bold text-gray-500">Contact</p>
+                    <p className="text-xs font-bold text-gray-500">
+                      {messages.contact}
+                    </p>
                     <p className="mt-1 text-sm font-black text-violet-200">
                       support@ascendrahub.com
                     </p>
@@ -199,10 +249,10 @@ export default function LegalPolicyPage({
         </section>
 
         <section className="mx-auto grid max-w-[1500px] gap-12 px-6 py-12 lg:px-10 xl:grid-cols-[260px_minmax(0,1fr)] 2xl:px-14">
-          <TableOfContents sections={sections} />
+          <TableOfContents sections={sections} label={messages.contents} />
 
           <article className="mx-auto w-full max-w-[980px]">
-            <LegalPageTabs />
+            <LegalPageTabs pages={messages.pages} />
 
             <div className="mt-4">
               {sections.map((section, index) => (
