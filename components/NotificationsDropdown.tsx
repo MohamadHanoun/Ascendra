@@ -7,7 +7,7 @@ import {
   markAllNotificationsReadAction,
   markNotificationReadAction,
 } from "@/actions/notificationActions";
-
+import { useRealtimeEvents } from "@/hooks/useRealtimeEvents";
 const CUT8 =
   "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)";
 const CUT6 =
@@ -139,6 +139,27 @@ export default function NotificationsDropdown({
   useEffect(() => {
     void fetchNotifications();
   }, [fetchNotifications]);
+
+    useRealtimeEvents({
+      audience: "public",
+      intervalSeconds: 2,
+      onEvents(events) {
+        if (!isLoggedIn) {
+          return;
+        }
+
+        const hasNotificationEvent = events.some(
+          (event) =>
+            event.type === "notification.created" ||
+            event.type === "notification.updated" ||
+            event.entityType === "notification",
+        );
+
+        if (hasNotificationEvent) {
+          void fetchNotifications();
+        }
+      },
+    });
 
   useEffect(() => {
     setIsOpen(false);

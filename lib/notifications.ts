@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { createRealtimeEvent } from "@/lib/realtime";
 
 const defaultNotificationLimit = 10;
 const maxNotificationLimit = 50;
@@ -38,7 +39,11 @@ type NotificationData = {
   metadata?: Prisma.InputJsonValue;
 };
 
-function normalizeRequiredText(value: string, fieldName: string, maxLength: number) {
+function normalizeRequiredText(
+  value: string,
+  fieldName: string,
+  maxLength: number,
+) {
   const normalized = value.replace(/\s+/g, " ").trim().slice(0, maxLength);
 
   if (!normalized) {
@@ -66,7 +71,9 @@ function uniqueUserIds(userIds: string[]) {
   return Array.from(new Set(userIds.map((id) => id.trim()).filter(Boolean)));
 }
 
-function buildNotificationData(input: CreateNotificationInput): NotificationData {
+function buildNotificationData(
+  input: CreateNotificationInput,
+): NotificationData {
   const userId = input.userId.trim();
 
   if (!userId) {
@@ -87,11 +94,7 @@ function appendDedupeKey(
   metadata: Prisma.InputJsonValue | undefined,
   dedupeKey: string,
 ): Prisma.InputJsonValue {
-  if (
-    metadata &&
-    typeof metadata === "object" &&
-    !Array.isArray(metadata)
-  ) {
+  if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
     return {
       ...(metadata as Record<string, Prisma.InputJsonValue>),
       dedupeKey,
@@ -103,10 +106,23 @@ function appendDedupeKey(
   };
 }
 
+async function publishNotificationRealtimeEvent(type: string) {
+  await createRealtimeEvent({
+    type,
+    audience: "public",
+    entityType: "notification",
+    payload: {},
+  });
+}
+
 export async function createNotification(input: CreateNotificationInput) {
-  return prisma.notification.create({
+  const notification = await prisma.notification.create({
     data: buildNotificationData(input),
   });
+
+  await publishNotificationRealtimeEvent("notification.created");
+
+  return notification;
 }
 
 export async function createNotificationOnce(
@@ -133,9 +149,13 @@ export async function createNotificationOnce(
     return existingNotification;
   }
 
-  return prisma.notification.create({
+  const notification = await prisma.notification.create({
     data,
   });
+
+  await publishNotificationRealtimeEvent("notification.created");
+
+  return notification;
 }
 
 export async function createNotificationsOnceForUsers(
@@ -189,12 +209,19 @@ export async function createNotificationsForUsers(
     return { count: 0 };
   }
 
-  return prisma.notification.createMany({
+  const result = await prisma.notification.createMany({
     data: inputs.map(buildNotificationData),
   });
+
+  await publishNotificationRealtimeEvent("notification.created");
+
+  return result;
 }
 
-export async function getUnreadNotifications(userId: string, limit?: number | null) {
+export async function getUnreadNotifications(
+  userId: string,
+  limit?: number | null,
+) {
   const normalizedUserId = userId.trim();
 
   if (!normalizedUserId) {
@@ -261,7 +288,7 @@ export async function markNotificationRead(
     return { count: 0 };
   }
 
-  return prisma.notification.updateMany({
+  const result = await prisma.notification.updateMany({
     where: {
       id: normalizedNotificationId,
       userId: normalizedUserId,
@@ -271,6 +298,12 @@ export async function markNotificationRead(
       readAt: new Date(),
     },
   });
+
+  if (result.count > 0) {
+    await publishNotificationRealtimeEvent("notification.updated");
+  }
+
+  return result;
 }
 
 export async function markAllNotificationsRead(userId: string) {
@@ -280,7 +313,7 @@ export async function markAllNotificationsRead(userId: string) {
     return { count: 0 };
   }
 
-  return prisma.notification.updateMany({
+  const result = await prisma.notification.updateMany({
     where: {
       userId: normalizedUserId,
       readAt: null,
@@ -289,4 +322,10 @@ export async function markAllNotificationsRead(userId: string) {
       readAt: new Date(),
     },
   });
+
+  if (result.count > 0) {
+    await publishNotificationRealtimeEvent("notification.updated");
+  }
+
+  return result;
 }
