@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties, ReactNode } from "react";
 
 import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
@@ -75,6 +76,9 @@ const rolesMessages: Record<Locale, RolesMessages> = {
   },
 };
 
+const panelClip =
+  "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)";
+
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const messages = rolesMessages[locale].metadata;
@@ -96,32 +100,166 @@ async function getRoles() {
   });
 }
 
-function RoleRow({
+function CornerMark() {
+  return (
+    <div
+      aria-hidden="true"
+      className="asc-corner-mark"
+      style={{
+        position: "absolute",
+        top: 10,
+        left: 10,
+        width: 12,
+        height: 12,
+        borderTop: "1.5px solid var(--asc-accent)",
+        borderLeft: "1.5px solid var(--asc-accent)",
+        opacity: 0.9,
+        pointerEvents: "none",
+        zIndex: 30,
+      }}
+    />
+  );
+}
+
+function Panel({
+  children,
+  className = "",
+  style,
+}: {
+  children: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <section
+      className={`relative overflow-hidden border shadow-2xl shadow-black/20 ${className}`}
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "var(--asc-bg-1)",
+        clipPath: panelClip,
+        ...style,
+      }}
+    >
+      <CornerMark />
+      {children}
+    </section>
+  );
+}
+
+function SummaryCard({
+  label,
+  title,
+  totalLabel,
+  total,
+}: {
+  label: string;
+  title: string;
+  totalLabel: string;
+  total: number;
+}) {
+  return (
+    <Panel className="p-6">
+      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_180px] md:items-end">
+        <div>
+          <p
+            className="text-xs font-black uppercase tracking-[0.18em]"
+            style={{ color: "var(--asc-accent)" }}
+          >
+            ▲ {label}
+          </p>
+
+          <h2
+            className="mt-2 text-3xl md:text-4xl"
+            style={{ color: "var(--asc-fg-0)" }}
+          >
+            {title}
+          </h2>
+        </div>
+
+        <div>
+          <p
+            className="text-[10px] font-black uppercase tracking-[0.16em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            {totalLabel}
+          </p>
+
+          <p
+            className="mt-2 text-5xl font-black tabular-nums"
+            style={{
+              color: "var(--asc-accent)",
+              fontFamily: "var(--font-display)",
+            }}
+          >
+            {total}
+          </p>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+function RoleCard({
   name,
   color,
   description,
+  index,
 }: {
   name: string;
   color: string;
   description: string;
+  index: number;
 }) {
   return (
     <article
-      className="grid gap-3 px-5 py-4 last:border-b-0 md:grid-cols-[220px_minmax(0,1fr)] md:items-center"
-      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+      className="relative overflow-hidden border p-6"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background:
+          "linear-gradient(135deg, oklch(0.14 0.06 285 / 0.78), var(--asc-bg-1))",
+        clipPath: panelClip,
+      }}
     >
-      <div className="flex min-w-0 items-center gap-3">
-        <span
-          className="h-3 w-3 shrink-0 rounded-full"
-          style={{
-            backgroundColor: color,
-          }}
-        />
+      <CornerMark />
 
-        <p className="truncate font-black" style={{ color: "var(--asc-fg-0)" }}>{name}</p>
+      <div
+        aria-hidden="true"
+        className="absolute -right-5 -top-6 text-[120px] font-black leading-none"
+        style={{
+          color: "oklch(1 0 0 / 0.035)",
+          fontFamily: "var(--font-display)",
+        }}
+      >
+        {String(index + 1).padStart(2, "0")}
       </div>
 
-      <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>{description}</p>
+      <div className="relative z-10">
+        <div className="flex items-center gap-4">
+          <span
+            className="h-4 w-4 shrink-0"
+            style={{
+              backgroundColor: color,
+              boxShadow: `0 0 18px ${color}`,
+              clipPath:
+                "polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)",
+            }}
+          />
+
+          <h2
+            className="text-2xl md:text-3xl"
+            style={{ color: "var(--asc-fg-0)" }}
+          >
+            {name}
+          </h2>
+        </div>
+
+        <p
+          className="mt-5 text-sm leading-7"
+          style={{ color: "var(--asc-fg-3)" }}
+        >
+          {description}
+        </p>
+      </div>
     </article>
   );
 }
@@ -131,11 +269,14 @@ export default async function RolesPage() {
   const messages = rolesMessages[locale];
 
   return (
-    <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
+    <main
+      className="asc-ambient min-h-screen overflow-hidden"
+      style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
+    >
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[430px] overflow-hidden">
+        <section className="relative min-h-[460px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -143,51 +284,55 @@ export default async function RolesPage() {
             }}
           />
 
-          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.62) 44%,oklch(0.06 0.03 287 / 0.82) 100%)" }} />
-          <div className="absolute inset-x-0 bottom-0 h-40" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: [
+                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.28) 0%, oklch(0.07 0.025 285 / 0.65) 54%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.45) 42%, transparent 74%)",
+              ].join(", "),
+            }}
+          />
 
-          <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
-              {messages.hero.label}
+          <div
+            className="absolute inset-x-0 bottom-0 h-48"
+            style={{
+              background:
+                "linear-gradient(to bottom, transparent, var(--asc-bg-0))",
+            }}
+          />
+
+          <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-32 pt-24 lg:px-10 2xl:px-14">
+            <p
+              className="mb-4 text-xs font-black uppercase tracking-[0.22em]"
+              style={{ color: "var(--asc-accent)" }}
+            >
+              ▲ {messages.hero.label}
             </p>
 
-            <h1 className="text-5xl font-black uppercase tracking-tight md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
+            <h1
+              className="max-w-5xl text-5xl md:text-7xl"
+              style={{ color: "var(--asc-fg-0)" }}
+            >
               {messages.hero.title}
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-7" style={{ color: "var(--asc-fg-1)" }}>
+            <p
+              className="mt-5 max-w-2xl text-base leading-7"
+              style={{ color: "var(--asc-fg-2)" }}
+            >
               {messages.hero.description}
             </p>
           </div>
         </section>
 
-        <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
-          <section
-            className="p-5 shadow-2xl shadow-black/20"
-            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-          >
-            <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_160px] md:items-end">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-                  {messages.summary.label}
-                </p>
-
-                <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-                  {messages.summary.title}
-                </h2>
-              </div>
-
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-                  {messages.summary.total}
-                </p>
-
-                <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-                  {roles.length}
-                </p>
-              </div>
-            </div>
-          </section>
+        <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-20 lg:px-10 2xl:px-14">
+          <SummaryCard
+            label={messages.summary.label}
+            title={messages.summary.title}
+            totalLabel={messages.summary.total}
+            total={roles.length}
+          />
 
           {roles.length === 0 ? (
             <EmptyState
@@ -195,20 +340,16 @@ export default async function RolesPage() {
               description={messages.empty.description}
             />
           ) : (
-            <section
-              className="overflow-hidden shadow-2xl shadow-black/20 backdrop-blur"
-              style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-            >
-              <div>
-                {roles.map((role) => (
-                  <RoleRow
-                    key={role.id}
-                    name={role.name}
-                    color={role.color}
-                    description={role.description}
-                  />
-                ))}
-              </div>
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {roles.map((role, index) => (
+                <RoleCard
+                  key={role.id}
+                  name={role.name}
+                  color={role.color}
+                  description={role.description}
+                  index={index}
+                />
+              ))}
             </section>
           )}
         </section>
