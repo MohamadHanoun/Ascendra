@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   LineChart,
@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { createTeam, respondToTeamInvite } from "@/actions/teamActions";
 import CustomSelect from "@/components/CustomSelect";
+import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
 
 type TabId = "stats" | "teams" | "history" | "achievements";
 
@@ -281,6 +282,192 @@ function StatsTab({ tournamentResults, labels }: Pick<ProfileTabsProps, "tournam
   );
 }
 
+function InviteResponseButton({
+  inviteId,
+  response,
+  teamName,
+  labels,
+}: {
+  inviteId: string;
+  response: "accepted" | "rejected";
+  teamName: string;
+  labels: ProfileTabsProps["labels"];
+}) {
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  const isAccept = response === "accepted";
+
+  function runAction() {
+    const formData = new FormData();
+
+    formData.set("inviteId", inviteId);
+    formData.set("response", response);
+
+    startTransition(async () => {
+      await respondToTeamInvite(formData);
+      setOpen(false);
+    });
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        disabled={pending}
+        className={`px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${
+          isAccept ? "" : "border"
+        }`}
+        style={{
+          ...(isAccept
+            ? {
+                background: "oklch(0.55 0.14 150)",
+                color: "#fff",
+              }
+            : {
+                borderColor: "oklch(0.50 0.20 25 / 0.5)",
+                color: "var(--asc-live)",
+                background: "transparent",
+              }),
+          clipPath:
+            "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+        }}
+      >
+        {isAccept ? labels.accept : labels.decline}
+      </button>
+
+      <ConfirmDialogPortal
+        open={open}
+        eyebrow="Confirmation"
+        title={
+          isAccept ? "Accept team invitation?" : "Decline team invitation?"
+        }
+        description={
+          isAccept
+            ? `Join ${teamName}? You will become a member of this team.`
+            : `Decline the invitation to join ${teamName}?`
+        }
+        confirmLabel={isAccept ? labels.accept : labels.decline}
+        cancelLabel="Cancel"
+        pendingLabel={isAccept ? "Accepting..." : "Declining..."}
+        pending={pending}
+        variant={isAccept ? "success" : "danger"}
+        onConfirm={runAction}
+        onCancel={() => setOpen(false)}
+      />
+    </>
+  );
+}
+
+function CreateTeamForm({
+  dbGames,
+  labels,
+}: {
+  dbGames: Game[];
+  labels: ProfileTabsProps["labels"];
+}) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setOpen(true);
+  }
+
+  function runAction() {
+    const form = formRef.current;
+
+    if (!form) {
+      return;
+    }
+
+    const formData = new FormData(form);
+
+    startTransition(async () => {
+      await createTeam(formData);
+      setOpen(false);
+    });
+  }
+
+  return (
+    <>
+      <form ref={formRef} onSubmit={handleSubmit} className="grid gap-5 p-5">
+        <div className="relative z-50 grid gap-5 md:grid-cols-2">
+          <label className="grid gap-2">
+            <span
+              className="text-xs font-black uppercase tracking-[0.12em]"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              {labels.teamName}
+            </span>
+
+            <input
+              name="name"
+              required
+              placeholder={labels.teamNamePlaceholder}
+              className="border px-4 py-3 text-white outline-none transition"
+              style={{
+                borderColor: "var(--asc-line-soft)",
+                background: "var(--asc-bg-2)",
+              }}
+            />
+          </label>
+
+          <label className="grid gap-2">
+            <span
+              className="text-xs font-black uppercase tracking-[0.12em]"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              {labels.game}
+            </span>
+
+            <CustomSelect
+              name="gameSlug"
+              required
+              placeholder={labels.selectGame}
+              options={dbGames.map((game) => ({
+                value: game.slug,
+                label: game.name,
+                description: labels.teamGame,
+              }))}
+            />
+          </label>
+        </div>
+
+        <button
+          type="submit"
+          disabled={pending}
+          className="w-fit px-5 py-3 font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          style={{
+            background: "var(--asc-accent-2)",
+            boxShadow: "0 0 20px var(--asc-accent-glow)",
+            clipPath:
+              "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+          }}
+        >
+          {pending ? "Creating..." : labels.createTeam}
+        </button>
+      </form>
+
+      <ConfirmDialogPortal
+        open={open}
+        eyebrow="Confirmation"
+        title="Create team?"
+        description="Create this team with the selected game. You will become the team leader."
+        confirmLabel={labels.createTeam}
+        cancelLabel="Cancel"
+        pendingLabel="Creating..."
+        pending={pending}
+        variant="primary"
+        onConfirm={runAction}
+        onCancel={() => setOpen(false)}
+      />
+    </>
+  );
+}
+
 function TeamsTab({
   teams, invitations, userId, isGuildMember, dbGames, labels, sectionLabels, statuses, heroLabels,
 }: Pick<ProfileTabsProps, "teams" | "invitations" | "userId" | "isGuildMember" | "dbGames" | "labels" | "sectionLabels" | "statuses" | "heroLabels">) {
@@ -288,9 +475,25 @@ function TeamsTab({
     <div className="grid gap-6">
       {invitations.length > 0 && (
         <Card>
-          <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-            <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ {sectionLabels.invitations}</p>
-            <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>{sectionLabels.teamInvitations}</h3>
+          <div
+            className="px-5 py-4"
+            style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+          >
+            <p
+              className="text-xs font-black uppercase tracking-[0.16em]"
+              style={{ color: "var(--asc-accent)" }}
+            >
+              ▲ {sectionLabels.invitations}
+            </p>
+            <h3
+              className="mt-1 text-xl font-black uppercase"
+              style={{
+                color: "var(--asc-fg-0)",
+                fontFamily: "'Barlow Condensed', sans-serif",
+              }}
+            >
+              {sectionLabels.teamInvitations}
+            </h3>
           </div>
           {invitations.map((inv) => (
             <div
@@ -299,28 +502,36 @@ function TeamsTab({
               style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
             >
               <div>
-                <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>{inv.team.name}</p>
-                <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+                <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
+                  {inv.team.name}
+                </p>
+                <p
+                  className="mt-1 text-sm"
+                  style={{ color: "var(--asc-fg-3)" }}
+                >
                   {inv.team.game?.name ?? "—"} · {inv.team.members.length}{" "}
-                  {getCount(inv.team.members.length, labels.member, labels.members)}{" "}
+                  {getCount(
+                    inv.team.members.length,
+                    labels.member,
+                    labels.members,
+                  )}{" "}
                   · {labels.by} {inv.invitedBy.username}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <form action={respondToTeamInvite}>
-                  <input type="hidden" name="inviteId" value={inv.id} />
-                  <input type="hidden" name="response" value="accepted" />
-                  <button type="submit" className="px-4 py-2 text-sm font-black transition hover:opacity-90" style={{ background: "oklch(0.55 0.14 150)", color: "#fff" }}>
-                    {labels.accept}
-                  </button>
-                </form>
-                <form action={respondToTeamInvite}>
-                  <input type="hidden" name="inviteId" value={inv.id} />
-                  <input type="hidden" name="response" value="rejected" />
-                  <button type="submit" className="border px-4 py-2 text-sm font-black transition hover:opacity-90" style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}>
-                    {labels.decline}
-                  </button>
-                </form>
+                <InviteResponseButton
+                  inviteId={inv.id}
+                  response="accepted"
+                  teamName={inv.team.name}
+                  labels={labels}
+                />
+
+                <InviteResponseButton
+                  inviteId={inv.id}
+                  response="rejected"
+                  teamName={inv.team.name}
+                  labels={labels}
+                />
               </div>
             </div>
           ))}
@@ -328,16 +539,35 @@ function TeamsTab({
       )}
 
       <Card>
-        <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ {sectionLabels.myTeams}</p>
-          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
-            {sectionLabels.myTeams} · {teams.length} {getCount(teams.length, heroLabels.team, heroLabels.teams)}
+        <div
+          className="px-5 py-4"
+          style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+        >
+          <p
+            className="text-xs font-black uppercase tracking-[0.16em]"
+            style={{ color: "var(--asc-accent)" }}
+          >
+            ▲ {sectionLabels.myTeams}
+          </p>
+          <h3
+            className="mt-1 text-xl font-black uppercase"
+            style={{
+              color: "var(--asc-fg-0)",
+              fontFamily: "'Barlow Condensed', sans-serif",
+            }}
+          >
+            {sectionLabels.myTeams} · {teams.length}{" "}
+            {getCount(teams.length, heroLabels.team, heroLabels.teams)}
           </h3>
         </div>
         {teams.length === 0 ? (
           <div className="p-5">
-            <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>{sectionLabels.noTeamsTitle}</p>
-            <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>{sectionLabels.noTeamsDescription}</p>
+            <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
+              {sectionLabels.noTeamsTitle}
+            </p>
+            <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+              {sectionLabels.noTeamsDescription}
+            </p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2">
@@ -350,28 +580,69 @@ function TeamsTab({
                   className="relative border-b p-5 transition"
                   style={{ borderColor: "var(--asc-line-soft)" }}
                 >
-                  <div aria-hidden="true" style={{ position: "absolute", top: 9, left: 9, width: 8, height: 8, borderTop: "1px solid var(--asc-accent)", borderLeft: "1px solid var(--asc-accent)", opacity: 0.5 }} />
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      position: "absolute",
+                      top: 9,
+                      left: 9,
+                      width: 8,
+                      height: 8,
+                      borderTop: "1px solid var(--asc-accent)",
+                      borderLeft: "1px solid var(--asc-accent)",
+                      opacity: 0.5,
+                    }}
+                  />
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate font-black" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18 }}>{team.name}</p>
-                      <p className="mt-1 text-xs" style={{ color: "var(--asc-fg-3)" }}>
+                      <p
+                        className="truncate font-black"
+                        style={{
+                          color: "var(--asc-fg-0)",
+                          fontFamily: "'Barlow Condensed', sans-serif",
+                          fontSize: 18,
+                        }}
+                      >
+                        {team.name}
+                      </p>
+                      <p
+                        className="mt-1 text-xs"
+                        style={{ color: "var(--asc-fg-3)" }}
+                      >
                         {team.game?.name ?? "—"} · {team.members.length}{" "}
-                        {getCount(team.members.length, labels.member, labels.members)}
+                        {getCount(
+                          team.members.length,
+                          labels.member,
+                          labels.members,
+                        )}
                       </p>
                     </div>
                     <StatusBadge status={team.status} statuses={statuses} />
                   </div>
                   {team.rejectionReason && (
-                    <p className="mt-2 text-xs" style={{ color: "var(--asc-live)" }}>{team.rejectionReason}</p>
+                    <p
+                      className="mt-2 text-xs"
+                      style={{ color: "var(--asc-live)" }}
+                    >
+                      {team.rejectionReason}
+                    </p>
                   )}
                   <div className="mt-4 flex items-center justify-between">
-                    <p className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
-                      {isLeader ? labels.leader : membership?.role ?? statuses.member}
+                    <p
+                      className="text-xs font-black uppercase tracking-[0.12em]"
+                      style={{ color: "var(--asc-fg-3)" }}
+                    >
+                      {isLeader
+                        ? labels.leader
+                        : (membership?.role ?? statuses.member)}
                     </p>
                     <Link
                       href={`/profile/teams/${team.id}`}
                       className="px-4 py-2 text-xs font-black transition hover:opacity-90"
-                      style={{ background: "var(--asc-accent-2)", color: "#fff" }}
+                      style={{
+                        background: "var(--asc-accent-2)",
+                        color: "#fff",
+                      }}
                     >
                       {labels.open}
                     </Link>
@@ -384,49 +655,51 @@ function TeamsTab({
       </Card>
 
       <Card>
-        <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ {sectionLabels.createTeam}</p>
-          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>{sectionLabels.startNewTeam}</h3>
+        <div
+          className="px-5 py-4"
+          style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+        >
+          <p
+            className="text-xs font-black uppercase tracking-[0.16em]"
+            style={{ color: "var(--asc-accent)" }}
+          >
+            ▲ {sectionLabels.createTeam}
+          </p>
+          <h3
+            className="mt-1 text-xl font-black uppercase"
+            style={{
+              color: "var(--asc-fg-0)",
+              fontFamily: "'Barlow Condensed', sans-serif",
+            }}
+          >
+            {sectionLabels.startNewTeam}
+          </h3>
           <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-            {isGuildMember ? sectionLabels.createTeamMeta : sectionLabels.discordRequiredMeta}
+            {isGuildMember
+              ? sectionLabels.createTeamMeta
+              : sectionLabels.discordRequiredMeta}
           </p>
         </div>
         {isGuildMember ? (
-          <form action={createTeam} className="grid gap-5 p-5">
-            <div className="relative z-50 grid gap-5 md:grid-cols-2">
-              <label className="grid gap-2">
-                <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>{labels.teamName}</span>
-                <input
-                  name="name"
-                  required
-                  placeholder={labels.teamNamePlaceholder}
-                  className="border px-4 py-3 text-white outline-none transition"
-                  style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
-                />
-              </label>
-              <label className="grid gap-2">
-                <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>{labels.game}</span>
-                <CustomSelect
-                  name="gameSlug"
-                  required
-                  placeholder={labels.selectGame}
-                  options={dbGames.map((g) => ({ value: g.slug, label: g.name, description: labels.teamGame }))}
-                />
-              </label>
-            </div>
-            <button
-              type="submit"
-              className="w-fit px-5 py-3 font-black text-white transition hover:opacity-90"
-              style={{ background: "var(--asc-accent-2)", boxShadow: "0 0 20px var(--asc-accent-glow)" }}
-            >
-              {labels.createTeam}
-            </button>
-          </form>
+          <CreateTeamForm dbGames={dbGames} labels={labels} />
         ) : (
           <div className="p-5">
-            <div className="border p-4" style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" }}>
-              <p className="font-black" style={{ color: "var(--asc-accent)" }}>{labels.ascendraDiscordRequired}</p>
-              <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>{labels.discordRequiredDescription}</p>
+            <div
+              className="border p-4"
+              style={{
+                borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                background: "var(--asc-accent-dim)",
+              }}
+            >
+              <p className="font-black" style={{ color: "var(--asc-accent)" }}>
+                {labels.ascendraDiscordRequired}
+              </p>
+              <p
+                className="mt-2 text-sm leading-6"
+                style={{ color: "var(--asc-fg-2)" }}
+              >
+                {labels.discordRequiredDescription}
+              </p>
             </div>
           </div>
         )}
