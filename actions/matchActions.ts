@@ -7,6 +7,7 @@ import {
   verifyValorantMatch,
   findRecentCustomMatches,
 } from "@/lib/gameIntegrations/riotValorantAdapter";
+import { notifyMatchConfirmed } from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
 import {
   adminOverrideMatchResult as engineAdminOverride,
@@ -256,6 +257,8 @@ export async function submitValorantMatchId(
       teamBId: true,
       scheduledAt: true,
       tournamentId: true,
+      roundNumber: true,
+      matchNumber: true,
       status: true,
       bestOf: true,
     },
@@ -380,6 +383,7 @@ export async function submitValorantMatchId(
           version: { increment: 1 },
         },
       });
+      await notifyMatchConfirmed(match, v.winnerTeamId);
       await advanceBracketAfterMatch(matchId);
     }
 

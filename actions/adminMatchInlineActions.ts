@@ -11,6 +11,7 @@ import {
   createRiotTournament,
   createTournamentCodeForMatch,
 } from "@/lib/gameIntegrations/riotLolAdapter";
+import { notifyMatchRoomReady } from "@/lib/matchNotifications";
 import { AuditStatus, GameProvider, MatchGameStatus, MatchStatus, Prisma, ReportStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
@@ -219,6 +220,8 @@ export async function createMatchRoomInline(
     select: {
       id: true,
       tournamentId: true,
+      roundNumber: true,
+      matchNumber: true,
       teamAId: true,
       teamBId: true,
       room: { select: { id: true } },
@@ -251,6 +254,8 @@ export async function createMatchRoomInline(
     },
   });
 
+  await notifyMatchRoomReady(match);
+
   await writeAudit({
     action: "match.room.created",
     request: { matchId, adminId: admin.id, roomCode, forceRecreate },
@@ -278,6 +283,8 @@ export async function generateLolCodesInline(
     select: {
       id: true,
       tournamentId: true,
+      roundNumber: true,
+      matchNumber: true,
       teamAId: true,
       teamBId: true,
       bestOf: true,
@@ -387,6 +394,8 @@ export async function generateLolCodesInline(
       },
     },
   });
+
+  await notifyMatchRoomReady(match);
 
   await writeAudit({
     action: "match.lol.codes.generated",

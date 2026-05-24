@@ -32,6 +32,22 @@ export type NavigationMessages = {
     logoutTitle: string;
     logoutDescription: string;
   };
+  search: {
+    label: string;
+    placeholder: string;
+    loading: string;
+    noResults: string;
+    error: string;
+    types: {
+      tournament: string;
+      announcement: string;
+      rule: string;
+      role: string;
+      staff: string;
+      team: string;
+      player: string;
+    };
+  };
   language: {
     label: string;
     english: string;
@@ -447,6 +463,22 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         fallbackName: "Ascendra Player",
         logoutTitle: "Confirm logout",
         logoutDescription: "Are you sure you want to log out?",
+      },
+      search: {
+        label: "Search",
+        placeholder: "Search tournaments, teams, players...",
+        loading: "Searching...",
+        noResults: "No matching results.",
+        error: "Search is unavailable.",
+        types: {
+          tournament: "Tournament",
+          announcement: "News",
+          rule: "Rule",
+          role: "Role",
+          staff: "Staff",
+          team: "Team",
+          player: "Player",
+        },
       },
       language: {
         label: "Language",
@@ -939,6 +971,22 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         fallbackName: "لاعب Ascendra",
         logoutTitle: "تأكيد تسجيل الخروج",
         logoutDescription: "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+      },
+      search: {
+        label: "البحث",
+        placeholder: "ابحث في البطولات والفرق واللاعبين...",
+        loading: "جار البحث...",
+        noResults: "لا توجد نتائج مطابقة.",
+        error: "تعذر تحميل نتائج البحث.",
+        types: {
+          tournament: "بطولة",
+          announcement: "خبر",
+          rule: "قاعدة",
+          role: "دور",
+          staff: "فريق العمل",
+          team: "فريق",
+          player: "لاعب",
+        },
       },
       language: {
         label: "اللغة",

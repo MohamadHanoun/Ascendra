@@ -1,6 +1,10 @@
 "use server";
 
 import { auth } from "@/auth";
+import {
+  createNotificationsOnceForUsers,
+  getAdminNotificationUserIds,
+} from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -31,6 +35,39 @@ async function requireUser() {
   }
 
   return user;
+}
+
+async function notifyRegistrationUsers(input: {
+  userIds: string[];
+  type: string;
+  title: string;
+  message: string;
+  href: string;
+  registrationId: string;
+  tournamentId: string;
+  teamId: string;
+  dedupeKey: string;
+}) {
+  try {
+    await createNotificationsOnceForUsers({
+      userIds: input.userIds,
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      href: input.href,
+      dedupeKey: input.dedupeKey,
+      metadata: {
+        registrationId: input.registrationId,
+        tournamentId: input.tournamentId,
+        teamId: input.teamId,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "[RegistrationNotifications] Failed to create notifications:",
+      error,
+    );
+  }
 }
 
 export async function registerTeamForTournament(formData: FormData) {
@@ -122,25 +159,35 @@ export async function registerTeamForTournament(formData: FormData) {
     },
   });
 
-  if (existingRegistration) {
-    if (existingRegistration.status !== "cancelled") {
-      tournamentError("This team is already registered for this tournament.");
-    }
-
-    await prisma.tournamentRegistration.update({
-      where: { id: existingRegistration.id },
-      data: { status: "registered", registeredById: user.id },
-    });
-  } else {
-    await prisma.tournamentRegistration.create({
-      data: {
-        tournamentId: tournament.id,
-        teamId: team.id,
-        registeredById: user.id,
-        status: "registered",
-      },
-    });
+  if (existingRegistration && existingRegistration.status !== "cancelled") {
+    tournamentError("This team is already registered for this tournament.");
   }
+
+  const registration = existingRegistration
+    ? await prisma.tournamentRegistration.update({
+        where: { id: existingRegistration.id },
+        data: { status: "registered", registeredById: user.id },
+      })
+    : await prisma.tournamentRegistration.create({
+        data: {
+          tournamentId: tournament.id,
+          teamId: team.id,
+          registeredById: user.id,
+          status: "registered",
+        },
+      });
+
+  await notifyRegistrationUsers({
+    userIds: await getAdminNotificationUserIds(),
+    type: "registration.submitted",
+    title: "Registration submitted",
+    message: `${team.name} registered for ${tournament.title}.`,
+    href: "/admin?tab=registrations",
+    registrationId: registration.id,
+    tournamentId: tournament.id,
+    teamId: team.id,
+    dedupeKey: `registration.submitted:${registration.id}:${registration.updatedAt.toISOString()}`,
+  });
 
   revalidatePath("/tournaments");
   revalidatePath("/profile");

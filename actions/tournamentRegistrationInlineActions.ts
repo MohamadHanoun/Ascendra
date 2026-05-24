@@ -5,6 +5,10 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
+import {
+  createNotificationsOnceForUsers,
+  getAdminNotificationUserIds,
+} from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
 
@@ -213,6 +217,39 @@ async function publishRegistrationRealtimeEvent(params: {
   ]);
 }
 
+async function notifyRegistrationUsers(input: {
+  userIds: string[];
+  type: string;
+  title: string;
+  message: string;
+  href: string;
+  registrationId: string;
+  tournamentId: string;
+  teamId: string;
+  dedupeKey: string;
+}) {
+  try {
+    await createNotificationsOnceForUsers({
+      userIds: input.userIds,
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      href: input.href,
+      dedupeKey: input.dedupeKey,
+      metadata: {
+        registrationId: input.registrationId,
+        tournamentId: input.tournamentId,
+        teamId: input.teamId,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "[RegistrationNotifications] Failed to create notifications:",
+      error,
+    );
+  }
+}
+
 async function registerTeamForTournament(
   formData: FormData,
 ): Promise<TournamentRegistrationActionResult> {
@@ -329,55 +366,64 @@ async function registerTeamForTournament(
   }
 
   const snapshotMembers = buildSnapshotMembers(team.members);
+  const registration = existingRegistration
+    ? await prisma.tournamentRegistration.update({
+        where: {
+          id: existingRegistration.id,
+        },
+        data: {
+          status: "registered",
+          registeredById: user.id,
+          rejectionReason: null,
+          approvedAt: null,
+          cancelledAt: null,
+          reviewedAt: null,
 
-  if (existingRegistration) {
-    await prisma.tournamentRegistration.update({
-      where: {
-        id: existingRegistration.id,
-      },
-      data: {
-        status: "registered",
-        registeredById: user.id,
-        rejectionReason: null,
-        approvedAt: null,
-        cancelledAt: null,
-        reviewedAt: null,
+          snapshotTeamName: team.name,
+          snapshotTeamGame: team.game?.name ?? null,
+          snapshotMembers,
 
-        snapshotTeamName: team.name,
-        snapshotTeamGame: team.game?.name ?? null,
-        snapshotMembers,
+          discordRoleStatus: "not_needed",
+          discordRoleName: null,
+          discordRoleId: null,
+          discordChannelName: null,
+          discordChannelId: null,
+          discordRoleError: null,
+          discordRoleRequestedAt: null,
+          discordRoleSyncedAt: null,
+        },
+      })
+    : await prisma.tournamentRegistration.create({
+        data: {
+          tournamentId: tournament.id,
+          teamId: team.id,
+          registeredById: user.id,
+          status: "registered",
 
-        discordRoleStatus: "not_needed",
-        discordRoleName: null,
-        discordRoleId: null,
-        discordChannelName: null,
-        discordChannelId: null,
-        discordRoleError: null,
-        discordRoleRequestedAt: null,
-        discordRoleSyncedAt: null,
-      },
-    });
-  } else {
-    await prisma.tournamentRegistration.create({
-      data: {
-        tournamentId: tournament.id,
-        teamId: team.id,
-        registeredById: user.id,
-        status: "registered",
+          snapshotTeamName: team.name,
+          snapshotTeamGame: team.game?.name ?? null,
+          snapshotMembers,
 
-        snapshotTeamName: team.name,
-        snapshotTeamGame: team.game?.name ?? null,
-        snapshotMembers,
-
-        discordRoleStatus: "not_needed",
-      },
-    });
-  }
+          discordRoleStatus: "not_needed",
+        },
+      });
 
   await publishRegistrationRealtimeEvent({
     tournamentId: tournament.id,
     teamId: team.id,
     type: "registered",
+  });
+
+  await notifyRegistrationUsers({
+    userIds: await getAdminNotificationUserIds(),
+    type: "registration.submitted",
+    title: "Registration submitted",
+    message: `${team.name} registered for ${tournament.title}.`,
+    href: "/admin?tab=registrations",
+    registrationId: registration.id,
+    tournamentId: tournament.id,
+    teamId: team.id,
+    dedupeKey: `registration.submitted:${registration.id}:${registration.updatedAt.toISOString()}`,
   });
 
   revalidateTournamentRegistrationViews(tournament.id);

@@ -9,6 +9,13 @@ import {
 
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import {
+  notifyBracketAdvanced,
+  notifyManualResultSubmitted,
+  notifyMatchConfirmed,
+  notifyMatchDisputed,
+  notifyMatchScheduled,
+} from "@/lib/matchNotifications";
 
 export type EngineResult<T = void> =
   | { ok: true; data: T }
@@ -183,8 +190,15 @@ export async function createMatchesForTournament(
   }
 
   const created = await prisma.$transaction(async (tx) => {
-    const createdRows: { id: string; roundNumber: number; matchNumber: number }[] =
-      [];
+    const createdRows: {
+      id: string;
+      tournamentId: string;
+      roundNumber: number;
+      matchNumber: number;
+      teamAId: string | null;
+      teamBId: string | null;
+      status: MatchStatus;
+    }[] = [];
 
     for (const draft of drafts) {
       const row = await tx.tournamentMatch.create({
@@ -202,7 +216,15 @@ export async function createMatchesForTournament(
             : null,
           completedAt: draft.isBye ? new Date() : null,
         },
-        select: { id: true, roundNumber: true, matchNumber: true },
+        select: {
+          id: true,
+          tournamentId: true,
+          roundNumber: true,
+          matchNumber: true,
+          teamAId: true,
+          teamBId: true,
+          status: true,
+        },
       });
       createdRows.push(row);
     }
@@ -238,6 +260,17 @@ export async function createMatchesForTournament(
 
     return createdRows;
   });
+
+  await Promise.all(
+    created
+      .filter(
+        (match) =>
+          match.status === MatchStatus.scheduled &&
+          Boolean(match.teamAId) &&
+          Boolean(match.teamBId),
+      )
+      .map((match) => notifyMatchScheduled(match)),
+  );
 
   for (const draft of drafts) {
     if (!draft.isBye) continue;
@@ -501,7 +534,17 @@ export async function submitManualMatchReport(
     },
   );
 
+  await notifyManualResultSubmitted(match, input.teamId, created.reportId);
+
+  if (created.disputed) {
+    await notifyMatchDisputed(match);
+  }
+
   if (created.autoConfirmed) {
+    await notifyMatchConfirmed(match, input.winnerTeamId, {
+      teamAScore: input.teamAScore,
+      teamBScore: input.teamBScore,
+    });
     await advanceBracketAfterMatch(input.matchId);
   }
 
@@ -585,6 +628,17 @@ export async function confirmMatchResult(
     { winnerTeamId, adminUserId },
   );
 
+  await notifyMatchConfirmed(
+    match,
+    winnerTeamId,
+    candidateReport
+      ? {
+          teamAScore: candidateReport.teamAScore,
+          teamBScore: candidateReport.teamBScore,
+        }
+      : null,
+  );
+
   await advanceBracketAfterMatch(matchId);
 
   return ok({ matchStatus: MatchStatus.confirmed, winnerTeamId });
@@ -655,6 +709,8 @@ export async function disputeMatchResult(
     "admin",
     { userId, reason: trimmedReason },
   );
+
+  await notifyMatchDisputed(match);
 
   return ok({ matchStatus: MatchStatus.disputed });
 }
@@ -847,6 +903,8 @@ export async function advanceBracketAfterMatch(
     { nextMatchId: next.id, slot: match.nextMatchSlot },
   );
 
+  await notifyBracketAdvanced(match, next.id);
+
   return ok({ advanced: true, nextMatchId: next.id });
 }
 
@@ -926,6 +984,11 @@ export async function adminOverrideMatchResult(
     "public",
     { adminOverride: true, winnerTeamId: input.winnerTeamId },
   );
+
+  await notifyMatchConfirmed(match, input.winnerTeamId, {
+    teamAScore: input.teamAScore,
+    teamBScore: input.teamBScore,
+  });
 
   await advanceBracketAfterMatch(input.matchId);
 

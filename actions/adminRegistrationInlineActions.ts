@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 
 import { auth } from "@/auth";
+import { createNotificationsOnceForUsers } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
 
@@ -174,6 +175,53 @@ async function publishRegistrationUpdate(params: {
   ]);
 }
 
+function compactReason(reason: string) {
+  const compacted = reason.replace(/\s+/g, " ").trim();
+
+  if (compacted.length <= 140) {
+    return compacted;
+  }
+
+  return `${compacted.slice(0, 137)}...`;
+}
+
+async function notifyRegistrationUsers(input: {
+  userIds: string[];
+  type: string;
+  title: string;
+  message: string;
+  href: string;
+  registrationId: string;
+  tournamentId: string;
+  teamId: string;
+  dedupeKey: string;
+  rejectionReason?: string;
+}) {
+  try {
+    await createNotificationsOnceForUsers({
+      userIds: input.userIds,
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      href: input.href,
+      dedupeKey: input.dedupeKey,
+      metadata: {
+        registrationId: input.registrationId,
+        tournamentId: input.tournamentId,
+        teamId: input.teamId,
+        ...(input.rejectionReason
+          ? { rejectionReason: input.rejectionReason }
+          : {}),
+      },
+    });
+  } catch (error) {
+    console.error(
+      "[RegistrationNotifications] Failed to create notifications:",
+      error,
+    );
+  }
+}
+
 function getApprovalErrorMessage(error: Error, teamSize: number) {
   if (error.message === "NO_APPROVED_SLOTS_AVAILABLE") {
     return "No approved slots are available for this tournament.";
@@ -298,6 +346,8 @@ export async function approveRegistrationInline(
     return fail("No approved slots are available for this tournament.");
   }
 
+  const reviewedAt = new Date();
+
   try {
     await prisma.$transaction(
       async (tx) => {
@@ -401,8 +451,8 @@ export async function approveRegistrationInline(
           data: {
             status: "approved",
             rejectionReason: null,
-            approvedAt: new Date(),
-            reviewedAt: new Date(),
+            approvedAt: reviewedAt,
+            reviewedAt,
 
             snapshotTeamName: freshRegistration.team.name,
             snapshotTeamGame: freshRegistration.team.game?.name ?? null,
@@ -413,7 +463,7 @@ export async function approveRegistrationInline(
             discordRoleStatus: "pending_create",
             discordRoleName: roleName,
             discordRoleError: null,
-            discordRoleRequestedAt: new Date(),
+            discordRoleRequestedAt: reviewedAt,
 
             discordChannelName: channelName,
           },
@@ -478,6 +528,21 @@ export async function approveRegistrationInline(
     teamName: registration.team.name,
   });
 
+  await notifyRegistrationUsers({
+    userIds: [
+      registration.team.leaderId,
+      ...registration.team.members.map((member) => member.userId),
+    ],
+    type: "registration.approved",
+    title: "Registration approved",
+    message: `Registration approved for ${registration.tournament.title}.`,
+    href: `/tournaments/${registration.tournamentId}`,
+    registrationId: registration.id,
+    tournamentId: registration.tournamentId,
+    teamId: registration.teamId,
+    dedupeKey: `registration.approved:${registration.id}`,
+  });
+
   revalidateRegistrationViews(registration.tournamentId);
 
   return success("Registration approved successfully.");
@@ -531,6 +596,7 @@ export async function rejectRegistrationInline(
 
   const shouldRemoveAccess = needsDiscordAccessRemove(registration);
   const memberDiscordIds = getMemberDiscordIds(registration.team.members);
+  const reviewedAt = new Date();
 
   await prisma.$transaction(async (tx) => {
     await tx.tournamentRegistration.update({
@@ -541,10 +607,10 @@ export async function rejectRegistrationInline(
         status: "rejected",
         rejectionReason,
         approvedAt: null,
-        reviewedAt: new Date(),
+        reviewedAt,
 
         discordRoleStatus: shouldRemoveAccess ? "pending_remove" : "not_needed",
-        discordRoleRequestedAt: shouldRemoveAccess ? new Date() : null,
+        discordRoleRequestedAt: shouldRemoveAccess ? reviewedAt : null,
         discordRoleError: null,
       },
     });
@@ -589,6 +655,21 @@ export async function rejectRegistrationInline(
     teamId: registration.teamId,
     teamName: registration.team.name,
     rejectionReason,
+  });
+
+  const reason = compactReason(rejectionReason);
+
+  await notifyRegistrationUsers({
+    userIds: [registration.team.leaderId],
+    type: "registration.rejected",
+    title: "Registration rejected",
+    message: `Registration rejected for ${registration.tournament.title}. Reason: ${reason}`,
+    href: `/tournaments/${registration.tournamentId}`,
+    registrationId: registration.id,
+    tournamentId: registration.tournamentId,
+    teamId: registration.teamId,
+    dedupeKey: `registration.rejected:${registration.id}:${reviewedAt.toISOString()}`,
+    rejectionReason: reason,
   });
 
   revalidateRegistrationViews(registration.tournamentId);
@@ -639,6 +720,7 @@ export async function cancelRegistrationInline(
 
   const shouldRemoveAccess = needsDiscordAccessRemove(registration);
   const memberDiscordIds = getMemberDiscordIds(registration.team.members);
+  const reviewedAt = new Date();
 
   await prisma.$transaction(async (tx) => {
     await tx.tournamentRegistration.update({
@@ -648,11 +730,11 @@ export async function cancelRegistrationInline(
       data: {
         status: "cancelled",
         approvedAt: null,
-        reviewedAt: new Date(),
-        cancelledAt: new Date(),
+        reviewedAt,
+        cancelledAt: reviewedAt,
 
         discordRoleStatus: shouldRemoveAccess ? "pending_remove" : "not_needed",
-        discordRoleRequestedAt: shouldRemoveAccess ? new Date() : null,
+        discordRoleRequestedAt: shouldRemoveAccess ? reviewedAt : null,
         discordRoleError: null,
       },
     });
@@ -695,6 +777,18 @@ export async function cancelRegistrationInline(
     tournamentId: registration.tournamentId,
     teamId: registration.teamId,
     teamName: registration.team.name,
+  });
+
+  await notifyRegistrationUsers({
+    userIds: [registration.team.leaderId],
+    type: "registration.cancelled",
+    title: "Registration cancelled",
+    message: `Registration cancelled for ${registration.tournament.title}.`,
+    href: `/tournaments/${registration.tournamentId}`,
+    registrationId: registration.id,
+    tournamentId: registration.tournamentId,
+    teamId: registration.teamId,
+    dedupeKey: `registration.cancelled:${registration.id}:${reviewedAt.toISOString()}`,
   });
 
   revalidateRegistrationViews(registration.tournamentId);

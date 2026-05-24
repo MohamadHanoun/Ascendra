@@ -6,7 +6,9 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 
+import GlobalSearch from "@/components/GlobalSearch";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import NotificationsDropdown from "@/components/NotificationsDropdown";
 import type { Locale, NavigationMessages } from "@/lib/i18n";
 
 const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "";
@@ -44,69 +46,6 @@ function BrandLogo() {
 }
 
 const CUT8 = "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)";
-
-function NavSearchBar() {
-  return (
-    <div
-      className="hidden items-center gap-2 lg:flex"
-      style={{
-        width: 220,
-        background: "var(--asc-bg-1)",
-        border: "1px solid var(--asc-line-soft)",
-        padding: "6px 10px",
-        clipPath: CUT8,
-        fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
-        fontSize: 11,
-        color: "var(--asc-fg-3)",
-        letterSpacing: "0.06em",
-        cursor: "default",
-        flexShrink: 0,
-      }}
-    >
-      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-        <circle cx="11" cy="11" r="7"/>
-        <path d="m20 20-3.5-3.5"/>
-      </svg>
-      <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Search teams, players…</span>
-      <kbd style={{ fontFamily: "inherit", fontSize: 10, padding: "2px 5px", background: "var(--asc-bg-2)", border: "1px solid var(--asc-line-soft)", color: "var(--asc-fg-3)", flexShrink: 0 }}>⌘K</kbd>
-    </div>
-  );
-}
-
-function NavBellBtn() {
-  return (
-    <button
-      type="button"
-      className="hidden lg:grid"
-      style={{
-        placeItems: "center",
-        width: 36, height: 36, flexShrink: 0,
-        background: "var(--asc-bg-1)",
-        border: "1px solid var(--asc-line-soft)",
-        color: "var(--asc-fg-1)",
-        clipPath: CUT8,
-        cursor: "pointer",
-        position: "relative",
-      }}
-    >
-      <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"/>
-        <path d="M10 21a2 2 0 0 0 4 0"/>
-      </svg>
-      <span
-        style={{
-          position: "absolute", top: -2, right: -2,
-          background: "var(--asc-accent)",
-          color: "var(--asc-fg-0)",
-          fontFamily: "var(--font-mono, monospace)",
-          fontSize: 9, fontWeight: 600,
-          padding: "1px 4px",
-          lineHeight: 1.4,
-        }}
-      >2</span>
-    </button>
-  );
-}
 
 function NavAvatarPill({
   userName,
@@ -354,7 +293,7 @@ export default function NavbarClient({
 
           <div className="hidden items-center gap-2 ltr:ml-auto rtl:mr-auto lg:flex">
             {/* Search bar */}
-            <NavSearchBar />
+            <GlobalSearch labels={labels.search} />
 
             {/* Discord */}
             {discordInvite && (
@@ -384,7 +323,7 @@ export default function NavbarClient({
             )}
 
             {/* Bell */}
-            <NavBellBtn />
+            <NotificationsDropdown isLoggedIn={isLoggedIn} />
 
             {/* Auth */}
             {isLoggedIn ? (

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
+import { createNotificationOnce } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
 
@@ -205,6 +206,56 @@ async function publishTeamUpdate(payload: {
       }),
     ),
   ]);
+}
+
+type TeamNotificationInput = {
+  userIds: string[];
+  type: string;
+  title: string;
+  message: string;
+  href?: string;
+  teamId: string;
+  dedupeKey: string;
+  inviteId?: string;
+  actorId?: string;
+  targetUserId?: string;
+};
+
+function uniqueUserIds(userIds: string[]) {
+  return Array.from(new Set(userIds.filter(Boolean)));
+}
+
+async function createTeamNotifications(input: TeamNotificationInput) {
+  const userIds = uniqueUserIds(input.userIds);
+
+  if (userIds.length === 0) {
+    return;
+  }
+
+  try {
+    await Promise.all(
+      userIds.map((userId) =>
+        createNotificationOnce({
+          userId,
+          type: input.type,
+          title: input.title,
+          message: input.message,
+          href: input.href,
+          dedupeKey: `${input.dedupeKey}:${userId}`,
+          metadata: {
+            teamId: input.teamId,
+            ...(input.inviteId ? { inviteId: input.inviteId } : {}),
+            ...(input.actorId ? { actorId: input.actorId } : {}),
+            ...(input.targetUserId
+              ? { targetUserId: input.targetUserId }
+              : {}),
+          },
+        }),
+      ),
+    );
+  } catch (error) {
+    console.error("[TeamNotifications] Failed to create notifications:", error);
+  }
 }
 
 async function getCurrentUser() {
@@ -498,6 +549,19 @@ export async function invitePlayerToTeamInline(
     userIds: [user.id, invitedUser.id],
   });
 
+  await createTeamNotifications({
+    userIds: [invitedUser.id],
+    type: "team.invite.created",
+    title: "Team invitation",
+    message: `${user.username} invited you to join ${team.name}.`,
+    href: "/profile",
+    teamId: team.id,
+    inviteId: invite.id,
+    actorId: user.id,
+    targetUserId: invitedUser.id,
+    dedupeKey: `team.invite.created:${invite.id}:${invite.createdAt.toISOString()}`,
+  });
+
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
@@ -563,6 +627,18 @@ export async function removeTeamMemberInline(
       ...team.members.map((teamMember) => teamMember.userId),
       member.userId,
     ],
+  });
+
+  await createTeamNotifications({
+    userIds: [member.userId],
+    type: "team.member.removed",
+    title: "Team membership updated",
+    message: `You were removed from ${team.name}.`,
+    href: "/profile",
+    teamId: team.id,
+    actorId: user.id,
+    targetUserId: member.userId,
+    dedupeKey: `team.member.removed:${member.id}`,
   });
 
   revalidatePath("/profile");
@@ -693,6 +769,8 @@ export async function transferTeamLeadershipInline(
     return fail(messages.alreadyTeamLeader);
   }
 
+  const transferredAt = new Date();
+
   await prisma.$transaction([
     prisma.team.update({
       where: {
@@ -727,6 +805,30 @@ export async function transferTeamLeadershipInline(
     type: "team.leader.transferred",
     teamId: team.id,
     userIds: team.members.map((member) => member.userId),
+  });
+
+  await createTeamNotifications({
+    userIds: [user.id],
+    type: "team.leader.transferred",
+    title: "Team leadership transferred",
+    message: `You transferred leadership of ${team.name} to ${targetMember.user.username}.`,
+    href: `/profile/teams/${team.id}`,
+    teamId: team.id,
+    actorId: user.id,
+    targetUserId: targetMember.userId,
+    dedupeKey: `team.leader.transferred:${team.id}:${user.id}:${targetMember.userId}:${transferredAt.toISOString()}:old`,
+  });
+
+  await createTeamNotifications({
+    userIds: [targetMember.userId],
+    type: "team.leader.transferred",
+    title: "You are now team leader",
+    message: `You are now the leader of ${team.name}.`,
+    href: `/profile/teams/${team.id}`,
+    teamId: team.id,
+    actorId: user.id,
+    targetUserId: targetMember.userId,
+    dedupeKey: `team.leader.transferred:${team.id}:${user.id}:${targetMember.userId}:${transferredAt.toISOString()}:new`,
   });
 
   revalidatePath("/profile");
@@ -900,6 +1002,17 @@ export async function deleteTeamInline(
     type: "team.deleted",
     teamId: team.id,
     userIds: memberUserIds,
+  });
+
+  await createTeamNotifications({
+    userIds: memberUserIds,
+    type: "team.deleted",
+    title: "Team deleted",
+    message: `${team.name} was deleted.`,
+    href: "/profile",
+    teamId: team.id,
+    actorId: user.id,
+    dedupeKey: `team.deleted:${team.id}`,
   });
 
   revalidatePath("/profile");

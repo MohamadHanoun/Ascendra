@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
+import { createNotificationOnce } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
 
@@ -191,6 +192,56 @@ async function publishTeamUpdate(payload: {
       }),
     ),
   ]);
+}
+
+type TeamNotificationInput = {
+  userIds: string[];
+  type: string;
+  title: string;
+  message: string;
+  href?: string;
+  teamId: string;
+  dedupeKey: string;
+  inviteId?: string;
+  actorId?: string;
+  targetUserId?: string;
+};
+
+function uniqueUserIds(userIds: string[]) {
+  return Array.from(new Set(userIds.filter(Boolean)));
+}
+
+async function createTeamNotifications(input: TeamNotificationInput) {
+  const userIds = uniqueUserIds(input.userIds);
+
+  if (userIds.length === 0) {
+    return;
+  }
+
+  try {
+    await Promise.all(
+      userIds.map((userId) =>
+        createNotificationOnce({
+          userId,
+          type: input.type,
+          title: input.title,
+          message: input.message,
+          href: input.href,
+          dedupeKey: `${input.dedupeKey}:${userId}`,
+          metadata: {
+            teamId: input.teamId,
+            ...(input.inviteId ? { inviteId: input.inviteId } : {}),
+            ...(input.actorId ? { actorId: input.actorId } : {}),
+            ...(input.targetUserId
+              ? { targetUserId: input.targetUserId }
+              : {}),
+          },
+        }),
+      ),
+    );
+  } catch (error) {
+    console.error("[TeamNotifications] Failed to create notifications:", error);
+  }
 }
 
 async function requireUser() {
@@ -532,6 +583,19 @@ export async function invitePlayerToTeam(formData: FormData) {
     userIds: [user.id, invitedUser.id],
   });
 
+  await createTeamNotifications({
+    userIds: [invitedUser.id],
+    type: "team.invite.created",
+    title: "Team invitation",
+    message: `${user.username} invited you to join ${team.name}.`,
+    href: "/profile",
+    teamId: team.id,
+    inviteId: invite.id,
+    actorId: user.id,
+    targetUserId: invitedUser.id,
+    dedupeKey: `team.invite.created:${invite.id}:${invite.createdAt.toISOString()}`,
+  });
+
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
@@ -629,6 +693,7 @@ export async function respondToTeamInvite(formData: FormData) {
 
   if (response === "accepted") {
     await requireTeamNotInActiveRegistration(invite.teamId, messages);
+    const respondedAt = new Date();
 
     await prisma.$transaction(async (tx) => {
       await tx.teamMember.upsert({
@@ -652,7 +717,7 @@ export async function respondToTeamInvite(formData: FormData) {
         },
         data: {
           status: "accepted",
-          respondedAt: new Date(),
+          respondedAt,
         },
       });
     });
@@ -668,11 +733,31 @@ export async function respondToTeamInvite(formData: FormData) {
       ],
     });
 
+    await createTeamNotifications({
+      userIds: [
+        ...invite.team.members
+          .map((member) => member.userId)
+          .filter((userId) => userId !== user.id),
+        invite.team.leaderId,
+      ],
+      type: "team.invite.accepted",
+      title: "Team member joined",
+      message: `${user.username} joined ${invite.team.name}.`,
+      href: `/profile/teams/${invite.teamId}`,
+      teamId: invite.teamId,
+      inviteId: invite.id,
+      actorId: user.id,
+      targetUserId: user.id,
+      dedupeKey: `team.invite.accepted:${invite.id}:${respondedAt.toISOString()}`,
+    });
+
     revalidatePath("/profile");
     revalidatePath(`/profile/teams/${invite.teamId}`);
 
     teamRedirect(invite.teamId, messages.invitationAccepted);
   }
+
+  const respondedAt = new Date();
 
   await prisma.teamInvite.update({
     where: {
@@ -680,7 +765,7 @@ export async function respondToTeamInvite(formData: FormData) {
     },
     data: {
       status: "rejected",
-      respondedAt: new Date(),
+      respondedAt,
     },
   });
 
@@ -689,6 +774,19 @@ export async function respondToTeamInvite(formData: FormData) {
     teamId: invite.teamId,
     inviteId: invite.id,
     userIds: [user.id, invite.team.leaderId],
+  });
+
+  await createTeamNotifications({
+    userIds: [invite.team.leaderId],
+    type: "team.invite.rejected",
+    title: "Team invitation declined",
+    message: `${user.username} declined the invitation to join ${invite.team.name}.`,
+    href: `/profile/teams/${invite.teamId}`,
+    teamId: invite.teamId,
+    inviteId: invite.id,
+    actorId: user.id,
+    targetUserId: user.id,
+    dedupeKey: `team.invite.rejected:${invite.id}:${respondedAt.toISOString()}`,
   });
 
   revalidatePath("/profile");
@@ -738,6 +836,18 @@ export async function removeTeamMember(formData: FormData) {
       ...team.members.map((teamMember) => teamMember.userId),
       member.userId,
     ],
+  });
+
+  await createTeamNotifications({
+    userIds: [member.userId],
+    type: "team.member.removed",
+    title: "Team membership updated",
+    message: `You were removed from ${team.name}.`,
+    href: "/profile",
+    teamId: team.id,
+    actorId: user.id,
+    targetUserId: member.userId,
+    dedupeKey: `team.member.removed:${member.id}`,
   });
 
   revalidatePath("/profile");
@@ -826,6 +936,17 @@ export async function deleteTeam(formData: FormData) {
     type: "team.deleted",
     teamId: team.id,
     userIds: memberUserIds,
+  });
+
+  await createTeamNotifications({
+    userIds: memberUserIds,
+    type: "team.deleted",
+    title: "Team deleted",
+    message: `${team.name} was deleted.`,
+    href: "/profile",
+    teamId: team.id,
+    actorId: user.id,
+    dedupeKey: `team.deleted:${team.id}`,
   });
 
   revalidatePath("/profile");

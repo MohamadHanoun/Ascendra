@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { createNotificationsOnceForUsers } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -21,6 +22,39 @@ function redirectWithError(error: string): never {
   redirect(`/admin?tab=registrations&error=${encodeURIComponent(error)}`);
 }
 
+async function notifyRegistrationUsers(input: {
+  userIds: string[];
+  type: string;
+  title: string;
+  message: string;
+  href: string;
+  registrationId: string;
+  tournamentId: string;
+  teamId: string;
+  dedupeKey: string;
+}) {
+  try {
+    await createNotificationsOnceForUsers({
+      userIds: input.userIds,
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      href: input.href,
+      dedupeKey: input.dedupeKey,
+      metadata: {
+        registrationId: input.registrationId,
+        tournamentId: input.tournamentId,
+        teamId: input.teamId,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "[RegistrationNotifications] Failed to create notifications:",
+      error,
+    );
+  }
+}
+
 export async function approveTournamentRegistration(formData: FormData) {
   await requireAdmin();
 
@@ -33,6 +67,14 @@ export async function approveTournamentRegistration(formData: FormData) {
   const registration = await prisma.tournamentRegistration.findUnique({
     where: {
       id: registrationId,
+    },
+    include: {
+      tournament: true,
+      team: {
+        include: {
+          members: true,
+        },
+      },
     },
   });
 
@@ -57,6 +99,21 @@ export async function approveTournamentRegistration(formData: FormData) {
     },
   });
 
+  await notifyRegistrationUsers({
+    userIds: [
+      registration.team.leaderId,
+      ...registration.team.members.map((member) => member.userId),
+    ],
+    type: "registration.approved",
+    title: "Registration approved",
+    message: `Registration approved for ${registration.tournament.title}.`,
+    href: `/tournaments/${registration.tournamentId}`,
+    registrationId: registration.id,
+    tournamentId: registration.tournamentId,
+    teamId: registration.teamId,
+    dedupeKey: `registration.approved:${registration.id}`,
+  });
+
   revalidatePath("/admin");
   revalidatePath("/tournaments");
   revalidatePath("/profile");
@@ -77,6 +134,10 @@ export async function cancelTournamentRegistrationAsAdmin(formData: FormData) {
     where: {
       id: registrationId,
     },
+    include: {
+      tournament: true,
+      team: true,
+    },
   });
 
   if (!registration) {
@@ -94,6 +155,18 @@ export async function cancelTournamentRegistrationAsAdmin(formData: FormData) {
     data: {
       status: "cancelled",
     },
+  });
+
+  await notifyRegistrationUsers({
+    userIds: [registration.team.leaderId],
+    type: "registration.cancelled",
+    title: "Registration cancelled",
+    message: `Registration cancelled for ${registration.tournament.title}.`,
+    href: `/tournaments/${registration.tournamentId}`,
+    registrationId: registration.id,
+    tournamentId: registration.tournamentId,
+    teamId: registration.teamId,
+    dedupeKey: `registration.cancelled:${registration.id}`,
   });
 
   revalidatePath("/admin");

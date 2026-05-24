@@ -16,6 +16,7 @@ import {
   resolveWinnerFromPuuids,
   verifyCodeMetadata,
 } from "@/lib/gameIntegrations/riotLolAdapter";
+import { notifyMatchConfirmed } from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
 import { completeMatchGame } from "@/lib/tournamentMatchEngine";
 
@@ -151,6 +152,8 @@ async function ingest(rawBody: string, rawJson: unknown): Promise<IngestResult> 
       teamAId: true,
       teamBId: true,
       tournamentId: true,
+      roundNumber: true,
+      matchNumber: true,
       status: true,
       bestOf: true,
     },
@@ -307,6 +310,7 @@ async function ingest(rawBody: string, rawJson: unknown): Promise<IngestResult> 
           version: { increment: 1 },
         },
       });
+      await notifyMatchConfirmed(match, refreshed.winnerTeamId);
       const { advanceBracketAfterMatch } = await import(
         "@/lib/tournamentMatchEngine"
       );
