@@ -43,6 +43,135 @@ function BrandLogo() {
   );
 }
 
+const CUT8 = "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)";
+
+function NavSearchBar() {
+  return (
+    <div
+      className="hidden items-center gap-2 lg:flex"
+      style={{
+        width: 220,
+        background: "var(--asc-bg-1)",
+        border: "1px solid var(--asc-line-soft)",
+        padding: "6px 10px",
+        clipPath: CUT8,
+        fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+        fontSize: 11,
+        color: "var(--asc-fg-3)",
+        letterSpacing: "0.06em",
+        cursor: "default",
+        flexShrink: 0,
+      }}
+    >
+      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+        <circle cx="11" cy="11" r="7"/>
+        <path d="m20 20-3.5-3.5"/>
+      </svg>
+      <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Search teams, players…</span>
+      <kbd style={{ fontFamily: "inherit", fontSize: 10, padding: "2px 5px", background: "var(--asc-bg-2)", border: "1px solid var(--asc-line-soft)", color: "var(--asc-fg-3)", flexShrink: 0 }}>⌘K</kbd>
+    </div>
+  );
+}
+
+function NavBellBtn() {
+  return (
+    <button
+      type="button"
+      className="hidden lg:grid"
+      style={{
+        placeItems: "center",
+        width: 36, height: 36, flexShrink: 0,
+        background: "var(--asc-bg-1)",
+        border: "1px solid var(--asc-line-soft)",
+        color: "var(--asc-fg-1)",
+        clipPath: CUT8,
+        cursor: "pointer",
+        position: "relative",
+      }}
+    >
+      <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"/>
+        <path d="M10 21a2 2 0 0 0 4 0"/>
+      </svg>
+      <span
+        style={{
+          position: "absolute", top: -2, right: -2,
+          background: "var(--asc-accent)",
+          color: "var(--asc-fg-0)",
+          fontFamily: "var(--font-mono, monospace)",
+          fontSize: 9, fontWeight: 600,
+          padding: "1px 4px",
+          lineHeight: 1.4,
+        }}
+      >2</span>
+    </button>
+  );
+}
+
+function NavAvatarPill({
+  userName,
+  userImage,
+  isOpen,
+  onClick,
+}: {
+  userName: string | null;
+  userImage: string | null;
+  isOpen: boolean;
+  onClick: () => void;
+}) {
+  const initials = (userName || "PL").slice(0, 2).toUpperCase();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "4px 10px 4px 4px",
+        background: isOpen ? "var(--asc-bg-2)" : "var(--asc-bg-1)",
+        border: "1px solid var(--asc-line-soft)",
+        clipPath: CUT8,
+        cursor: "pointer",
+        flexShrink: 0,
+        transition: "background 120ms ease",
+      }}
+    >
+      {userImage ? (
+        <Image
+          src={userImage}
+          alt={userName || ""}
+          width={28} height={28}
+          style={{ objectFit: "cover", flexShrink: 0, clipPath: "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)" }}
+        />
+      ) : (
+        <span style={{
+          display: "grid", placeItems: "center",
+          width: 28, height: 28, flexShrink: 0,
+          background: "linear-gradient(135deg, var(--asc-accent), var(--asc-accent-2))",
+          color: "oklch(0.97 0.01 290)",
+          fontFamily: "var(--font-display, sans-serif)",
+          fontWeight: 700, fontSize: 11, letterSpacing: "0.04em",
+          clipPath: "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)",
+        }}>{initials}</span>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", lineHeight: 1, gap: 3, textAlign: "start" }}>
+        <span style={{
+          fontFamily: "var(--font-display, sans-serif)",
+          fontWeight: 600, fontSize: 12,
+          letterSpacing: "0.08em",
+          color: "var(--asc-fg-0)",
+          maxWidth: 96, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          textTransform: "uppercase",
+        }}>{userName || "Player"}</span>
+        <span style={{
+          fontFamily: "var(--font-mono, monospace)",
+          fontSize: 9, color: "var(--asc-accent)",
+          letterSpacing: "0.08em",
+        }}>▲ PLAYER</span>
+      </div>
+    </button>
+  );
+}
+
 function isActivePath(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -220,32 +349,49 @@ export default function NavbarClient({
             ))}
           </div>
 
-          <div className="hidden items-center gap-3 ltr:ml-auto rtl:mr-auto lg:flex">
+          <div className="hidden items-center gap-2 ltr:ml-auto rtl:mr-auto lg:flex">
+            {/* Search bar */}
+            <NavSearchBar />
+
+            {/* Discord */}
+            {discordInvite && (
+              <a
+                href={discordInvite}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "8px 12px",
+                  background: "oklch(0.62 0.18 270)",
+                  color: "oklch(0.98 0.01 290)",
+                  fontFamily: "var(--font-display, sans-serif)",
+                  fontWeight: 600, fontSize: 12,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  clipPath: CUT8,
+                  textDecoration: "none",
+                  flexShrink: 0,
+                  transition: "background 120ms ease",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.55 0.20 270)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.62 0.18 270)"; }}
+              >
+                DISCORD
+              </a>
+            )}
+
+            {/* Bell */}
+            <NavBellBtn />
+
+            {/* Auth */}
             {isLoggedIn ? (
               <div ref={profileMenuRef} className="relative">
-                <button
-                  type="button"
+                <NavAvatarPill
+                  userName={userName}
+                  userImage={userImage}
+                  isOpen={isProfileOpen}
                   onClick={() => setIsProfileOpen((v) => !v)}
-                  className="flex items-center gap-3 px-3 py-2 transition"
-                  style={{
-                    border: "1px solid var(--asc-line-soft)",
-                    background: isProfileOpen ? "var(--asc-accent-dim)" : "transparent",
-                    clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-                  }}
-                >
-                  <UserAvatar
-                    userName={userName}
-                    userImage={userImage}
-                    fallbackName={labels.account.fallbackName}
-                    small
-                  />
-                  <span
-                    className="max-w-[120px] truncate text-sm font-bold"
-                    style={{ color: "var(--asc-fg-1)" }}
-                  >
-                    {labels.links.profile}
-                  </span>
-                </button>
+                />
 
                 {isProfileOpen && (
                   <div
@@ -371,27 +517,6 @@ export default function NavbarClient({
               >
                 {labels.actions.login}
               </Link>
-            )}
-
-            {discordInvite && (
-              <a
-                href={discordInvite}
-                target="_blank"
-                rel="noreferrer"
-                className="px-5 py-2 text-sm font-black text-white transition"
-                style={{
-                  background: "var(--asc-accent-2)",
-                  clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "var(--asc-accent)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "var(--asc-accent-2)";
-                }}
-              >
-                {labels.actions.joinDiscord}
-              </a>
             )}
 
             <LanguageSwitcher locale={locale} labels={labels.language} />
