@@ -1,5 +1,5 @@
+import type { CSSProperties, ReactNode } from "react";
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 
 import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
@@ -62,6 +62,32 @@ function formatDate(date: Date, locale: Locale) {
   });
 }
 
+function getRelativeTime(date: Date, locale: Locale) {
+  const diffMs = Date.now() - date.getTime();
+  const hours = Math.max(1, Math.round(diffMs / 3600000));
+
+  if (locale === "ar") {
+    if (hours < 24) {
+      return `منذ ${hours} ساعة`;
+    }
+
+    return `منذ ${Math.round(hours / 24)} يوم`;
+  }
+
+  if (hours < 24) {
+    return `${hours}H AGO`;
+  }
+
+  return `${Math.round(hours / 24)}D AGO`;
+}
+
+function getReadTime(description: string, locale: Locale) {
+  const words = description.trim().split(/\s+/).filter(Boolean).length;
+  const minutes = Math.max(1, Math.ceil(words / 180));
+
+  return locale === "ar" ? `${minutes} دقيقة قراءة` : `${minutes} MIN READ`;
+}
+
 function Pill({
   children,
   tone = "violet",
@@ -69,16 +95,32 @@ function Pill({
   children: ReactNode;
   tone?: "violet" | "green" | "blue" | "gray";
 }) {
-  const styles: Record<string, React.CSSProperties> = {
-    violet: { borderColor: "oklch(0.70 0.22 285 / 0.25)", background: "oklch(0.70 0.22 285 / 0.10)", color: "oklch(0.88 0.10 285)" },
-    green: { borderColor: "oklch(0.74 0.16 150 / 0.25)", background: "oklch(0.74 0.16 150 / 0.10)", color: "oklch(0.74 0.16 150)" },
-    blue: { borderColor: "oklch(0.75 0.14 220 / 0.25)", background: "oklch(0.75 0.14 220 / 0.10)", color: "oklch(0.75 0.14 220)" },
-    gray: { borderColor: "oklch(0.32 0.06 290 / 0.18)", background: "oklch(0.10 0.02 287 / 0.25)", color: "var(--asc-fg-2)" },
+  const styles: Record<string, CSSProperties> = {
+    violet: {
+      borderColor: "oklch(0.70 0.22 285 / 0.34)",
+      background: "oklch(0.70 0.22 285 / 0.10)",
+      color: "var(--asc-accent)",
+    },
+    green: {
+      borderColor: "oklch(0.74 0.16 150 / 0.30)",
+      background: "oklch(0.74 0.16 150 / 0.10)",
+      color: "var(--asc-green)",
+    },
+    blue: {
+      borderColor: "oklch(0.75 0.14 220 / 0.30)",
+      background: "oklch(0.75 0.14 220 / 0.10)",
+      color: "var(--asc-blue)",
+    },
+    gray: {
+      borderColor: "var(--asc-line-soft)",
+      background: "oklch(0.10 0.02 287 / 0.25)",
+      color: "var(--asc-fg-2)",
+    },
   };
 
   return (
     <span
-      className="inline-flex w-fit border px-3 py-1 text-xs font-black"
+      className="inline-flex w-fit border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
       style={styles[tone]}
     >
       {children}
@@ -86,14 +128,82 @@ function Pill({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function CornerMark() {
   return (
-    <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+    <div
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        top: -1,
+        left: -1,
+        width: 18,
+        height: 18,
+        borderTop: "2px solid var(--asc-accent)",
+        borderLeft: "2px solid var(--asc-accent)",
+        opacity: 0.72,
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className="relative border p-5"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "var(--asc-bg-1)",
+        clipPath:
+          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
+      }}
+    >
+      <CornerMark />
+
+      <p
+        className="text-[10px] font-black uppercase tracking-[0.18em]"
+        style={{ color: "var(--asc-fg-3)" }}
+      >
         {label}
       </p>
 
-      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
+      <p
+        className="mt-3 text-4xl font-black tabular-nums"
+        style={{
+          color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
+          fontFamily: "var(--font-display)",
+        }}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return (
+    <div className="mb-6">
+      <p
+        className="text-xs font-black uppercase tracking-[0.18em]"
+        style={{ color: "var(--asc-accent)" }}
+      >
+        ▲ {eyebrow}
+      </p>
+
+      <h2
+        className="mt-2 text-3xl md:text-4xl"
+        style={{ color: "var(--asc-fg-0)" }}
+      >
+        {title}
+      </h2>
     </div>
   );
 }
@@ -109,60 +219,143 @@ function FeaturedAnnouncement({
 }) {
   return (
     <article
-      className="p-6 shadow-2xl shadow-black/20"
-      style={{ border: "1px solid oklch(0.74 0.16 150 / 0.20)", background: "oklch(0.74 0.16 150 / 0.055)" }}
+      className="relative overflow-hidden border p-6 shadow-2xl shadow-black/20 md:p-8"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background:
+          "linear-gradient(135deg, oklch(0.18 0.10 285 / 0.56) 0%, var(--asc-bg-1) 58%, oklch(0.09 0.03 287) 100%)",
+        clipPath:
+          "polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px)",
+      }}
     >
-      <div className="flex flex-wrap gap-2">
-        <Pill tone="green">{labels.featured}</Pill>
-        <Pill>{announcement.category}</Pill>
-        <Pill tone="gray">{formatDate(announcement.createdAt, locale)}</Pill>
+      <CornerMark />
+
+      <div
+        aria-hidden="true"
+        className="absolute -right-8 -top-8 text-[180px] font-black leading-none"
+        style={{
+          color: "oklch(1 0 0 / 0.035)",
+          fontFamily: "var(--font-display)",
+        }}
+      >
+        01
       </div>
 
-      <h2 className="mt-5 max-w-4xl text-3xl font-black md:text-4xl" style={{ color: "var(--asc-fg-0)" }}>
-        {announcement.title}
-      </h2>
+      <div className="relative z-10">
+        <div className="flex flex-wrap gap-2">
+          <Pill tone="violet">{labels.featured}</Pill>
+          {announcement.important && (
+            <Pill tone="green">{labels.important}</Pill>
+          )}
+          <Pill tone="gray">{announcement.category}</Pill>
+          <Pill tone="gray">{formatDate(announcement.createdAt, locale)}</Pill>
+        </div>
 
-      <p className="mt-4 max-w-5xl text-sm leading-7" style={{ color: "var(--asc-fg-1)" }}>
-        {announcement.description}
-      </p>
+        <h2
+          className="mt-6 max-w-5xl text-4xl md:text-5xl"
+          style={{ color: "var(--asc-fg-0)" }}
+        >
+          {announcement.title}
+        </h2>
+
+        <p
+          className="mt-5 max-w-5xl text-sm leading-7 md:text-base"
+          style={{ color: "var(--asc-fg-2)" }}
+        >
+          {announcement.description}
+        </p>
+
+        <p
+          className="mt-6 text-[10px] font-black uppercase tracking-[0.16em]"
+          style={{ color: "var(--asc-accent)" }}
+        >
+          {getReadTime(announcement.description, locale)}
+        </p>
+      </div>
     </article>
   );
 }
 
-function AnnouncementRow({
+function AnnouncementCard({
   announcement,
+  index,
   locale,
   labels,
 }: {
   announcement: AnnouncementItem;
+  index: number;
   locale: Locale;
   labels: NewsMessages["labels"];
 }) {
   return (
-    <article className="grid gap-4 px-5 py-5 transition md:grid-cols-[170px_minmax(0,1fr)] md:items-start" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-      <div className="flex flex-wrap gap-2 md:block">
-        <Pill tone={announcement.important ? "green" : "violet"}>
-          {announcement.category}
-        </Pill>
+    <article
+      className="group relative flex min-h-[190px] gap-5 overflow-hidden border p-5 transition hover:opacity-95"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "var(--asc-bg-1)",
+        clipPath:
+          "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+      }}
+    >
+      <CornerMark />
 
-        <div className="mt-0 md:mt-3">
-          <Pill tone="gray">{formatDate(announcement.createdAt, locale)}</Pill>
-        </div>
-      </div>
+      <p
+        className="shrink-0 text-6xl font-black leading-none tabular-nums"
+        style={{
+          color: "var(--asc-accent)",
+          fontFamily: "var(--font-display)",
+        }}
+      >
+        {String(index + 1).padStart(2, "0")}
+      </p>
 
-      <div className="min-w-0">
-        <div className="mb-3 flex flex-wrap gap-2">
+      <div className="relative z-10 min-w-0 flex-1">
+        <div className="flex flex-wrap gap-2">
+          <Pill tone={announcement.important ? "green" : "violet"}>
+            {announcement.category}
+          </Pill>
+
           {announcement.important && (
             <Pill tone="green">{labels.important}</Pill>
           )}
         </div>
 
-        <h2 className="text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{announcement.title}</h2>
+        <p
+          className="mt-4 text-[10px] font-black uppercase tracking-[0.18em]"
+          style={{ color: "var(--asc-fg-3)" }}
+        >
+          {getRelativeTime(announcement.createdAt, locale)} ·{" "}
+          {formatDate(announcement.createdAt, locale)}
+        </p>
 
-        <p className="mt-2 max-w-5xl text-sm leading-7" style={{ color: "var(--asc-fg-3)" }}>
+        <h3
+          className="mt-2 text-xl leading-tight md:text-2xl"
+          style={{ color: "var(--asc-fg-0)" }}
+        >
+          {announcement.title}
+        </h3>
+
+        <p
+          className="mt-3 line-clamp-3 text-sm leading-6"
+          style={{ color: "var(--asc-fg-3)" }}
+        >
           {announcement.description}
         </p>
+
+        <p
+          className="mt-5 text-[10px] font-black uppercase tracking-[0.14em]"
+          style={{ color: "var(--asc-fg-3)" }}
+        >
+          {getReadTime(announcement.description, locale)}
+        </p>
       </div>
+
+      <span
+        className="mt-1 shrink-0 text-2xl transition group-hover:translate-x-1"
+        style={{ color: "var(--asc-fg-3)" }}
+      >
+        ›
+      </span>
     </article>
   );
 }
@@ -181,7 +374,9 @@ export default async function AnnouncementsPage() {
   ).size;
 
   const featuredAnnouncement =
-    announcements.find((announcement) => announcement.important) || null;
+    announcements.find((announcement) => announcement.important) ||
+    announcements[0] ||
+    null;
 
   const regularAnnouncements = featuredAnnouncement
     ? announcements.filter(
@@ -190,7 +385,10 @@ export default async function AnnouncementsPage() {
     : announcements;
 
   return (
-    <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
+    <main
+      className="asc-ambient min-h-screen overflow-hidden"
+      style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
+    >
       <div className="relative z-10">
         <Navbar />
 
@@ -202,35 +400,63 @@ export default async function AnnouncementsPage() {
             }}
           />
 
-          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.94) 0%,oklch(0.06 0.03 287 / 0.68) 44%,oklch(0.06 0.03 287 / 0.84) 100%)" }} />
-          <div className="absolute inset-x-0 bottom-0 h-44" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: [
+                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.28) 0%, oklch(0.07 0.025 285 / 0.62) 52%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.42) 38%, transparent 72%)",
+              ].join(", "),
+            }}
+          />
+
+          <div
+            className="absolute inset-x-0 bottom-0 h-44"
+            style={{
+              background:
+                "linear-gradient(to bottom, transparent, var(--asc-bg-0))",
+            }}
+          />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-green)" }}>
-              {messages.hero.label}
+            <p
+              className="mb-4 text-xs font-black uppercase tracking-[0.22em]"
+              style={{ color: "var(--asc-accent)" }}
+            >
+              ▲ {messages.hero.label}
             </p>
 
-            <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
+            <h1
+              className="max-w-5xl text-5xl md:text-7xl"
+              style={{ color: "var(--asc-fg-0)" }}
+            >
               {messages.hero.title}
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-7" style={{ color: "var(--asc-fg-1)" }}>
+            <p
+              className="mt-5 max-w-2xl text-base leading-7"
+              style={{ color: "var(--asc-fg-2)" }}
+            >
               {messages.hero.description}
             </p>
           </div>
         </section>
 
-        <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
-          <section
-            className="grid gap-5 p-5 shadow-2xl shadow-black/20 md:grid-cols-3"
-            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-          >
-            <Stat
+        <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-10 px-6 pb-16 lg:px-10 2xl:px-14">
+          <section className="grid gap-4 md:grid-cols-3">
+            <StatCard
               label={messages.stats.published}
               value={announcements.length}
             />
-            <Stat label={messages.stats.important} value={importantCount} />
-            <Stat label={messages.stats.categories} value={categoriesCount} />
+            <StatCard
+              label={messages.stats.important}
+              value={importantCount}
+              accent
+            />
+            <StatCard
+              label={messages.stats.categories}
+              value={categoriesCount}
+            />
           </section>
 
           {announcements.length === 0 ? (
@@ -241,37 +467,45 @@ export default async function AnnouncementsPage() {
           ) : (
             <>
               {featuredAnnouncement && (
-                <FeaturedAnnouncement
-                  announcement={featuredAnnouncement}
-                  locale={locale}
-                  labels={messages.labels}
-                />
+                <section>
+                  <SectionHeader
+                    eyebrow={messages.labels.featured}
+                    title={featuredAnnouncement.category}
+                  />
+
+                  <FeaturedAnnouncement
+                    announcement={featuredAnnouncement}
+                    locale={locale}
+                    labels={messages.labels}
+                  />
+                </section>
               )}
 
-              <section
-                className="overflow-hidden shadow-2xl shadow-black/20 backdrop-blur"
-                style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-              >
-                <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-                  <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-green)" }}>
-                    {messages.labels.latest}
-                  </p>
-
-                  <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-                    {messages.labels.publishedAnnouncements}
-                  </h2>
-                </div>
+              <section>
+                <SectionHeader
+                  eyebrow={messages.labels.latest}
+                  title={messages.labels.publishedAnnouncements}
+                />
 
                 {regularAnnouncements.length === 0 ? (
-                  <div className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+                  <div
+                    className="relative border p-6 text-sm"
+                    style={{
+                      borderColor: "var(--asc-line-soft)",
+                      background: "var(--asc-bg-1)",
+                      color: "var(--asc-fg-3)",
+                    }}
+                  >
+                    <CornerMark />
                     {messages.labels.noOtherAnnouncements}
                   </div>
                 ) : (
-                  <div>
-                    {regularAnnouncements.map((announcement) => (
-                      <AnnouncementRow
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {regularAnnouncements.map((announcement, index) => (
+                      <AnnouncementCard
                         key={announcement.id}
                         announcement={announcement}
+                        index={index}
                         locale={locale}
                         labels={messages.labels}
                       />
