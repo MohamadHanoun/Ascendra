@@ -819,6 +819,12 @@ export default async function HomePage() {
   const featuredDaysUntil = featuredTournament?.startsAt
     ? Math.max(0, Math.ceil((featuredTournament.startsAt.getTime() - Date.now()) / 86400000))
     : null;
+  const featuredHoursUntil = featuredTournament?.startsAt
+    ? Math.max(0, Math.floor(((featuredTournament.startsAt.getTime() - Date.now()) % 86400000) / 3600000))
+    : null;
+  const featuredMinsUntil = featuredTournament?.startsAt
+    ? Math.max(0, Math.floor(((featuredTournament.startsAt.getTime() - Date.now()) % 3600000) / 60000))
+    : null;
 
   return (
     <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
@@ -826,31 +832,78 @@ export default async function HomePage() {
         <Navbar />
 
         {/* Hero */}
-        <section className="relative min-h-[720px] overflow-hidden">
+        <section
+          style={{
+            position: "relative",
+            minHeight: 720,
+            overflow: "hidden",
+            display: "flex",
+            alignItems: "flex-end",
+          }}
+        >
+          {/* Background */}
           <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: 'url("/images/backgrounds/home-hero.webp")' }}
-          />
-          <div
-            className="absolute inset-0"
             style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: 'url("/images/backgrounds/home-hero.webp")',
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              zIndex: 0,
+            }}
+          />
+          {/* Dual overlay */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.20) 0%, oklch(0.07 0.025 285 / 0.55) 55%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.30) 40%, transparent 65%)",
+                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.35) 0%, oklch(0.07 0.025 285 / 0.55) 45%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.4) 35%, transparent 70%)",
               ].join(", "),
+              zIndex: 1,
             }}
           />
 
-          <div className="relative z-10 mx-auto flex min-h-[720px] max-w-[1680px] items-end px-6 pb-20 pt-24 lg:px-10 2xl:px-14">
-            <div className="grid w-full gap-10 lg:grid-cols-[3fr_2fr] lg:items-end">
+          {/* Content */}
+          <div
+            className="relative w-full"
+            style={{ zIndex: 2, maxWidth: 1480, margin: "0 auto", padding: "56px 32px" }}
+          >
+            <div className="grid gap-14 lg:grid-cols-[3fr_2fr] lg:items-end">
 
               {/* Left column */}
               <div>
-                <p className="mb-5 text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
-                  ▲ ASCENDRA · SEASON 07 · A PREMIUM ESPORTS PLATFORM
-                </p>
-                <h1 className="text-6xl font-black uppercase leading-none md:text-8xl" style={{ color: "var(--asc-fg-0)" }}>
-                  RISE<br />
+                <div
+                  style={{
+                    fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+                    fontSize: 11,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: "var(--asc-fg-2)",
+                    marginBottom: 22,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <span style={{ color: "var(--asc-accent)" }}>▲</span>
+                  {" ASCENDRA · SEASON 07 · A PREMIUM ESPORTS PLATFORM"}
+                </div>
+
+                <h1
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 700,
+                    fontSize: "clamp(48px, 6.4vw, 108px)",
+                    lineHeight: 0.92,
+                    letterSpacing: "-0.005em",
+                    textTransform: "uppercase",
+                    color: "var(--asc-fg-0)",
+                    margin: 0,
+                  }}
+                >
+                  Rise<br />
                   <span
                     style={{
                       background: "linear-gradient(92deg, var(--asc-accent) 0%, oklch(0.85 0.10 245) 100%)",
@@ -859,82 +912,243 @@ export default async function HomePage() {
                       backgroundClip: "text",
                     }}
                   >
-                    BEYOND LIMITS.
+                    Beyond limits.
                   </span>
                 </h1>
-                <p className="mt-6 max-w-xl text-base leading-7" style={{ color: "var(--asc-fg-2)" }}>
+
+                <p
+                  style={{
+                    color: "var(--asc-fg-1)",
+                    fontSize: 17,
+                    maxWidth: 480,
+                    marginTop: 26,
+                    lineHeight: 1.55,
+                  }}
+                >
                   {messages.hero.description}
                 </p>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <PrimaryLink href="/tournaments">{messages.hero.primary}</PrimaryLink>
-                  <SecondaryLink href="/profile">{messages.hero.secondary}</SecondaryLink>
+
+                <div style={{ display: "flex", gap: 12, marginTop: 36, flexWrap: "wrap" }}>
+                  <Link
+                    href="/tournaments"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "16px 26px",
+                      fontFamily: "var(--font-display)",
+                      fontWeight: 600,
+                      fontSize: 14,
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      background: "var(--asc-fg-0)",
+                      color: "oklch(0.08 0.02 285)",
+                      border: "1px solid var(--asc-fg-0)",
+                      clipPath: "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Browse tournaments ›
+                  </Link>
+                  <Link
+                    href="/community"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "16px 26px",
+                      fontFamily: "var(--font-display)",
+                      fontWeight: 600,
+                      fontSize: 14,
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      background: "transparent",
+                      color: "var(--asc-fg-0)",
+                      border: "1px solid var(--asc-line)",
+                      clipPath: "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Join Discord
+                  </Link>
                 </div>
               </div>
 
-              {/* Right column — featured event card */}
+              {/* Right column — Featured event card */}
               <div
-                className="relative border p-6 shadow-2xl"
-                style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.09 0.035 287 / 0.90)" }}
+                style={{
+                  position: "relative",
+                  background: "oklch(0.08 0.03 285 / 0.7)",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                  border: "1px solid var(--asc-line)",
+                  clipPath: "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+                  padding: 20,
+                }}
               >
-                <div style={{ position: "absolute", top: -1, left: -1, width: 14, height: 14, borderTop: "1.5px solid rgba(255,255,255,0.22)", borderLeft: "1.5px solid rgba(255,255,255,0.22)" }} />
+                {/* Corner mark */}
+                <div aria-hidden="true" style={{ position: "absolute", top: 10, left: 10, width: 14, height: 14, pointerEvents: "none", opacity: 0.6 }}>
+                  <div style={{ position: "absolute", left: 0, top: 0, width: 8, height: 1, background: "var(--asc-accent)" }} />
+                  <div style={{ position: "absolute", left: 0, top: 0, width: 1, height: 8, background: "var(--asc-accent)" }} />
+                </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="asc-live-dot" />
-                  <span className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-accent)" }}>
-                    FEATURED · SEASON 7
+                {/* Status chip */}
+                <div style={{ marginBottom: 14 }}>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "4px 8px 4px 6px",
+                      fontFamily: "var(--font-mono, monospace)",
+                      fontSize: 10,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      color: "var(--asc-accent)",
+                      background: "oklch(0.22 0.10 285 / 0.20)",
+                      border: "1px solid var(--asc-accent-dim)",
+                    }}
+                  >
+                    <span style={{ width: 5, height: 5, borderRadius: 999, background: "var(--asc-accent)", display: "inline-block", flexShrink: 0 }} />
+                    Featured · Season 7
                   </span>
                 </div>
 
-                <h2 className="mt-4 text-2xl font-black uppercase leading-tight md:text-3xl" style={{ color: "var(--asc-fg-0)" }}>
+                <h2
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 700,
+                    fontSize: 26,
+                    lineHeight: 1.05,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    color: "var(--asc-fg-0)",
+                    margin: "0 0 4px",
+                  }}
+                >
                   {featuredTournament?.title ?? "ASCENDRA MAJOR · SEASON 7"}
                 </h2>
-                <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-2)" }}>
-                  {featuredTournament?.game?.name ? `${featuredTournament.game.name} · Open qualifier` : "The crown returns to the arena"}
+                <p style={{ color: "var(--asc-fg-2)", fontSize: 13, marginBottom: 20 }}>
+                  {featuredTournament?.game?.name
+                    ? `${featuredTournament.game.name} · Open qualifier`
+                    : "The crown returns to the arena"}
                 </p>
 
-                <p className="mt-5 text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-                  ▲ GROUP STAGE BEGINS IN
-                </p>
-                <div className="mt-2 flex gap-4">
+                <div
+                  style={{
+                    fontFamily: "var(--font-mono, monospace)",
+                    fontSize: 11,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: "var(--asc-fg-2)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    marginBottom: 10,
+                  }}
+                >
+                  <span style={{ color: "var(--asc-accent)" }}>▲</span> Group stage begins in
+                </div>
+
+                <div style={{ display: "flex", gap: 20, marginBottom: 22 }}>
                   {[
                     { v: featuredDaysUntil !== null ? String(featuredDaysUntil) : "–", l: "DAYS" },
-                    { v: "–", l: "HRS" },
-                    { v: "–", l: "MIN" },
+                    { v: featuredHoursUntil !== null ? String(featuredHoursUntil) : "–", l: "HRS" },
+                    { v: featuredMinsUntil !== null ? String(featuredMinsUntil) : "–", l: "MIN" },
                   ].map(({ v, l }) => (
-                    <div key={l} className="text-center">
-                      <p className="text-3xl font-black tabular-nums" style={{ color: "var(--asc-fg-0)" }}>{v}</p>
-                      <p className="text-[9px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>{l}</p>
+                    <div key={l}>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          fontWeight: 700,
+                          fontSize: 36,
+                          lineHeight: 1,
+                          color: "var(--asc-fg-0)",
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        {v}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-mono, monospace)",
+                          fontSize: 9,
+                          fontWeight: 600,
+                          letterSpacing: "0.14em",
+                          textTransform: "uppercase",
+                          color: "var(--asc-fg-3)",
+                          marginTop: 4,
+                        }}
+                      >
+                        {l}
+                      </div>
                     </div>
                   ))}
                 </div>
 
-                <div style={{ margin: "20px 0 16px", height: 1, background: "var(--asc-line-soft)" }} />
+                <div style={{ height: 1, background: "var(--asc-line-soft)", marginBottom: 16 }} />
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>PRIZE</p>
-                    <p className="mt-1 text-sm font-black" style={{ color: "var(--asc-blue)" }}>
-                      {featuredTournament?.prize ?? "–"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>SLOTS</p>
-                    <p className="mt-1 text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
-                      {featuredTournament ? `${featuredApprovedSlots}/${featuredTournament.maxTeams}` : "–"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>REGION</p>
-                    <p className="mt-1 text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>Global</p>
-                  </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 18 }}>
+                  {[
+                    { k: "Prize", v: featuredTournament?.prize ?? "–", accent: true },
+                    {
+                      k: "Slots",
+                      v: featuredTournament
+                        ? `${featuredApprovedSlots}/${featuredTournament.maxTeams}`
+                        : "–",
+                      accent: false,
+                    },
+                    { k: "Region", v: "Global", accent: false },
+                  ].map(({ k, v, accent }) => (
+                    <div key={k} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-mono, monospace)",
+                          fontSize: 10,
+                          letterSpacing: "0.16em",
+                          textTransform: "uppercase",
+                          color: "var(--asc-fg-3)",
+                        }}
+                      >
+                        {k}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          fontWeight: 600,
+                          fontSize: 20,
+                          letterSpacing: "0.02em",
+                          color: accent ? "var(--asc-prize)" : "var(--asc-fg-0)",
+                        }}
+                      >
+                        {v}
+                      </span>
+                    </div>
+                  ))}
                 </div>
 
                 <Link
                   href={featuredTournament ? `/tournaments/${featuredTournament.id}` : "/tournaments"}
-                  className="mt-5 flex w-full justify-center py-3 text-sm font-black text-white transition hover:opacity-90"
-                  style={{ background: "var(--asc-accent-2)" }}
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: 8,
+                    width: "100%",
+                    padding: "12px 18px",
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 600,
+                    fontSize: 13,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    background: "var(--asc-accent)",
+                    color: "oklch(0.10 0.02 285)",
+                    boxShadow: "0 0 24px var(--asc-accent-glow)",
+                    clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
+                    textDecoration: "none",
+                  }}
                 >
-                  REGISTER TEAM ›
+                  Register team ›
                 </Link>
               </div>
 
