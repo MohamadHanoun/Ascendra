@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 
 import { auth } from "@/auth";
 import { getNotificationSummary } from "@/lib/notifications";
@@ -16,39 +17,85 @@ function parseLimit(value: string | null) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-export async function GET(request: Request) {
-  const session = await auth();
-  const userId = session?.user?.databaseId;
+function jsonResponse(body: unknown, status = 200) {
+  return NextResponse.json(body, {
+    status,
+    headers: {
+      "Cache-Control": "no-store, max-age=0",
+    },
+  });
+}
 
-  if (!userId) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Unauthorized",
-      },
-      {
-        status: 401,
-      },
-    );
+function mayBeMissingNotificationMigration(error: unknown) {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    ["P2021", "P2022"].includes(error.code)
+  ) {
+    return true;
   }
 
-  const { searchParams } = new URL(request.url);
-  const summary = await getNotificationSummary(
-    userId,
-    parseLimit(searchParams.get("limit")),
-  );
+  const message = error instanceof Error ? error.message : String(error);
 
-  return NextResponse.json({
-    ok: true,
-    unreadCount: summary.unreadCount,
-    notifications: summary.notifications.map((notification) => ({
-      id: notification.id,
-      type: notification.type,
-      title: notification.title,
-      message: notification.message,
-      href: notification.href,
-      readAt: notification.readAt?.toISOString() ?? null,
-      createdAt: notification.createdAt.toISOString(),
-    })),
-  });
+  return (
+    /notification/i.test(message) &&
+    /(does not exist|not found|unknown|missing|P2021|P2022)/i.test(message)
+  );
+}
+
+export async function GET(request: Request) {
+  try {
+    const session = await auth();
+    const userId = session?.user?.databaseId;
+
+    if (!userId) {
+      return jsonResponse(
+        {
+          ok: false,
+          error: "Unauthorized",
+          unreadCount: 0,
+          notifications: [],
+        },
+        401,
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const summary = await getNotificationSummary(
+      userId,
+      parseLimit(searchParams.get("limit")),
+    );
+
+    return jsonResponse({
+      ok: true,
+      unreadCount: summary.unreadCount,
+      notifications: summary.notifications.map((notification) => ({
+        id: notification.id,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        href: notification.href,
+        readAt: notification.readAt?.toISOString() ?? null,
+        createdAt: notification.createdAt.toISOString(),
+      })),
+    });
+  } catch (error) {
+    if (mayBeMissingNotificationMigration(error)) {
+      console.error(
+        "[api/notifications] Notification migration may not be applied.",
+        error,
+      );
+    } else {
+      console.error("[api/notifications] Failed to load notifications.", error);
+    }
+
+    return jsonResponse(
+      {
+        ok: false,
+        error: "Unable to load notifications.",
+        unreadCount: 0,
+        notifications: [],
+      },
+      500,
+    );
+  }
 }

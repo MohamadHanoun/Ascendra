@@ -34,6 +34,9 @@ type NotificationsDropdownProps = {
   isLoggedIn: boolean;
 };
 
+const signInMessage = "Sign in to view notifications.";
+const unavailableMessage = "Notifications are temporarily unavailable.";
+
 function formatCount(count: number) {
   if (count > 99) {
     return "99+";
@@ -53,6 +56,20 @@ function formatDate(value: string) {
     month: "short",
     day: "numeric",
   });
+}
+
+async function parseNotificationsResponse(response: Response) {
+  const body = await response.text();
+
+  if (!body.trim()) {
+    throw new Error(unavailableMessage);
+  }
+
+  try {
+    return JSON.parse(body) as NotificationsResponse;
+  } catch {
+    throw new Error(unavailableMessage);
+  }
 }
 
 export default function NotificationsDropdown({
@@ -83,12 +100,26 @@ export default function NotificationsDropdown({
     try {
       const response = await fetch("/api/notifications?limit=10", {
         cache: "no-store",
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+        },
       });
 
-      const payload = (await response.json()) as NotificationsResponse;
+      const payload = await parseNotificationsResponse(response);
 
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || "Unable to load notifications.");
+      if (response.status === 401) {
+        throw new Error(signInMessage);
+      }
+
+      if (!response.ok) {
+        throw new Error(unavailableMessage);
+      }
+
+      if (!payload.ok) {
+        throw new Error(
+          payload.error === "Unauthorized" ? signInMessage : unavailableMessage,
+        );
       }
 
       setUnreadCount(payload.unreadCount ?? 0);
@@ -98,7 +129,7 @@ export default function NotificationsDropdown({
       setError(
         fetchError instanceof Error
           ? fetchError.message
-          : "Unable to load notifications.",
+          : unavailableMessage,
       );
     } finally {
       setIsLoading(false);
