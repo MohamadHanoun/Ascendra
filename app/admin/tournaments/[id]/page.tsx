@@ -18,6 +18,7 @@ import {
 import { auth } from "@/auth";
 import AdminTabNavigation from "@/components/AdminTabNavigation";
 import AdminTournamentImageFields from "@/components/AdminTournamentImageFields";
+import AdminMatchPanel from "@/components/AdminMatchPanel";
 import AdminTournamentResultsPanel from "@/components/AdminTournamentResultsPanel";
 import Footer from "@/components/Footer";
 import InlineAdminTournamentForm from "@/components/InlineAdminTournamentForm";
@@ -236,7 +237,7 @@ export default async function ManageTournamentPage({
   if (!session?.user) redirect("/login");
   if (!session.user.isAdmin) redirect("/admin");
 
-  const [tournament, games] = await Promise.all([
+  const [tournament, games, rawMatches] = await Promise.all([
     prisma.tournament.findUnique({
       where: { id },
       include: {
@@ -261,13 +262,44 @@ export default async function ManageTournamentPage({
       },
       orderBy: { name: "asc" },
     }),
+    prisma.match.findMany({
+      where: { tournamentId: id },
+      select: {
+        id: true,
+        round: true,
+        matchNumber: true,
+        teamAId: true,
+        teamBId: true,
+        teamA: { select: { id: true, name: true } },
+        teamB: { select: { id: true, name: true } },
+        scheduledAt: true,
+        status: true,
+        bestOf: true,
+        scoreA: true,
+        scoreB: true,
+        winnerTeamId: true,
+        confirmedByAdmin: true,
+        notes: true,
+      },
+      orderBy: [{ round: "asc" }, { matchNumber: "asc" }],
+    }),
   ]);
 
   if (!tournament) notFound();
 
+  const matches = rawMatches.map((m: (typeof rawMatches)[number]) => ({
+    ...m,
+    scheduledAt: m.scheduledAt?.toISOString() ?? null,
+  }));
+
   const approvedRegistrations = tournament.registrations.filter(
     (r: RegistrationWithTeam) => r.status === "approved",
   );
+
+  const registeredTeams = approvedRegistrations.map((r) => ({
+    id: r.team.id,
+    name: r.team.name,
+  }));
 
   const pendingRegistrations = tournament.registrations.filter(
     (r: RegistrationWithTeam) => r.status === "registered",
@@ -654,6 +686,18 @@ export default async function ManageTournamentPage({
                 tournamentTitle={tournament.title}
                 registrations={tournament.registrations}
                 results={tournament.results}
+              />
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              label="Matches"
+              title="Match schedule"
+              meta={`${matches.length} match${matches.length === 1 ? "" : "es"}`}
+            >
+              <AdminMatchPanel
+                tournamentId={tournament.id}
+                matches={matches}
+                registeredTeams={registeredTeams}
               />
             </CollapsibleSection>
           </div>
