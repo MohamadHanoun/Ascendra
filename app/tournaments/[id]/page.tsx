@@ -17,6 +17,7 @@ import {
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
+import TournamentMatchesSection from "@/components/TournamentMatchesSection";
 
 export const dynamic = "force-dynamic";
 
@@ -289,7 +290,8 @@ export default async function TournamentDetailsPage({
       })
     : null;
 
-  const tournament = await prisma.tournament.findUnique({
+  const [tournament, matches] = await Promise.all([
+    prisma.tournament.findUnique({
     where: {
       id,
     },
@@ -375,7 +377,16 @@ export default async function TournamentDetailsPage({
         },
       },
     },
-  });
+  }),
+    prisma.match.findMany({
+      where: { tournamentId: id },
+      include: {
+        teamA: { select: { id: true, name: true } },
+        teamB: { select: { id: true, name: true } },
+      },
+      orderBy: [{ round: "asc" }, { matchNumber: "asc" }],
+    }),
+  ]);
 
   if (!tournament) {
     notFound();
@@ -676,6 +687,8 @@ export default async function TournamentDetailsPage({
               )}
             </section>
           </div>
+
+          <TournamentMatchesSection matches={matches} locale={locale} />
 
           {tournament.results.length > 0 && (
             <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
