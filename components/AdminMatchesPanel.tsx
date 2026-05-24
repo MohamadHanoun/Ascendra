@@ -1,826 +1,925 @@
-import type { ReactNode } from "react";
+"use client";
 
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+
+import type { AdminMatchActionResult } from "@/actions/adminMatchActions";
 import {
-  confirmMatchInline,
-  createMatchRoomInline,
-  overrideMatchInline,
-  resetMatchInline,
-  type AdminMatchInlineResult,
-} from "@/actions/adminMatchInlineActions";
-import InlineAdminActionForm from "@/components/InlineAdminActionForm";
-import { prisma } from "@/lib/prisma";
-import type { AdminTeamActionResult } from "@/actions/adminTeamInlineActions";
+  confirmMatchResult,
+  createMatch,
+  deleteMatch,
+  updateMatchScore,
+  updateMatchStatus,
+} from "@/actions/adminMatchActions";
+import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+type MatchTeam = { id: string; name: string };
 
-type Tone = "green" | "yellow" | "red" | "gray" | "violet" | "amber";
+type MatchRow = {
+  id: string;
+  round: number;
+  matchNumber: number;
+  teamAId: string | null;
+  teamBId: string | null;
+  teamA: MatchTeam | null;
+  teamB: MatchTeam | null;
+  scheduledAt: string | null;
+  status: string;
+  bestOf: number;
+  scoreA: number;
+  scoreB: number;
+  winnerTeamId: string | null;
+  confirmedByAdmin: boolean;
+  notes: string | null;
+};
 
-// ─── Shared style helpers ─────────────────────────────────────────────────────
+type RegisteredTeam = { id: string; name: string };
 
-const toneStyle: Record<string, React.CSSProperties> = {
-  green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
-  yellow: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
-  amber: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
-  red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
-  gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
-  violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+type AdminMatchPanelProps = {
+  tournamentId: string;
+  matches: MatchRow[];
+  registeredTeams: RegisteredTeam[];
+};
+
+const inputStyle: React.CSSProperties = {
+  borderColor: "var(--asc-line-soft)",
+  background: "var(--asc-bg-2)",
+  color: "var(--asc-fg-0)",
+};
+
+const pillStyleMap: Record<string, React.CSSProperties> = {
+  green: {
+    color: "var(--asc-green)",
+    borderColor: "oklch(0.55 0.14 150 / 0.5)",
+    background: "oklch(0.25 0.12 150 / 0.18)",
+  },
+  yellow: {
+    color: "var(--asc-amber)",
+    borderColor: "oklch(0.65 0.16 75 / 0.5)",
+    background: "oklch(0.25 0.14 75 / 0.18)",
+  },
+  red: {
+    color: "var(--asc-live)",
+    borderColor: "oklch(0.50 0.20 25 / 0.5)",
+    background: "oklch(0.25 0.18 25 / 0.18)",
+  },
+  blue: {
+    color: "var(--asc-blue)",
+    borderColor: "oklch(0.55 0.12 220 / 0.5)",
+    background: "oklch(0.25 0.10 220 / 0.18)",
+  },
+  gray: {
+    color: "var(--asc-fg-3)",
+    borderColor: "var(--asc-line-soft)",
+    background: "transparent",
+  },
+  violet: {
+    color: "var(--asc-accent)",
+    borderColor: "oklch(0.50 0.20 285 / 0.4)",
+    background: "var(--asc-accent-dim)",
+  },
 };
 
 function Pill({
   children,
   tone = "gray",
 }: {
-  children: ReactNode;
-  tone?: Tone;
+  children: React.ReactNode;
+  tone?: "green" | "yellow" | "red" | "blue" | "gray" | "violet";
 }) {
   return (
     <span
-      className="inline-flex w-fit border px-3 py-1 text-xs font-black"
-      style={toneStyle[tone]}
+      className="inline-flex w-fit border px-2.5 py-0.5 text-xs font-black capitalize"
+      style={pillStyleMap[tone]}
     >
       {children}
     </span>
   );
 }
 
-function matchStatusTone(status: string): Tone {
-  const map: Record<string, Tone> = {
-    scheduled: "gray",
-    ready: "green",
-    room_created: "violet",
-    in_progress: "yellow",
-    result_pending: "amber",
-    disputed: "red",
-    confirmed: "green",
+function Notice({ result }: { result: AdminMatchActionResult | null }) {
+  if (!result) return null;
+
+  return (
+    <div
+      className="border px-3 py-2 text-sm font-bold"
+      style={
+        result.ok
+          ? {
+              borderColor: "oklch(0.55 0.14 150 / 0.5)",
+              background: "oklch(0.25 0.12 150 / 0.18)",
+              color: "var(--asc-green)",
+            }
+          : {
+              borderColor: "oklch(0.50 0.20 25 / 0.5)",
+              background: "oklch(0.25 0.18 25 / 0.18)",
+              color: "var(--asc-live)",
+            }
+      }
+    >
+      {result.message}
+    </div>
+  );
+}
+
+function matchStatusTone(
+  status: string,
+): "green" | "yellow" | "red" | "blue" | "gray" | "violet" {
+  const map: Record<
+    string,
+    "green" | "yellow" | "red" | "blue" | "gray" | "violet"
+  > = {
+    live: "green",
+    scheduled: "yellow",
     completed: "violet",
     cancelled: "gray",
-    forfeit: "red",
-    bye: "gray",
+    disputed: "red",
+    pending: "gray",
   };
+
   return map[status] ?? "gray";
 }
 
-function matchStatusLabel(status: string): string {
-  const map: Record<string, string> = {
-    scheduled: "Scheduled",
-    ready: "Ready",
-    room_created: "Room Created",
-    in_progress: "Live",
-    result_pending: "Awaiting Result",
-    disputed: "Disputed",
-    confirmed: "Confirmed",
-    completed: "Completed",
-    cancelled: "Cancelled",
-    forfeit: "Forfeit",
-    bye: "Bye",
-  };
-  return map[status] ?? status;
-}
+function formatScheduled(iso: string | null) {
+  if (!iso) return null;
 
-function reportStatusTone(status: string): Tone {
-  const map: Record<string, Tone> = {
-    submitted: "amber",
-    confirmed: "green",
-    rejected: "red",
-    superseded: "gray",
-  };
-  return map[status] ?? "gray";
-}
-
-function auditStatusTone(status: string): Tone {
-  if (status === "success") return "green";
-  if (status === "failure") return "red";
-  return "amber";
-}
-
-function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
-  return (
-    <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-      <div>
-        <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
-          {eyebrow}
-        </p>
-        <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-          {title}
-        </h2>
-      </div>
-    </div>
-  );
-}
-
-function Stat({ label, value, warn }: { label: string; value: number; warn?: boolean }) {
-  return (
-    <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-        {label}
-      </p>
-      <p
-        className="mt-1 text-2xl font-black"
-        style={{ color: warn && value > 0 ? "var(--asc-live)" : "var(--asc-fg-0)" }}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
-      {label}:{" "}
-      <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>
-        {value}
-      </span>
-    </p>
-  );
-}
-
-function fmt(d: Date | null) {
-  if (!d) return "—";
-  return d.toLocaleString("en", { dateStyle: "medium", timeStyle: "short" });
-}
-
-// ─── Helpers to bridge AdminMatchInlineResult → AdminTeamActionResult ─────────
-// TypeScript structural typing: both have {ok, message, redirectTo?} — compatible.
-function asTeamResult(
-  fn: (fd: FormData) => Promise<AdminMatchInlineResult>,
-): (fd: FormData) => Promise<AdminTeamActionResult> {
-  return fn as (fd: FormData) => Promise<AdminTeamActionResult>;
-}
-
-// ─── Confirm form ─────────────────────────────────────────────────────────────
-
-function ConfirmForm({ matchId }: { matchId: string }) {
-  return (
-    <InlineAdminActionForm
-      action={asTeamResult(confirmMatchInline)}
-      buttonLabel="✓ Confirm"
-      pendingLabel="Confirming…"
-      variant="success"
-      confirmTitle="Confirm match result"
-      confirmDescription="This will confirm the reported result and advance the bracket. This cannot be undone without a manual reset."
-      confirmLabel="Confirm result"
-    >
-      <input type="hidden" name="matchId" value={matchId} />
-    </InlineAdminActionForm>
-  );
-}
-
-// ─── Override form ────────────────────────────────────────────────────────────
-
-function OverrideForm({
-  matchId,
-  teamAId,
-  teamBId,
-  teamAName,
-  teamBName,
-}: {
-  matchId: string;
-  teamAId: string;
-  teamBId: string;
-  teamAName: string;
-  teamBName: string;
-}) {
-  const inputStyle: React.CSSProperties = {
-    background: "var(--asc-bg-2)",
-    border: "1px solid var(--asc-line-soft)",
-    color: "var(--asc-fg-0)",
-    padding: "0.4rem 0.65rem",
-    fontSize: "0.8125rem",
-    outline: "none",
-    width: "100%",
-  };
-
-  return (
-    <InlineAdminActionForm
-      action={asTeamResult(overrideMatchInline)}
-      buttonLabel="⚠ Override"
-      pendingLabel="Overriding…"
-      variant="danger"
-      confirmTitle="Override match result"
-      confirmDescription="This will force-set the winner and scores, bypassing all submitted reports. The action is logged."
-      confirmLabel="Force override"
-    >
-      <input type="hidden" name="matchId" value={matchId} />
-
-      <div className="grid gap-2">
-        <label
-          className="text-[10px] font-black uppercase tracking-[0.12em]"
-          style={{ color: "var(--asc-fg-3)" }}
-        >
-          Winner
-        </label>
-        <select name="winnerTeamId" required style={inputStyle}>
-          <option value="">— Select —</option>
-          <option value={teamAId}>{teamAName}</option>
-          <option value={teamBId}>{teamBName}</option>
-        </select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <div className="grid gap-1">
-          <label
-            className="text-[10px] font-black uppercase tracking-[0.12em]"
-            style={{ color: "var(--asc-fg-3)" }}
-          >
-            {teamAName} score
-          </label>
-          <input type="number" name="teamAScore" min="0" max="99" defaultValue="0" required style={inputStyle} />
-        </div>
-        <div className="grid gap-1">
-          <label
-            className="text-[10px] font-black uppercase tracking-[0.12em]"
-            style={{ color: "var(--asc-fg-3)" }}
-          >
-            {teamBName} score
-          </label>
-          <input type="number" name="teamBScore" min="0" max="99" defaultValue="0" required style={inputStyle} />
-        </div>
-      </div>
-
-      <div className="grid gap-1">
-        <label
-          className="text-[10px] font-black uppercase tracking-[0.12em]"
-          style={{ color: "var(--asc-fg-3)" }}
-        >
-          Override note
-        </label>
-        <input
-          type="text"
-          name="note"
-          maxLength={300}
-          placeholder="Reason for override…"
-          style={inputStyle}
-        />
-      </div>
-    </InlineAdminActionForm>
-  );
-}
-
-// ─── Reset form ───────────────────────────────────────────────────────────────
-
-function ResetForm({ matchId }: { matchId: string }) {
-  return (
-    <InlineAdminActionForm
-      action={asTeamResult(resetMatchInline)}
-      buttonLabel="↺ Reset"
-      pendingLabel="Resetting…"
-      variant="secondary"
-      confirmTitle="Reset match result"
-      confirmDescription="This clears the winner and all confirmed reports, returning the match to 'awaiting result'. Both teams will need to resubmit."
-      confirmLabel="Reset result"
-    >
-      <input type="hidden" name="matchId" value={matchId} />
-    </InlineAdminActionForm>
-  );
-}
-
-// ─── Room form ────────────────────────────────────────────────────────────────
-
-function CreateRoomForm({
-  matchId,
-  existingRoom,
-}: {
-  matchId: string;
-  existingRoom: { roomCode: string | null; status: string; joinUrl: string | null } | null;
-}) {
-  const inputStyle: React.CSSProperties = {
-    background: "var(--asc-bg-2)",
-    border: "1px solid var(--asc-line-soft)",
-    color: "var(--asc-fg-0)",
-    padding: "0.4rem 0.65rem",
-    fontSize: "0.8125rem",
-    outline: "none",
-    width: "100%",
-  };
-
-  return (
-    <InlineAdminActionForm
-      action={asTeamResult(createMatchRoomInline)}
-      buttonLabel={existingRoom ? "↺ Recreate Room" : "+ Create Room"}
-      pendingLabel="Creating…"
-      variant={existingRoom ? "secondary" : "primary"}
-      confirmTitle={existingRoom ? "Recreate game room" : "Create game room"}
-      confirmDescription={
-        existingRoom
-          ? "This will delete the existing room and create a new one."
-          : "Create a manual game room with a code and optional password."
-      }
-      confirmLabel={existingRoom ? "Recreate" : "Create"}
-    >
-      <input type="hidden" name="matchId" value={matchId} />
-      {existingRoom && (
-        <input type="hidden" name="forceRecreate" value="true" />
-      )}
-
-      <div className="grid gap-2">
-        <label
-          className="text-[10px] font-black uppercase tracking-[0.12em]"
-          style={{ color: "var(--asc-fg-3)" }}
-        >
-          Room code
-        </label>
-        <input
-          type="text"
-          name="roomCode"
-          maxLength={64}
-          placeholder="e.g. ASCMATCH123"
-          defaultValue={existingRoom?.roomCode ?? ""}
-          style={inputStyle}
-        />
-      </div>
-
-      <div className="grid gap-2">
-        <label
-          className="text-[10px] font-black uppercase tracking-[0.12em]"
-          style={{ color: "var(--asc-fg-3)" }}
-        >
-          Password (optional)
-        </label>
-        <input
-          type="text"
-          name="password"
-          maxLength={64}
-          placeholder="leave blank for none"
-          style={inputStyle}
-        />
-      </div>
-
-      <div className="grid gap-2">
-        <label
-          className="text-[10px] font-black uppercase tracking-[0.12em]"
-          style={{ color: "var(--asc-fg-3)" }}
-        >
-          Join URL (optional)
-        </label>
-        <input
-          type="url"
-          name="joinUrl"
-          placeholder="https://…"
-          defaultValue={existingRoom?.joinUrl ?? ""}
-          style={inputStyle}
-        />
-      </div>
-    </InlineAdminActionForm>
-  );
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
-
-export default async function AdminMatchesPanel() {
-  // Load all TournamentMatches that need attention first, then the rest
-  const rawMatches = await prisma.tournamentMatch.findMany({
-    orderBy: [
-      // Sort order: disputed → result_pending → in_progress → others
-      { status: "asc" },
-      { roundNumber: "asc" },
-      { matchNumber: "asc" },
-    ],
-    take: 200,
-    select: {
-      id: true,
-      tournamentId: true,
-      roundNumber: true,
-      matchNumber: true,
-      status: true,
-      bestOf: true,
-      teamAId: true,
-      teamBId: true,
-      winnerTeamId: true,
-      scheduledAt: true,
-      completedAt: true,
-      isBye: true,
-      reports: {
-        orderBy: { createdAt: "desc" },
-        include: {
-          submittedBy: { select: { id: true, username: true } },
-        },
-      },
-      room: {
-        select: { id: true, roomCode: true, password: true, joinUrl: true, status: true, createdAt: true },
-      },
-    },
+  return new Date(iso).toLocaleString("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
   });
+}
 
-  // Sort by urgency client-side for precise ordering
-  const urgencyOrder: Record<string, number> = {
-    disputed: 0,
-    result_pending: 1,
-    in_progress: 2,
-    room_created: 3,
-    ready: 4,
-    scheduled: 5,
-    confirmed: 6,
-    completed: 7,
-    forfeit: 8,
-    bye: 9,
-    cancelled: 10,
-  };
-  rawMatches.sort(
-    (a, b) =>
-      (urgencyOrder[a.status] ?? 99) - (urgencyOrder[b.status] ?? 99) ||
-      a.roundNumber - b.roundNumber ||
-      a.matchNumber - b.matchNumber,
-  );
+function AddMatchForm({
+  tournamentId,
+  registeredTeams,
+}: {
+  tournamentId: string;
+  registeredTeams: RegisteredTeam[];
+}) {
+  const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+  const [pending, startTransition] = useTransition();
+  const [notice, setNotice] = useState<AdminMatchActionResult | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  // Bulk-load tournament titles
-  const tournamentIds = [...new Set(rawMatches.map((m) => m.tournamentId))];
-  const tournaments =
-    tournamentIds.length > 0
-      ? await prisma.tournament.findMany({
-          where: { id: { in: tournamentIds } },
-          select: { id: true, title: true },
-        })
-      : [];
-  const tournamentTitle = new Map(tournaments.map((t) => [t.id, t.title]));
-
-  // Bulk-load team names
-  const teamIdSet = new Set<string>();
-  for (const m of rawMatches) {
-    if (m.teamAId) teamIdSet.add(m.teamAId);
-    if (m.teamBId) teamIdSet.add(m.teamBId);
-    if (m.winnerTeamId) teamIdSet.add(m.winnerTeamId);
-    for (const r of m.reports) teamIdSet.add(r.teamId);
-    for (const r of m.reports) teamIdSet.add(r.winnerTeamId);
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setConfirmOpen(true);
   }
-  const teamIds = [...teamIdSet];
-  const teamRows =
-    teamIds.length > 0
-      ? await prisma.team.findMany({
-          where: { id: { in: teamIds } },
-          select: { id: true, name: true },
-        })
-      : [];
-  const teamName = new Map(teamRows.map((t) => [t.id, t.name]));
 
-  // Recent audit logs (global feed)
-  const auditLogs = await prisma.gameApiAuditLog.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 30,
-    select: {
-      id: true,
-      action: true,
-      provider: true,
-      status: true,
-      error: true,
-      request: true,
-      createdAt: true,
-    },
-  });
+  function runAddMatch() {
+    const form = formRef.current;
 
-  // Stats
-  const disputedCount = rawMatches.filter((m) => m.status === "disputed").length;
-  const pendingResultCount = rawMatches.filter((m) => m.status === "result_pending").length;
-  const liveCount = rawMatches.filter((m) => m.status === "in_progress").length;
-  const totalCount = rawMatches.length;
+    if (!form) {
+      return;
+    }
+
+    const formData = new FormData(form);
+
+    startTransition(async () => {
+      const result = await createMatch(formData);
+
+      setNotice(result);
+      setConfirmOpen(false);
+
+      if (result.ok) {
+        form.reset();
+
+        window.setTimeout(() => {
+          router.refresh();
+        }, 450);
+      }
+    });
+  }
 
   return (
-    <div className="grid gap-10">
-      {/* ── Header ── */}
-      <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-        <SectionHeader eyebrow="Match Engine" title="Match Management" />
-        <div className="grid grid-cols-4 gap-5">
-          <Stat label="Disputed" value={disputedCount} warn />
-          <Stat label="Pending Result" value={pendingResultCount} warn={pendingResultCount > 0} />
-          <Stat label="Live" value={liveCount} />
-          <Stat label="Total" value={totalCount} />
-        </div>
-      </div>
+    <>
+      <form ref={formRef} onSubmit={handleSubmit} className="grid gap-4 p-4">
+        <input type="hidden" name="tournamentId" value={tournamentId} />
 
-      {/* ── Match list ── */}
-      <section
-        className="overflow-hidden border shadow-2xl"
-        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5">
+            <span
+              className="text-xs font-bold uppercase tracking-[0.12em]"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              Round
+            </span>
+
+            <input
+              name="round"
+              type="number"
+              min="1"
+              required
+              placeholder="1"
+              className="border px-4 py-3 text-sm text-white outline-none transition"
+              style={inputStyle}
+            />
+          </label>
+
+          <label className="grid gap-1.5">
+            <span
+              className="text-xs font-bold uppercase tracking-[0.12em]"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              Match #
+            </span>
+
+            <input
+              name="matchNumber"
+              type="number"
+              min="1"
+              required
+              placeholder="1"
+              className="border px-4 py-3 text-sm text-white outline-none transition"
+              style={inputStyle}
+            />
+          </label>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5">
+            <span
+              className="text-xs font-bold uppercase tracking-[0.12em]"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              Team A
+            </span>
+
+            <select
+              name="teamAId"
+              className="border px-4 py-3 text-sm text-white outline-none transition"
+              style={inputStyle}
+            >
+              <option value="">— BYE / TBD —</option>
+
+              {registeredTeams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1.5">
+            <span
+              className="text-xs font-bold uppercase tracking-[0.12em]"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              Team B
+            </span>
+
+            <select
+              name="teamBId"
+              className="border px-4 py-3 text-sm text-white outline-none transition"
+              style={inputStyle}
+            >
+              <option value="">— BYE / TBD —</option>
+
+              {registeredTeams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5">
+            <span
+              className="text-xs font-bold uppercase tracking-[0.12em]"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              Scheduled at
+            </span>
+
+            <input
+              name="scheduledAt"
+              type="datetime-local"
+              className="border px-4 py-3 text-sm text-white outline-none transition"
+              style={inputStyle}
+            />
+          </label>
+
+          <label className="grid gap-1.5">
+            <span
+              className="text-xs font-bold uppercase tracking-[0.12em]"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              Best of
+            </span>
+
+            <select
+              name="bestOf"
+              defaultValue="1"
+              className="border px-4 py-3 text-sm text-white outline-none transition"
+              style={inputStyle}
+            >
+              {[1, 3, 5, 7].map((number) => (
+                <option key={number} value={number}>
+                  BO{number}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <label className="grid gap-1.5">
+          <span
+            className="text-xs font-bold uppercase tracking-[0.12em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            Notes (optional)
+          </span>
+
+          <input
+            name="notes"
+            placeholder="Optional match notes"
+            className="border px-4 py-3 text-sm text-white outline-none transition"
+            style={inputStyle}
+          />
+        </label>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={pending}
+            className="px-4 py-2 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            style={{
+              background: "var(--asc-accent-2)",
+              clipPath:
+                "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+            }}
+          >
+            {pending ? "Adding..." : "Add match"}
+          </button>
+        </div>
+
+        <Notice result={notice} />
+      </form>
+
+      <ConfirmDialogPortal
+        open={confirmOpen}
+        eyebrow="Confirmation"
+        title="Add match?"
+        description="Create this match in the tournament schedule."
+        confirmLabel="Add match"
+        cancelLabel="Cancel"
+        pendingLabel="Adding..."
+        pending={pending}
+        variant="primary"
+        onConfirm={runAddMatch}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </>
+  );
+}
+
+function MatchCard({
+  match,
+}: {
+  match: MatchRow;
+  registeredTeams: RegisteredTeam[];
+}) {
+  const router = useRouter();
+  const scoreFormRef = useRef<HTMLFormElement>(null);
+  const statusFormRef = useRef<HTMLFormElement>(null);
+  const [pending, startTransition] = useTransition();
+
+  const [scoreNotice, setScoreNotice] = useState<AdminMatchActionResult | null>(
+    null,
+  );
+  const [statusNotice, setStatusNotice] =
+    useState<AdminMatchActionResult | null>(null);
+  const [deleteNotice, setDeleteNotice] =
+    useState<AdminMatchActionResult | null>(null);
+
+  const [confirmScoreOpen, setConfirmScoreOpen] = useState(false);
+  const [confirmResultOpen, setConfirmResultOpen] = useState(false);
+  const [confirmStatusOpen, setConfirmStatusOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(match.status);
+
+  const teamAName = match.teamA?.name ?? "TBD";
+  const teamBName = match.teamB?.name ?? "TBD";
+  const scheduledStr = formatScheduled(match.scheduledAt);
+  const scoreLabel = `${match.scoreA}–${match.scoreB}`;
+
+  const winnerOptions = [
+    ...(match.teamA && match.teamAId
+      ? [{ id: match.teamAId, name: match.teamA.name }]
+      : []),
+    ...(match.teamB && match.teamBId
+      ? [{ id: match.teamBId, name: match.teamB.name }]
+      : []),
+  ];
+
+  function runScore() {
+    const form = scoreFormRef.current;
+
+    if (!form) {
+      return;
+    }
+
+    const formData = new FormData(form);
+
+    startTransition(async () => {
+      const result = await updateMatchScore(formData);
+
+      setScoreNotice(result);
+      setConfirmScoreOpen(false);
+
+      if (result.ok) {
+        window.setTimeout(() => {
+          router.refresh();
+        }, 450);
+      }
+    });
+  }
+
+  function runStatus() {
+    const form = statusFormRef.current;
+
+    if (!form) {
+      return;
+    }
+
+    const formData = new FormData(form);
+
+    startTransition(async () => {
+      const result = await updateMatchStatus(formData);
+
+      setStatusNotice(result);
+      setConfirmStatusOpen(false);
+
+      if (result.ok) {
+        window.setTimeout(() => {
+          router.refresh();
+        }, 450);
+      }
+    });
+  }
+
+  function runConfirm() {
+    const formData = new FormData();
+    formData.set("matchId", match.id);
+
+    startTransition(async () => {
+      const result = await confirmMatchResult(formData);
+
+      setScoreNotice(result);
+      setConfirmResultOpen(false);
+
+      if (result.ok) {
+        window.setTimeout(() => {
+          router.refresh();
+        }, 450);
+      }
+    });
+  }
+
+  function runDelete() {
+    const formData = new FormData();
+    formData.set("matchId", match.id);
+
+    startTransition(async () => {
+      const result = await deleteMatch(formData);
+
+      setDeleteNotice(result);
+      setConfirmDeleteOpen(false);
+
+      if (result.ok) {
+        window.setTimeout(() => {
+          router.refresh();
+        }, 450);
+      }
+    });
+  }
+
+  return (
+    <>
+      <details
+        className="group overflow-hidden border"
+        style={{
+          borderColor: "var(--asc-line-soft)",
+          background: "oklch(0.08 0.02 287)",
+        }}
       >
-        <div
-          className="px-5 py-4"
-          style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-        >
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-            Disputed and pending matches appear first. Click into a tournament for bracket generation.
-          </p>
-        </div>
+        <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 transition hover:bg-white/[0.035]">
+          <span
+            className="w-10 shrink-0 text-center text-xs font-black uppercase tracking-[0.1em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            M{match.matchNumber}
+          </span>
 
-        {rawMatches.length === 0 && (
-          <div className="px-5 py-12 text-center">
-            <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
-              No tournament matches found. Generate a bracket from a tournament admin page first.
-            </p>
+          <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm">
+            <span
+              className="truncate text-right font-black"
+              style={{ color: "var(--asc-fg-0)" }}
+            >
+              {teamAName}
+            </span>
+
+            <span
+              className="shrink-0 text-xs font-bold"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              {match.status === "completed" ? scoreLabel : "vs"}
+            </span>
+
+            <span
+              className="truncate font-black"
+              style={{ color: "var(--asc-fg-0)" }}
+            >
+              {teamBName}
+            </span>
           </div>
-        )}
 
-        <div className="divide-y" style={{ borderColor: "var(--asc-line-soft)" }}>
-          {rawMatches.map((match) => {
-            const tName = tournamentTitle.get(match.tournamentId) ?? match.tournamentId;
-            const aName = match.teamAId ? (teamName.get(match.teamAId) ?? "TBD") : "TBD";
-            const bName = match.teamBId ? (teamName.get(match.teamBId) ?? "TBD") : "TBD";
-            const wName = match.winnerTeamId ? (teamName.get(match.winnerTeamId) ?? null) : null;
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <Pill tone={matchStatusTone(match.status)}>{match.status}</Pill>
 
-            const isDisputed = match.status === "disputed";
-            const isTerminal = ["completed", "confirmed", "cancelled", "bye", "forfeit"].includes(match.status);
-            const canConfirm = ["result_pending", "disputed", "in_progress"].includes(match.status);
-            const canOverride = !isTerminal;
-            const canReset = ["result_pending", "disputed", "confirmed", "completed", "forfeit"].includes(match.status);
-            const canRoom = !!(match.teamAId && match.teamBId);
+            {match.confirmedByAdmin && <Pill tone="green">Confirmed</Pill>}
 
-            const liveBadgeStyle: React.CSSProperties = isDisputed
-              ? { background: "oklch(0.65 0.22 25 / 0.06)", borderLeft: "2px solid var(--asc-live)" }
-              : {};
+            {scheduledStr && (
+              <span
+                className="hidden text-xs xl:block"
+                style={{ color: "var(--asc-fg-3)" }}
+              >
+                {scheduledStr}
+              </span>
+            )}
+          </div>
 
-            return (
-              <div key={match.id} className="p-5" style={liveBadgeStyle}>
-                {/* ── Match header row ── */}
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="grid gap-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Pill tone={matchStatusTone(match.status)}>
-                        {matchStatusLabel(match.status)}
-                      </Pill>
-                      <span
-                        className="text-[10px] font-black uppercase tracking-[0.14em]"
-                        style={{ color: "var(--asc-fg-3)" }}
-                      >
-                        {tName} · R{match.roundNumber} · M{match.matchNumber} · BO{match.bestOf}
-                      </span>
-                    </div>
+          <span
+            className="grid h-7 w-7 shrink-0 place-items-center text-sm font-black transition group-open:rotate-45"
+            style={{
+              border: "1px solid var(--asc-line-soft)",
+              background: "oklch(0.09 0.02 287)",
+              color: "var(--asc-fg-3)",
+            }}
+          >
+            +
+          </span>
+        </summary>
 
-                    {/* Teams */}
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="text-base font-black"
-                        style={{ color: wName === aName ? "var(--asc-green)" : "var(--asc-fg-0)" }}
-                      >
-                        {aName}
-                        {wName === aName && (
-                          <span className="ml-1 text-xs" style={{ color: "var(--asc-green)" }}>✓</span>
-                        )}
-                      </span>
-                      <span className="text-xs font-black uppercase tracking-widest" style={{ color: "var(--asc-fg-3)" }}>
-                        vs
-                      </span>
-                      <span
-                        className="text-base font-black"
-                        style={{ color: wName === bName ? "var(--asc-green)" : "var(--asc-fg-0)" }}
-                      >
-                        {bName}
-                        {wName === bName && (
-                          <span className="ml-1 text-xs" style={{ color: "var(--asc-green)" }}>✓</span>
-                        )}
-                      </span>
-                    </div>
+        <div
+          className="p-4"
+          style={{ borderTop: "1px solid var(--asc-line-soft)" }}
+        >
+          <div className="grid gap-6">
+            <div>
+              <p
+                className="mb-3 text-xs font-black uppercase tracking-[0.14em]"
+                style={{ color: "var(--asc-fg-3)" }}
+              >
+                Score · BO{match.bestOf}
+              </p>
 
-                    {/* Meta */}
-                    <div className="flex flex-wrap items-center gap-4 text-xs" style={{ color: "var(--asc-fg-3)" }}>
-                      {match.scheduledAt && <span>Scheduled: {fmt(match.scheduledAt)}</span>}
-                      {match.completedAt && <span>Completed: {fmt(match.completedAt)}</span>}
-                      {match.isBye && <span className="font-black uppercase">Bye</span>}
-                      <span className="font-mono opacity-50">{match.id}</span>
-                    </div>
-                  </div>
+              <form
+                ref={scoreFormRef}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setConfirmScoreOpen(true);
+                }}
+                className="grid gap-3"
+              >
+                <input type="hidden" name="matchId" value={match.id} />
 
-                  {/* Action buttons row */}
-                  <div className="flex flex-wrap items-start gap-3">
-                    {canConfirm && <ConfirmForm matchId={match.id} />}
+                <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+                  <label className="grid gap-1.5">
+                    <span
+                      className="text-xs font-bold"
+                      style={{ color: "var(--asc-fg-3)" }}
+                    >
+                      {teamAName}
+                    </span>
 
-                    {canOverride && match.teamAId && match.teamBId && (
-                      <OverrideForm
-                        matchId={match.id}
-                        teamAId={match.teamAId}
-                        teamBId={match.teamBId}
-                        teamAName={aName}
-                        teamBName={bName}
-                      />
-                    )}
+                    <input
+                      name="scoreA"
+                      type="number"
+                      min="0"
+                      defaultValue={match.scoreA}
+                      className="border px-4 py-3 text-sm text-white outline-none transition"
+                      style={inputStyle}
+                    />
+                  </label>
 
-                    {canReset && <ResetForm matchId={match.id} />}
-                  </div>
+                  <span
+                    className="pb-3 text-center text-sm font-bold"
+                    style={{ color: "var(--asc-fg-3)" }}
+                  >
+                    vs
+                  </span>
+
+                  <label className="grid gap-1.5">
+                    <span
+                      className="text-xs font-bold"
+                      style={{ color: "var(--asc-fg-3)" }}
+                    >
+                      {teamBName}
+                    </span>
+
+                    <input
+                      name="scoreB"
+                      type="number"
+                      min="0"
+                      defaultValue={match.scoreB}
+                      className="border px-4 py-3 text-sm text-white outline-none transition"
+                      style={inputStyle}
+                    />
+                  </label>
                 </div>
 
-                {/* ── Reports ── */}
-                {match.reports.length > 0 && (
-                  <div className="mt-4">
-                    <p
-                      className="mb-2 text-[10px] font-black uppercase tracking-[0.14em]"
+                {winnerOptions.length > 0 && (
+                  <label className="grid gap-1.5">
+                    <span
+                      className="text-xs font-bold"
                       style={{ color: "var(--asc-fg-3)" }}
                     >
-                      Reports ({match.reports.length})
-                    </p>
-                    <div className="grid gap-2 md:grid-cols-2">
-                      {match.reports.map((report) => {
-                        const reportTeam = teamName.get(report.teamId) ?? "Unknown";
-                        const reportWinner = teamName.get(report.winnerTeamId) ?? "Unknown";
-                        return (
-                          <div
-                            key={report.id}
-                            className="border p-3"
-                            style={{
-                              borderColor: "var(--asc-line-soft)",
-                              background: "var(--asc-bg-2)",
-                            }}
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-xs font-black" style={{ color: "var(--asc-fg-1)" }}>
-                                {reportTeam}
-                              </span>
-                              <Pill tone={reportStatusTone(report.status)}>
-                                {report.status}
-                              </Pill>
-                            </div>
-                            <div
-                              className="mt-2 grid gap-1 text-xs"
-                              style={{ color: "var(--asc-fg-3)" }}
-                            >
-                              <InfoRow
-                                label="Declared winner"
-                                value={<span style={{ color: "var(--asc-green)" }}>{reportWinner}</span>}
-                              />
-                              <InfoRow
-                                label="Score"
-                                value={`${report.teamAScore} — ${report.teamBScore}`}
-                              />
-                              <InfoRow label="By" value={report.submittedBy.username} />
-                              {report.note && (
-                                <p className="mt-1 leading-5 opacity-70">{report.note}</p>
-                              )}
-                              {report.evidenceUrl && (
-                                <a
-                                  href={report.evidenceUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="mt-1 inline-block font-bold hover:opacity-75"
-                                  style={{ color: "var(--asc-blue)" }}
-                                >
-                                  Evidence →
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                      Winner
+                    </span>
 
-                {/* ── Game Room ── */}
-                {canRoom && (
-                  <div className="mt-4">
-                    <p
-                      className="mb-2 text-[10px] font-black uppercase tracking-[0.14em]"
-                      style={{ color: "var(--asc-fg-3)" }}
+                    <select
+                      name="winnerTeamId"
+                      defaultValue={match.winnerTeamId ?? ""}
+                      className="border px-4 py-3 text-sm text-white outline-none transition"
+                      style={inputStyle}
                     >
-                      Game Room
-                    </p>
+                      <option value="">No winner set</option>
 
-                    {match.room ? (
-                      <div
-                        className="border p-3"
-                        style={{
-                          borderColor: "var(--asc-line-soft)",
-                          background: "var(--asc-bg-2)",
-                        }}
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                          <div className="grid gap-1 text-xs" style={{ color: "var(--asc-fg-3)" }}>
-                            {match.room.roomCode && (
-                              <InfoRow
-                                label="Code"
-                                value={
-                                  <span className="font-mono" style={{ color: "var(--asc-accent)" }}>
-                                    {match.room.roomCode}
-                                  </span>
-                                }
-                              />
-                            )}
-                            {match.room.password && (
-                              <InfoRow label="Password" value={match.room.password} />
-                            )}
-                            {match.room.joinUrl && (
-                              <InfoRow
-                                label="URL"
-                                value={
-                                  <a
-                                    href={match.room.joinUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="hover:opacity-75"
-                                    style={{ color: "var(--asc-blue)" }}
-                                  >
-                                    {match.room.joinUrl}
-                                  </a>
-                                }
-                              />
-                            )}
-                            <InfoRow label="Status" value={match.room.status} />
-                            <InfoRow label="Created" value={fmt(match.room.createdAt)} />
-                          </div>
-                          <CreateRoomForm matchId={match.id} existingRoom={match.room} />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="w-64">
-                        <CreateRoomForm matchId={match.id} existingRoom={null} />
-                      </div>
-                    )}
-                  </div>
+                      {winnerOptions.map((team) => (
+                        <option key={team.id} value={team.id}>
+                          {team.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
 
-      {/* ── Audit Log ── */}
-      <section className="grid gap-5">
-        <SectionHeader eyebrow="Audit Trail" title="Recent Match Engine Logs" />
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="submit"
+                    disabled={pending}
+                    className="px-4 py-2 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{
+                      background: "var(--asc-accent-2)",
+                      clipPath:
+                        "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+                    }}
+                  >
+                    {pending ? "Saving..." : "Update score"}
+                  </button>
 
-        <section
-          className="overflow-hidden border shadow-2xl"
-          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-        >
-          <div
-            className="px-5 py-3"
-            style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-          >
-            <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-              Last 30 entries · all providers · sorted by newest first
-            </p>
-          </div>
+                  {match.status === "completed" && !match.confirmedByAdmin && (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => setConfirmResultOpen(true)}
+                      className="border px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                      style={{
+                        borderColor: "oklch(0.55 0.14 150 / 0.5)",
+                        color: "var(--asc-green)",
+                        background: "transparent",
+                        clipPath:
+                          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+                      }}
+                    >
+                      Confirm result
+                    </button>
+                  )}
+                </div>
 
-          {auditLogs.length === 0 ? (
-            <div className="px-5 py-8 text-center">
-              <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
-                No audit log entries yet.
+                <Notice result={scoreNotice} />
+              </form>
+            </div>
+
+            <div>
+              <p
+                className="mb-3 text-xs font-black uppercase tracking-[0.14em]"
+                style={{ color: "var(--asc-fg-3)" }}
+              >
+                Status
               </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-xs">
-                <thead>
-                  <tr style={{ background: "oklch(0.10 0.03 287 / 0.5)" }}>
-                    {["Time", "Action", "Provider", "Status", "Match / Error"].map((h) => (
-                      <th
-                        key={h}
-                        className="px-4 py-2.5 text-left font-black uppercase tracking-[0.14em]"
-                        style={{ color: "var(--asc-fg-3)", borderBottom: "1px solid var(--asc-line-soft)" }}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {auditLogs.map((log, i) => {
-                    const reqMatchId =
-                      log.request &&
-                      typeof log.request === "object" &&
-                      !Array.isArray(log.request) &&
-                      "matchId" in log.request
-                        ? String((log.request as Record<string, unknown>).matchId)
-                        : null;
 
-                    return (
-                      <tr
-                        key={log.id}
-                        style={
-                          i % 2 === 0
-                            ? {}
-                            : { background: "oklch(0.10 0.03 287 / 0.3)" }
-                        }
-                      >
-                        <td className="px-4 py-2.5 tabular-nums" style={{ color: "var(--asc-fg-3)" }}>
-                          {log.createdAt.toLocaleString("en", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </td>
-                        <td className="px-4 py-2.5 font-black" style={{ color: "var(--asc-fg-1)" }}>
-                          {log.action}
-                        </td>
-                        <td className="px-4 py-2.5" style={{ color: "var(--asc-fg-3)" }}>
-                          {log.provider}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <Pill tone={auditStatusTone(log.status)}>
-                            {log.status}
-                          </Pill>
-                        </td>
-                        <td
-                          className="max-w-[240px] truncate px-4 py-2.5 font-mono"
-                          style={{ color: log.error ? "var(--asc-live)" : "var(--asc-fg-3)" }}
-                        >
-                          {log.error ?? reqMatchId ?? "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <form
+                ref={statusFormRef}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setConfirmStatusOpen(true);
+                }}
+                className="flex flex-wrap items-center gap-2"
+              >
+                <input type="hidden" name="matchId" value={match.id} />
+
+                <select
+                  name="status"
+                  value={selectedStatus}
+                  onChange={(event) => setSelectedStatus(event.target.value)}
+                  className="w-auto border px-4 py-3 text-sm text-white outline-none transition"
+                  style={inputStyle}
+                >
+                  {[
+                    "pending",
+                    "scheduled",
+                    "live",
+                    "completed",
+                    "cancelled",
+                  ].map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="submit"
+                  disabled={pending}
+                  className="border px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    borderColor: "var(--asc-line-soft)",
+                    color: "var(--asc-fg-3)",
+                    background: "transparent",
+                    clipPath:
+                      "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+                  }}
+                >
+                  {pending ? "..." : "Set status"}
+                </button>
+
+                <Notice result={statusNotice} />
+              </form>
             </div>
-          )}
-        </section>
-      </section>
+
+            <div
+              className="pt-4"
+              style={{ borderTop: "1px solid oklch(0.50 0.20 25 / 0.2)" }}
+            >
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteOpen(true)}
+                disabled={pending}
+                className="border px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                style={{
+                  borderColor: "oklch(0.50 0.20 25 / 0.5)",
+                  color: "var(--asc-live)",
+                  background: "transparent",
+                  clipPath:
+                    "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+                }}
+              >
+                Delete match
+              </button>
+
+              <Notice result={deleteNotice} />
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <ConfirmDialogPortal
+        open={confirmScoreOpen}
+        eyebrow="Confirmation"
+        title="Update match score?"
+        description={`Update the score for R${match.round} · M${match.matchNumber} (${teamAName} vs ${teamBName}).`}
+        confirmLabel="Update score"
+        cancelLabel="Cancel"
+        pendingLabel="Saving..."
+        pending={pending}
+        variant="primary"
+        onConfirm={runScore}
+        onCancel={() => setConfirmScoreOpen(false)}
+      />
+
+      <ConfirmDialogPortal
+        open={confirmResultOpen}
+        eyebrow="Confirmation"
+        title="Confirm match result?"
+        description={`Confirm R${match.round} · M${match.matchNumber} (${teamAName} vs ${teamBName}). This can affect bracket progression.`}
+        confirmLabel="Confirm result"
+        cancelLabel="Cancel"
+        pendingLabel="Confirming..."
+        pending={pending}
+        variant="success"
+        onConfirm={runConfirm}
+        onCancel={() => setConfirmResultOpen(false)}
+      />
+
+      <ConfirmDialogPortal
+        open={confirmStatusOpen}
+        eyebrow="Confirmation"
+        title="Update match status?"
+        description={`Set R${match.round} · M${match.matchNumber} (${teamAName} vs ${teamBName}) to ${selectedStatus}.`}
+        confirmLabel="Set status"
+        cancelLabel="Cancel"
+        pendingLabel="Updating..."
+        pending={pending}
+        variant={selectedStatus === "cancelled" ? "danger" : "secondary"}
+        onConfirm={runStatus}
+        onCancel={() => setConfirmStatusOpen(false)}
+      />
+
+      <ConfirmDialogPortal
+        open={confirmDeleteOpen}
+        eyebrow="Confirmation"
+        title="Delete match?"
+        description={`Delete R${match.round} · M${match.matchNumber} (${teamAName} vs ${teamBName})? This cannot be undone.`}
+        confirmLabel="Delete permanently"
+        cancelLabel="Cancel"
+        pendingLabel="Deleting..."
+        pending={pending}
+        variant="danger"
+        onConfirm={runDelete}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
+    </>
+  );
+}
+
+export default function AdminMatchPanel({
+  tournamentId,
+  matches,
+  registeredTeams,
+}: AdminMatchPanelProps) {
+  const matchesByRound = matches.reduce<Record<number, MatchRow[]>>(
+    (acc, match) => {
+      if (!acc[match.round]) acc[match.round] = [];
+      acc[match.round].push(match);
+      return acc;
+    },
+    {},
+  );
+
+  const rounds = Object.keys(matchesByRound)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  return (
+    <div className="grid gap-5">
+      <details
+        className="group overflow-hidden border"
+        style={{
+          borderColor: "var(--asc-line-soft)",
+          background: "oklch(0.08 0.02 287)",
+        }}
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 transition hover:bg-white/[0.035]">
+          <p
+            className="text-sm font-black"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            Add match
+          </p>
+
+          <span
+            className="grid h-7 w-7 place-items-center text-sm font-black transition group-open:rotate-45"
+            style={{
+              border: "1px solid var(--asc-line-soft)",
+              background: "oklch(0.09 0.02 287)",
+              color: "var(--asc-fg-3)",
+            }}
+          >
+            +
+          </span>
+        </summary>
+
+        <div style={{ borderTop: "1px solid var(--asc-line-soft)" }}>
+          <AddMatchForm
+            tournamentId={tournamentId}
+            registeredTeams={registeredTeams}
+          />
+        </div>
+      </details>
+
+      {matches.length === 0 ? (
+        <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
+          No matches yet.
+        </p>
+      ) : (
+        <div className="grid gap-6">
+          {rounds.map((round) => (
+            <div key={round}>
+              <p
+                className="mb-2 text-xs font-black uppercase tracking-[0.14em]"
+                style={{ color: "var(--asc-fg-3)" }}
+              >
+                Round {round}
+              </p>
+
+              <div className="grid gap-2">
+                {matchesByRound[round].map((match) => (
+                  <MatchCard
+                    key={match.id}
+                    match={match}
+                    registeredTeams={registeredTeams}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

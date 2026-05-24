@@ -42,31 +42,59 @@ const inputStyle: React.CSSProperties = {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+    <span
+      className="text-xs font-black uppercase tracking-[0.12em]"
+      style={{ color: "var(--asc-fg-3)" }}
+    >
       {children}
     </span>
   );
 }
 
 function getNextPlacement(results: ExistingResultItem[]) {
-  if (results.length === 0) return 1;
+  if (results.length === 0) {
+    return 1;
+  }
+
   const usedPlacements = new Set(results.map((result) => result.placement));
   let placement = 1;
-  while (usedPlacements.has(placement)) placement += 1;
+
+  while (usedPlacements.has(placement)) {
+    placement += 1;
+  }
+
   return placement;
 }
 
 function getSuggestedPoints(placement: number) {
-  if (placement === 1) return 10;
-  if (placement === 2) return 7;
-  if (placement === 3) return 5;
+  if (placement === 1) {
+    return 10;
+  }
+
+  if (placement === 2) {
+    return 7;
+  }
+
+  if (placement === 3) {
+    return 5;
+  }
+
   return 1;
 }
 
 function getSuggestedNote(placement: number) {
-  if (placement === 1) return "Champion";
-  if (placement === 2) return "Runner-up";
-  if (placement === 3) return "Third place";
+  if (placement === 1) {
+    return "Champion";
+  }
+
+  if (placement === 2) {
+    return "Runner-up";
+  }
+
+  if (placement === 3) {
+    return "Third place";
+  }
+
   return "Participation";
 }
 
@@ -94,7 +122,9 @@ export default function AdminTournamentResultForm({
     return {
       value: registration.teamId,
       label: alreadyHasResult ? `${teamName} · edit result` : teamName,
-      description: `${teamGame} · approved${alreadyHasResult ? " · result saved" : ""}`,
+      description: `${teamGame} · approved${
+        alreadyHasResult ? " · result saved" : ""
+      }`,
     };
   });
 
@@ -106,6 +136,7 @@ export default function AdminTournamentResultForm({
 
   function applyNextAvailablePlacement() {
     const availablePlacement = getNextPlacement(results);
+
     setPlacement(availablePlacement);
     setPoints(getSuggestedPoints(availablePlacement));
     setNote(getSuggestedNote(availablePlacement));
@@ -113,6 +144,7 @@ export default function AdminTournamentResultForm({
 
   function handlePlacementChange(value: number) {
     const safeValue = Number.isFinite(value) && value > 0 ? value : 1;
+
     setPlacement(safeValue);
     setPoints(getSuggestedPoints(safeValue));
     setNote(getSuggestedNote(safeValue));
@@ -125,11 +157,15 @@ export default function AdminTournamentResultForm({
       pendingLabel="Saving..."
       variant="success"
       className="grid gap-5"
+      confirmTitle="Save tournament result?"
+      confirmDescription="Save or update this team's official tournament placement and points. This may affect the leaderboard."
+      confirmLabel="Save result"
     >
       <input type="hidden" name="tournamentId" value={tournamentId} />
 
       <label className="grid gap-2">
         <FieldLabel>Team</FieldLabel>
+
         <CustomSelect
           name="teamId"
           required
@@ -143,7 +179,8 @@ export default function AdminTournamentResultForm({
 
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           {presets.map((preset) => {
-            const isActive = placement === preset.placement && points === preset.points;
+            const isActive =
+              placement === preset.placement && points === preset.points;
 
             return (
               <button
@@ -153,12 +190,24 @@ export default function AdminTournamentResultForm({
                 className="border px-4 py-3 text-left transition hover:opacity-90"
                 style={
                   isActive
-                    ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
-                    : { borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }
+                    ? {
+                        borderColor: "oklch(0.55 0.14 150 / 0.5)",
+                        background: "oklch(0.25 0.12 150 / 0.18)",
+                        color: "var(--asc-green)",
+                      }
+                    : {
+                        borderColor: "var(--asc-line-soft)",
+                        background: "var(--asc-bg-2)",
+                        color: "var(--asc-fg-3)",
+                      }
                 }
               >
                 <span className="block text-sm font-black">{preset.label}</span>
-                <span className="mt-1 block text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
+
+                <span
+                  className="mt-1 block text-xs font-bold"
+                  style={{ color: "var(--asc-fg-3)" }}
+                >
                   #{preset.placement} · {preset.points} pts
                 </span>
               </button>
@@ -171,7 +220,13 @@ export default function AdminTournamentResultForm({
         type="button"
         onClick={applyNextAvailablePlacement}
         className="w-fit border px-4 py-2 text-sm font-black transition hover:opacity-90"
-        style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+        style={{
+          borderColor: "oklch(0.50 0.20 285 / 0.4)",
+          background: "var(--asc-accent-dim)",
+          color: "var(--asc-accent)",
+          clipPath:
+            "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+        }}
       >
         Use next placement
       </button>
@@ -179,13 +234,16 @@ export default function AdminTournamentResultForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2">
           <FieldLabel>Placement</FieldLabel>
+
           <input
             name="placement"
             type="number"
             min="1"
             required
             value={placement}
-            onChange={(event) => handlePlacementChange(Number(event.target.value))}
+            onChange={(event) =>
+              handlePlacementChange(Number(event.target.value))
+            }
             className="w-full border px-4 py-3 text-white outline-none transition"
             style={inputStyle}
           />
@@ -193,6 +251,7 @@ export default function AdminTournamentResultForm({
 
         <label className="grid gap-2">
           <FieldLabel>Points</FieldLabel>
+
           <input
             name="points"
             type="number"
@@ -208,6 +267,7 @@ export default function AdminTournamentResultForm({
 
       <label className="grid gap-2">
         <FieldLabel>Note</FieldLabel>
+
         <input
           name="note"
           value={note}
