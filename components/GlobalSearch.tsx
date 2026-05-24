@@ -75,26 +75,33 @@ export default function GlobalSearch({ labels }: GlobalSearchProps) {
     closeSearch();
   }, [pathname]);
 
-  useEffect(() => {
-    function handleKeyboardShortcut(event: KeyboardEvent) {
-      const isSearchShortcut =
-        event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey);
+    useEffect(() => {
+      function handleKeyboardShortcut(event: KeyboardEvent) {
+        const key = typeof event.key === "string" ? event.key : "";
 
-      if (isSearchShortcut) {
-        event.preventDefault();
-        openSearch();
+        if (!key) {
+          return;
+        }
+
+        const isSearchShortcut =
+          key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey);
+
+        if (isSearchShortcut) {
+          event.preventDefault();
+          openSearch();
+        }
+
+        if (key === "Escape") {
+          closeSearch();
+        }
       }
 
-      if (event.key === "Escape") {
-        closeSearch();
-      }
-    }
+      document.addEventListener("keydown", handleKeyboardShortcut);
 
-    document.addEventListener("keydown", handleKeyboardShortcut);
-    return () => {
-      document.removeEventListener("keydown", handleKeyboardShortcut);
-    };
-  }, []);
+      return () => {
+        document.removeEventListener("keydown", handleKeyboardShortcut);
+      };
+    }, []);
 
   useEffect(() => {
     if (!isOpen) {
