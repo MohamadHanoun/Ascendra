@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { auth } from "@/auth";
 import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import LeaderboardRealtime from "@/components/LeaderboardRealtime";
@@ -23,6 +24,7 @@ type LeaderboardPageProps = {
   searchParams: Promise<{
     game?: string;
     type?: string;
+    region?: string;
   }>;
 };
 
@@ -32,6 +34,7 @@ type SnapshotMember = {
 };
 
 const games = ["Overall", "Valorant", "League of Legends", "CS2", "Dota2"];
+const regions = ["Global", "NA", "EU", "APAC", "BR"];
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -63,19 +66,18 @@ function getGameHeading(
   return `${game} ${messages.headings.gameStandings}`;
 }
 
-function buildLeaderboardHref(game: string, type: "players" | "teams") {
+function buildLeaderboardHref(
+  game: string,
+  type: "players" | "teams",
+  region = "Global",
+) {
   const params = new URLSearchParams();
 
-  if (game !== "Overall") {
-    params.set("game", game);
-  }
-
-  if (type === "teams") {
-    params.set("type", "teams");
-  }
+  if (game !== "Overall") params.set("game", game);
+  if (type === "teams") params.set("type", "teams");
+  if (region !== "Global") params.set("region", region);
 
   const query = params.toString();
-
   return query ? `/leaderboard?${query}` : "/leaderboard";
 }
 
@@ -93,6 +95,31 @@ function FilterButton({
       href={href}
       scroll={false}
       className="border px-4 py-2 text-sm font-black transition"
+      style={
+        active
+          ? { borderColor: "var(--asc-accent)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }
+          : { borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-3)" }
+      }
+    >
+      {label}
+    </Link>
+  );
+}
+
+function RegionButton({
+  href,
+  label,
+  active,
+}: {
+  href: string;
+  label: string;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      scroll={false}
+      className="border px-3 py-1.5 text-xs font-black transition"
       style={
         active
           ? { borderColor: "var(--asc-accent)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }
@@ -400,14 +427,22 @@ async function getTeamLeaderboard(
 export default async function LeaderboardPage({
   searchParams,
 }: LeaderboardPageProps) {
-  const [params, locale] = await Promise.all([searchParams, getLocale()]);
+  const [params, locale, session] = await Promise.all([
+    searchParams,
+    getLocale(),
+    auth(),
+  ]);
   const messages = getDictionary(locale).leaderboard;
+  const currentUserId = session?.user?.databaseId ?? undefined;
 
   const selectedGame = games.includes(params.game || "")
     ? params.game || "Overall"
     : "Overall";
 
   const selectedType = params.type === "teams" ? "teams" : "players";
+  const selectedRegion = regions.includes(params.region || "")
+    ? params.region || "Global"
+    : "Global";
 
   const playerLeaderboard =
     selectedType === "players"
@@ -471,15 +506,31 @@ export default async function LeaderboardPage({
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <TypeButton
-                href={buildLeaderboardHref(selectedGame, "players")}
+                href={buildLeaderboardHref(selectedGame, "players", selectedRegion)}
                 label={messages.types.playerRanking}
                 active={selectedType === "players"}
               />
               <TypeButton
-                href={buildLeaderboardHref(selectedGame, "teams")}
+                href={buildLeaderboardHref(selectedGame, "teams", selectedRegion)}
                 label={messages.types.teamRanking}
                 active={selectedType === "teams"}
               />
+            </div>
+
+            {/* Region filter */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-fg-3)" }}>
+                Region
+              </span>
+              <div style={{ width: 1, height: 16, background: "var(--asc-line-soft)" }} />
+              {regions.map((region) => (
+                <RegionButton
+                  key={region}
+                  href={buildLeaderboardHref(selectedGame, selectedType, region)}
+                  label={region}
+                  active={selectedRegion === region}
+                />
+              ))}
             </div>
           </div>
         </section>
@@ -508,7 +559,7 @@ export default async function LeaderboardPage({
                 {games.map((game) => (
                   <FilterButton
                     key={game}
-                    href={buildLeaderboardHref(game, selectedType)}
+                    href={buildLeaderboardHref(game, selectedType, selectedRegion)}
                     label={getGameLabel(game, messages)}
                     active={selectedGame === game}
                   />
@@ -536,7 +587,11 @@ export default async function LeaderboardPage({
 
           {activeLeaderboard.length > 0 ? (
             selectedType === "players" ? (
-              <LeaderboardTable users={playerLeaderboard} messages={messages.table} />
+              <LeaderboardTable
+                users={playerLeaderboard}
+                messages={messages.table}
+                currentUserId={currentUserId}
+              />
             ) : (
               <TeamLeaderboardTable teams={teamLeaderboard} messages={messages.table} />
             )
