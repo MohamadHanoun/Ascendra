@@ -1,9 +1,11 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminTeamActionResult } from "@/actions/adminTeamInlineActions";
+
+import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
 
 type InlineAdminActionFormProps = {
   action: (formData: FormData) => Promise<AdminTeamActionResult>;
@@ -20,17 +22,37 @@ type InlineAdminActionFormProps = {
   textareaRequired?: boolean;
 };
 
-function getButtonStyle(variant: InlineAdminActionFormProps["variant"]): React.CSSProperties {
-  if (variant === "danger") return { borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" };
-  if (variant === "success") return { background: "oklch(0.55 0.14 150)", color: "#fff" };
-  if (variant === "secondary") return { borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" };
-  return { background: "var(--asc-accent-2)", color: "#fff", boxShadow: "0 0 16px var(--asc-accent-glow)" };
-}
+function getButtonStyle(
+  variant: InlineAdminActionFormProps["variant"],
+): CSSProperties {
+  if (variant === "danger") {
+    return {
+      borderColor: "oklch(0.50 0.20 25 / 0.5)",
+      color: "var(--asc-live)",
+      background: "transparent",
+    };
+  }
 
-function getConfirmButtonStyle(variant: InlineAdminActionFormProps["variant"]): React.CSSProperties {
-  if (variant === "danger") return { background: "oklch(0.50 0.20 25)", color: "#fff" };
-  if (variant === "success") return { background: "oklch(0.55 0.14 150)", color: "#fff" };
-  return { background: "var(--asc-accent-2)", color: "#fff" };
+  if (variant === "success") {
+    return {
+      background: "oklch(0.55 0.14 150)",
+      color: "#fff",
+    };
+  }
+
+  if (variant === "secondary") {
+    return {
+      borderColor: "var(--asc-line-soft)",
+      color: "var(--asc-fg-2)",
+      background: "transparent",
+    };
+  }
+
+  return {
+    background: "var(--asc-accent-2)",
+    color: "#fff",
+    boxShadow: "0 0 16px var(--asc-accent-glow)",
+  };
 }
 
 export default function InlineAdminActionForm({
@@ -54,42 +76,64 @@ export default function InlineAdminActionForm({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [textareaValue, setTextareaValue] = useState("");
 
+  const buttonStyle = getButtonStyle(variant);
+  const isBordered = variant === "danger" || variant === "secondary";
+  const needsConfirmation = Boolean(
+    confirmTitle || confirmDescription || textareaName,
+  );
+
   function runAction() {
     const form = formRef.current;
-    if (!form) return;
+
+    if (!form) {
+      return;
+    }
 
     if (textareaRequired && textareaName && !textareaValue.trim()) {
-      setNotice({ ok: false, message: "Please write a reason before confirming." });
+      setNotice({
+        ok: false,
+        message: "Please write a reason before confirming.",
+      });
       return;
     }
 
     const formData = new FormData(form);
-    if (textareaName) formData.set(textareaName, textareaValue.trim());
+
+    if (textareaName) {
+      formData.set(textareaName, textareaValue.trim());
+    }
 
     startTransition(async () => {
       const result = await action(formData);
+
       setNotice(result);
       setConfirmOpen(false);
 
       if (result.redirectTo) {
-        window.setTimeout(() => router.push(result.redirectTo || "/admin"), 350);
+        window.setTimeout(() => {
+          router.push(result.redirectTo || "/admin");
+        }, 350);
         return;
       }
-      if (result.ok) window.setTimeout(() => router.refresh(), 450);
+
+      if (result.ok) {
+        window.setTimeout(() => {
+          router.refresh();
+        }, 450);
+      }
     });
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (confirmTitle || confirmDescription || textareaName) {
+
+    if (needsConfirmation) {
       setConfirmOpen(true);
       return;
     }
+
     runAction();
   }
-
-  const buttonStyle = getButtonStyle(variant);
-  const isBordered = variant === "danger" || variant === "secondary";
 
   return (
     <>
@@ -99,8 +143,14 @@ export default function InlineAdminActionForm({
         <button
           type="submit"
           disabled={pending}
-          className={`px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${isBordered ? "border" : ""}`}
-          style={buttonStyle}
+          className={`px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${
+            isBordered ? "border" : ""
+          }`}
+          style={{
+            ...buttonStyle,
+            clipPath:
+              "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+          }}
         >
           {pending ? pendingLabel : buttonLabel}
         </button>
@@ -110,8 +160,16 @@ export default function InlineAdminActionForm({
             className="border px-3 py-2 text-xs font-bold"
             style={
               notice.ok
-                ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
-                : { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }
+                ? {
+                    borderColor: "oklch(0.55 0.14 150 / 0.5)",
+                    background: "oklch(0.25 0.12 150 / 0.18)",
+                    color: "var(--asc-green)",
+                  }
+                : {
+                    borderColor: "oklch(0.50 0.20 25 / 0.5)",
+                    background: "oklch(0.25 0.18 25 / 0.18)",
+                    color: "var(--asc-live)",
+                  }
             }
           >
             {notice.message}
@@ -119,67 +177,44 @@ export default function InlineAdminActionForm({
         )}
       </form>
 
-      {confirmOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 px-4 backdrop-blur-sm">
-          <div
-            className="w-full max-w-md overflow-hidden border shadow-2xl shadow-black/40"
-            style={{ borderColor: "var(--asc-line)", background: "var(--asc-bg-1)" }}
-          >
-            <div className="px-6 py-5" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-              <p className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-                Confirmation
-              </p>
+      <ConfirmDialogPortal
+        open={confirmOpen}
+        eyebrow="Confirmation"
+        title={confirmTitle || "Confirm action"}
+        description={confirmDescription}
+        confirmLabel={confirmLabel}
+        cancelLabel="Cancel"
+        pendingLabel={pendingLabel}
+        pending={pending}
+        variant={variant}
+        onConfirm={runAction}
+        onCancel={() => setConfirmOpen(false)}
+      >
+        {textareaName && (
+          <label className="mt-5 grid gap-2">
+            <span
+              className="text-sm font-bold"
+              style={{ color: "var(--asc-fg-1)" }}
+            >
+              {textareaLabel || "Reason"}
+            </span>
 
-              <h2 className="mt-2 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-                {confirmTitle || "Confirm action"}
-              </h2>
-
-              {confirmDescription && (
-                <p className="mt-2 leading-7" style={{ color: "var(--asc-fg-2)" }}>
-                  {confirmDescription}
-                </p>
-              )}
-
-              {textareaName && (
-                <label className="mt-5 grid gap-2">
-                  <span className="text-sm font-bold" style={{ color: "var(--asc-fg-1)" }}>
-                    {textareaLabel || "Reason"}
-                  </span>
-
-                  <textarea
-                    value={textareaValue}
-                    onChange={(event) => setTextareaValue(event.target.value)}
-                    placeholder={textareaPlaceholder || "Write a reason..."}
-                    className="min-h-28 border px-4 py-3 outline-none transition"
-                    style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-0)" }}
-                  />
-                </label>
-              )}
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-3 p-6">
-              <button
-                type="button"
-                onClick={() => setConfirmOpen(false)}
-                className="border px-5 py-3 text-sm font-black transition hover:opacity-90"
-                style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" }}
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                disabled={pending}
-                onClick={runAction}
-                className="px-5 py-3 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                style={getConfirmButtonStyle(variant)}
-              >
-                {pending ? pendingLabel : confirmLabel}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            <textarea
+              value={textareaValue}
+              onChange={(event) => setTextareaValue(event.target.value)}
+              placeholder={textareaPlaceholder || "Write a reason..."}
+              className="min-h-28 border px-4 py-3 outline-none transition"
+              style={{
+                borderColor: "var(--asc-line-soft)",
+                background: "var(--asc-bg-2)",
+                color: "var(--asc-fg-0)",
+                clipPath:
+                  "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+              }}
+            />
+          </label>
+        )}
+      </ConfirmDialogPortal>
     </>
   );
 }
