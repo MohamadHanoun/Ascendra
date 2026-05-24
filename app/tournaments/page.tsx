@@ -298,18 +298,7 @@ function StatCard({
           "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
       }}
     >
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -1,
-          left: -1,
-          width: 15,
-          height: 15,
-          borderTop: "1.5px solid var(--asc-line)",
-          borderLeft: "1.5px solid var(--asc-line)",
-        }}
-      />
+      <div aria-hidden="true" className="asc-corner-mark" />
 
       <p
         className="text-[10px] font-black uppercase tracking-[0.18em]"
@@ -460,19 +449,7 @@ function FeaturedTournament({
         }}
       />
 
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -1,
-          left: -1,
-          width: 18,
-          height: 18,
-          borderTop: "2px solid var(--asc-accent)",
-          borderLeft: "2px solid var(--asc-accent)",
-          opacity: 0.72,
-        }}
-      />
+      <div aria-hidden="true" className="asc-corner-mark" />
 
       <div className="relative z-10 grid min-h-[260px] gap-8 p-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)] lg:items-end">
         <div>

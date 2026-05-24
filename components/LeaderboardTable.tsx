@@ -166,47 +166,13 @@ function PodiumCard({
       }}
     >
       {/* L-bracket corner mark */}
-      <div
-        aria-hidden="true"
-        style={{ position: "absolute", top: 9, left: 9, width: 10, height: 10, borderTop: "1px solid var(--asc-accent)", borderLeft: "1px solid var(--asc-accent)", opacity: 0.6 }}
-      />
+      <div aria-hidden="true" className="asc-corner-mark" />
 
       {/* Ghost rank number */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -10,
-          right: -8,
-          fontFamily: "'Barlow Condensed', sans-serif",
-          fontWeight: 900,
-          fontSize: rank === 1 ? 180 : 130,
-          color: "oklch(1 0 0)",
-          opacity: 0.04,
-          lineHeight: 0.9,
-          letterSpacing: "-0.02em",
-          userSelect: "none",
-          pointerEvents: "none",
-        }}
-      >
-        0{rank}
-      </div>
+      <div aria-hidden="true" className="asc-corner-mark" />
 
       {/* Accent glow — rank 1 only */}
-      {rank === 1 && (
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: -40,
-            right: -40,
-            width: 200,
-            height: 200,
-            background: "radial-gradient(circle, var(--asc-accent-glow) 0%, transparent 60%)",
-            pointerEvents: "none",
-          }}
-        />
-      )}
+      {rank === 1 && <div aria-hidden="true" className="asc-corner-mark" />}
 
       {/* Rank number */}
       <div className="relative flex items-center gap-2">
@@ -232,7 +198,8 @@ function PodiumCard({
           style={{
             width: rank === 1 ? 64 : 52,
             height: rank === 1 ? 64 : 52,
-            background: "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.30 0.16 325))",
+            background:
+              "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.30 0.16 325))",
             color: "oklch(0.97 0.01 290)",
             fontSize: rank === 1 ? 20 : 16,
             fontFamily: "'Barlow Condensed', sans-serif",
@@ -255,23 +222,40 @@ function PodiumCard({
               {user.username}
             </p>
             {isCurrentUser && (
-              <span className="text-[9px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-accent)" }}>
+              <span
+                className="text-[9px] font-black uppercase tracking-[0.14em]"
+                style={{ color: "var(--asc-accent)" }}
+              >
                 YOU
               </span>
             )}
           </div>
-          <p className="mt-1 text-[10px] font-black uppercase tracking-[0.10em]" style={{ color: "var(--asc-fg-3)" }}>
+          <p
+            className="mt-1 text-[10px] font-black uppercase tracking-[0.10em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
             GLOBAL
           </p>
         </div>
       </div>
 
-      <div style={{ margin: "16px 0", height: 1, background: "var(--asc-line-soft)" }} />
+      <div
+        style={{
+          margin: "16px 0",
+          height: 1,
+          background: "var(--asc-line-soft)",
+        }}
+      />
 
       {/* Stats grid */}
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <p className="text-[9px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>PTS</p>
+          <p
+            className="text-[9px] font-black uppercase tracking-[0.14em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            PTS
+          </p>
           <p
             className="mt-1 font-black tabular-nums"
             style={{
@@ -284,7 +268,12 @@ function PodiumCard({
           </p>
         </div>
         <div>
-          <p className="text-[9px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>{messages.results}</p>
+          <p
+            className="text-[9px] font-black uppercase tracking-[0.14em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            {messages.results}
+          </p>
           <p
             className="mt-1 font-black tabular-nums"
             style={{
@@ -297,7 +286,12 @@ function PodiumCard({
           </p>
         </div>
         <div>
-          <p className="text-[9px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>{messages.best}</p>
+          <p
+            className="text-[9px] font-black uppercase tracking-[0.14em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            {messages.best}
+          </p>
           <p
             className="mt-1 font-black tabular-nums"
             style={{

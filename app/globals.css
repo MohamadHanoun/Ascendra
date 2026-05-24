@@ -271,3 +271,16 @@ article.overflow-hidden[class*="border"]::before {
   opacity: 0.9;
   filter: none;
 }
+
+.asc-corner-mark {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 12px;
+  height: 12px;
+  border-top: 1.5px solid var(--asc-accent);
+  border-left: 1.5px solid var(--asc-accent);
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 30;
+}

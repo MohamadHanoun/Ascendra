@@ -305,55 +305,11 @@ function PodiumCard({
           "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
       }}
     >
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: 10,
-          left: 10,
-          width: 14,
-          height: 14,
-          borderTop: "1.5px solid var(--asc-accent)",
-          borderLeft: "1.5px solid var(--asc-accent)",
-          opacity: 0.7,
-        }}
-      />
+      <div aria-hidden="true" className="asc-corner-mark" />
 
-      {place === 1 && (
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: -40,
-            right: -40,
-            width: 240,
-            height: 240,
-            background:
-              "radial-gradient(circle, var(--asc-accent-glow) 0%, transparent 62%)",
-            pointerEvents: "none",
-          }}
-        />
-      )}
+      {place === 1 && <div aria-hidden="true" className="asc-corner-mark" />}
 
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -12,
-          right: -8,
-          fontFamily: "var(--font-display)",
-          fontWeight: 700,
-          fontSize: place === 1 ? 210 : 150,
-          color: "oklch(1 0 0)",
-          opacity: 0.045,
-          lineHeight: 0.9,
-          letterSpacing: "-0.02em",
-          userSelect: "none",
-          pointerEvents: "none",
-        }}
-      >
-        0{place}
-      </div>
+      <div aria-hidden="true" className="asc-corner-mark" />
 
       <div className="relative flex items-center gap-2">
         <span
@@ -793,20 +749,7 @@ function LeaderboardTable({
           borderColor: "var(--asc-line-soft)",
         }}
       >
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: 10,
-            left: 10,
-            width: 14,
-            height: 14,
-            zIndex: 1,
-            borderTop: "1.5px solid var(--asc-accent)",
-            borderLeft: "1.5px solid var(--asc-accent)",
-            opacity: 0.65,
-          }}
-        />
+        <div aria-hidden="true" className="asc-corner-mark" />
 
         <div className="min-w-[980px]">
           <div

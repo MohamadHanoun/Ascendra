@@ -129,23 +129,7 @@ function Pill({
 }
 
 function CornerMark() {
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        position: "absolute",
-        top: 10,
-        left: 10,
-        width: 12,
-        height: 12,
-        borderTop: "1.5px solid var(--asc-accent)",
-        borderLeft: "1.5px solid var(--asc-accent)",
-        opacity: 0.9,
-        pointerEvents: "none",
-        zIndex: 20,
-      }}
-    />
-  );
+  return <div aria-hidden="true" className="asc-corner-mark" />;
 }
 
 function StatCard({

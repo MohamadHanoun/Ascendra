@@ -379,19 +379,7 @@ function FeaturedEventCard({
           "polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)",
       }}
     >
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -1,
-          left: -1,
-          width: 18,
-          height: 18,
-          borderTop: "2px solid var(--asc-accent)",
-          borderLeft: "2px solid var(--asc-accent)",
-          opacity: 0.72,
-        }}
-      />
+      <div aria-hidden="true" className="asc-corner-mark" />
 
       <div className="flex items-center gap-2">
         <span className="asc-live-dot" />
@@ -738,19 +726,7 @@ function TournamentFeatureCard({
         }}
       />
 
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -1,
-          left: -1,
-          width: 18,
-          height: 18,
-          borderTop: "2px solid var(--asc-accent)",
-          borderLeft: "2px solid var(--asc-accent)",
-          opacity: 0.72,
-        }}
-      />
+      <div aria-hidden="true" className="asc-corner-mark" />
 
       <div className="relative z-10 flex h-full min-h-[inherit] flex-col p-5">
         <div className="flex flex-wrap items-center gap-2">
@@ -867,19 +843,7 @@ function GameTile({ game }: { game: GameData }) {
         }}
       />
 
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -1,
-          left: -1,
-          width: 18,
-          height: 18,
-          borderTop: "2px solid var(--asc-accent)",
-          borderLeft: "2px solid var(--asc-accent)",
-          opacity: 0.72,
-        }}
-      />
+      <div aria-hidden="true" className="asc-corner-mark" />
 
       <div className="absolute right-4 top-4">
         <span
@@ -945,19 +909,7 @@ function DiscordPreviewCard() {
           "polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)",
       }}
     >
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -1,
-          left: -1,
-          width: 18,
-          height: 18,
-          borderTop: "2px solid var(--asc-accent)",
-          borderLeft: "2px solid var(--asc-accent)",
-          opacity: 0.72,
-        }}
-      />
+      <div aria-hidden="true" className="asc-corner-mark" />
 
       <div className="flex items-start gap-4">
         <DiscordGlyph />
@@ -1048,18 +1000,7 @@ function HomeMetricTile({
           "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
       }}
     >
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -1,
-          left: -1,
-          width: 14,
-          height: 14,
-          borderTop: "1.5px solid var(--asc-line)",
-          borderLeft: "1.5px solid var(--asc-line)",
-        }}
-      />
+      <div aria-hidden="true" className="asc-corner-mark" />
 
       <p
         className="text-[10px] font-black uppercase tracking-[0.18em]"

@@ -324,18 +324,7 @@ function InfoCard({
           "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
       }}
     >
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -1,
-          left: -1,
-          width: 15,
-          height: 15,
-          borderTop: "1.5px solid var(--asc-line)",
-          borderLeft: "1.5px solid var(--asc-line)",
-        }}
-      />
+      <div aria-hidden="true" className="asc-corner-mark" />
       <p
         className="text-[10px] font-black uppercase tracking-[0.16em]"
         style={{ color: "var(--asc-fg-3)" }}

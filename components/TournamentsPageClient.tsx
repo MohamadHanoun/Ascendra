@@ -38,12 +38,7 @@ type Props = {
 // ── Atoms ─────────────────────────────────────────────────────────────────────
 
 function CornerMark() {
-  return (
-    <>
-      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, width: 8, height: 1, background: "var(--asc-accent)", opacity: 0.6 }} />
-      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, width: 1, height: 8, background: "var(--asc-accent)", opacity: 0.6 }} />
-    </>
-  );
+  return <div aria-hidden="true" className="asc-corner-mark" />;
 }
 
 function StatusChip({ status, registrationStatus, statusLabels }: { status: string; registrationStatus: string; statusLabels: Props["statusLabels"] }) {
