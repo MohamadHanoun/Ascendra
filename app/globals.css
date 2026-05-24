@@ -46,7 +46,7 @@
   --asc-prize: #60a5fa;
 
   /* Font variables (populated by next/font in layout.tsx) */
-  --font-display: var(--font-barlow-condensed, 'Barlow Condensed', system-ui, sans-serif);
+  --font-display: var(--font-rajdhani, 'Rajdhani', system-ui, sans-serif);
   --font-body: var(--font-inter, 'Inter', system-ui, sans-serif);
 
   /* L-bracket size */

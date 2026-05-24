@@ -64,8 +64,15 @@ function NavLink({
     <Link
       href={href}
       onClick={onClick}
-      className="relative px-4 py-2 text-sm font-bold tracking-wide transition"
-      style={{ color: isActive ? "var(--asc-accent)" : "var(--asc-fg-2)" }}
+      className="relative px-4 py-2 transition"
+      style={{
+        color: isActive ? "var(--asc-accent)" : "var(--asc-fg-2)",
+        fontFamily: "var(--font-display)",
+        fontWeight: 600,
+        fontSize: "0.8rem",
+        letterSpacing: "0.14em",
+        textTransform: "uppercase",
+      }}
     >
       {label}
       {isActive && (
@@ -223,6 +230,7 @@ export default function NavbarClient({
                   style={{
                     border: "1px solid var(--asc-line-soft)",
                     background: isProfileOpen ? "var(--asc-accent-dim)" : "transparent",
+                    clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
                   }}
                 >
                   <UserAvatar
@@ -358,6 +366,7 @@ export default function NavbarClient({
                 style={{
                   border: "1px solid var(--asc-line)",
                   color: "var(--asc-fg-2)",
+                  clipPath: "polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)",
                 }}
               >
                 {labels.actions.login}
@@ -370,7 +379,10 @@ export default function NavbarClient({
                 target="_blank"
                 rel="noreferrer"
                 className="px-5 py-2 text-sm font-black text-white transition"
-                style={{ background: "var(--asc-accent-2)" }}
+                style={{
+                  background: "var(--asc-accent-2)",
+                  clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+                }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.background = "var(--asc-accent)";
                 }}

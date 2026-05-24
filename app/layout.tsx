@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
-import { Barlow_Condensed, Inter } from "next/font/google";
+import { Barlow_Condensed, Inter, Rajdhani } from "next/font/google";
 
 import { getTextDirection, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import "./globals.css";
+
+const rajdhani = Rajdhani({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-rajdhani",
+  display: "swap",
+});
 
 const barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
@@ -102,7 +109,7 @@ export default async function RootLayout({
       lang={locale}
       dir={getTextDirection(locale)}
       suppressHydrationWarning
-      className={`${barlowCondensed.variable} ${inter.variable}`}
+      className={`${rajdhani.variable} ${barlowCondensed.variable} ${inter.variable}`}
     >
       <body>{children}</body>
     </html>
