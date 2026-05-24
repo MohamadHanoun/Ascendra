@@ -30,10 +30,22 @@ const inputStyle: React.CSSProperties = {
 
 function StatusBadge({ active }: { active: boolean }) {
   const style: React.CSSProperties = active
-    ? { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" }
-    : { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" };
+    ? {
+        color: "var(--asc-green)",
+        borderColor: "oklch(0.55 0.14 150 / 0.5)",
+        background: "oklch(0.25 0.12 150 / 0.18)",
+      }
+    : {
+        color: "var(--asc-fg-3)",
+        borderColor: "var(--asc-line-soft)",
+        background: "transparent",
+      };
+
   return (
-    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={style}>
+    <span
+      className="inline-flex w-fit border px-3 py-1 text-xs font-black"
+      style={style}
+    >
       {active ? "Active" : "Hidden"}
     </span>
   );
@@ -41,13 +53,22 @@ function StatusBadge({ active }: { active: boolean }) {
 
 function Notice({ notice }: { notice: AdminRoleActionResult | null }) {
   if (!notice) return null;
+
   return (
     <div
       className="border px-4 py-3 text-sm font-bold"
       style={
         notice.ok
-          ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
-          : { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }
+          ? {
+              borderColor: "oklch(0.55 0.14 150 / 0.5)",
+              background: "oklch(0.25 0.12 150 / 0.18)",
+              color: "var(--asc-green)",
+            }
+          : {
+              borderColor: "oklch(0.50 0.20 25 / 0.5)",
+              background: "oklch(0.25 0.18 25 / 0.18)",
+              color: "var(--asc-live)",
+            }
       }
     >
       {notice.message}
@@ -71,7 +92,11 @@ function moveItem(items: RoleItem[], fromIndex: number, toIndex: number) {
   return nextItems.map((item, index) => ({ ...item, order: index + 1 }));
 }
 
-export default function AdminRoleDragList({ initialRoles }: { initialRoles: RoleItem[] }) {
+export default function AdminRoleDragList({
+  initialRoles,
+}: {
+  initialRoles: RoleItem[];
+}) {
   const router = useRouter();
 
   const [roles, setRoles] = useState(initialRoles);
@@ -86,10 +111,15 @@ export default function AdminRoleDragList({ initialRoles }: { initialRoles: Role
 
   function saveOrder(nextRoles: RoleItem[]) {
     const formData = new FormData();
-    formData.set("orderedRoleIds", JSON.stringify(nextRoles.map((role) => role.id)));
+
+    formData.set(
+      "orderedRoleIds",
+      JSON.stringify(nextRoles.map((role) => role.id)),
+    );
 
     startTransition(async () => {
       const result = await reorderRolesInline(formData);
+
       setNotice(result);
 
       if (!result.ok) {
@@ -97,7 +127,9 @@ export default function AdminRoleDragList({ initialRoles }: { initialRoles: Role
         return;
       }
 
-      window.setTimeout(() => { router.refresh(); }, 300);
+      window.setTimeout(() => {
+        router.refresh();
+      }, 300);
     });
   }
 
@@ -128,6 +160,7 @@ export default function AdminRoleDragList({ initialRoles }: { initialRoles: Role
     }
 
     const nextRoles = moveItem(roles, fromIndex, toIndex);
+
     setRoles(nextRoles);
     setDraggedRoleId(null);
     setDragOverRoleId(null);
@@ -141,7 +174,14 @@ export default function AdminRoleDragList({ initialRoles }: { initialRoles: Role
 
   if (roles.length === 0) {
     return (
-      <div className="border p-6 shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-3)" }}>
+      <div
+        className="border p-6 shadow-2xl shadow-black/20"
+        style={{
+          borderColor: "var(--asc-line-soft)",
+          background: "var(--asc-bg-1)",
+          color: "var(--asc-fg-3)",
+        }}
+      >
         No roles found.
       </div>
     );
@@ -151,33 +191,52 @@ export default function AdminRoleDragList({ initialRoles }: { initialRoles: Role
     <div className="grid gap-4">
       <div
         className="flex flex-col justify-between gap-3 border px-5 py-4 shadow-2xl shadow-black/20 lg:flex-row lg:items-center"
-        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+        style={{
+          borderColor: "var(--asc-line-soft)",
+          background: "var(--asc-bg-1)",
+        }}
       >
         <div>
-          <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>Drag to reorder</p>
-          <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>Use the handle and drop the role in a new position.</p>
+          <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
+            Drag to reorder
+          </p>
+          <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+            Use the handle and drop the role in a new position.
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-3">
           {pending && (
             <div
               className="border px-4 py-3 text-sm font-bold"
-              style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+              style={{
+                borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                background: "var(--asc-accent-dim)",
+                color: "var(--asc-accent)",
+              }}
             >
               Saving order...
             </div>
           )}
+
           <Notice notice={notice} />
         </div>
       </div>
 
       <section
         className="overflow-hidden border shadow-2xl shadow-black/20"
-        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+        style={{
+          borderColor: "var(--asc-line-soft)",
+          background: "var(--asc-bg-1)",
+        }}
       >
         <div
           className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] lg:grid lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:gap-5"
-          style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "oklch(0.08 0.02 287)", color: "var(--asc-fg-3)" }}
+          style={{
+            borderBottom: "1px solid var(--asc-line-soft)",
+            background: "oklch(0.08 0.02 287)",
+            color: "var(--asc-fg-3)",
+          }}
         >
           <span>Order</span>
           <span>Role</span>
@@ -196,16 +255,25 @@ export default function AdminRoleDragList({ initialRoles }: { initialRoles: Role
                 key={role.id}
                 draggable
                 onDragStart={() => handleDragStart(role.id)}
-                onDragOver={(event) => { event.preventDefault(); handleDragOver(role.id); }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  handleDragOver(role.id);
+                }}
                 onDrop={() => handleDrop(role.id)}
                 onDragEnd={handleDragEnd}
-                className={`grid gap-4 px-5 py-4 transition lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:items-start lg:gap-5 ${isDragging ? "opacity-50" : ""} ${isDragTarget ? "bg-violet-500/10" : "hover:bg-white/[0.035]"}`}
+                className={`grid gap-4 px-5 py-4 transition lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:items-start lg:gap-5 ${
+                  isDragging ? "opacity-50" : ""
+                } ${isDragTarget ? "bg-violet-500/10" : "hover:bg-white/[0.035]"}`}
                 style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
               >
                 <div className="flex items-center justify-between gap-3 lg:justify-start">
                   <span
                     className="grid h-10 w-10 place-items-center text-sm font-black"
-                    style={{ border: "1px solid oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+                    style={{
+                      border: "1px solid oklch(0.50 0.20 285 / 0.4)",
+                      background: "var(--asc-accent-dim)",
+                      color: "var(--asc-accent)",
+                    }}
                   >
                     {String(position).padStart(2, "0")}
                   </span>
@@ -214,7 +282,11 @@ export default function AdminRoleDragList({ initialRoles }: { initialRoles: Role
                     type="button"
                     aria-label="Drag role"
                     className="grid h-10 w-10 cursor-grab place-items-center text-lg font-black transition active:cursor-grabbing lg:hidden"
-                    style={{ border: "1px solid var(--asc-line-soft)", background: "oklch(0.09 0.02 287)", color: "var(--asc-fg-3)" }}
+                    style={{
+                      border: "1px solid var(--asc-line-soft)",
+                      background: "oklch(0.09 0.02 287)",
+                      color: "var(--asc-fg-3)",
+                    }}
                   >
                     ≡
                   </button>
@@ -225,18 +297,37 @@ export default function AdminRoleDragList({ initialRoles }: { initialRoles: Role
                   buttonLabel="Save"
                   pendingLabel="Saving..."
                   className="grid gap-4"
+                  confirmTitle="Save role changes?"
+                  confirmDescription={`Save changes to ${role.name}?`}
+                  confirmLabel="Save role"
                 >
                   <input type="hidden" name="roleId" value={role.id} />
                   <input type="hidden" name="order" value={position} />
 
                   <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_170px]">
                     <label className="grid gap-2">
-                      <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Role name</span>
-                      <input name="name" required defaultValue={role.name} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+                      <span
+                        className="text-xs font-black uppercase tracking-[0.12em]"
+                        style={{ color: "var(--asc-fg-3)" }}
+                      >
+                        Role name
+                      </span>
+                      <input
+                        name="name"
+                        required
+                        defaultValue={role.name}
+                        className="border px-4 py-3 text-white outline-none transition"
+                        style={inputStyle}
+                      />
                     </label>
 
                     <label className="grid gap-2">
-                      <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Color</span>
+                      <span
+                        className="text-xs font-black uppercase tracking-[0.12em]"
+                        style={{ color: "var(--asc-fg-3)" }}
+                      >
+                        Color
+                      </span>
                       <input
                         name="color"
                         type="color"
@@ -249,7 +340,12 @@ export default function AdminRoleDragList({ initialRoles }: { initialRoles: Role
                   </div>
 
                   <label className="grid gap-2">
-                    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Description</span>
+                    <span
+                      className="text-xs font-black uppercase tracking-[0.12em]"
+                      style={{ color: "var(--asc-fg-3)" }}
+                    >
+                      Description
+                    </span>
                     <textarea
                       name="description"
                       required
@@ -267,7 +363,11 @@ export default function AdminRoleDragList({ initialRoles }: { initialRoles: Role
                     type="button"
                     aria-label="Drag role"
                     className="hidden h-10 w-10 cursor-grab place-items-center text-lg font-black transition active:cursor-grabbing lg:mt-4 lg:grid"
-                    style={{ border: "1px solid var(--asc-line-soft)", background: "oklch(0.09 0.02 287)", color: "var(--asc-fg-3)" }}
+                    style={{
+                      border: "1px solid var(--asc-line-soft)",
+                      background: "oklch(0.09 0.02 287)",
+                      color: "var(--asc-fg-3)",
+                    }}
                   >
                     ≡
                   </button>
@@ -281,6 +381,9 @@ export default function AdminRoleDragList({ initialRoles }: { initialRoles: Role
                       pendingLabel="Hiding..."
                       variant="secondary"
                       className="grid gap-2"
+                      confirmTitle="Hide role?"
+                      confirmDescription={`Hide ${role.name} from the public roles list?`}
+                      confirmLabel="Hide role"
                     >
                       <input type="hidden" name="roleId" value={role.id} />
                     </InlineAdminRoleForm>
@@ -291,6 +394,9 @@ export default function AdminRoleDragList({ initialRoles }: { initialRoles: Role
                       pendingLabel="Showing..."
                       variant="success"
                       className="grid gap-2"
+                      confirmTitle="Show role?"
+                      confirmDescription={`Show ${role.name} in the public roles list?`}
+                      confirmLabel="Show role"
                     >
                       <input type="hidden" name="roleId" value={role.id} />
                     </InlineAdminRoleForm>
