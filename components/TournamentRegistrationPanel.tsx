@@ -16,6 +16,7 @@ import {
 } from "@/actions/tournamentRegistrationInlineActions";
 import type { TournamentRegistrationActionResult } from "@/actions/tournamentRegistrationInlineActions";
 import CustomSelect from "@/components/CustomSelect";
+import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
 import type { TournamentDetailsMessages } from "@/lib/i18n";
 
 type AvailableTeam = {
@@ -215,12 +216,11 @@ function RegisterForm({
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [notice, setNotice] =
     useState<TournamentRegistrationActionResult | null>(null);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  function runAction() {
     if (pending) {
       return;
     }
@@ -237,6 +237,7 @@ function RegisterForm({
       const result = await registerRegistrationInline(formData);
 
       setNotice(result);
+      setConfirmOpen(false);
 
       if (result.redirectTo) {
         router.push(result.redirectTo);
@@ -251,42 +252,71 @@ function RegisterForm({
     });
   }
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setConfirmOpen(true);
+  }
+
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="grid gap-4">
-      <input type="hidden" name="tournamentId" value={tournamentId} />
+    <>
+      <form ref={formRef} onSubmit={handleSubmit} className="grid gap-4">
+        <input type="hidden" name="tournamentId" value={tournamentId} />
 
-      <label className="grid gap-2">
-        <span className="text-sm font-bold" style={{ color: "var(--asc-fg-1)" }}>
-          {messages.chooseTeam}
-        </span>
+        <label className="grid gap-2">
+          <span
+            className="text-sm font-bold"
+            style={{ color: "var(--asc-fg-1)" }}
+          >
+            {messages.chooseTeam}
+          </span>
 
-        <CustomSelect
-          name="teamId"
-          required
-          placeholder={messages.selectTeam}
-          options={availableTeams.map((team) => ({
-            value: team.id,
-            label: team.name,
-            description: `${team.game} · ${team.memberCount} ${getPlayerLabel(
-              team.memberCount,
-              playerLabel,
-              playersLabel,
-            )}`,
-          }))}
-        />
-      </label>
+          <CustomSelect
+            name="teamId"
+            required
+            placeholder={messages.selectTeam}
+            options={availableTeams.map((team) => ({
+              value: team.id,
+              label: team.name,
+              description: `${team.game} · ${team.memberCount} ${getPlayerLabel(
+                team.memberCount,
+                playerLabel,
+                playersLabel,
+              )}`,
+            }))}
+          />
+        </label>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-fit px-5 py-3 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-        style={{ background: "var(--asc-accent-2)", boxShadow: "0 0 20px var(--asc-accent-glow)" }}
-      >
-        {pending ? messages.registering : messages.registerTeam}
-      </button>
+        <button
+          type="submit"
+          disabled={pending}
+          className="w-fit px-5 py-3 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          style={{
+            background: "var(--asc-accent-2)",
+            boxShadow: "0 0 20px var(--asc-accent-glow)",
+            clipPath:
+              "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+          }}
+        >
+          {pending ? messages.registering : messages.registerTeam}
+        </button>
 
-      <ActionNotice result={notice} />
-    </form>
+        <ActionNotice result={notice} />
+      </form>
+
+      <ConfirmDialogPortal
+        open={confirmOpen}
+        eyebrow={messages.confirmation}
+        title="Register team?"
+        description="Submit this team registration for admin review. Make sure the selected team and roster are correct."
+        confirmLabel={messages.registerTeam}
+        cancelLabel="Cancel"
+        pendingLabel={messages.registering}
+        pending={pending}
+        variant="primary"
+        onConfirm={runAction}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </>
   );
 }
 
@@ -354,7 +384,13 @@ function CancelRegistrationForm({
           type="submit"
           disabled={pending}
           className="w-fit border px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-          style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
+          style={{
+            borderColor: "oklch(0.50 0.20 25 / 0.5)",
+            color: "var(--asc-live)",
+            background: "transparent",
+            clipPath:
+              "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+          }}
         >
           {pending ? messages.cancelling : messages.cancelRegistration}
         </button>
@@ -362,49 +398,21 @@ function CancelRegistrationForm({
         <ActionNotice result={notice} />
       </form>
 
-      {confirmOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 px-4 backdrop-blur-sm">
-          <div
-            className="w-full max-w-md overflow-hidden border shadow-2xl shadow-black/40"
-            style={{ borderColor: "var(--asc-line)", background: "var(--asc-bg-1)" }}
-          >
-            <div className="px-6 py-5" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-              <p className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-                {messages.confirmation}
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-                {messages.cancelRegistrationTitle}
-              </h2>
-
-              <p className="mt-2 leading-7" style={{ color: "var(--asc-fg-2)" }}>
-                {formatTemplate(messages.cancelRegistrationDescription, { teamName })}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-3 p-6">
-              <button
-                type="button"
-                onClick={() => setConfirmOpen(false)}
-                className="border px-5 py-3 text-sm font-black transition hover:opacity-90"
-                style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" }}
-              >
-                {messages.keepRegistration}
-              </button>
-
-              <button
-                type="button"
-                onClick={runAction}
-                disabled={pending}
-                className="px-5 py-3 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                style={{ background: "oklch(0.50 0.20 25)" }}
-              >
-                {pending ? messages.cancelling : messages.cancelRegistration}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialogPortal
+        open={confirmOpen}
+        eyebrow={messages.confirmation}
+        title={messages.cancelRegistrationTitle}
+        description={formatTemplate(messages.cancelRegistrationDescription, {
+          teamName,
+        })}
+        confirmLabel={messages.cancelRegistration}
+        cancelLabel={messages.keepRegistration}
+        pendingLabel={messages.cancelling}
+        pending={pending}
+        variant="danger"
+        onConfirm={runAction}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </>
   );
 }
