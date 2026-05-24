@@ -12,10 +12,7 @@ type TournamentRegistrationItem = {
   teamId: string;
   snapshotTeamName?: string | null;
   snapshotTeamGame?: string | null;
-  team: {
-    id: string;
-    name: string;
-  };
+  team: { id: string; name: string };
 };
 
 type ExistingResultItem = {
@@ -31,84 +28,45 @@ type AdminTournamentResultFormProps = {
 };
 
 const presets = [
-  {
-    label: "Champion",
-    placement: 1,
-    points: 10,
-    note: "Champion",
-  },
-  {
-    label: "Runner-up",
-    placement: 2,
-    points: 7,
-    note: "Runner-up",
-  },
-  {
-    label: "Third place",
-    placement: 3,
-    points: 5,
-    note: "Third place",
-  },
-  {
-    label: "Participation",
-    placement: 4,
-    points: 1,
-    note: "Participation",
-  },
+  { label: "Champion", placement: 1, points: 10, note: "Champion" },
+  { label: "Runner-up", placement: 2, points: 7, note: "Runner-up" },
+  { label: "Third place", placement: 3, points: 5, note: "Third place" },
+  { label: "Participation", placement: 4, points: 1, note: "Participation" },
 ];
 
-function inputClass() {
-  return "w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400";
-}
+const inputStyle: React.CSSProperties = {
+  borderColor: "var(--asc-line-soft)",
+  background: "var(--asc-bg-2)",
+  color: "var(--asc-fg-0)",
+};
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <span className="text-sm font-bold text-gray-200">{children}</span>;
+  return (
+    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+      {children}
+    </span>
+  );
 }
 
 function getNextPlacement(results: ExistingResultItem[]) {
-  if (results.length === 0) {
-    return 1;
-  }
-
+  if (results.length === 0) return 1;
   const usedPlacements = new Set(results.map((result) => result.placement));
   let placement = 1;
-
-  while (usedPlacements.has(placement)) {
-    placement += 1;
-  }
-
+  while (usedPlacements.has(placement)) placement += 1;
   return placement;
 }
 
 function getSuggestedPoints(placement: number) {
-  if (placement === 1) {
-    return 10;
-  }
-
-  if (placement === 2) {
-    return 7;
-  }
-
-  if (placement === 3) {
-    return 5;
-  }
-
+  if (placement === 1) return 10;
+  if (placement === 2) return 7;
+  if (placement === 3) return 5;
   return 1;
 }
 
 function getSuggestedNote(placement: number) {
-  if (placement === 1) {
-    return "Champion";
-  }
-
-  if (placement === 2) {
-    return "Runner-up";
-  }
-
-  if (placement === 3) {
-    return "Third place";
-  }
-
+  if (placement === 1) return "Champion";
+  if (placement === 2) return "Runner-up";
+  if (placement === 3) return "Third place";
   return "Participation";
 }
 
@@ -136,9 +94,7 @@ export default function AdminTournamentResultForm({
     return {
       value: registration.teamId,
       label: alreadyHasResult ? `${teamName} · edit result` : teamName,
-      description: `${teamGame} · approved${
-        alreadyHasResult ? " · result saved" : ""
-      }`,
+      description: `${teamGame} · approved${alreadyHasResult ? " · result saved" : ""}`,
     };
   });
 
@@ -150,7 +106,6 @@ export default function AdminTournamentResultForm({
 
   function applyNextAvailablePlacement() {
     const availablePlacement = getNextPlacement(results);
-
     setPlacement(availablePlacement);
     setPoints(getSuggestedPoints(availablePlacement));
     setNote(getSuggestedNote(availablePlacement));
@@ -158,7 +113,6 @@ export default function AdminTournamentResultForm({
 
   function handlePlacementChange(value: number) {
     const safeValue = Number.isFinite(value) && value > 0 ? value : 1;
-
     setPlacement(safeValue);
     setPoints(getSuggestedPoints(safeValue));
     setNote(getSuggestedNote(safeValue));
@@ -176,7 +130,6 @@ export default function AdminTournamentResultForm({
 
       <label className="grid gap-2">
         <FieldLabel>Team</FieldLabel>
-
         <CustomSelect
           name="teamId"
           required
@@ -190,23 +143,22 @@ export default function AdminTournamentResultForm({
 
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           {presets.map((preset) => {
-            const isActive =
-              placement === preset.placement && points === preset.points;
+            const isActive = placement === preset.placement && points === preset.points;
 
             return (
               <button
                 key={preset.label}
                 type="button"
                 onClick={() => applyPreset(preset)}
-                className={`rounded-xl border px-4 py-3 text-left transition ${
+                className="border px-4 py-3 text-left transition hover:opacity-90"
+                style={
                   isActive
-                    ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
-                    : "border-white/10 bg-black/25 text-gray-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
-                }`}
+                    ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
+                    : { borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }
+                }
               >
                 <span className="block text-sm font-black">{preset.label}</span>
-
-                <span className="mt-1 block text-xs font-bold text-gray-500">
+                <span className="mt-1 block text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
                   #{preset.placement} · {preset.points} pts
                 </span>
               </button>
@@ -218,7 +170,8 @@ export default function AdminTournamentResultForm({
       <button
         type="button"
         onClick={applyNextAvailablePlacement}
-        className="w-fit rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-2 text-sm font-black text-violet-200 transition hover:bg-violet-500/20"
+        className="w-fit border px-4 py-2 text-sm font-black transition hover:opacity-90"
+        style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
       >
         Use next placement
       </button>
@@ -226,23 +179,20 @@ export default function AdminTournamentResultForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2">
           <FieldLabel>Placement</FieldLabel>
-
           <input
             name="placement"
             type="number"
             min="1"
             required
             value={placement}
-            onChange={(event) =>
-              handlePlacementChange(Number(event.target.value))
-            }
-            className={inputClass()}
+            onChange={(event) => handlePlacementChange(Number(event.target.value))}
+            className="w-full border px-4 py-3 text-white outline-none transition"
+            style={inputStyle}
           />
         </label>
 
         <label className="grid gap-2">
           <FieldLabel>Points</FieldLabel>
-
           <input
             name="points"
             type="number"
@@ -250,20 +200,21 @@ export default function AdminTournamentResultForm({
             required
             value={points}
             onChange={(event) => setPoints(Number(event.target.value))}
-            className={inputClass()}
+            className="w-full border px-4 py-3 text-white outline-none transition"
+            style={inputStyle}
           />
         </label>
       </div>
 
       <label className="grid gap-2">
         <FieldLabel>Note</FieldLabel>
-
         <input
           name="note"
           value={note}
           onChange={(event) => setNote(event.target.value)}
           placeholder="Optional note"
-          className={inputClass()}
+          className="w-full border px-4 py-3 text-white outline-none transition"
+          style={inputStyle}
         />
       </label>
     </InlineAdminTournamentForm>

@@ -116,20 +116,21 @@ function formatApplications(
 function StatusBadge({ status, label }: { status: string; label?: string }) {
   const normalized = status.toLowerCase().replace("registration ", "");
 
-  const tone =
+  const style =
     normalized === "open" || normalized === "approved"
-      ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
+      ? { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" }
       : normalized === "upcoming" || normalized === "registered"
-        ? "border-sky-400/25 bg-sky-500/10 text-sky-300"
+        ? { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" }
         : normalized === "closed" || normalized === "rejected"
-          ? "border-red-400/25 bg-red-500/10 text-red-300"
+          ? { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" }
           : normalized === "ended"
-            ? "border-blue-400/25 bg-blue-500/10 text-blue-300"
-            : "border-white/10 bg-white/5 text-gray-300";
+            ? { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" }
+            : { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" };
 
   return (
     <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${tone}`}
+      className="inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black"
+      style={style}
     >
       {label || status}
     </span>
@@ -146,7 +147,8 @@ function PrimaryLink({
   return (
     <Link
       href={href}
-      className="inline-flex justify-center rounded-xl bg-violet-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/40 transition hover:bg-violet-500"
+      className="inline-flex justify-center px-6 py-3 text-sm font-black text-white transition"
+      style={{ background: "var(--asc-accent-2)", boxShadow: "0 0 20px var(--asc-accent-glow)" }}
     >
       {children}
     </Link>
@@ -163,7 +165,8 @@ function SecondaryLink({
   return (
     <Link
       href={href}
-      className="inline-flex justify-center rounded-xl border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-black text-white transition hover:bg-white/10"
+      className="inline-flex justify-center px-6 py-3 text-sm font-black transition"
+      style={{ border: "1px solid var(--asc-line)", color: "var(--asc-fg-2)" }}
     >
       {children}
     </Link>
@@ -181,15 +184,13 @@ function SectionHeader({
 }) {
   return (
     <div className="mb-8">
-      <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-300">
+      <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
         {label}
       </p>
-
-      <h2 className="mt-2 text-3xl font-black text-white md:text-4xl">
+      <h2 className="mt-2 text-3xl md:text-4xl" style={{ color: "var(--asc-fg-0)" }}>
         {title}
       </h2>
-
-      <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-400">
+      <p className="mt-3 max-w-3xl text-sm leading-7" style={{ color: "var(--asc-fg-3)" }}>
         {description}
       </p>
     </div>
@@ -198,12 +199,11 @@ function SectionHeader({
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+    <div className="p-4" style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)" }}>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
         {label}
       </p>
-
-      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
     </div>
   );
 }
@@ -230,13 +230,8 @@ function ProgressBar({
         <span>{Math.round(progress)}%</span>
       </div>
 
-      <div className="h-2 overflow-hidden rounded-full bg-white/10">
-        <div
-          className="h-full rounded-full bg-violet-500 shadow-lg shadow-violet-500/25"
-          style={{
-            width: `${progress}%`,
-          }}
-        />
+      <div className="asc-progress-track">
+        <div className="asc-progress-fill" style={{ width: `${progress}%` }} />
       </div>
     </div>
   );
@@ -273,11 +268,14 @@ function TournamentMiniCard({
   const imageSrc = getTournamentImageUrl(tournament.game?.slug ?? null, tournament.imageUrl);
 
   return (
-    <article className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 transition hover:bg-white/[0.06]">
+    <article
+      className="overflow-hidden border transition"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+    >
       <div
         className="h-44 bg-cover bg-center"
         style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.10), rgba(7,8,17,0.82)), url("${imageSrc}")`,
+          backgroundImage: `linear-gradient(to bottom, oklch(0.06 0.03 287 / 0.10), oklch(0.06 0.03 287 / 0.88)), url("${imageSrc}")`,
         }}
       />
 
@@ -285,31 +283,22 @@ function TournamentMiniCard({
         <div className="flex flex-wrap gap-2">
           <StatusBadge
             status={tournament.status}
-            label={getTournamentStatusLabel(
-              tournament.status,
-              messages.statuses,
-            )}
+            label={getTournamentStatusLabel(tournament.status, messages.statuses)}
           />
-
           <StatusBadge
             status={tournament.registrationStatus}
-            label={getRegistrationStatusLabel(
-              tournament.registrationStatus,
-              messages.statuses,
-            )}
+            label={getRegistrationStatusLabel(tournament.registrationStatus, messages.statuses)}
           />
         </div>
 
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
             {tournament.game?.name ?? "—"}
           </p>
-
-          <h3 className="mt-2 text-2xl font-black text-white">
+          <h3 className="mt-2 text-2xl" style={{ color: "var(--asc-fg-0)" }}>
             {tournament.title}
           </h3>
-
-          <p className="mt-2 text-sm text-gray-400">
+          <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
             {tournament.startsAt?.toLocaleDateString() ?? "—"} · {tournament.teamSize}v{tournament.teamSize}
           </p>
         </div>
@@ -320,13 +309,14 @@ function TournamentMiniCard({
           approvedLabel={messages.tournaments.approved}
         />
 
-        <p className="text-xs font-bold text-gray-500">
+        <p className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
           {formatApplications(applications, messages.tournaments, locale)}
         </p>
 
         <Link
           href={`/tournaments/${tournament.id}`}
-          className="rounded-xl bg-violet-600 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-violet-500"
+          className="px-5 py-3 text-center text-sm font-black text-white transition"
+          style={{ background: "var(--asc-accent-2)" }}
         >
           {messages.tournaments.viewDetails}
         </Link>
@@ -345,14 +335,15 @@ function JourneyRow({
   description: string;
 }) {
   return (
-    <article className="grid gap-3 border-b border-white/10 px-5 py-4 last:border-b-0 md:grid-cols-[80px_180px_minmax(0,1fr)] md:items-center">
-      <p className="text-sm font-black text-violet-300">
+    <article
+      className="grid gap-3 px-5 py-4 last:border-b-0 md:grid-cols-[80px_180px_minmax(0,1fr)] md:items-center"
+      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+    >
+      <p className="text-sm font-black" style={{ color: "var(--asc-accent)" }}>
         {String(index).padStart(2, "0")}
       </p>
-
-      <h3 className="font-black text-white">{title}</h3>
-
-      <p className="text-sm leading-6 text-gray-400">{description}</p>
+      <h3 className="font-black" style={{ color: "var(--asc-fg-0)" }}>{title}</h3>
+      <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>{description}</p>
     </article>
   );
 }
@@ -367,60 +358,38 @@ function PlayerHubSection({
   return (
     <section className="relative py-16 lg:py-20">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
-        <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/20">
+        <section
+          className="overflow-hidden border p-6 shadow-2xl"
+          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+        >
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_460px] lg:items-end">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-300">
+              <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
                 {messages.label}
               </p>
-
-              <h2 className="mt-2 text-3xl font-black text-white md:text-4xl">
-                {stats.isLoggedIn
-                  ? messages.loggedInTitle
-                  : messages.guestTitle}
+              <h2 className="mt-2 text-3xl md:text-4xl" style={{ color: "var(--asc-fg-0)" }}>
+                {stats.isLoggedIn ? messages.loggedInTitle : messages.guestTitle}
               </h2>
-
-              <p className="mt-4 max-w-3xl text-sm leading-7 text-gray-400">
-                {stats.isLoggedIn
-                  ? messages.loggedInDescription
-                  : messages.guestDescription}
+              <p className="mt-4 max-w-3xl text-sm leading-7" style={{ color: "var(--asc-fg-3)" }}>
+                {stats.isLoggedIn ? messages.loggedInDescription : messages.guestDescription}
               </p>
-
               <div className="mt-6 flex flex-wrap gap-3">
                 <PrimaryLink href={stats.isLoggedIn ? "/profile" : "/login"}>
-                  {stats.isLoggedIn
-                    ? messages.openProfile
-                    : messages.loginWithDiscord}
+                  {stats.isLoggedIn ? messages.openProfile : messages.loginWithDiscord}
                 </PrimaryLink>
-
                 <SecondaryLink href="/tournaments">
                   {messages.viewTournaments}
                 </SecondaryLink>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-2 gap-3">
               <Stat label={messages.stats.teams} value={stats.teamsCount} />
-              <Stat
-                label={messages.stats.invites}
-                value={stats.pendingInvitesCount}
-              />
-              <Stat
-                label={messages.stats.entries}
-                value={stats.activeRegistrationsCount}
-              />
-              <Stat
-                label={messages.stats.points}
-                value={stats.tournamentPoints}
-              />
-              <Stat
-                label={messages.stats.results}
-                value={stats.tournamentResultsCount}
-              />
-              <Stat
-                label={messages.stats.best}
-                value={stats.bestPlacement ? `#${stats.bestPlacement}` : "-"}
-              />
+              <Stat label={messages.stats.invites} value={stats.pendingInvitesCount} />
+              <Stat label={messages.stats.entries} value={stats.activeRegistrationsCount} />
+              <Stat label={messages.stats.points} value={stats.tournamentPoints} />
+              <Stat label={messages.stats.results} value={stats.tournamentResultsCount} />
+              <Stat label={messages.stats.best} value={stats.bestPlacement ? `#${stats.bestPlacement}` : "-"} />
             </div>
           </div>
         </section>
@@ -598,50 +567,39 @@ export default async function HomePage() {
     .slice(0, 3);
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
-
+    <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
       <div className="relative z-10">
         <Navbar />
 
+        {/* Hero */}
         <section className="relative min-h-[720px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: 'url("/images/backgrounds/home-hero.webp")',
-            }}
+            style={{ backgroundImage: 'url("/images/backgrounds/home-hero.webp")' }}
           />
-
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.86)_0%,rgba(7,8,17,0.50)_44%,rgba(7,8,17,0.68)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, oklch(0.06 0.03 287 / 0.90) 0%, oklch(0.06 0.03 287 / 0.50) 44%, oklch(0.06 0.03 287 / 0.72) 100%)" }} />
+          <div className="absolute inset-x-0 bottom-0 h-56" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
 
           <div className="relative z-10 flex min-h-[720px] items-center px-6 pb-32 pt-20 lg:px-10 2xl:px-14">
             <div className="max-w-5xl">
-              <p className="mb-5 text-sm font-black uppercase tracking-[0.22em] text-violet-300">
+              <p className="mb-5 text-sm font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
                 {messages.hero.label}
               </p>
-
-              <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
+              <h1 className="max-w-5xl text-5xl md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
                 {messages.hero.title}
               </h1>
-
-              <p className="mt-6 max-w-2xl text-base leading-7 text-gray-300">
+              <p className="mt-6 max-w-2xl text-base leading-7" style={{ color: "var(--asc-fg-2)" }}>
                 {messages.hero.description}
               </p>
-
               <div className="mt-8 flex flex-wrap gap-3">
-                <PrimaryLink href="/tournaments">
-                  {messages.hero.primary}
-                </PrimaryLink>
-
-                <SecondaryLink href="/profile">
-                  {messages.hero.secondary}
-                </SecondaryLink>
+                <PrimaryLink href="/tournaments">{messages.hero.primary}</PrimaryLink>
+                <SecondaryLink href="/profile">{messages.hero.secondary}</SecondaryLink>
               </div>
             </div>
           </div>
         </section>
 
+        {/* Tournaments */}
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader
@@ -651,7 +609,7 @@ export default async function HomePage() {
             />
 
             {tournaments.length === 0 ? (
-              <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-gray-300 shadow-2xl shadow-black/20">
+              <div className="border p-6" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-2)" }}>
                 {messages.tournaments.empty}
               </div>
             ) : (
@@ -668,13 +626,12 @@ export default async function HomePage() {
             )}
 
             <div className="mt-8 flex justify-center">
-              <SecondaryLink href="/tournaments">
-                {messages.tournaments.viewAll}
-              </SecondaryLink>
+              <SecondaryLink href="/tournaments">{messages.tournaments.viewAll}</SecondaryLink>
             </div>
           </div>
         </section>
 
+        {/* How It Works */}
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader
@@ -683,7 +640,10 @@ export default async function HomePage() {
               description={messages.flow.description}
             />
 
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+            <section
+              className="overflow-hidden border shadow-2xl"
+              style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+            >
               {messages.flow.steps.map((step, index) => (
                 <JourneyRow
                   key={step.title}
@@ -696,10 +656,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <PlayerHubSection
-          stats={playerHubStats}
-          messages={messages.playerHub}
-        />
+        <PlayerHubSection stats={playerHubStats} messages={messages.playerHub} />
 
         <Footer />
       </div>

@@ -46,11 +46,12 @@ function TabLink({ tab, activeTab }: { tab: AdminTab; activeTab: string }) {
   return (
     <Link
       href={`/admin?tab=${tab.value}`}
-      className={`whitespace-nowrap rounded-xl border px-4 py-2 text-sm font-black transition ${
+      className="whitespace-nowrap border px-4 py-2 text-sm font-black transition"
+      style={
         isActive
-          ? "border-violet-400/40 bg-violet-500/15 text-white shadow-lg shadow-violet-950/20"
-          : "border-white/10 bg-black/20 text-gray-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
-      }`}
+          ? { borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }
+          : { borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-2)" }
+      }
     >
       {tab.label}
     </Link>
@@ -62,14 +63,17 @@ export default function AdminTabNavigation({
 }: AdminTabNavigationProps) {
   return (
     <section className="pb-8">
-      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 shadow-2xl shadow-black/20">
+      <div
+        className="border p-4 shadow-2xl"
+        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+      >
         <div className="grid gap-4">
           {groups.map((group) => (
             <div
               key={group.title}
               className="grid gap-2 lg:grid-cols-[110px_minmax(0,1fr)] lg:items-center"
             >
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-500">
+              <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-fg-3)" }}>
                 {group.title}
               </p>
 
@@ -82,17 +86,19 @@ export default function AdminTabNavigation({
           ))}
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-3 border-t border-white/10 pt-4">
+        <div className="mt-4 flex flex-wrap gap-3 pt-4" style={{ borderTop: "1px solid var(--asc-line-soft)" }}>
           <Link
             href="/admin/games"
-            className="inline-flex rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-2 text-sm font-black text-violet-200 transition hover:border-violet-300/40 hover:bg-violet-500/15 hover:text-white"
+            className="inline-flex border px-4 py-2 text-sm font-black transition hover:opacity-90"
+            style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
           >
             Games
           </Link>
 
           <Link
             href="/admin/bot"
-            className="inline-flex rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-2 text-sm font-black text-emerald-200 transition hover:border-emerald-300/40 hover:bg-emerald-500/15 hover:text-white"
+            className="inline-flex border px-4 py-2 text-sm font-black transition hover:opacity-90"
+            style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}
           >
             Bot Dashboard
           </Link>

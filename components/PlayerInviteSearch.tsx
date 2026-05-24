@@ -13,9 +13,7 @@ type PlayerInviteSearchProps = {
   teamId: string;
 };
 
-export default function PlayerInviteSearch({
-  teamId,
-}: PlayerInviteSearchProps) {
+export default function PlayerInviteSearch({ teamId }: PlayerInviteSearchProps) {
   const [query, setQuery] = useState("");
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -35,12 +33,8 @@ export default function PlayerInviteSearch({
 
       try {
         const response = await fetch(
-          `/api/players/search?teamId=${teamId}&q=${encodeURIComponent(
-            cleanQuery,
-          )}`,
-          {
-            cache: "no-store",
-          },
+          `/api/players/search?teamId=${teamId}&q=${encodeURIComponent(cleanQuery)}`,
+          { cache: "no-store" },
         );
 
         if (!response.ok) {
@@ -76,38 +70,40 @@ export default function PlayerInviteSearch({
           value={query}
           onChange={(event) => handleInputChange(event.target.value)}
           placeholder="Search registered player..."
-          className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-cyan-400"
+          className="w-full border px-4 py-3 text-white outline-none transition"
+          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
         />
 
         {query.trim().length >= 2 && !selectedPlayer && (
-          <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-[#111827] shadow-2xl">
+          <div
+            className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden border shadow-2xl"
+            style={{ borderColor: "var(--asc-line)", background: "var(--asc-bg-1)" }}
+          >
             {isLoading ? (
-              <p className="p-4 text-sm text-gray-400">Searching...</p>
+              <p className="p-4 text-sm" style={{ color: "var(--asc-fg-3)" }}>Searching...</p>
             ) : players.length === 0 ? (
-              <p className="p-4 text-sm text-gray-400">
-                No matching players found.
-              </p>
+              <p className="p-4 text-sm" style={{ color: "var(--asc-fg-3)" }}>No matching players found.</p>
             ) : (
               players.map((player) => (
                 <button
                   key={player.id}
                   type="button"
                   onClick={() => selectPlayer(player)}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-white/10"
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:opacity-90"
+                  style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                 >
                   {player.avatar ? (
-                    <img
-                      src={player.avatar}
-                      alt={player.username}
-                      className="h-9 w-9 rounded-full"
-                    />
+                    <img src={player.avatar} alt={player.username} className="h-9 w-9 object-cover" />
                   ) : (
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500/20 text-xs font-black text-indigo-300">
-                      Ascendra
+                    <span
+                      className="grid h-9 w-9 place-items-center text-xs font-black"
+                      style={{ background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+                    >
+                      {player.username.slice(0, 2).toUpperCase()}
                     </span>
                   )}
 
-                  <span className="font-semibold text-white">
+                  <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>
                     {player.username}
                   </span>
                 </button>
@@ -118,9 +114,12 @@ export default function PlayerInviteSearch({
       </div>
 
       {selectedPlayer && (
-        <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4">
-          <p className="text-sm text-cyan-300">Selected player</p>
-          <p className="mt-1 font-bold text-white">{selectedPlayer.username}</p>
+        <div
+          className="border p-4"
+          style={{ borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" }}
+        >
+          <p className="text-sm" style={{ color: "var(--asc-blue)" }}>Selected player</p>
+          <p className="mt-1 font-bold" style={{ color: "var(--asc-fg-0)" }}>{selectedPlayer.username}</p>
         </div>
       )}
 
@@ -131,12 +130,13 @@ export default function PlayerInviteSearch({
         <button
           type="submit"
           disabled={!selectedPlayer}
-          className="rounded-xl bg-indigo-500 px-5 py-3 font-bold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+          className="px-5 py-3 font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          style={{ background: "var(--asc-accent-2)" }}
         >
           Send Invite
         </button>
 
-        <p className="self-center text-sm text-gray-400">
+        <p className="self-center text-sm" style={{ color: "var(--asc-fg-3)" }}>
           The player must be registered and connected to Ascendra Discord.
         </p>
       </form>

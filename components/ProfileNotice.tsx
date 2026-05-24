@@ -30,21 +30,21 @@ export default async function ProfileNotice({
 
   return (
     <div
-      className={`mb-8 rounded-3xl border p-5 shadow-2xl shadow-black/20 ${
+      className="mb-8 p-5 shadow-2xl shadow-black/20"
+      style={
         isError
-          ? "border-red-400/25 bg-red-500/10 text-red-200"
-          : "border-emerald-400/25 bg-emerald-500/10 text-emerald-200"
-      }`}
+          ? { border: "1px solid oklch(0.65 0.22 25 / 0.25)", background: "oklch(0.65 0.22 25 / 0.10)", color: "oklch(0.88 0.10 25)" }
+          : { border: "1px solid oklch(0.74 0.16 150 / 0.25)", background: "oklch(0.74 0.16 150 / 0.10)", color: "oklch(0.88 0.10 150)" }
+      }
     >
       <p
-        className={`text-sm font-black uppercase tracking-[0.16em] ${
-          isError ? "text-red-300" : "text-emerald-300"
-        }`}
+        className="text-sm font-black uppercase tracking-[0.16em]"
+        style={{ color: isError ? "oklch(0.65 0.22 25)" : "oklch(0.74 0.16 150)" }}
       >
         {isError ? messages.failed : messages.success}
       </p>
 
-      <p className="mt-2 text-sm leading-6 text-gray-300">{error || message}</p>
+      <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-1)" }}>{error || message}</p>
     </div>
   );
 }

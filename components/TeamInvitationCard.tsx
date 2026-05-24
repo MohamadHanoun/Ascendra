@@ -14,55 +14,56 @@ type TeamInvitationCardProps = {
   };
 };
 
-export default function TeamInvitationCard({
-  invite,
-}: TeamInvitationCardProps) {
+export default function TeamInvitationCard({ invite }: TeamInvitationCardProps) {
   if (!invite.team) {
     return (
-      <article className="rounded-2xl border border-red-500/20 bg-red-500/10 p-5">
-        <h3 className="text-xl font-bold text-red-300">
+      <article
+        className="asc-card border p-5"
+        style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.10)" }}
+      >
+        <h3 className="text-xl font-bold" style={{ color: "var(--asc-live)" }}>
           Invitation unavailable
         </h3>
-
-        <p className="mt-2 leading-7 text-gray-300">
-          This invitation is missing team information. It may belong to a
-          deleted team.
+        <p className="mt-2 leading-7" style={{ color: "var(--asc-fg-2)" }}>
+          This invitation is missing team information. It may belong to a deleted team.
         </p>
       </article>
     );
   }
 
-  const isLocked =
-    invite.team.status === "pending" || invite.team.status === "approved";
+  const isLocked = invite.team.status === "pending" || invite.team.status === "approved";
 
   return (
-    <article className="rounded-2xl border border-white/10 bg-black/20 p-5">
+    <article className="asc-card border p-5" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-indigo-300">
+          <p className="mb-2 text-sm font-black uppercase tracking-[0.2em]" style={{ color: "var(--asc-accent)" }}>
             Team Invitation
           </p>
 
-          <h3 className="text-2xl font-bold">{invite.team.name}</h3>
+          <h3 className="text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{invite.team.name}</h3>
 
-          <p className="mt-2 text-gray-300">
-            {invite.team.game} • Invited by{" "}
-            {invite.invitedBy?.username || "Unknown player"}
+          <p className="mt-2" style={{ color: "var(--asc-fg-2)" }}>
+            {invite.team.game} · Invited by {invite.invitedBy?.username || "Unknown player"}
           </p>
         </div>
 
-        <span className="rounded-full bg-indigo-500/20 px-4 py-1 text-sm font-bold text-indigo-300">
+        <span
+          className="inline-flex border px-4 py-1 text-sm font-bold"
+          style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+        >
           {invite.team.status}
         </span>
       </div>
 
       {isLocked ? (
-        <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4">
-          <p className="font-bold text-yellow-300">Invitation locked</p>
-
-          <p className="mt-2 text-sm leading-6 text-gray-300">
-            This team has already been submitted or approved, so this invitation
-            can no longer be accepted.
+        <div
+          className="border p-4"
+          style={{ borderColor: "oklch(0.65 0.16 75 / 0.4)", background: "oklch(0.25 0.14 75 / 0.12)" }}
+        >
+          <p className="font-bold" style={{ color: "var(--asc-amber)" }}>Invitation locked</p>
+          <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
+            This team has already been submitted or approved, so this invitation can no longer be accepted.
           </p>
         </div>
       ) : (
@@ -70,10 +71,10 @@ export default function TeamInvitationCard({
           <form action={respondToTeamInvite}>
             <input type="hidden" name="inviteId" value={invite.id} />
             <input type="hidden" name="response" value="accepted" />
-
             <button
               type="submit"
-              className="w-full rounded-xl bg-green-500 px-5 py-3 font-bold text-white transition hover:bg-green-400 sm:w-auto"
+              className="w-full px-5 py-3 font-bold text-white transition hover:opacity-90 sm:w-auto"
+              style={{ background: "oklch(0.55 0.14 150)" }}
             >
               Accept
             </button>
@@ -82,10 +83,10 @@ export default function TeamInvitationCard({
           <form action={respondToTeamInvite}>
             <input type="hidden" name="inviteId" value={invite.id} />
             <input type="hidden" name="response" value="rejected" />
-
             <button
               type="submit"
-              className="w-full rounded-xl border border-red-500/20 px-5 py-3 font-bold text-red-300 transition hover:bg-red-500/10 sm:w-auto"
+              className="w-full border px-5 py-3 font-bold transition hover:opacity-90 sm:w-auto"
+              style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
             >
               Reject
             </button>

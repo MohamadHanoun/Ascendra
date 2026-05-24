@@ -5,10 +5,10 @@ type RulesPreviewProps = {
 export default function RulesPreview({ rules }: RulesPreviewProps) {
   return (
     <section id="rules" className="mx-auto max-w-7xl px-6 pb-24">
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-        <h2 className="mb-6 text-4xl font-black">Basic Rules</h2>
+      <div className="asc-card border p-8" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
+        <h2 className="mb-6 text-4xl font-black" style={{ color: "var(--asc-fg-0)" }}>Basic Rules</h2>
 
-        <ul className="space-y-4 text-gray-300">
+        <ul className="space-y-4" style={{ color: "var(--asc-fg-2)" }}>
           {rules.map((rule, index) => (
             <li key={rule}>
               {String(index + 1).padStart(2, "0")}. {rule}
@@ -18,7 +18,8 @@ export default function RulesPreview({ rules }: RulesPreviewProps) {
 
         <a
           href="/rules"
-          className="mt-8 inline-block rounded-xl border border-white/10 px-6 py-3 font-bold text-gray-200 transition hover:bg-white/10"
+          className="mt-8 inline-block border px-6 py-3 font-bold transition hover:opacity-90"
+          style={{ borderColor: "var(--asc-line)", color: "var(--asc-fg-2)", background: "transparent" }}
         >
           View All Rules
         </a>

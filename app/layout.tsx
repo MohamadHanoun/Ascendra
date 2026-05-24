@@ -1,8 +1,23 @@
 import type { Metadata } from "next";
+import { Barlow_Condensed, Inter } from "next/font/google";
 
 import { getTextDirection, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import "./globals.css";
+
+const barlowCondensed = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["600", "700", "800", "900"],
+  variable: "--font-barlow-condensed",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 const siteUrl = (
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.ascendrahub.com"
@@ -83,7 +98,12 @@ export default async function RootLayout({
   const locale = await getLocale();
 
   return (
-    <html lang={locale} dir={getTextDirection(locale)} suppressHydrationWarning>
+    <html
+      lang={locale}
+      dir={getTextDirection(locale)}
+      suppressHydrationWarning
+      className={`${barlowCondensed.variable} ${inter.variable}`}
+    >
       <body>{children}</body>
     </html>
   );

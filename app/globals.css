@@ -1,52 +1,241 @@
 @import "tailwindcss";
 
-:root {
-  --background: #070811;
-  --foreground: #ededed;
+/* ── Tailwind v4: Zero out all border radii on cards/buttons/inputs ── */
+@theme {
+  --radius-sm: 0px;
+  --radius: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-full: 9999px;
 }
 
+/* ── Design Tokens ── */
+:root {
+  /* Backgrounds */
+  --asc-bg-0: #08090e;
+  --asc-bg-1: #0d1117;
+  --asc-bg-2: oklch(0.15 0.045 287);
+  --asc-bg-3: oklch(0.20 0.055 290);
 
+  /* Borders */
+  --asc-line: oklch(0.32 0.06 290 / 0.45);
+  --asc-line-soft: oklch(0.32 0.06 290 / 0.18);
+
+  /* Text */
+  --asc-fg-0: oklch(0.985 0.005 285);
+  --asc-fg-1: oklch(0.88 0.018 285);
+  --asc-fg-2: oklch(0.66 0.03 285);
+  --asc-fg-3: oklch(0.46 0.04 285);
+
+  /* Accent */
+  --asc-accent: oklch(0.70 0.22 285);
+  --asc-accent-2: oklch(0.58 0.24 285);
+  --asc-accent-glow: oklch(0.70 0.22 285 / 0.25);
+  --asc-accent-dim: oklch(0.30 0.10 285 / 0.22);
+
+  /* Status colors */
+  --asc-live: oklch(0.65 0.22 25);
+  --asc-green: oklch(0.74 0.16 150);
+  --asc-amber: oklch(0.82 0.16 75);
+  --asc-blue: oklch(0.75 0.14 220);
+
+  /* Prize value color (user spec: always #60a5fa blue) */
+  --asc-prize: #60a5fa;
+
+  /* Font variables (populated by next/font in layout.tsx) */
+  --font-display: var(--font-barlow-condensed, 'Barlow Condensed', system-ui, sans-serif);
+  --font-body: var(--font-inter, 'Inter', system-ui, sans-serif);
+
+  /* L-bracket size */
+  --asc-bracket: 16px;
+
+  /* Legacy compat */
+  --background: var(--asc-bg-0);
+  --foreground: var(--asc-fg-1);
+}
+
+/* ── Base ── */
 html {
-  background: #070811;
+  background: var(--asc-bg-0);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-input,
-textarea,
-select {
-  color-scheme: dark;
-}
-
-select {
-  background-color: #070811;
-  color: #ffffff;
-}
-
-select:focus {
-  outline: none;
-}
-
-select option {
-  background-color: #0f111c;
-  color: #ffffff;
-}
-
-select option:checked {
-  background-color: #191b29;
-  color: #ffffff;
-}
-
-select option:disabled {
-  background-color: #0f111c;
-  color: #6b7280;
+  background: var(--asc-bg-0);
+  color: var(--asc-fg-1);
+  font-family: var(--font-body, system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 ::selection {
-  background-color: rgba(124, 58, 237, 0.45);
+  background-color: var(--asc-accent-glow);
+  color: var(--asc-fg-0);
+}
+
+/* ── Typography: Barlow Condensed on all headings ── */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+/* ── Forms ── */
+input, textarea, select {
+  color-scheme: dark;
+  border-radius: 0 !important;
+}
+
+select {
+  background-color: var(--asc-bg-1);
   color: #ffffff;
+}
+
+select:focus { outline: none; }
+select option { background-color: var(--asc-bg-1); color: #ffffff; }
+select option:checked { background-color: var(--asc-bg-2); color: #ffffff; }
+select option:disabled { color: var(--asc-fg-3); }
+
+/* ── L-Bracket Corner (::before on positioned sections/articles) ── */
+/*
+  Applied to sections that act as card panels.
+  The L-bracket is two short accent lines in the top-left (top-right in RTL).
+  Uses border-top + border-inline-start for RTL support.
+*/
+
+.asc-card,
+section.overflow-hidden[class*="border"],
+section.overflow-hidden[class*="bg-white"] {
+  position: relative;
+}
+
+.asc-card::before,
+section.overflow-hidden[class*="border"]::before,
+section.overflow-hidden[class*="bg-white"]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  width: var(--asc-bracket);
+  height: var(--asc-bracket);
+  border-top: 2px solid var(--asc-accent);
+  border-inline-start: 2px solid var(--asc-accent);
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.75;
+}
+
+/* article cards (tournament cards, etc.) */
+article.overflow-hidden[class*="border"] {
+  position: relative;
+}
+
+article.overflow-hidden[class*="border"]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  width: var(--asc-bracket);
+  height: var(--asc-bracket);
+  border-top: 2px solid var(--asc-accent);
+  border-inline-start: 2px solid var(--asc-accent);
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.75;
+}
+
+/* Explicit utility class */
+.asc-card {
+  background: var(--asc-bg-1);
+  border: 1px solid var(--asc-line-soft);
+}
+
+/* ── Prize value color ── */
+.prize-value,
+[data-prize] {
+  color: var(--asc-prize) !important;
+}
+
+/* ── LIVE pulse animation ── */
+@keyframes ascLivePulse {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.65 0.22 25 / 0.7); }
+  50% { box-shadow: 0 0 0 5px oklch(0.65 0.22 25 / 0); }
+}
+
+.asc-live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--asc-live);
+  animation: ascLivePulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* ── Status badge tokens ── */
+.badge-live {
+  color: var(--asc-live);
+  border-color: oklch(0.50 0.20 25 / 0.5);
+  background: oklch(0.25 0.18 25 / 0.18);
+}
+
+.badge-registration {
+  color: var(--asc-green);
+  border-color: oklch(0.55 0.14 150 / 0.5);
+  background: oklch(0.25 0.12 150 / 0.18);
+}
+
+.badge-featured {
+  color: var(--asc-amber);
+  border-color: oklch(0.65 0.14 75 / 0.5);
+  background: oklch(0.25 0.12 75 / 0.18);
+}
+
+/* ── Accent ambient glow background ── */
+.asc-ambient::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 1200px 600px at 50% -10%, oklch(0.30 0.16 285 / 0.09), transparent 70%),
+    radial-gradient(ellipse 800px 400px at 100% 30%, oklch(0.30 0.14 240 / 0.05), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: screen;
+}
+
+/* ── Progress bar ── */
+.asc-progress-track {
+  height: 2px;
+  background: var(--asc-line-soft);
+  position: relative;
+  overflow: visible;
+}
+
+.asc-progress-fill {
+  height: 100%;
+  background: var(--asc-accent);
+  box-shadow: 0 0 8px var(--asc-accent-glow);
+  transition: width 0.4s ease;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--asc-bg-0); }
+::-webkit-scrollbar-thumb { background: var(--asc-line); }
+::-webkit-scrollbar-thumb:hover { background: var(--asc-accent); }
+
+/* ── Nav active underline glow ── */
+.nav-active-line {
+  position: absolute;
+  bottom: -1px;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  height: 2px;
+  background: var(--asc-accent);
+  box-shadow: 0 0 10px var(--asc-accent-glow);
 }

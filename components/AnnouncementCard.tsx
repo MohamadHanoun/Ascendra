@@ -22,31 +22,43 @@ export default function AnnouncementCard({
   announcement,
   featured = false,
 }: AnnouncementCardProps) {
+  const importantBorder = announcement.important
+    ? { borderColor: "oklch(0.65 0.16 75 / 0.4)", background: "oklch(0.25 0.14 75 / 0.08)" }
+    : { borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" };
+
   return (
     <article
-      className={`flex h-full flex-col overflow-hidden rounded-3xl border shadow-2xl shadow-black/20 transition hover:border-violet-400/30 hover:bg-white/[0.06] ${
-        announcement.important
-          ? "border-yellow-400/25 bg-yellow-500/[0.06]"
-          : "border-white/10 bg-white/[0.04]"
-      }`}
+      className="flex h-full flex-col overflow-hidden border shadow-2xl shadow-black/20 transition"
+      style={importantBorder}
     >
       <div
-        className={`border-b border-white/10 px-5 py-4 ${
-          announcement.important ? "bg-yellow-500/[0.05]" : "bg-white/[0.03]"
-        }`}
+        className="px-5 py-4"
+        style={{
+          borderBottom: "1px solid var(--asc-line-soft)",
+          background: announcement.important ? "oklch(0.25 0.14 75 / 0.05)" : "oklch(0.10 0.03 287 / 0.4)",
+        }}
       >
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-xs font-black text-violet-200">
+          <span
+            className="inline-flex border px-3 py-1 text-xs font-black"
+            style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+          >
             {announcement.category}
           </span>
 
           {announcement.important && (
-            <span className="inline-flex rounded-full border border-yellow-400/25 bg-yellow-500/10 px-3 py-1 text-xs font-black text-yellow-300">
+            <span
+              className="inline-flex border px-3 py-1 text-xs font-black"
+              style={{ borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)", color: "var(--asc-amber)" }}
+            >
               Important
             </span>
           )}
 
-          <span className="inline-flex rounded-full border border-white/10 bg-black/25 px-3 py-1 text-xs font-black text-gray-400">
+          <span
+            className="inline-flex border px-3 py-1 text-xs font-black"
+            style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-3)" }}
+          >
             {formatDate(announcement.createdAt)}
           </span>
         </div>
@@ -54,17 +66,15 @@ export default function AnnouncementCard({
 
       <div className="flex flex-1 flex-col p-5">
         <h2
-          className={`font-black text-white ${
-            featured ? "text-3xl md:text-4xl" : "text-2xl"
-          }`}
+          className={`font-black ${featured ? "text-3xl md:text-4xl" : "text-2xl"}`}
+          style={{ color: "var(--asc-fg-0)" }}
         >
           {announcement.title}
         </h2>
 
         <p
-          className={`mt-4 flex-1 leading-7 text-gray-400 ${
-            featured ? "text-base" : "text-sm"
-          }`}
+          className={`mt-4 flex-1 leading-7 ${featured ? "text-base" : "text-sm"}`}
+          style={{ color: "var(--asc-fg-3)" }}
         >
           {announcement.description}
         </p>

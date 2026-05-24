@@ -16,20 +16,16 @@ type AnnouncementBrowserProps = {
   announcements: AnnouncementItem[];
 };
 
-const categoryFilters = [
-  "All",
-  "Update",
-  "Tournaments",
-  "Bot",
-  "Community",
-  "Maintenance",
-];
-
+const categoryFilters = ["All", "Update", "Tournaments", "Bot", "Community", "Maintenance"];
 const importanceFilters = ["All", "Important", "Normal"];
 
-export default function AnnouncementBrowser({
-  announcements,
-}: AnnouncementBrowserProps) {
+const inputStyle: React.CSSProperties = {
+  borderColor: "var(--asc-line-soft)",
+  background: "var(--asc-bg-2)",
+  color: "var(--asc-fg-0)",
+};
+
+export default function AnnouncementBrowser({ announcements }: AnnouncementBrowserProps) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [importance, setImportance] = useState("All");
@@ -44,9 +40,7 @@ export default function AnnouncementBrowser({
         announcement.category.toLowerCase().includes(searchValue) ||
         announcement.description.toLowerCase().includes(searchValue);
 
-      const matchesCategory =
-        category === "All" || announcement.category === category;
-
+      const matchesCategory = category === "All" || announcement.category === category;
       const matchesImportance =
         importance === "All" ||
         (importance === "Important" && announcement.important) ||
@@ -58,10 +52,10 @@ export default function AnnouncementBrowser({
 
   return (
     <>
-      <div className="mb-10 rounded-3xl border border-white/10 bg-white/5 p-6">
+      <div className="mb-10 border p-6" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
         <div className="grid gap-5 lg:grid-cols-[1fr_auto_auto] lg:items-end">
           <label className="grid gap-2">
-            <span className="font-semibold text-gray-200">
+            <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
               Search announcements
             </span>
 
@@ -69,17 +63,21 @@ export default function AnnouncementBrowser({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search by title, category, or description..."
-              className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-indigo-400"
+              className="border px-4 py-3 text-white outline-none transition"
+              style={inputStyle}
             />
           </label>
 
           <label className="grid gap-2">
-            <span className="font-semibold text-gray-200">Category</span>
+            <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+              Category
+            </span>
 
             <select
               value={category}
               onChange={(event) => setCategory(event.target.value)}
-              className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-indigo-400"
+              className="border px-4 py-3 text-white outline-none transition"
+              style={inputStyle}
             >
               {categoryFilters.map((filter) => (
                 <option key={filter} value={filter}>
@@ -90,12 +88,15 @@ export default function AnnouncementBrowser({
           </label>
 
           <label className="grid gap-2">
-            <span className="font-semibold text-gray-200">Importance</span>
+            <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+              Importance
+            </span>
 
             <select
               value={importance}
               onChange={(event) => setImportance(event.target.value)}
-              className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-indigo-400"
+              className="border px-4 py-3 text-white outline-none transition"
+              style={inputStyle}
             >
               {importanceFilters.map((filter) => (
                 <option key={filter} value={filter}>
@@ -106,26 +107,20 @@ export default function AnnouncementBrowser({
           </label>
         </div>
 
-        <p className="mt-5 text-sm text-gray-400">
+        <p className="mt-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>
           Showing {filteredAnnouncements.length} of {announcements.length} announcements.
         </p>
       </div>
 
       {filteredAnnouncements.length === 0 ? (
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
-          <h2 className="mb-3 text-2xl font-bold">No announcements found</h2>
-
-          <p className="text-gray-300">
-            Try changing the search text or filters.
-          </p>
+        <div className="border p-8 text-center" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
+          <h2 className="mb-3 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>No announcements found</h2>
+          <p style={{ color: "var(--asc-fg-2)" }}>Try changing the search text or filters.</p>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredAnnouncements.map((announcement) => (
-            <AnnouncementCard
-              key={announcement.id}
-              announcement={announcement}
-            />
+            <AnnouncementCard key={announcement.id} announcement={announcement} />
           ))}
         </div>
       )}

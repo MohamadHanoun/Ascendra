@@ -11,13 +11,7 @@ import {
 import InlineAdminAnnouncementForm from "@/components/InlineAdminAnnouncementForm";
 import { prisma } from "@/lib/prisma";
 
-const categories = [
-  "Tournament",
-  "Community",
-  "Update",
-  "Maintenance",
-  "Event",
-];
+const categories = ["Tournament", "Community", "Update", "Maintenance", "Event"];
 
 type AnnouncementAction = (formData: FormData) => Promise<{
   ok: boolean;
@@ -25,12 +19,26 @@ type AnnouncementAction = (formData: FormData) => Promise<{
   redirectTo?: string;
 }>;
 
-function inputClass() {
-  return "rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400";
-}
+const inputStyle: React.CSSProperties = {
+  borderColor: "var(--asc-line-soft)",
+  background: "var(--asc-bg-2)",
+  color: "var(--asc-fg-0)",
+};
+
+const pillStyleMap: Record<string, React.CSSProperties> = {
+  green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+  yellow: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
+  red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+  gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
+  violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+};
 
 function FieldLabel({ children }: { children: ReactNode }) {
-  return <span className="text-sm font-bold text-gray-200">{children}</span>;
+  return (
+    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+      {children}
+    </span>
+  );
 }
 
 function Pill({
@@ -40,36 +48,17 @@ function Pill({
   children: ReactNode;
   tone?: "green" | "yellow" | "red" | "gray" | "violet";
 }) {
-  const styles = {
-    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    red: "border-red-400/25 bg-red-500/10 text-red-300",
-    gray: "border-white/10 bg-white/5 text-gray-300",
-    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-  };
-
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={pillStyleMap[tone]}>
       {children}
     </span>
   );
 }
 
-function StatusBadges({
-  published,
-  important,
-}: {
-  published: boolean;
-  important: boolean;
-}) {
+function StatusBadges({ published, important }: { published: boolean; important: boolean }) {
   return (
     <div className="flex flex-wrap gap-2">
-      <Pill tone={published ? "green" : "gray"}>
-        {published ? "Published" : "Hidden"}
-      </Pill>
-
+      <Pill tone={published ? "green" : "gray"}>{published ? "Published" : "Hidden"}</Pill>
       {important && <Pill tone="yellow">Important</Pill>}
     </div>
   );
@@ -78,11 +67,8 @@ function StatusBadges({
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
-        {label}
-      </p>
-
-      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>{label}</p>
+      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
     </div>
   );
 }
@@ -114,48 +100,26 @@ function SmallAction({
 }
 
 function formatDate(date: Date) {
-  return date.toLocaleString("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  return date.toLocaleString("en", { dateStyle: "medium", timeStyle: "short" });
 }
 
 export default async function AdminAnnouncementList() {
   const announcements = await prisma.announcement.findMany({
-    orderBy: [
-      {
-        published: "desc",
-      },
-      {
-        important: "desc",
-      },
-      {
-        createdAt: "desc",
-      },
-    ],
+    orderBy: [{ published: "desc" }, { important: "desc" }, { createdAt: "desc" }],
   });
 
-  const publishedCount = announcements.filter(
-    (announcement) => announcement.published,
-  ).length;
-
+  const publishedCount = announcements.filter((a) => a.published).length;
   const hiddenCount = announcements.length - publishedCount;
-
-  const importantCount = announcements.filter(
-    (announcement) => announcement.important,
-  ).length;
+  const importantCount = announcements.filter((a) => a.important).length;
 
   return (
     <section className="grid gap-6">
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
+          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
             Manage announcements
           </p>
-
-          <h2 className="mt-2 text-3xl font-black text-white">
-            Announcements list
-          </h2>
+          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>Announcements list</h2>
         </div>
 
         <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
@@ -167,100 +131,72 @@ export default async function AdminAnnouncementList() {
       </div>
 
       {announcements.length === 0 ? (
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-gray-300 shadow-2xl shadow-black/20">
+        <div className="border p-6 shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-3)" }}>
           No announcements found.
         </div>
       ) : (
-        <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-          <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[minmax(0,1fr)_150px_150px_160px] xl:gap-5">
+        <section className="overflow-hidden border shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
+          <div
+            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[minmax(0,1fr)_150px_150px_160px] xl:gap-5"
+            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "oklch(0.08 0.02 287)", color: "var(--asc-fg-3)" }}
+          >
             <span>Announcement</span>
             <span>Category</span>
             <span>Status</span>
             <span>Created</span>
           </div>
 
-          <div className="divide-y divide-white/10">
-            {announcements.map((announcement) => (
+          <div>
+            {announcements.map((announcement, idx) => (
               <article
                 key={announcement.id}
                 className="grid gap-4 px-5 py-5 transition hover:bg-white/[0.035]"
+                style={idx < announcements.length - 1 ? { borderBottom: "1px solid var(--asc-line-soft)" } : {}}
               >
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_150px_150px_160px] xl:items-center xl:gap-5">
                   <div className="min-w-0">
-                    <h3 className="truncate text-xl font-black text-white">
-                      {announcement.title}
-                    </h3>
-
-                    <p className="mt-1 line-clamp-2 text-sm leading-6 text-gray-400">
-                      {announcement.description}
-                    </p>
+                    <h3 className="truncate text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>{announcement.title}</h3>
+                    <p className="mt-1 line-clamp-2 text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>{announcement.description}</p>
                   </div>
 
                   <Pill tone="violet">{announcement.category}</Pill>
-
-                  <StatusBadges
-                    published={announcement.published}
-                    important={announcement.important}
-                  />
-
-                  <p className="text-sm text-gray-500">
-                    {formatDate(announcement.createdAt)}
-                  </p>
+                  <StatusBadges published={announcement.published} important={announcement.important} />
+                  <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>{formatDate(announcement.createdAt)}</p>
                 </div>
 
-                <details className="rounded-2xl border border-white/10 bg-black/20">
-                  <summary className="cursor-pointer px-4 py-3 text-sm font-black text-gray-300 transition hover:text-white">
+                <details className="border" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}>
+                  <summary
+                    className="cursor-pointer px-4 py-3 text-sm font-black transition"
+                    style={{ color: "var(--asc-fg-3)" }}
+                  >
                     Edit and actions
                   </summary>
 
-                  <div className="grid gap-5 border-t border-white/10 p-4 xl:grid-cols-[minmax(0,1fr)_240px] xl:items-start">
+                  <div
+                    className="grid gap-5 p-4 xl:grid-cols-[minmax(0,1fr)_240px] xl:items-start"
+                    style={{ borderTop: "1px solid var(--asc-line-soft)" }}
+                  >
                     <InlineAdminAnnouncementForm
                       action={updateAnnouncementInline}
                       buttonLabel="Save changes"
                       pendingLabel="Saving..."
                       className="grid gap-4"
                     >
-                      <input
-                        type="hidden"
-                        name="announcementId"
-                        value={announcement.id}
-                      />
-                      <input
-                        type="hidden"
-                        name="published"
-                        value={announcement.published ? "true" : "false"}
-                      />
-                      <input
-                        type="hidden"
-                        name="important"
-                        value={announcement.important ? "true" : "false"}
-                      />
+                      <input type="hidden" name="announcementId" value={announcement.id} />
+                      <input type="hidden" name="published" value={announcement.published ? "true" : "false"} />
+                      <input type="hidden" name="important" value={announcement.important ? "true" : "false"} />
 
                       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
                         <label className="grid gap-2">
                           <FieldLabel>Title</FieldLabel>
-
-                          <input
-                            name="title"
-                            required
-                            defaultValue={announcement.title}
-                            className={inputClass()}
-                          />
+                          <input name="title" required defaultValue={announcement.title} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
                         </label>
 
                         <label className="grid gap-2">
                           <FieldLabel>Category</FieldLabel>
-
-                          <select
-                            name="category"
-                            required
-                            defaultValue={announcement.category}
-                            className={inputClass()}
-                          >
+                          <select name="category" required defaultValue={announcement.category} className="border px-4 py-3 text-white outline-none transition" style={inputStyle}>
                             {categories.map((category) => (
-                              <option key={category} value={category}>
-                                {category}
-                              </option>
+                              <option key={category} value={category}>{category}</option>
                             ))}
                           </select>
                         </label>
@@ -268,50 +204,27 @@ export default async function AdminAnnouncementList() {
 
                       <label className="grid gap-2">
                         <FieldLabel>Description</FieldLabel>
-
                         <textarea
                           name="description"
                           required
                           defaultValue={announcement.description}
-                          className={`${inputClass()} min-h-24 resize-y text-sm leading-6`}
+                          className="min-h-24 resize-y border px-4 py-3 text-sm leading-6 text-white outline-none transition"
+                          style={inputStyle}
                         />
                       </label>
                     </InlineAdminAnnouncementForm>
 
                     <aside className="grid content-start gap-3">
                       {announcement.published ? (
-                        <SmallAction
-                          action={unpublishAnnouncementInline}
-                          announcementId={announcement.id}
-                          label="Unpublish"
-                          pendingLabel="Unpublishing..."
-                          variant="danger"
-                        />
+                        <SmallAction action={unpublishAnnouncementInline} announcementId={announcement.id} label="Unpublish" pendingLabel="Unpublishing..." variant="danger" />
                       ) : (
-                        <SmallAction
-                          action={publishAnnouncementInline}
-                          announcementId={announcement.id}
-                          label="Publish"
-                          pendingLabel="Publishing..."
-                          variant="success"
-                        />
+                        <SmallAction action={publishAnnouncementInline} announcementId={announcement.id} label="Publish" pendingLabel="Publishing..." variant="success" />
                       )}
 
                       {announcement.important ? (
-                        <SmallAction
-                          action={unmarkAnnouncementImportantInline}
-                          announcementId={announcement.id}
-                          label="Remove important"
-                          pendingLabel="Updating..."
-                        />
+                        <SmallAction action={unmarkAnnouncementImportantInline} announcementId={announcement.id} label="Remove important" pendingLabel="Updating..." />
                       ) : (
-                        <SmallAction
-                          action={markAnnouncementImportantInline}
-                          announcementId={announcement.id}
-                          label="Mark important"
-                          pendingLabel="Updating..."
-                          variant="success"
-                        />
+                        <SmallAction action={markAnnouncementImportantInline} announcementId={announcement.id} label="Mark important" pendingLabel="Updating..." variant="success" />
                       )}
 
                       <InlineAdminAnnouncementForm
@@ -324,11 +237,7 @@ export default async function AdminAnnouncementList() {
                         confirmDescription={`Delete ${announcement.title}? This cannot be undone.`}
                         confirmLabel="Delete permanently"
                       >
-                        <input
-                          type="hidden"
-                          name="announcementId"
-                          value={announcement.id}
-                        />
+                        <input type="hidden" name="announcementId" value={announcement.id} />
                       </InlineAdminAnnouncementForm>
                     </aside>
                   </div>

@@ -3,21 +3,21 @@ type StatsDetailCardProps = {
   value: string;
 };
 
-export default function StatsDetailCard({
-  title,
-  value,
-}: StatsDetailCardProps) {
+export default function StatsDetailCard({ title, value }: StatsDetailCardProps) {
   return (
-    <article className="grid gap-3 p-5 transition hover:bg-white/[0.035] md:grid-cols-[minmax(0,1fr)_120px] md:items-center">
+    <article
+      className="grid gap-3 p-5 transition md:grid-cols-[minmax(0,1fr)_120px] md:items-center"
+      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+    >
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+        <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
           Metric
         </p>
 
-        <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
+        <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>{title}</h2>
       </div>
 
-      <p className="text-2xl font-black text-violet-200">{value}</p>
+      <p className="text-2xl font-black" style={{ color: "var(--asc-accent)" }}>{value}</p>
     </article>
   );
 }

@@ -20,32 +20,17 @@ type InlineAdminActionFormProps = {
   textareaRequired?: boolean;
 };
 
-function getButtonClass(variant: InlineAdminActionFormProps["variant"]) {
-  if (variant === "danger") {
-    return "rounded-xl border border-red-500/25 px-4 py-2 text-sm font-black text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50";
-  }
-
-  if (variant === "success") {
-    return "rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50";
-  }
-
-  if (variant === "secondary") {
-    return "rounded-xl border border-white/10 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
-  }
-
-  return "rounded-xl bg-violet-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50";
+function getButtonStyle(variant: InlineAdminActionFormProps["variant"]): React.CSSProperties {
+  if (variant === "danger") return { borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" };
+  if (variant === "success") return { background: "oklch(0.55 0.14 150)", color: "#fff" };
+  if (variant === "secondary") return { borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" };
+  return { background: "var(--asc-accent-2)", color: "#fff", boxShadow: "0 0 16px var(--asc-accent-glow)" };
 }
 
-function getConfirmButtonClass(variant: InlineAdminActionFormProps["variant"]) {
-  if (variant === "danger") {
-    return "rounded-xl bg-red-500 px-5 py-3 text-sm font-black text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50";
-  }
-
-  if (variant === "success") {
-    return "rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50";
-  }
-
-  return "rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50";
+function getConfirmButtonStyle(variant: InlineAdminActionFormProps["variant"]): React.CSSProperties {
+  if (variant === "danger") return { background: "oklch(0.50 0.20 25)", color: "#fff" };
+  if (variant === "success") return { background: "oklch(0.55 0.14 150)", color: "#fff" };
+  return { background: "var(--asc-accent-2)", color: "#fff" };
 }
 
 export default function InlineAdminActionForm({
@@ -71,58 +56,40 @@ export default function InlineAdminActionForm({
 
   function runAction() {
     const form = formRef.current;
-
-    if (!form) {
-      return;
-    }
+    if (!form) return;
 
     if (textareaRequired && textareaName && !textareaValue.trim()) {
-      setNotice({
-        ok: false,
-        message: "Please write a reason before confirming.",
-      });
-
+      setNotice({ ok: false, message: "Please write a reason before confirming." });
       return;
     }
 
     const formData = new FormData(form);
-
-    if (textareaName) {
-      formData.set(textareaName, textareaValue.trim());
-    }
+    if (textareaName) formData.set(textareaName, textareaValue.trim());
 
     startTransition(async () => {
       const result = await action(formData);
-
       setNotice(result);
       setConfirmOpen(false);
 
       if (result.redirectTo) {
-        window.setTimeout(() => {
-          router.push(result.redirectTo || "/admin");
-        }, 350);
-
+        window.setTimeout(() => router.push(result.redirectTo || "/admin"), 350);
         return;
       }
-
-      if (result.ok) {
-        window.setTimeout(() => {
-          router.refresh();
-        }, 450);
-      }
+      if (result.ok) window.setTimeout(() => router.refresh(), 450);
     });
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (confirmTitle || confirmDescription || textareaName) {
       setConfirmOpen(true);
       return;
     }
-
     runAction();
   }
+
+  const buttonStyle = getButtonStyle(variant);
+  const isBordered = variant === "danger" || variant === "secondary";
 
   return (
     <>
@@ -132,18 +99,20 @@ export default function InlineAdminActionForm({
         <button
           type="submit"
           disabled={pending}
-          className={getButtonClass(variant)}
+          className={`px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${isBordered ? "border" : ""}`}
+          style={buttonStyle}
         >
           {pending ? pendingLabel : buttonLabel}
         </button>
 
         {notice && (
           <div
-            className={`rounded-2xl border px-3 py-2 text-xs font-bold ${
+            className="border px-3 py-2 text-xs font-bold"
+            style={
               notice.ok
-                ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
-                : "border-red-400/25 bg-red-500/10 text-red-300"
-            }`}
+                ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
+                : { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }
+            }
           >
             {notice.message}
           </div>
@@ -152,25 +121,28 @@ export default function InlineAdminActionForm({
 
       {confirmOpen && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#11121d] shadow-2xl shadow-black/40">
-            <div className="border-b border-white/10 px-6 py-5">
-              <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
+          <div
+            className="w-full max-w-md overflow-hidden border shadow-2xl shadow-black/40"
+            style={{ borderColor: "var(--asc-line)", background: "var(--asc-bg-1)" }}
+          >
+            <div className="px-6 py-5" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+              <p className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
                 Confirmation
               </p>
 
-              <h2 className="mt-2 text-2xl font-black text-white">
+              <h2 className="mt-2 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
                 {confirmTitle || "Confirm action"}
               </h2>
 
               {confirmDescription && (
-                <p className="mt-2 leading-7 text-gray-300">
+                <p className="mt-2 leading-7" style={{ color: "var(--asc-fg-2)" }}>
                   {confirmDescription}
                 </p>
               )}
 
               {textareaName && (
                 <label className="mt-5 grid gap-2">
-                  <span className="text-sm font-bold text-gray-200">
+                  <span className="text-sm font-bold" style={{ color: "var(--asc-fg-1)" }}>
                     {textareaLabel || "Reason"}
                   </span>
 
@@ -178,7 +150,8 @@ export default function InlineAdminActionForm({
                     value={textareaValue}
                     onChange={(event) => setTextareaValue(event.target.value)}
                     placeholder={textareaPlaceholder || "Write a reason..."}
-                    className="min-h-28 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400"
+                    className="min-h-28 border px-4 py-3 outline-none transition"
+                    style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-0)" }}
                   />
                 </label>
               )}
@@ -188,7 +161,8 @@ export default function InlineAdminActionForm({
               <button
                 type="button"
                 onClick={() => setConfirmOpen(false)}
-                className="rounded-xl border border-white/10 px-5 py-3 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
+                className="border px-5 py-3 text-sm font-black transition hover:opacity-90"
+                style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" }}
               >
                 Cancel
               </button>
@@ -197,7 +171,8 @@ export default function InlineAdminActionForm({
                 type="button"
                 disabled={pending}
                 onClick={runAction}
-                className={getConfirmButtonClass(variant)}
+                className="px-5 py-3 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                style={getConfirmButtonStyle(variant)}
               >
                 {pending ? pendingLabel : confirmLabel}
               </button>

@@ -13,18 +13,16 @@ function Pill({
   children: React.ReactNode;
   tone?: "green" | "blue" | "red" | "gray" | "violet";
 }) {
-  const styles = {
-    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    blue: "border-sky-400/25 bg-sky-500/10 text-sky-300",
-    red: "border-red-400/25 bg-red-500/10 text-red-300",
-    gray: "border-white/10 bg-white/5 text-gray-300",
-    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
+  const styleMap: Record<string, React.CSSProperties> = {
+    green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+    blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
+    red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+    gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
+    violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
   };
 
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={styleMap[tone]}>
       {children}
     </span>
   );
@@ -32,7 +30,6 @@ function Pill({
 
 function RankBadge({ rank }: { rank: number }) {
   const tone = rank === 1 ? "green" : rank <= 3 ? "blue" : "violet";
-
   return <Pill tone={tone}>#{rank}</Pill>;
 }
 
@@ -54,12 +51,14 @@ function RankingRow({
   messages: LeaderboardMessages["table"];
 }) {
   return (
-    <article className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.035] md:grid-cols-[80px_minmax(0,1fr)_110px_100px_110px_120px] md:items-center">
+    <article
+      className="grid gap-4 px-5 py-4 transition md:grid-cols-[80px_minmax(0,1fr)_110px_100px_110px_120px] md:items-center"
+      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+    >
       <RankBadge rank={user.rank} />
 
       <div className="min-w-0">
-        <p className="truncate font-black text-white">{user.username}</p>
-
+        <p className="truncate font-black" style={{ color: "var(--asc-fg-0)" }}>{user.username}</p>
         <div className="mt-2 md:hidden">
           <RoleBadge role={user.role} />
         </div>
@@ -69,8 +68,8 @@ function RankingRow({
         <RoleBadge role={user.role} />
       </div>
 
-      <p className="text-sm text-gray-300">
-        <span className="font-black text-white">{user.tournamentResults}</span>{" "}
+      <p className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
+        <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>{user.tournamentResults}</span>{" "}
         {getResultLabel(user.tournamentResults, messages)}
       </p>
 
@@ -96,33 +95,32 @@ function PodiumCard({
 
   return (
     <article
-      className={`rounded-3xl border p-5 shadow-2xl ${
+      className="border p-5 shadow-2xl"
+      style={
         isFirst
-          ? "border-emerald-400/25 bg-emerald-500/[0.08] shadow-emerald-950/20"
-          : "border-white/10 bg-black/20 shadow-black/20"
-      }`}
+          ? { borderColor: "oklch(0.55 0.14 150 / 0.4)", background: "oklch(0.25 0.12 150 / 0.10)" }
+          : { borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }
+      }
     >
       <div className="flex items-center justify-between gap-3">
         <RankBadge rank={user.rank} />
         <RoleBadge role={user.role} />
       </div>
 
-      <p className="mt-5 truncate text-2xl font-black text-white">
+      <p className="mt-5 truncate text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
         {user.username}
       </p>
 
-      <p className="mt-1 text-sm text-gray-500">
-        {user.tournamentResults}{" "}
-        {getResultLabel(user.tournamentResults, messages)} · {messages.best}{" "}
+      <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+        {user.tournamentResults} {getResultLabel(user.tournamentResults, messages)} · {messages.best}{" "}
         {user.bestPlacement ? `#${user.bestPlacement}` : "-"}
       </p>
 
       <div className="mt-5">
-        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+        <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
           {messages.points}
         </p>
-
-        <p className="mt-1 text-3xl font-black text-emerald-300">
+        <p className="mt-1 text-3xl font-black" style={{ color: "var(--asc-green)" }}>
           {user.tournamentPoints.toLocaleString()}
         </p>
       </div>
@@ -138,19 +136,21 @@ export default function LeaderboardTable({
   const remaining = users.slice(3);
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
-      <div className="border-b border-white/10 px-5 py-4">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">
+    <section
+      className="overflow-hidden border shadow-2xl"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+    >
+      <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+        <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
           {messages.playerRanking}
         </p>
-
-        <h2 className="mt-1 text-xl font-black text-white">
+        <h2 className="mt-1 text-xl" style={{ color: "var(--asc-fg-0)" }}>
           {messages.standings}
         </h2>
       </div>
 
       {topThree.length > 0 && (
-        <div className="grid gap-4 border-b border-white/10 p-5 lg:grid-cols-3">
+        <div className="grid gap-4 p-5 lg:grid-cols-3" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
           {topThree.map((user) => (
             <PodiumCard key={user.id} user={user} messages={messages} />
           ))}
@@ -159,7 +159,10 @@ export default function LeaderboardTable({
 
       {remaining.length > 0 && (
         <div>
-          <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 md:grid md:grid-cols-[80px_minmax(0,1fr)_110px_100px_110px_120px]">
+          <div
+            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] md:grid md:grid-cols-[80px_minmax(0,1fr)_110px_100px_110px_120px]"
+            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
+          >
             <span>{messages.rank}</span>
             <span>{messages.player}</span>
             <span>{messages.role}</span>
@@ -168,7 +171,7 @@ export default function LeaderboardTable({
             <span>{messages.points}</span>
           </div>
 
-          <div className="divide-y divide-white/10">
+          <div>
             {remaining.map((user) => (
               <RankingRow key={user.id} user={user} messages={messages} />
             ))}
@@ -177,7 +180,7 @@ export default function LeaderboardTable({
       )}
 
       {users.length === 0 && (
-        <div className="p-5 text-sm text-gray-400">
+        <div className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>
           {messages.noRankedPlayers}
         </div>
       )}

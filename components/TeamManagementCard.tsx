@@ -37,142 +37,106 @@ type TeamManagementCardProps = {
   };
 };
 
-function statusStyle(status: string) {
-  if (status === "approved") {
-    return "border-green-500/20 bg-green-500/10 text-green-300";
-  }
+const statusStyleMap: Record<string, React.CSSProperties> = {
+  approved: { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" },
+  pending: { borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)", color: "var(--asc-amber)" },
+  rejected: { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" },
+  default: { borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
+};
 
-  if (status === "pending") {
-    return "border-yellow-500/20 bg-yellow-500/10 text-yellow-300";
-  }
-
-  if (status === "rejected") {
-    return "border-red-500/20 bg-red-500/10 text-red-300";
-  }
-
-  return "border-indigo-500/20 bg-indigo-500/10 text-indigo-300";
+function getStatusStyle(status: string): React.CSSProperties {
+  return statusStyleMap[status] ?? statusStyleMap.default;
 }
 
 function statusLabel(status: string) {
-  if (status === "approved") {
-    return "Approved";
-  }
-
-  if (status === "pending") {
-    return "Pending Review";
-  }
-
-  if (status === "rejected") {
-    return "Rejected";
-  }
-
+  if (status === "approved") return "Approved";
+  if (status === "pending") return "Pending Review";
+  if (status === "rejected") return "Rejected";
   return "Draft";
 }
 
 function statusDescription(status: string) {
-  if (status === "approved") {
-    return "This team is approved and ready for future Ascendra tournaments.";
-  }
-
-  if (status === "pending") {
-    return "This team is waiting for admin review. You can still update it before approval.";
-  }
-
-  if (status === "rejected") {
-    return "This team was rejected. You can edit it and submit it again.";
-  }
-
+  if (status === "approved") return "This team is approved and ready for future Ascendra tournaments.";
+  if (status === "pending") return "This team is waiting for admin review. You can still update it before approval.";
+  if (status === "rejected") return "This team was rejected. You can edit it and submit it again.";
   return "This team is still a draft. Invite players, then submit it for review.";
 }
 
 function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  return name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 }
 
-export default function TeamManagementCard({ team }: TeamManagementCardProps) {
-  const canEdit =
-    team.status === "draft" ||
-    team.status === "pending" ||
-    team.status === "rejected";
+const inputStyle: React.CSSProperties = {
+  borderColor: "var(--asc-line-soft)",
+  background: "var(--asc-bg-2)",
+  color: "var(--asc-fg-0)",
+};
 
+export default function TeamManagementCard({ team }: TeamManagementCardProps) {
+  const canEdit = team.status === "draft" || team.status === "pending" || team.status === "rejected";
   const canSubmit = team.status === "draft" || team.status === "rejected";
   const canDelete = team.status !== "approved";
 
-  const pendingInvites = team.invites.filter(
-    (invite) => invite.status === "pending",
-  );
-
+  const pendingInvites = team.invites.filter((invite) => invite.status === "pending");
   const leader = team.members.find((member) => member.role === "leader");
-  const regularMembers = team.members.filter(
-    (member) => member.role !== "leader",
-  );
+  const regularMembers = team.members.filter((member) => member.role !== "leader");
 
   return (
-    <article className="overflow-hidden rounded-3xl border border-white/10 bg-[#101522]">
-      <div className="border-b border-white/10 bg-white/[0.03] p-6">
+    <article className="asc-card overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
+      <div className="p-6" style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "oklch(0.10 0.03 287 / 0.4)" }}>
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
             <div className="mb-3 flex flex-wrap items-center gap-3">
-              <span
-                className={`rounded-full border px-4 py-1 text-sm font-bold ${statusStyle(
-                  team.status,
-                )}`}
-              >
+              <span className="inline-flex border px-4 py-1 text-sm font-bold" style={getStatusStyle(team.status)}>
                 {statusLabel(team.status)}
               </span>
 
-              <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-1 text-sm font-bold text-cyan-300">
+              <span
+                className="inline-flex border px-4 py-1 text-sm font-bold"
+                style={{ borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)", color: "var(--asc-blue)" }}
+              >
                 {team.game}
               </span>
             </div>
 
-            <h3 className="text-3xl font-black">{team.name}</h3>
+            <h3 className="text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{team.name}</h3>
 
-            <p className="mt-3 max-w-2xl leading-7 text-gray-300">
+            <p className="mt-3 max-w-2xl leading-7" style={{ color: "var(--asc-fg-2)" }}>
               {statusDescription(team.status)}
             </p>
           </div>
 
           <div className="grid min-w-[160px] grid-cols-2 gap-3 text-center">
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <p className="text-2xl font-black">{team.members.length}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-500">
-                Members
-              </p>
+            <div className="border p-4" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}>
+              <p className="text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{team.members.length}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.18em]" style={{ color: "var(--asc-fg-3)" }}>Members</p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <p className="text-2xl font-black">{pendingInvites.length}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-500">
-                Invites
-              </p>
+            <div className="border p-4" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}>
+              <p className="text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{pendingInvites.length}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.18em]" style={{ color: "var(--asc-fg-3)" }}>Invites</p>
             </div>
           </div>
         </div>
       </div>
 
       {team.status === "rejected" && team.rejectionReason && (
-        <div className="border-b border-red-500/20 bg-red-500/10 p-6">
-          <p className="mb-2 font-bold text-red-300">Team rejected</p>
-
-          <p className="leading-7 text-gray-300">
-            Reason: {team.rejectionReason}
-          </p>
+        <div
+          className="p-6"
+          style={{ borderBottom: "1px solid oklch(0.50 0.20 25 / 0.3)", background: "oklch(0.25 0.18 25 / 0.10)" }}
+        >
+          <p className="mb-2 font-bold" style={{ color: "var(--asc-live)" }}>Team rejected</p>
+          <p className="leading-7" style={{ color: "var(--asc-fg-2)" }}>Reason: {team.rejectionReason}</p>
         </div>
       )}
 
       <div className="grid gap-6 p-6 xl:grid-cols-[1fr_0.9fr]">
         <section className="grid gap-6">
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+          <div className="border p-5" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}>
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
-                <h4 className="text-xl font-black">Team Settings</h4>
-                <p className="mt-1 text-sm text-gray-400">
+                <h4 className="text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>Team Settings</h4>
+                <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                   Update the team name or game before approval.
                 </p>
               </div>
@@ -183,30 +147,32 @@ export default function TeamManagementCard({ team }: TeamManagementCardProps) {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2">
-                  <span className="font-semibold text-gray-200">Team Name</span>
-
+                  <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+                    Team Name
+                  </span>
                   <input
                     name="name"
                     defaultValue={team.name}
                     disabled={!canEdit}
                     required
-                    className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="border px-4 py-3 outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
+                    style={inputStyle}
                   />
                 </label>
 
                 <label className="grid gap-2">
-                  <span className="font-semibold text-gray-200">Game</span>
-
+                  <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+                    Game
+                  </span>
                   <select
                     name="game"
                     defaultValue={team.game}
                     disabled={!canEdit}
-                    className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="border px-4 py-3 outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
+                    style={inputStyle}
                   >
                     {games.map((game) => (
-                      <option key={game} value={game}>
-                        {game}
-                      </option>
+                      <option key={game} value={game}>{game}</option>
                     ))}
                   </select>
                 </label>
@@ -215,32 +181,37 @@ export default function TeamManagementCard({ team }: TeamManagementCardProps) {
               {canEdit ? (
                 <button
                   type="submit"
-                  className="w-full rounded-xl border border-indigo-500/20 px-4 py-3 font-bold text-indigo-300 transition hover:bg-indigo-500/10 sm:w-fit"
+                  className="w-fit border px-4 py-3 font-bold transition hover:opacity-90 sm:w-fit"
+                  style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
                 >
                   Save Changes
                 </button>
               ) : (
-                <p className="rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm leading-6 text-green-200">
-                  Approved teams are locked for players. Contact Ascendra staff if
-                  this team needs changes.
+                <p
+                  className="p-4 text-sm leading-6"
+                  style={{ borderLeft: "2px solid oklch(0.55 0.14 150 / 0.6)", background: "oklch(0.25 0.12 150 / 0.12)", color: "var(--asc-green)" }}
+                >
+                  Approved teams are locked for players. Contact Ascendra staff if this team needs changes.
                 </p>
               )}
             </form>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+          <div className="border p-5" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}>
             <div className="mb-5">
-              <h4 className="text-xl font-black">Invite Player</h4>
-              <p className="mt-1 text-sm text-gray-400">
-                Search for registered Ascendra players and send them a team
-                invitation.
+              <h4 className="text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>Invite Player</h4>
+              <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+                Search for registered Ascendra players and send them a team invitation.
               </p>
             </div>
 
             {canEdit ? (
               <PlayerInviteSearch teamId={team.id} />
             ) : (
-              <p className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-gray-300">
+              <p
+                className="p-4 text-sm leading-6"
+                style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-2)" }}
+              >
                 Invitations are locked after team approval.
               </p>
             )}
@@ -250,28 +221,23 @@ export default function TeamManagementCard({ team }: TeamManagementCardProps) {
                 {pendingInvites.map((invite) => (
                   <div
                     key={invite.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-4"
+                    className="flex flex-wrap items-center justify-between gap-3 p-4"
+                    style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
                   >
                     <div>
-                      <p className="font-semibold">
+                      <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
                         {invite.invitedUser.username}
                       </p>
-                      <p className="mt-1 text-sm text-yellow-300">
-                        Pending invitation
-                      </p>
+                      <p className="mt-1 text-sm" style={{ color: "var(--asc-amber)" }}>Pending invitation</p>
                     </div>
 
                     {canEdit && (
                       <form action={cancelTeamInvite}>
-                        <input
-                          type="hidden"
-                          name="inviteId"
-                          value={invite.id}
-                        />
-
+                        <input type="hidden" name="inviteId" value={invite.id} />
                         <button
                           type="submit"
-                          className="rounded-xl border border-red-500/20 px-4 py-2 text-sm font-bold text-red-300 transition hover:bg-red-500/10"
+                          className="border px-4 py-2 text-sm font-bold transition hover:opacity-90"
+                          style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
                         >
                           Cancel
                         </button>
@@ -285,28 +251,34 @@ export default function TeamManagementCard({ team }: TeamManagementCardProps) {
         </section>
 
         <section className="grid content-start gap-6">
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+          <div className="border p-5" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}>
             <div className="mb-5">
-              <h4 className="text-xl font-black">Members</h4>
-              <p className="mt-1 text-sm text-gray-400">
+              <h4 className="text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>Members</h4>
+              <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                 Players currently connected to this team.
               </p>
             </div>
 
             <div className="grid gap-3">
               {leader && (
-                <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-4">
+                <div
+                  className="p-4"
+                  style={{ border: "1px solid oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" }}
+                >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/20 text-sm font-black text-indigo-300">
+                      <div
+                        className="grid h-10 w-10 shrink-0 place-items-center text-sm font-black"
+                        style={{ background: "oklch(0.30 0.10 285 / 0.4)", color: "var(--asc-accent)" }}
+                      >
                         {getInitials(leader.user.username)}
                       </div>
 
                       <div className="min-w-0">
-                        <p className="truncate font-bold">
+                        <p className="truncate font-bold" style={{ color: "var(--asc-fg-0)" }}>
                           {leader.user.username}
                         </p>
-                        <p className="text-sm text-indigo-300">Leader</p>
+                        <p className="text-sm" style={{ color: "var(--asc-accent)" }}>Leader</p>
                       </div>
                     </div>
                   </div>
@@ -314,26 +286,33 @@ export default function TeamManagementCard({ team }: TeamManagementCardProps) {
               )}
 
               {regularMembers.length === 0 ? (
-                <p className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-gray-300">
+                <p
+                  className="p-4 text-sm leading-6"
+                  style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-2)" }}
+                >
                   No members yet. Invite players to build your team.
                 </p>
               ) : (
                 regularMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="rounded-xl border border-white/10 bg-white/5 p-4"
+                    className="p-4"
+                    style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-sm font-black text-gray-300">
+                        <div
+                          className="grid h-10 w-10 shrink-0 place-items-center text-sm font-black"
+                          style={{ background: "var(--asc-bg-2)", color: "var(--asc-fg-2)" }}
+                        >
                           {getInitials(member.user.username)}
                         </div>
 
                         <div className="min-w-0">
-                          <p className="truncate font-bold">
+                          <p className="truncate font-bold" style={{ color: "var(--asc-fg-0)" }}>
                             {member.user.username}
                           </p>
-                          <p className="text-sm capitalize text-gray-400">
+                          <p className="text-sm capitalize" style={{ color: "var(--asc-fg-3)" }}>
                             {member.role}
                           </p>
                         </div>
@@ -342,15 +321,11 @@ export default function TeamManagementCard({ team }: TeamManagementCardProps) {
                       {canEdit && (
                         <form action={removeTeamMember}>
                           <input type="hidden" name="teamId" value={team.id} />
-                          <input
-                            type="hidden"
-                            name="memberId"
-                            value={member.id}
-                          />
-
+                          <input type="hidden" name="memberId" value={member.id} />
                           <button
                             type="submit"
-                            className="rounded-xl border border-red-500/20 px-4 py-2 text-sm font-bold text-red-300 transition hover:bg-red-500/10"
+                            className="border px-4 py-2 text-sm font-bold transition hover:opacity-90"
+                            style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
                           >
                             Remove
                           </button>
@@ -363,22 +338,20 @@ export default function TeamManagementCard({ team }: TeamManagementCardProps) {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-            <h4 className="text-xl font-black">Actions</h4>
-
-            <p className="mt-1 text-sm leading-6 text-gray-400">
-              Submit the team when it is ready, or delete it if you no longer
-              need it.
+          <div className="border p-5" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}>
+            <h4 className="text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>Actions</h4>
+            <p className="mt-1 text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
+              Submit the team when it is ready, or delete it if you no longer need it.
             </p>
 
             <div className="mt-5 grid gap-3">
               {canSubmit && (
                 <form action={submitTeamForReview}>
                   <input type="hidden" name="teamId" value={team.id} />
-
                   <button
                     type="submit"
-                    className="w-full rounded-xl bg-green-500 px-5 py-3 font-bold text-white transition hover:bg-green-400"
+                    className="w-full px-5 py-3 font-bold text-white transition hover:opacity-90"
+                    style={{ background: "oklch(0.55 0.14 150)" }}
                   >
                     Submit for Review
                   </button>
@@ -386,7 +359,10 @@ export default function TeamManagementCard({ team }: TeamManagementCardProps) {
               )}
 
               {team.status === "pending" && (
-                <p className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm leading-6 text-yellow-100">
+                <p
+                  className="p-4 text-sm leading-6"
+                  style={{ border: "1px solid oklch(0.65 0.16 75 / 0.4)", background: "oklch(0.25 0.14 75 / 0.12)", color: "var(--asc-amber)" }}
+                >
                   This team is already waiting for admin review.
                 </p>
               )}
@@ -400,7 +376,10 @@ export default function TeamManagementCard({ team }: TeamManagementCardProps) {
               )}
 
               {team.status === "approved" && (
-                <p className="rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm leading-6 text-green-100">
+                <p
+                  className="p-4 text-sm leading-6"
+                  style={{ border: "1px solid oklch(0.55 0.14 150 / 0.4)", background: "oklch(0.25 0.12 150 / 0.12)", color: "var(--asc-green)" }}
+                >
                   This team is approved and cannot be deleted by players.
                 </p>
               )}

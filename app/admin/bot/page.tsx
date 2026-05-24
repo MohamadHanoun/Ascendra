@@ -83,8 +83,8 @@ export default async function AdminBotPage({
   const activeSection = getActiveSection(params.botSection);
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
+    <main className="min-h-screen overflow-hidden text-white" style={{ background: "var(--asc-bg-0)" }}>
+      <div className="pointer-events-none fixed inset-0" style={{ background: "radial-gradient(circle at top left,oklch(0.45 0.20 285 / 0.10) 0%,transparent 32%),radial-gradient(circle at top right,oklch(0.45 0.22 285 / 0.08) 0%,transparent 32%)" }} />
 
       <div className="relative z-10">
         <Navbar />

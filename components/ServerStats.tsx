@@ -14,10 +14,11 @@ export default function ServerStats({ stats }: ServerStatsProps) {
         {stats.map((item) => (
           <div
             key={item.label}
-            className="rounded-2xl border border-white/10 bg-white/5 p-6"
+            className="asc-card border p-6"
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
           >
-            <p className="text-4xl font-black text-indigo-400">{item.value}</p>
-            <p className="mt-2 text-gray-300">{item.label}</p>
+            <p className="text-4xl font-black" style={{ color: "var(--asc-accent)" }}>{item.value}</p>
+            <p className="mt-2" style={{ color: "var(--asc-fg-2)" }}>{item.label}</p>
           </div>
         ))}
       </div>

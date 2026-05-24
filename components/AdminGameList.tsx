@@ -17,12 +17,26 @@ type GameAction = (formData: FormData) => Promise<{
   redirectTo?: string;
 }>;
 
-function inputClass() {
-  return "rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400";
-}
+const inputStyle: React.CSSProperties = {
+  borderColor: "var(--asc-line-soft)",
+  background: "var(--asc-bg-2)",
+  color: "var(--asc-fg-0)",
+};
+
+const pillStyleMap: Record<string, React.CSSProperties> = {
+  green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+  red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+  gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
+  violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+  blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
+};
 
 function FieldLabel({ children }: { children: ReactNode }) {
-  return <span className="text-sm font-bold text-gray-200">{children}</span>;
+  return (
+    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+      {children}
+    </span>
+  );
 }
 
 function Pill({
@@ -32,18 +46,8 @@ function Pill({
   children: ReactNode;
   tone?: "green" | "red" | "gray" | "violet" | "blue";
 }) {
-  const styles = {
-    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    red: "border-red-400/25 bg-red-500/10 text-red-300",
-    gray: "border-white/10 bg-white/5 text-gray-300",
-    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-    blue: "border-blue-400/25 bg-blue-500/10 text-blue-300",
-  };
-
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={pillStyleMap[tone]}>
       {children}
     </span>
   );
@@ -52,11 +56,8 @@ function Pill({
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
-        {label}
-      </p>
-
-      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>{label}</p>
+      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
     </div>
   );
 }
@@ -102,11 +103,10 @@ export default async function AdminGameList() {
     <section className="grid gap-6">
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
+          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
             Manage games
           </p>
-
-          <h2 className="mt-2 text-3xl font-black text-white">Games list</h2>
+          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>Games list</h2>
         </div>
 
         <div className="grid grid-cols-3 gap-5">
@@ -117,12 +117,15 @@ export default async function AdminGameList() {
       </div>
 
       {games.length === 0 ? (
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-gray-300 shadow-2xl shadow-black/20">
+        <div className="border p-6 shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-3)" }}>
           No games found. Add one above.
         </div>
       ) : (
-        <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-          <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[minmax(0,1fr)_140px_120px_100px_100px] xl:gap-5">
+        <section className="overflow-hidden border shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
+          <div
+            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[minmax(0,1fr)_140px_120px_100px_100px] xl:gap-5"
+            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "oklch(0.08 0.02 287)", color: "var(--asc-fg-3)" }}
+          >
             <span>Game</span>
             <span>Platform</span>
             <span>Team size</span>
@@ -130,56 +133,50 @@ export default async function AdminGameList() {
             <span>Linked</span>
           </div>
 
-          <div className="divide-y divide-white/10">
-            {games.map((game) => (
+          <div>
+            {games.map((game, idx) => (
               <article
                 key={game.id}
                 className="grid gap-4 px-5 py-5 transition hover:bg-white/[0.035]"
+                style={idx < games.length - 1 ? { borderBottom: "1px solid var(--asc-line-soft)" } : {}}
               >
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_140px_120px_100px_100px] xl:items-center xl:gap-5">
                   <div className="min-w-0">
-                    <h3 className="truncate text-xl font-black text-white">
-                      {game.name}
-                    </h3>
-
-                    <p className="mt-0.5 text-sm text-gray-500">
+                    <h3 className="truncate text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>{game.name}</h3>
+                    <p className="mt-0.5 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                       {game.slug}
-                      {game.shortName && (
-                        <span className="ml-2 text-gray-600">
-                          · {game.shortName}
-                        </span>
-                      )}
+                      {game.shortName && <span className="ml-2" style={{ color: "var(--asc-fg-3)", opacity: 0.6 }}>· {game.shortName}</span>}
                     </p>
                   </div>
 
-                  <Pill tone={game.platform ? "blue" : "gray"}>
-                    {game.platform ?? "—"}
-                  </Pill>
+                  <Pill tone={game.platform ? "blue" : "gray"}>{game.platform ?? "—"}</Pill>
 
-                  <p className="text-sm font-bold text-gray-300">
+                  <p className="text-sm font-bold" style={{ color: "var(--asc-fg-0)" }}>
                     {game.defaultTeamSize}v{game.defaultTeamSize}
                     {game.defaultSubstitutes > 0 && (
-                      <span className="ml-1 font-normal text-gray-500">
-                        +{game.defaultSubstitutes} sub
-                      </span>
+                      <span className="ml-1 font-normal" style={{ color: "var(--asc-fg-3)" }}>+{game.defaultSubstitutes} sub</span>
                     )}
                   </p>
 
-                  <Pill tone={game.isActive ? "green" : "red"}>
-                    {game.isActive ? "Active" : "Inactive"}
-                  </Pill>
+                  <Pill tone={game.isActive ? "green" : "red"}>{game.isActive ? "Active" : "Inactive"}</Pill>
 
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
                     {game._count.tournaments}T · {game._count.teams}Tm
                   </p>
                 </div>
 
-                <details className="rounded-2xl border border-white/10 bg-black/20">
-                  <summary className="cursor-pointer px-4 py-3 text-sm font-black text-gray-300 transition hover:text-white">
+                <details className="border" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}>
+                  <summary
+                    className="cursor-pointer px-4 py-3 text-sm font-black transition"
+                    style={{ color: "var(--asc-fg-3)" }}
+                  >
                     Edit and actions
                   </summary>
 
-                  <div className="grid gap-5 border-t border-white/10 p-4 xl:grid-cols-[minmax(0,1fr)_200px] xl:items-start">
+                  <div
+                    className="grid gap-5 p-4 xl:grid-cols-[minmax(0,1fr)_200px] xl:items-start"
+                    style={{ borderTop: "1px solid var(--asc-line-soft)" }}
+                  >
                     <InlineAdminGameForm
                       action={updateGameInline}
                       buttonLabel="Save changes"
@@ -191,102 +188,48 @@ export default async function AdminGameList() {
                       <div className="grid gap-4 lg:grid-cols-2">
                         <label className="grid gap-2">
                           <FieldLabel>Name</FieldLabel>
-
-                          <input
-                            name="name"
-                            required
-                            defaultValue={game.name}
-                            className={inputClass()}
-                          />
+                          <input name="name" required defaultValue={game.name} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
                         </label>
 
                         <label className="grid gap-2">
                           <FieldLabel>Slug</FieldLabel>
-
-                          <input
-                            name="slug"
-                            required
-                            defaultValue={game.slug}
-                            className={inputClass()}
-                          />
+                          <input name="slug" required defaultValue={game.slug} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
                         </label>
                       </div>
 
                       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_140px_140px]">
                         <label className="grid gap-2">
                           <FieldLabel>Short name</FieldLabel>
-
-                          <input
-                            name="shortName"
-                            defaultValue={game.shortName ?? ""}
-                            placeholder="e.g. VAL"
-                            className={inputClass()}
-                          />
+                          <input name="shortName" defaultValue={game.shortName ?? ""} placeholder="e.g. VAL" className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
                         </label>
 
                         <label className="grid gap-2">
                           <FieldLabel>Platform</FieldLabel>
-
-                          <select
-                            name="platform"
-                            defaultValue={game.platform ?? ""}
-                            className={inputClass()}
-                          >
+                          <select name="platform" defaultValue={game.platform ?? ""} className="border px-4 py-3 text-white outline-none transition" style={inputStyle}>
                             <option value="">No platform</option>
-
                             {platforms.map((platform) => (
-                              <option key={platform} value={platform}>
-                                {platform}
-                              </option>
+                              <option key={platform} value={platform}>{platform}</option>
                             ))}
                           </select>
                         </label>
 
                         <label className="grid gap-2">
                           <FieldLabel>Team size</FieldLabel>
-
-                          <input
-                            name="defaultTeamSize"
-                            type="number"
-                            min={1}
-                            max={20}
-                            defaultValue={game.defaultTeamSize}
-                            className={inputClass()}
-                          />
+                          <input name="defaultTeamSize" type="number" min={1} max={20} defaultValue={game.defaultTeamSize} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
                         </label>
 
                         <label className="grid gap-2">
                           <FieldLabel>Substitutes</FieldLabel>
-
-                          <input
-                            name="defaultSubstitutes"
-                            type="number"
-                            min={0}
-                            max={10}
-                            defaultValue={game.defaultSubstitutes}
-                            className={inputClass()}
-                          />
+                          <input name="defaultSubstitutes" type="number" min={0} max={10} defaultValue={game.defaultSubstitutes} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
                         </label>
                       </div>
                     </InlineAdminGameForm>
 
                     <aside className="grid content-start gap-3">
                       {game.isActive ? (
-                        <SmallAction
-                          action={deactivateGameInline}
-                          gameId={game.id}
-                          label="Deactivate"
-                          pendingLabel="Deactivating..."
-                          variant="danger"
-                        />
+                        <SmallAction action={deactivateGameInline} gameId={game.id} label="Deactivate" pendingLabel="Deactivating..." variant="danger" />
                       ) : (
-                        <SmallAction
-                          action={activateGameInline}
-                          gameId={game.id}
-                          label="Activate"
-                          pendingLabel="Activating..."
-                          variant="success"
-                        />
+                        <SmallAction action={activateGameInline} gameId={game.id} label="Activate" pendingLabel="Activating..." variant="success" />
                       )}
 
                       <InlineAdminGameForm

@@ -4,16 +4,16 @@ type AdminModuleCardProps = {
   status: string;
 };
 
-function getStatusClasses(status: string) {
+function getStatusStyle(status: string): React.CSSProperties {
   if (status === "Ready") {
-    return "border-emerald-400/25 bg-emerald-500/10 text-emerald-300";
+    return { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" };
   }
 
   if (status === "Important") {
-    return "border-yellow-400/25 bg-yellow-500/10 text-yellow-300";
+    return { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" };
   }
 
-  return "border-violet-400/25 bg-violet-500/10 text-violet-200";
+  return { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" };
 }
 
 export default function AdminModuleCard({
@@ -22,15 +22,17 @@ export default function AdminModuleCard({
   status,
 }: AdminModuleCardProps) {
   return (
-    <article className="grid gap-3 px-5 py-4 transition hover:bg-white/[0.035] md:grid-cols-[220px_minmax(0,1fr)_120px] md:items-center">
-      <h3 className="font-black text-white">{title}</h3>
+    <article
+      className="grid gap-3 px-5 py-4 transition md:grid-cols-[220px_minmax(0,1fr)_120px] md:items-center"
+      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+    >
+      <h3 className="font-black" style={{ color: "var(--asc-fg-0)" }}>{title}</h3>
 
-      <p className="text-sm leading-6 text-gray-400">{description}</p>
+      <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>{description}</p>
 
       <span
-        className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${getStatusClasses(
-          status,
-        )}`}
+        className="inline-flex w-fit border px-3 py-1 text-xs font-black"
+        style={getStatusStyle(status)}
       >
         {status}
       </span>

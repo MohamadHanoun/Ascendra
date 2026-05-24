@@ -24,6 +24,12 @@ type AdminStaffListClientProps = {
   reorderStaffMembers: ServerAction;
 };
 
+const inputStyle: React.CSSProperties = {
+  borderColor: "var(--asc-line-soft)",
+  background: "var(--asc-bg-2)",
+  color: "var(--asc-fg-0)",
+};
+
 export default function AdminStaffListClient({
   staffMembers,
   updateStaffMember,
@@ -48,36 +54,20 @@ export default function AdminStaffListClient({
   }
 
   function moveStaffMember(targetId: string) {
-    if (!draggedId || draggedId === targetId) {
-      return;
-    }
-
+    if (!draggedId || draggedId === targetId) return;
     const currentItems = itemsRef.current;
-
     const draggedIndex = currentItems.findIndex((item) => item.id === draggedId);
     const targetIndex = currentItems.findIndex((item) => item.id === targetId);
-
-    if (draggedIndex === -1 || targetIndex === -1) {
-      return;
-    }
-
+    if (draggedIndex === -1 || targetIndex === -1) return;
     const updatedItems = [...currentItems];
     const [draggedItem] = updatedItems.splice(draggedIndex, 1);
-
     updatedItems.splice(targetIndex, 0, draggedItem);
-
-    const reorderedItems = updatedItems.map((item, index) => ({
-      ...item,
-      order: index + 1,
-    }));
-
-    updateItems(reorderedItems);
+    updateItems(updatedItems.map((item, index) => ({ ...item, order: index + 1 })));
   }
 
   function saveOrder() {
     const formData = new FormData();
     formData.append("ids", itemsRef.current.map((item) => item.id).join(","));
-
     startTransition(async () => {
       await reorderStaffMembers(formData);
       router.refresh();
@@ -85,33 +75,25 @@ export default function AdminStaffListClient({
   }
 
   function handleDragEnd() {
-    if (draggedId) {
-      saveOrder();
-    }
-
+    if (draggedId) saveOrder();
     setDraggedId(null);
   }
 
   return (
     <section className="mx-auto max-w-7xl px-6 pb-12">
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+      <div className="border p-6" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
         <div className="mb-8">
-          <h2 className="mb-3 text-3xl font-black">Manage Staff</h2>
-
-          <p className="max-w-2xl leading-7 text-gray-300">
-            Edit, show, hide, delete, or reorder Ascendra staff members. Drag staff
-            members from the handle icon to change their order.
+          <h2 className="mb-3 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>Manage Staff</h2>
+          <p className="max-w-2xl leading-7" style={{ color: "var(--asc-fg-3)" }}>
+            Edit, show, hide, delete, or reorder Ascendra staff members. Drag staff members from the handle icon to change their order.
           </p>
-
           {isPending && (
-            <p className="mt-3 text-sm font-semibold text-green-300">
-              Saving staff order...
-            </p>
+            <p className="mt-3 text-sm font-black" style={{ color: "var(--asc-green)" }}>Saving staff order...</p>
           )}
         </div>
 
         {items.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-6 text-gray-300">
+          <div className="border p-6 text-sm" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}>
             No staff members found yet.
           </div>
         ) : (
@@ -119,48 +101,38 @@ export default function AdminStaffListClient({
             {items.map((member) => (
               <article
                 key={member.id}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  moveStaffMember(member.id);
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  handleDragEnd();
-                }}
-                className={`flex gap-4 rounded-2xl border border-white/10 bg-black/20 p-5 transition ${
-                  draggedId === member.id
-                    ? "scale-[0.99] opacity-60"
-                    : "hover:border-green-500/40"
-                }`}
+                onDragOver={(event) => { event.preventDefault(); moveStaffMember(member.id); }}
+                onDrop={(event) => { event.preventDefault(); handleDragEnd(); }}
+                className={`flex gap-4 border p-5 transition ${draggedId === member.id ? "scale-[0.99] opacity-60" : ""}`}
+                style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
               >
                 <button
                   type="button"
                   draggable
                   title="Drag to reorder"
-                  onDragStart={(event) => {
-                    setDraggedId(member.id);
-                    event.dataTransfer.effectAllowed = "move";
-                  }}
+                  onDragStart={(event) => { setDraggedId(member.id); event.dataTransfer.effectAllowed = "move"; }}
                   onDragEnd={handleDragEnd}
-                  className="mt-1 flex h-fit shrink-0 cursor-grab flex-col gap-1 rounded-xl border border-white/10 bg-white/5 p-3 text-gray-400 transition hover:bg-white/10 hover:text-white active:cursor-grabbing"
+                  className="mt-1 flex h-fit shrink-0 cursor-grab flex-col gap-1 border p-3 transition hover:opacity-80 active:cursor-grabbing"
+                  style={inputStyle}
                 >
-                  <span className="block h-[2px] w-5 rounded bg-current" />
-                  <span className="block h-[2px] w-5 rounded bg-current" />
-                  <span className="block h-[2px] w-5 rounded bg-current" />
+                  <span className="block h-[2px] w-5 bg-current" />
+                  <span className="block h-[2px] w-5 bg-current" />
+                  <span className="block h-[2px] w-5 bg-current" />
                 </button>
 
                 <div className="flex-1">
                   <div className="mb-4 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-green-500/20 px-3 py-1 text-sm font-semibold text-green-300">
+                    <span
+                      className="inline-flex items-center border px-3 py-1 text-xs font-black uppercase tracking-[0.1em]"
+                      style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}
+                    >
                       Staff {member.order}
                     </span>
-
                     <span
-                      className={`rounded-full px-3 py-1 text-sm font-semibold ${
-                        member.isActive
-                          ? "bg-green-500/20 text-green-300"
-                          : "bg-gray-500/20 text-gray-300"
-                      }`}
+                      className="inline-flex items-center border px-3 py-1 text-xs font-black uppercase tracking-[0.1em]"
+                      style={member.isActive
+                        ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
+                        : { borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-3)" }}
                     >
                       {member.isActive ? "Active" : "Hidden"}
                     </span>
@@ -168,41 +140,44 @@ export default function AdminStaffListClient({
 
                   <form action={updateStaffMember} className="grid gap-4">
                     <input type="hidden" name="id" value={member.id} />
-
                     <div className="grid gap-4 md:grid-cols-2">
                       <input
                         name="name"
                         defaultValue={member.name}
                         required
-                        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-green-400"
+                        className="border px-4 py-3 text-sm outline-none transition"
+                        style={inputStyle}
+                        placeholder="Name"
                       />
-
                       <input
                         name="role"
                         defaultValue={member.role}
                         required
-                        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-green-400"
+                        className="border px-4 py-3 text-sm outline-none transition"
+                        style={inputStyle}
+                        placeholder="Role"
                       />
                     </div>
-
                     <input
                       name="status"
                       defaultValue={member.status}
                       required
-                      className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-green-400"
+                      className="border px-4 py-3 text-sm outline-none transition"
+                      style={inputStyle}
+                      placeholder="Status"
                     />
-
                     <input
                       name="avatarUrl"
                       defaultValue={member.avatarUrl || ""}
                       placeholder="Optional avatar URL"
-                      className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-green-400"
+                      className="border px-4 py-3 text-sm outline-none transition"
+                      style={inputStyle}
                     />
-
                     <div className="grid gap-3 sm:flex sm:flex-wrap">
                       <button
                         type="submit"
-                        className="rounded-xl border border-green-500/20 px-4 py-2 font-bold text-green-300 transition hover:bg-green-500/10"
+                        className="border px-4 py-2 text-sm font-black transition hover:opacity-80"
+                        style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}
                       >
                         Save Changes
                       </button>
@@ -212,20 +187,15 @@ export default function AdminStaffListClient({
                   <div className="mt-3 flex flex-wrap gap-3">
                     <form action={toggleStaffMemberActive}>
                       <input type="hidden" name="id" value={member.id} />
-                      <input
-                        type="hidden"
-                        name="isActive"
-                        value={String(member.isActive)}
-                      />
-
+                      <input type="hidden" name="isActive" value={String(member.isActive)} />
                       <button
                         type="submit"
-                        className="rounded-xl border border-green-500/20 px-4 py-2 font-bold text-green-300 transition hover:bg-green-500/10"
+                        className="border px-4 py-2 text-sm font-black transition hover:opacity-80"
+                        style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}
                       >
                         {member.isActive ? "Hide" : "Show"}
                       </button>
                     </form>
-
                     <ConfirmDeleteForm
                       id={member.id}
                       action={deleteStaffMember}

@@ -65,12 +65,13 @@ const legalPolicyMessages: Record<Locale, LegalPolicyMessages> = {
 
 function LegalPageTabs({ pages }: { pages: LegalPolicyMessages["pages"] }) {
   return (
-    <nav className="flex flex-wrap gap-2 border-b border-white/10 pb-5">
+    <nav className="flex flex-wrap gap-2 pb-5" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
       {pages.map((page) => (
         <a
           key={page.href}
           href={page.href}
-          className="rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-sm font-bold text-gray-300 transition hover:border-violet-400/30 hover:bg-violet-500/10 hover:text-white"
+          className="border px-4 py-2 text-sm font-bold transition"
+          style={{ border: "1px solid var(--asc-line)", background: "oklch(0.20 0.02 287 / 0.035)", color: "var(--asc-fg-2)" }}
         >
           {page.label}
         </a>
@@ -89,21 +90,22 @@ function TableOfContents({
   return (
     <aside className="hidden xl:block">
       <div className="sticky top-24">
-        <p className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+        <p className="mb-4 text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-fg-3)" }}>
           {label}
         </p>
 
-        <div className="grid gap-1 border-l border-white/10 pl-4">
+        <div className="grid gap-1 pl-4" style={{ borderLeft: "1px solid var(--asc-line-soft)" }}>
           {sections.map((section, index) => (
             <a
               key={section.id}
               href={`#${section.id}`}
-              className="group py-2 text-sm font-bold text-gray-500 transition hover:text-white"
+              className="group py-2 text-sm font-bold transition"
+              style={{ color: "var(--asc-fg-3)" }}
             >
-              <span className="mr-2 text-violet-400">
+              <span className="mr-2" style={{ color: "var(--asc-accent)" }}>
                 {String(index + 1).padStart(2, "0")}
               </span>
-              <span className="group-hover:text-white">{section.title}</span>
+              <span>{section.title}</span>
             </a>
           ))}
         </div>
@@ -122,22 +124,23 @@ function LegalSectionBlock({
   return (
     <section
       id={section.id}
-      className="scroll-mt-28 border-b border-white/10 py-10 last:border-b-0"
+      className="scroll-mt-28 py-10 last:border-b-0"
+      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
     >
       <div className="grid gap-5 md:grid-cols-[90px_minmax(0,1fr)]">
         <div>
-          <p className="text-sm font-black text-violet-300">
+          <p className="text-sm font-black" style={{ color: "var(--asc-accent)" }}>
             {String(index + 1).padStart(2, "0")}
           </p>
         </div>
 
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-white md:text-3xl">
+          <h2 className="text-2xl font-black tracking-tight md:text-3xl" style={{ color: "var(--asc-fg-0)" }}>
             {section.title}
           </h2>
 
           {section.intro && (
-            <p className="mt-4 text-base leading-8 text-gray-300">
+            <p className="mt-4 text-base leading-8" style={{ color: "var(--asc-fg-1)" }}>
               {section.intro}
             </p>
           )}
@@ -145,7 +148,7 @@ function LegalSectionBlock({
           {section.paragraphs && section.paragraphs.length > 0 && (
             <div className="mt-5 grid gap-4">
               {section.paragraphs.map((paragraph) => (
-                <p key={paragraph} className="text-sm leading-8 text-gray-400">
+                <p key={paragraph} className="text-sm leading-8" style={{ color: "var(--asc-fg-3)" }}>
                   {paragraph}
                 </p>
               ))}
@@ -157,8 +160,10 @@ function LegalSectionBlock({
               {section.bullets.map((bullet) => (
                 <li
                   key={bullet}
-                  className="relative pl-5 text-sm leading-8 text-gray-400 before:absolute before:left-0 before:top-[13px] before:h-1.5 before:w-1.5 before:rounded-full before:bg-violet-400"
+                  className="relative pl-5 text-sm leading-8 before:absolute before:left-0 before:top-[13px] before:h-1.5 before:w-1.5 before:rounded-full"
+                  style={{ color: "var(--asc-fg-3)", ["--tw-before-bg" as string]: "var(--asc-accent)" }}
                 >
+                  <span className="absolute left-0 top-[13px] h-1.5 w-1.5 rounded-full" style={{ background: "var(--asc-accent)" }} />
                   {bullet}
                 </li>
               ))}
@@ -166,7 +171,10 @@ function LegalSectionBlock({
           )}
 
           {section.note && (
-            <p className="mt-6 border-l-2 border-violet-400/60 bg-violet-500/[0.06] px-5 py-4 text-sm leading-8 text-violet-100">
+            <p
+              className="mt-6 px-5 py-4 text-sm leading-8"
+              style={{ borderLeft: "2px solid oklch(0.70 0.22 285 / 0.60)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }}
+            >
               {section.note}
             </p>
           )}
@@ -187,58 +195,56 @@ export default async function LegalPolicyPage({
   const messages = legalPolicyMessages[locale];
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.13)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(16,185,129,0.08)_0%,transparent_28%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
-
+    <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
       <div className="relative z-10">
         <Navbar />
 
-        <section className="border-b border-white/10">
+        <section style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
           <div className="mx-auto max-w-[1500px] px-6 py-20 lg:px-10 2xl:px-14">
-            <p className="mb-5 text-xs font-black uppercase tracking-[0.24em] text-violet-300">
+            <p className="mb-5 text-xs font-black uppercase tracking-[0.24em]" style={{ color: "var(--asc-accent)" }}>
               {messages.label}
             </p>
 
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
               <div>
-                <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
+                <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
                   {title}
                 </h1>
 
-                <p className="mt-6 max-w-3xl text-base leading-8 text-gray-300">
+                <p className="mt-6 max-w-3xl text-base leading-8" style={{ color: "var(--asc-fg-1)" }}>
                   {description}
                 </p>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-500">
+              <div className="p-5" style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
+                <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-fg-3)" }}>
                   {messages.documentInformation}
                 </p>
 
                 <div className="mt-4 grid gap-4">
                   <div>
-                    <p className="text-xs font-bold text-gray-500">
+                    <p className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
                       {messages.lastUpdated}
                     </p>
-                    <p className="mt-1 text-sm font-black text-white">
+                    <p className="mt-1 text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
                       {lastUpdated}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-xs font-bold text-gray-500">
+                    <p className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
                       {messages.effectiveDate}
                     </p>
-                    <p className="mt-1 text-sm font-black text-white">
+                    <p className="mt-1 text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
                       {effectiveDate}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-xs font-bold text-gray-500">
+                    <p className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
                       {messages.contact}
                     </p>
-                    <p className="mt-1 text-sm font-black text-violet-200">
+                    <p className="mt-1 text-sm font-black" style={{ color: "var(--asc-accent)" }}>
                       support@ascendrahub.com
                     </p>
                   </div>

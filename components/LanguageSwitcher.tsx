@@ -38,11 +38,8 @@ export default function LanguageSwitcher({
       onClick={switchLanguage}
       aria-label={ariaLabel}
       title={ariaLabel}
-      className={
-        compact
-          ? "flex w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-black text-gray-300 transition hover:border-violet-400/30 hover:bg-violet-500/10 hover:text-white"
-          : "inline-flex h-10 min-w-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] px-3 text-xs font-black uppercase tracking-[0.12em] text-gray-300 transition hover:border-violet-400/30 hover:bg-violet-500/10 hover:text-white"
-      }
+      className={compact ? "flex w-full items-center justify-center border px-4 py-3 text-sm font-black transition hover:opacity-90" : "inline-flex h-10 min-w-12 items-center justify-center border px-3 text-xs font-black uppercase tracking-[0.12em] transition hover:opacity-90"}
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
     >
       {compact ? buttonLabel : shortLabel}
     </button>

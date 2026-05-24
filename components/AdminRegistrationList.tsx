@@ -27,17 +27,13 @@ type SnapshotMember = {
   discordId?: string;
 };
 
-function toneClass(tone: Tone) {
-  const styles: Record<Tone, string> = {
-    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    red: "border-red-400/25 bg-red-500/10 text-red-300",
-    gray: "border-white/10 bg-white/5 text-gray-300",
-    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-  };
-
-  return styles[tone];
-}
+const toneStyle: Record<Tone, React.CSSProperties> = {
+  green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+  yellow: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
+  red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+  gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
+  violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+};
 
 function Pill({
   children,
@@ -47,11 +43,7 @@ function Pill({
   tone?: Tone;
 }) {
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${toneClass(
-        tone,
-      )}`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={toneStyle[tone]}>
       {children}
     </span>
   );
@@ -112,11 +104,10 @@ function DiscordRoleBadge({ status }: { status: string }) {
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
         {label}
       </p>
-
-      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
     </div>
   );
 }
@@ -221,8 +212,8 @@ function PlayerLine({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 py-2">
       <div className="min-w-0">
-        <p className="truncate font-black text-white">{username}</p>
-        <p className="break-all text-xs text-gray-500">{discordId}</p>
+        <p className="truncate font-black" style={{ color: "var(--asc-fg-0)" }}>{username}</p>
+        <p className="break-all text-xs" style={{ color: "var(--asc-fg-3)" }}>{discordId}</p>
       </div>
 
       <Pill tone={isLeader ? "green" : "violet"}>
@@ -254,45 +245,24 @@ function DiscordInfo({
   return (
     <div className="grid gap-3 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="font-black text-white">Discord automation</p>
+        <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>Discord automation</p>
         <DiscordRoleBadge status={status} />
       </div>
 
-      <div className="grid gap-2 text-gray-400">
-        <p>
-          Role:{" "}
-          <span className="font-bold text-white">
-            {roleName || "Not prepared"}
-          </span>
-        </p>
-        <p>
-          Role ID:{" "}
-          <span className="font-bold text-white">{roleId || "Pending"}</span>
-        </p>
-        <p>
-          Channel:{" "}
-          <span className="font-bold text-white">
-            {channelName || "Not prepared"}
-          </span>
-        </p>
-        <p>
-          Channel ID:{" "}
-          <span className="font-bold text-white">{channelId || "Pending"}</span>
-        </p>
-        <p>
-          Requested:{" "}
-          <span className="font-bold text-white">
-            {formatDate(requestedAt)}
-          </span>
-        </p>
-        <p>
-          Synced:{" "}
-          <span className="font-bold text-white">{formatDate(syncedAt)}</span>
-        </p>
+      <div className="grid gap-2" style={{ color: "var(--asc-fg-3)" }}>
+        <p>Role: <span className="font-bold" style={{ color: "var(--asc-fg-0)" }}>{roleName || "Not prepared"}</span></p>
+        <p>Role ID: <span className="font-bold" style={{ color: "var(--asc-fg-0)" }}>{roleId || "Pending"}</span></p>
+        <p>Channel: <span className="font-bold" style={{ color: "var(--asc-fg-0)" }}>{channelName || "Not prepared"}</span></p>
+        <p>Channel ID: <span className="font-bold" style={{ color: "var(--asc-fg-0)" }}>{channelId || "Pending"}</span></p>
+        <p>Requested: <span className="font-bold" style={{ color: "var(--asc-fg-0)" }}>{formatDate(requestedAt)}</span></p>
+        <p>Synced: <span className="font-bold" style={{ color: "var(--asc-fg-0)" }}>{formatDate(syncedAt)}</span></p>
       </div>
 
       {error && (
-        <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-red-300">
+        <p
+          className="border px-4 py-3"
+          style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }}
+        >
           {error}
         </p>
       )}
@@ -443,15 +413,15 @@ export default async function AdminRegistrationList({
 
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
+          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
             Registrations
           </p>
 
-          <h1 className="mt-2 text-3xl font-black text-white">
+          <h1 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
             Tournament registrations
           </h1>
 
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
+          <p className="mt-3 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
             Review teams, approve valid entries, and manage Discord access.
           </p>
         </div>
@@ -466,12 +436,21 @@ export default async function AdminRegistrationList({
       </div>
 
       {sortedRegistrations.length === 0 ? (
-        <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-gray-300 shadow-2xl shadow-black/20">
+        <section
+          className="border p-6 shadow-2xl"
+          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-2)" }}
+        >
           No tournament registrations found.
         </section>
       ) : (
-        <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-          <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_120px_120px_170px] xl:gap-5">
+        <section
+          className="overflow-hidden border shadow-2xl"
+          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+        >
+          <div
+            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_120px_120px_170px] xl:gap-5"
+            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
+          >
             <span>Team</span>
             <span>Tournament</span>
             <span>Status</span>
@@ -479,7 +458,7 @@ export default async function AdminRegistrationList({
             <span>Action</span>
           </div>
 
-          <div className="divide-y divide-white/10">
+          <div>
             {sortedRegistrations.map((registration) => {
               const approvedTournamentCount =
                 approvedCountByTournament.get(registration.tournamentId) || 0;
@@ -547,19 +526,20 @@ export default async function AdminRegistrationList({
               return (
                 <article
                   key={registration.id}
-                  className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.035]"
+                  className="grid gap-4 px-5 py-4 transition"
+                  style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                 >
                   <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_120px_120px_170px] xl:items-center xl:gap-5">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="truncate text-xl font-black text-white">
+                        <h2 className="truncate text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
                           {displayedTeamName}
                         </h2>
 
                         <Pill tone="violet">{displayedTeamGame}</Pill>
                       </div>
 
-                      <p className="mt-1 text-sm text-gray-400">
+                      <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                         {displayedMembers.length} player
                         {displayedMembers.length === 1 ? "" : "s"} · leader{" "}
                         {registration.team.leader.username}
@@ -567,7 +547,7 @@ export default async function AdminRegistrationList({
 
                       {registration.team.invites.length > 0 &&
                         registration.status === "registered" && (
-                          <p className="mt-1 text-sm font-bold text-yellow-300">
+                          <p className="mt-1 text-sm font-bold" style={{ color: "var(--asc-amber)" }}>
                             {registration.team.invites.length} pending invite
                             {registration.team.invites.length === 1 ? "" : "s"}
                           </p>
@@ -575,11 +555,11 @@ export default async function AdminRegistrationList({
                     </div>
 
                     <div className="min-w-0">
-                      <p className="truncate font-black text-white">
+                      <p className="truncate font-black" style={{ color: "var(--asc-fg-0)" }}>
                         {registration.tournament.title}
                       </p>
 
-                      <p className="mt-1 text-sm text-gray-400">
+                      <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                         {registration.tournament.startsAt?.toLocaleDateString() ?? "—"} ·{" "}
                         {approvedTournamentCount}/
                         {registration.tournament.maxTeams} approved
@@ -610,19 +590,28 @@ export default async function AdminRegistrationList({
                         ["registered", "rejected"].includes(
                           registration.status,
                         ) && (
-                          <div className="rounded-xl border border-yellow-400/25 bg-yellow-500/10 px-4 py-2 text-sm font-black text-yellow-300">
+                          <div
+                            className="border px-4 py-2 text-sm font-black"
+                            style={{ borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)", color: "var(--asc-amber)" }}
+                          >
                             {readinessIssues[0] || "Not ready"}
                           </div>
                         )}
 
                       {registration.status === "approved" && (
-                        <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/[0.06] px-4 py-2 text-center text-sm font-black text-emerald-300">
+                        <div
+                          className="border px-4 py-2 text-center text-sm font-black"
+                          style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.10)", color: "var(--asc-green)" }}
+                        >
                           Approved
                         </div>
                       )}
 
                       {registration.status === "cancelled" && (
-                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-center text-sm font-black text-gray-400">
+                        <div
+                          className="border px-4 py-2 text-center text-sm font-black"
+                          style={{ borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-3)" }}
+                        >
                           Closed
                         </div>
                       )}
@@ -630,25 +619,34 @@ export default async function AdminRegistrationList({
                   </div>
 
                   {registration.rejectionReason && (
-                    <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-300">
+                    <div
+                      className="border px-4 py-3 text-sm leading-6"
+                      style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }}
+                    >
                       {registration.rejectionReason}
                     </div>
                   )}
 
-                  <details className="rounded-2xl border border-white/10 bg-black/20">
-                    <summary className="cursor-pointer px-4 py-3 text-sm font-black text-gray-300 transition hover:text-white">
+                  <details
+                    className="border"
+                    style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+                  >
+                    <summary
+                      className="cursor-pointer px-4 py-3 text-sm font-black transition hover:opacity-90"
+                      style={{ color: "var(--asc-fg-2)" }}
+                    >
                       More details
                     </summary>
 
-                    <div className="grid gap-5 border-t border-white/10 p-4 lg:grid-cols-[1fr_1fr_220px]">
+                    <div className="grid gap-5 p-4 lg:grid-cols-[1fr_1fr_220px]" style={{ borderTop: "1px solid var(--asc-line-soft)" }}>
                       <section>
-                        <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                        <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
                           Players
                         </p>
 
-                        <div className="mt-3 divide-y divide-white/10">
+                        <div className="mt-3">
                           {displayedMembers.length === 0 ? (
-                            <p className="py-2 text-sm text-gray-400">
+                            <p className="py-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                               No players in this team.
                             </p>
                           ) : (
@@ -665,35 +663,15 @@ export default async function AdminRegistrationList({
                       </section>
 
                       <section>
-                        <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                        <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
                           Review info
                         </p>
 
-                        <div className="mt-3 grid gap-2 text-sm text-gray-400">
-                          <p>
-                            Registered by:{" "}
-                            <span className="font-bold text-white">
-                              {registration.registeredBy.username}
-                            </span>
-                          </p>
-                          <p>
-                            Registered:{" "}
-                            <span className="font-bold text-white">
-                              {formatDate(registration.createdAt)}
-                            </span>
-                          </p>
-                          <p>
-                            Reviewed:{" "}
-                            <span className="font-bold text-white">
-                              {formatDate(registration.reviewedAt)}
-                            </span>
-                          </p>
-                          <p>
-                            Required players:{" "}
-                            <span className="font-bold text-white">
-                              {registration.tournament.teamSize}
-                            </span>
-                          </p>
+                        <div className="mt-3 grid gap-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+                          <p>Registered by: <span className="font-bold" style={{ color: "var(--asc-fg-0)" }}>{registration.registeredBy.username}</span></p>
+                          <p>Registered: <span className="font-bold" style={{ color: "var(--asc-fg-0)" }}>{formatDate(registration.createdAt)}</span></p>
+                          <p>Reviewed: <span className="font-bold" style={{ color: "var(--asc-fg-0)" }}>{formatDate(registration.reviewedAt)}</span></p>
+                          <p>Required players: <span className="font-bold" style={{ color: "var(--asc-fg-0)" }}>{registration.tournament.teamSize}</span></p>
                         </div>
 
                         {shouldShowDiscordActions && (
@@ -713,7 +691,7 @@ export default async function AdminRegistrationList({
                       </section>
 
                       <aside className="grid content-start gap-3">
-                        <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                        <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
                           Actions
                         </p>
 

@@ -23,53 +23,45 @@ type TournamentMatchesSectionProps = {
 function MatchStatusBadge({ status }: { status: string }) {
   if (status === "live") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/25 bg-red-500/10 px-3 py-1 text-xs font-black text-red-300">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
+      <span
+        className="inline-flex items-center gap-1.5 border px-3 py-1 text-xs font-black"
+        style={{ color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" }}
+      >
+        <span className="asc-live-dot" />
         Live
       </span>
     );
   }
 
-  const config: Record<string, { label: string; className: string }> = {
+  const config: Record<string, { label: string; style: React.CSSProperties }> = {
     pending: {
       label: "Pending",
-      className: "border-white/10 bg-white/5 text-gray-400",
+      style: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
     },
     scheduled: {
       label: "Scheduled",
-      className: "border-blue-400/25 bg-blue-500/10 text-blue-300",
+      style: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
     },
     completed: {
       label: "Completed",
-      className: "border-violet-400/25 bg-violet-500/10 text-violet-200",
+      style: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
     },
     cancelled: {
       label: "Cancelled",
-      className: "border-red-400/25 bg-red-500/10 text-red-300",
+      style: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
     },
   };
 
-  const { label, className } = config[status] ?? {
-    label: status,
-    className: "border-white/10 bg-white/5 text-gray-400",
-  };
+  const entry = config[status] ?? { label: status, style: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" } };
 
   return (
-    <span
-      className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${className}`}
-    >
-      {label}
+    <span className="inline-flex border px-3 py-1 text-xs font-black" style={entry.style}>
+      {entry.label}
     </span>
   );
 }
 
-function MatchCard({
-  match,
-  locale,
-}: {
-  match: PublicMatch;
-  locale: string;
-}) {
+function MatchCard({ match, locale }: { match: PublicMatch; locale: string }) {
   const isLive = match.status === "live";
   const isCompleted = match.status === "completed";
 
@@ -81,12 +73,14 @@ function MatchCard({
 
   return (
     <div
-      className={`px-5 py-4 transition-colors${isLive ? " bg-red-500/[0.035]" : ""}`}
+      className="px-5 py-4 transition-colors"
+      style={isLive ? { background: "oklch(0.65 0.22 25 / 0.04)" } : {}}
     >
       <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4">
         <div className="text-right">
           <p
-            className={`font-black leading-tight ${teamAWon ? "text-emerald-300" : "text-white"}`}
+            className="font-black leading-tight"
+            style={{ color: teamAWon ? "var(--asc-green)" : "var(--asc-fg-0)" }}
           >
             {teamAName}
           </p>
@@ -94,13 +88,13 @@ function MatchCard({
 
         <div className="min-w-[80px] text-center">
           {isCompleted ? (
-            <p className="text-lg font-black tabular-nums text-white">
+            <p className="text-lg font-black tabular-nums" style={{ color: "var(--asc-fg-0)" }}>
               {match.scoreA}{" "}
-              <span className="text-gray-500">—</span>{" "}
+              <span style={{ color: "var(--asc-fg-3)" }}>—</span>{" "}
               {match.scoreB}
             </p>
           ) : (
-            <p className="text-sm font-black uppercase tracking-widest text-gray-600">
+            <p className="text-sm font-black uppercase tracking-widest" style={{ color: "var(--asc-fg-3)" }}>
               vs
             </p>
           )}
@@ -108,7 +102,8 @@ function MatchCard({
 
         <div>
           <p
-            className={`font-black leading-tight ${teamBWon ? "text-emerald-300" : "text-white"}`}
+            className="font-black leading-tight"
+            style={{ color: teamBWon ? "var(--asc-green)" : "var(--asc-fg-0)" }}
           >
             {teamBName}
           </p>
@@ -118,12 +113,12 @@ function MatchCard({
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <MatchStatusBadge status={match.status} />
 
-        <span className="text-xs font-bold text-gray-600">
+        <span className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
           Bo{match.bestOf}
         </span>
 
         {match.scheduledAt && (
-          <span className="text-xs text-gray-500">
+          <span className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
             {match.scheduledAt.toLocaleString(
               locale === "ar" ? "ar" : "en",
               { dateStyle: "medium", timeStyle: "short" },
@@ -132,7 +127,7 @@ function MatchCard({
         )}
 
         {isCompleted && match.confirmedByAdmin && (
-          <span className="text-xs font-black text-emerald-500">
+          <span className="text-xs font-black" style={{ color: "var(--asc-green)" }}>
             ✓ Official
           </span>
         )}
@@ -157,26 +152,31 @@ export default function TournamentMatchesSection({
     .sort((a, b) => a - b);
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-      <div className="border-b border-white/10 px-5 py-4">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+    <section
+      className="overflow-hidden border shadow-2xl"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+    >
+      <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+        <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
           Schedule
         </p>
-        <h2 className="mt-1 text-xl font-black text-white">Matches</h2>
+        <h2 className="mt-1 text-xl" style={{ color: "var(--asc-fg-0)" }}>Matches</h2>
       </div>
 
-      <div className="divide-y divide-white/10">
+      <div>
         {roundNumbers.map((round) => (
           <div key={round}>
-            <div className="bg-white/[0.02] px-5 py-2.5">
-              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+            <div className="px-5 py-2.5" style={{ background: "oklch(0.10 0.03 287 / 0.5)" }}>
+              <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
                 Round {round}
               </p>
             </div>
 
-            <div className="divide-y divide-white/[0.06]">
+            <div>
               {rounds[round].map((match) => (
-                <MatchCard key={match.id} match={match} locale={locale} />
+                <div key={match.id} style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+                  <MatchCard match={match} locale={locale} />
+                </div>
               ))}
             </div>
           </div>

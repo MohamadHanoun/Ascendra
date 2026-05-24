@@ -107,11 +107,11 @@ export async function generateMetadata(): Promise<Metadata> {
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
         {label}
       </p>
 
-      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
     </div>
   );
 }
@@ -123,15 +123,16 @@ function Pill({
   children: React.ReactNode;
   tone?: "green" | "violet" | "gray";
 }) {
-  const styles = {
-    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-    gray: "border-white/10 bg-white/5 text-gray-300",
+  const styles: Record<string, React.CSSProperties> = {
+    green: { borderColor: "oklch(0.74 0.16 150 / 0.25)", background: "oklch(0.74 0.16 150 / 0.10)", color: "oklch(0.74 0.16 150)" },
+    violet: { borderColor: "oklch(0.70 0.22 285 / 0.25)", background: "oklch(0.70 0.22 285 / 0.10)", color: "oklch(0.88 0.10 285)" },
+    gray: { borderColor: "oklch(0.32 0.06 290 / 0.18)", background: "oklch(0.20 0.02 287 / 0.05)", color: "var(--asc-fg-1)" },
   };
 
   return (
     <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
+      className="inline-flex w-fit border px-3 py-1 text-xs font-black"
+      style={styles[tone]}
     >
       {children}
     </span>
@@ -223,9 +224,7 @@ export default async function StatsPage() {
   const { overviewStats, gameStats } = await getStatsData(messages);
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
-
+    <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
       <div className="relative z-10">
         <Navbar />
 
@@ -237,32 +236,35 @@ export default async function StatsPage() {
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.62)_44%,rgba(7,8,17,0.80)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.62) 44%,oklch(0.06 0.03 287 / 0.80) 100%)" }} />
+          <div className="absolute inset-x-0 bottom-0 h-40" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
+            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
               {messages.hero.label}
             </p>
 
-            <h1 className="text-5xl font-black uppercase tracking-tight text-white md:text-7xl">
+            <h1 className="text-5xl font-black uppercase tracking-tight md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
               {messages.hero.title}
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
+            <p className="mt-5 max-w-2xl text-base leading-7" style={{ color: "var(--asc-fg-1)" }}>
               {messages.hero.description}
             </p>
           </div>
         </section>
 
         <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
-          <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
-            <div className="border-b border-white/10 pb-4">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+          <section
+            className="p-5 shadow-2xl shadow-black/20"
+            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+          >
+            <div className="pb-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+              <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
                 {messages.overview.label}
               </p>
 
-              <h2 className="mt-1 text-xl font-black text-white">
+              <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
                 {messages.overview.title}
               </h2>
             </div>
@@ -274,27 +276,31 @@ export default async function StatsPage() {
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-            <div className="border-b border-white/10 px-5 py-4">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+          <section
+            className="overflow-hidden shadow-2xl shadow-black/20"
+            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+          >
+            <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+              <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
                 {messages.labels.gameActivity}
               </p>
 
-              <h2 className="mt-1 text-xl font-black text-white">
+              <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
                 {messages.labels.gameActivityDescription}
               </h2>
             </div>
 
-            <div className="divide-y divide-white/10">
+            <div>
               {gameStats.map((item) => (
                 <article
                   key={item.game}
-                  className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.035] md:grid-cols-[minmax(0,1fr)_120px_120px_120px] md:items-center"
+                  className="grid gap-4 px-5 py-4 transition md:grid-cols-[minmax(0,1fr)_120px_120px_120px] md:items-center"
+                  style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                 >
                   <div>
-                    <p className="font-black text-white">{item.game}</p>
+                    <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>{item.game}</p>
 
-                    <p className="mt-1 text-sm text-gray-400">
+                    <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                       {messages.labels.gameActivityDescription}
                     </p>
                   </div>

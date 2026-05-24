@@ -20,63 +20,51 @@ type RuleItem = {
   isActive: boolean;
 };
 
+const inputStyle: React.CSSProperties = {
+  borderColor: "var(--asc-line-soft)",
+  background: "var(--asc-bg-2)",
+  color: "var(--asc-fg-0)",
+};
+
 function StatusBadge({ active }: { active: boolean }) {
+  const style: React.CSSProperties = active
+    ? { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" }
+    : { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" };
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${
-        active
-          ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
-          : "border-white/10 bg-white/5 text-gray-300"
-      }`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={style}>
       {active ? "Active" : "Hidden"}
     </span>
   );
 }
 
 function Notice({ notice }: { notice: AdminRuleActionResult | null }) {
-  if (!notice) {
-    return null;
-  }
-
+  if (!notice) return null;
   return (
     <div
-      className={`rounded-xl border px-4 py-3 text-sm font-bold ${
+      className="border px-4 py-3 text-sm font-bold"
+      style={
         notice.ok
-          ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
-          : "border-red-400/25 bg-red-500/10 text-red-300"
-      }`}
+          ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
+          : { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }
+      }
     >
       {notice.message}
     </div>
   );
 }
 
-function inputClass() {
-  return "rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400";
-}
-
 function moveItem(items: RuleItem[], fromIndex: number, toIndex: number) {
   const nextItems = [...items];
   const [movedItem] = nextItems.splice(fromIndex, 1);
 
-  if (!movedItem) {
-    return items;
-  }
+  if (!movedItem) return items;
 
   nextItems.splice(toIndex, 0, movedItem);
 
-  return nextItems.map((item, index) => ({
-    ...item,
-    order: index + 1,
-  }));
+  return nextItems.map((item, index) => ({ ...item, order: index + 1 }));
 }
 
-export default function AdminRuleDragList({
-  initialRules,
-}: {
-  initialRules: RuleItem[];
-}) {
+export default function AdminRuleDragList({ initialRules }: { initialRules: RuleItem[] }) {
   const router = useRouter();
 
   const [rules, setRules] = useState(initialRules);
@@ -91,15 +79,10 @@ export default function AdminRuleDragList({
 
   function saveOrder(nextRules: RuleItem[]) {
     const formData = new FormData();
-
-    formData.set(
-      "orderedRuleIds",
-      JSON.stringify(nextRules.map((rule) => rule.id)),
-    );
+    formData.set("orderedRuleIds", JSON.stringify(nextRules.map((rule) => rule.id)));
 
     startTransition(async () => {
       const result = await reorderRulesInline(formData);
-
       setNotice(result);
 
       if (!result.ok) {
@@ -107,9 +90,7 @@ export default function AdminRuleDragList({
         return;
       }
 
-      window.setTimeout(() => {
-        router.refresh();
-      }, 300);
+      window.setTimeout(() => { router.refresh(); }, 300);
     });
   }
 
@@ -119,10 +100,7 @@ export default function AdminRuleDragList({
   }
 
   function handleDragOver(ruleId: string) {
-    if (!draggedRuleId || draggedRuleId === ruleId) {
-      return;
-    }
-
+    if (!draggedRuleId || draggedRuleId === ruleId) return;
     setDragOverRuleId(ruleId);
   }
 
@@ -143,7 +121,6 @@ export default function AdminRuleDragList({
     }
 
     const nextRules = moveItem(rules, fromIndex, toIndex);
-
     setRules(nextRules);
     setDraggedRuleId(null);
     setDragOverRuleId(null);
@@ -157,7 +134,7 @@ export default function AdminRuleDragList({
 
   if (rules.length === 0) {
     return (
-      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-gray-300 shadow-2xl shadow-black/20">
+      <div className="border p-6 shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-3)" }}>
         No rules found.
       </div>
     );
@@ -165,34 +142,43 @@ export default function AdminRuleDragList({
 
   return (
     <div className="grid gap-4">
-      <div className="flex flex-col justify-between gap-3 rounded-3xl border border-white/10 bg-white/[0.04] px-5 py-4 shadow-2xl shadow-black/20 lg:flex-row lg:items-center">
+      <div
+        className="flex flex-col justify-between gap-3 border px-5 py-4 shadow-2xl shadow-black/20 lg:flex-row lg:items-center"
+        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+      >
         <div>
-          <p className="font-black text-white">Drag to reorder</p>
-          <p className="mt-1 text-sm text-gray-400">
-            Use the handle and drop the rule in a new position.
-          </p>
+          <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>Drag to reorder</p>
+          <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>Use the handle and drop the rule in a new position.</p>
         </div>
 
         <div className="flex flex-wrap gap-3">
           {pending && (
-            <div className="rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-3 text-sm font-bold text-violet-200">
+            <div
+              className="border px-4 py-3 text-sm font-bold"
+              style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+            >
               Saving order...
             </div>
           )}
-
           <Notice notice={notice} />
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-        <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 lg:grid lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:gap-5">
+      <section
+        className="overflow-hidden border shadow-2xl shadow-black/20"
+        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+      >
+        <div
+          className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] lg:grid lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:gap-5"
+          style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "oklch(0.08 0.02 287)", color: "var(--asc-fg-3)" }}
+        >
           <span>Order</span>
           <span>Rule</span>
           <span>Status</span>
           <span>Actions</span>
         </div>
 
-        <div className="divide-y divide-white/10">
+        <div>
           {rules.map((rule, index) => {
             const position = index + 1;
             const isDragging = draggedRuleId === rule.id;
@@ -203,27 +189,25 @@ export default function AdminRuleDragList({
                 key={rule.id}
                 draggable
                 onDragStart={() => handleDragStart(rule.id)}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  handleDragOver(rule.id);
-                }}
+                onDragOver={(event) => { event.preventDefault(); handleDragOver(rule.id); }}
                 onDrop={() => handleDrop(rule.id)}
                 onDragEnd={handleDragEnd}
-                className={`grid gap-4 px-5 py-4 transition lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:items-start lg:gap-5 ${
-                  isDragging ? "opacity-50" : ""
-                } ${
-                  isDragTarget ? "bg-violet-500/10" : "hover:bg-white/[0.035]"
-                }`}
+                className={`grid gap-4 px-5 py-4 transition lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:items-start lg:gap-5 ${isDragging ? "opacity-50" : ""} ${isDragTarget ? "bg-violet-500/10" : "hover:bg-white/[0.035]"}`}
+                style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
               >
                 <div className="flex items-center justify-between gap-3 lg:justify-start">
-                  <span className="grid h-10 w-10 place-items-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-sm font-black text-violet-200">
+                  <span
+                    className="grid h-10 w-10 place-items-center text-sm font-black"
+                    style={{ border: "1px solid oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+                  >
                     {String(position).padStart(2, "0")}
                   </span>
 
                   <button
                     type="button"
                     aria-label="Drag rule"
-                    className="grid h-10 w-10 cursor-grab place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition hover:border-violet-400/40 hover:text-violet-200 active:cursor-grabbing lg:hidden"
+                    className="grid h-10 w-10 cursor-grab place-items-center text-lg font-black transition active:cursor-grabbing lg:hidden"
+                    style={{ border: "1px solid var(--asc-line-soft)", background: "oklch(0.09 0.02 287)", color: "var(--asc-fg-3)" }}
                   >
                     ≡
                   </button>
@@ -240,12 +224,12 @@ export default function AdminRuleDragList({
 
                   <label className="grid gap-2">
                     <span className="sr-only">Rule text</span>
-
                     <textarea
                       name="text"
                       required
                       defaultValue={rule.text}
-                      className={`${inputClass()} min-h-20 resize-y text-sm leading-6`}
+                      className="min-h-20 resize-y border px-4 py-3 text-sm leading-6 text-white outline-none transition"
+                      style={inputStyle}
                     />
                   </label>
                 </InlineAdminRuleForm>
@@ -256,7 +240,8 @@ export default function AdminRuleDragList({
                   <button
                     type="button"
                     aria-label="Drag rule"
-                    className="hidden h-10 w-10 cursor-grab place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition hover:border-violet-400/40 hover:text-violet-200 active:cursor-grabbing lg:grid"
+                    className="hidden h-10 w-10 cursor-grab place-items-center text-lg font-black transition active:cursor-grabbing lg:grid"
+                    style={{ border: "1px solid var(--asc-line-soft)", background: "oklch(0.09 0.02 287)", color: "var(--asc-fg-3)" }}
                   >
                     ≡
                   </button>

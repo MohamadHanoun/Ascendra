@@ -20,18 +20,6 @@ type NavbarClientProps = {
   userImage: string | null;
 };
 
-function AscendraMark({ small = false }: { small?: boolean }) {
-  return (
-    <Image
-      src="/images/brand/ascendra-logo-mark.png"
-      alt="Ascendra"
-      width={small ? 32 : 44}
-      height={small ? 32 : 44}
-      className={`${small ? "h-8 w-8" : "h-11 w-11"} object-contain`}
-    />
-  );
-}
-
 function BrandLogo() {
   return (
     <Link href="/" className="flex shrink-0 items-center gap-3">
@@ -43,7 +31,6 @@ function BrandLogo() {
         priority
         className="h-11 w-11 object-contain"
       />
-
       <Image
         src="/images/brand/ascendra-wordmark.png"
         alt="Ascendra"
@@ -57,10 +44,7 @@ function BrandLogo() {
 }
 
 function isActivePath(pathname: string, href: string) {
-  if (href === "/") {
-    return pathname === "/";
-  }
-
+  if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -80,13 +64,24 @@ function NavLink({
     <Link
       href={href}
       onClick={onClick}
-      className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
-        isActive
-          ? "bg-violet-500/20 text-violet-200 shadow shadow-violet-950/20"
-          : "text-gray-300 hover:bg-white/10 hover:text-white"
-      }`}
+      className="relative px-4 py-2 text-sm font-bold tracking-wide transition"
+      style={{ color: isActive ? "var(--asc-accent)" : "var(--asc-fg-2)" }}
     >
       {label}
+      {isActive && (
+        <span
+          className="nav-active-line"
+          style={{
+            position: "absolute",
+            bottom: "-1px",
+            insetInlineStart: 0,
+            insetInlineEnd: 0,
+            height: "2px",
+            background: "var(--asc-accent)",
+            boxShadow: "0 0 10px var(--asc-accent-glow)",
+          }}
+        />
+      )}
     </Link>
   );
 }
@@ -118,11 +113,21 @@ function UserAvatar({
 
   return (
     <span
-      className={`grid place-items-center rounded-full bg-violet-500/15 ${
-        small ? "h-8 w-8" : "h-9 w-9"
-      }`}
+      className="grid place-items-center rounded-full"
+      style={{
+        width: small ? "2rem" : "2.25rem",
+        height: small ? "2rem" : "2.25rem",
+        background: "var(--asc-accent-dim)",
+      }}
     >
-      <AscendraMark small />
+      <Image
+        src="/images/brand/ascendra-logo-mark.png"
+        alt="Ascendra"
+        width={small ? 20 : 24}
+        height={small ? 20 : 24}
+        className="object-contain"
+        style={{ width: small ? "1.25rem" : "1.5rem", height: small ? "1.25rem" : "1.5rem" }}
+      />
     </span>
   );
 }
@@ -158,7 +163,6 @@ export default function NavbarClient({
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
-
       if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
         setIsProfileOpen(false);
       }
@@ -174,7 +178,6 @@ export default function NavbarClient({
 
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleEscape);
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
@@ -188,18 +191,23 @@ export default function NavbarClient({
   }
 
   function handleLogout() {
-    signOut({
-      callbackUrl: "/login",
-    });
+    signOut({ callbackUrl: "/login" });
   }
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#070811]/90 backdrop-blur-xl">
+      <header
+        className="sticky top-0 z-40"
+        style={{
+          borderBottom: "1px solid var(--asc-line-soft)",
+          background: "oklch(0.06 0.03 287 / 0.92)",
+          backdropFilter: "blur(18px) saturate(140%)",
+        }}
+      >
         <nav className="flex w-full items-center gap-4 px-6 py-3 lg:px-10 2xl:px-14">
           <BrandLogo />
 
-          <div className="hidden flex-1 items-center justify-center gap-2 lg:flex">
+          <div className="hidden flex-1 items-center justify-center gap-1 lg:flex">
             {mainLinks.map((link) => (
               <NavLink key={link.href} href={link.href} label={link.label} />
             ))}
@@ -210,8 +218,12 @@ export default function NavbarClient({
               <div ref={profileMenuRef} className="relative">
                 <button
                   type="button"
-                  onClick={() => setIsProfileOpen((value) => !value)}
-                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 transition hover:bg-white/10"
+                  onClick={() => setIsProfileOpen((v) => !v)}
+                  className="flex items-center gap-3 px-3 py-2 transition"
+                  style={{
+                    border: "1px solid var(--asc-line-soft)",
+                    background: isProfileOpen ? "var(--asc-accent-dim)" : "transparent",
+                  }}
                 >
                   <UserAvatar
                     userName={userName}
@@ -219,27 +231,39 @@ export default function NavbarClient({
                     fallbackName={labels.account.fallbackName}
                     small
                   />
-
-                  <span className="max-w-[120px] truncate text-sm font-bold text-white">
+                  <span
+                    className="max-w-[120px] truncate text-sm font-bold"
+                    style={{ color: "var(--asc-fg-1)" }}
+                  >
                     {labels.links.profile}
                   </span>
                 </button>
 
                 {isProfileOpen && (
-                  <div className="absolute mt-3 w-64 rounded-2xl border border-white/10 bg-[#11121d] p-3 shadow-2xl shadow-black/40 ltr:right-0 rtl:left-0">
-                    <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/[0.04] p-3">
+                  <div
+                    className="absolute mt-2 w-64 p-2 shadow-2xl ltr:right-0 rtl:left-0"
+                    style={{
+                      border: "1px solid var(--asc-line)",
+                      background: "var(--asc-bg-2)",
+                    }}
+                  >
+                    <div
+                      className="mb-2 flex items-center gap-3 p-3"
+                      style={{ background: "var(--asc-accent-dim)" }}
+                    >
                       <UserAvatar
                         userName={userName}
                         userImage={userImage}
                         fallbackName={labels.account.fallbackName}
                       />
-
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-white">
+                        <p
+                          className="truncate text-sm font-bold"
+                          style={{ color: "var(--asc-fg-0)" }}
+                        >
                           {userName || labels.account.fallbackName}
                         </p>
-
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
                           {labels.account.signedIn}
                         </p>
                       </div>
@@ -247,37 +271,80 @@ export default function NavbarClient({
 
                     <Link
                       href="/profile"
-                      className="block rounded-xl px-4 py-3 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                      className="block px-4 py-2.5 text-sm font-bold transition"
+                      style={{ color: "var(--asc-fg-2)" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "var(--asc-fg-0)";
+                        e.currentTarget.style.borderInlineStart = "2px solid var(--asc-accent)";
+                        e.currentTarget.style.paddingInlineStart = "calc(1rem - 2px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "var(--asc-fg-2)";
+                        e.currentTarget.style.borderInlineStart = "";
+                        e.currentTarget.style.paddingInlineStart = "";
+                      }}
                     >
                       {labels.links.profile}
                     </Link>
 
                     {isAdmin && (
                       <>
-                        <div className="my-2 border-t border-white/10" />
-
+                        <div
+                          className="my-1"
+                          style={{ borderTop: "1px solid var(--asc-line-soft)" }}
+                        />
                         <Link
                           href="/admin"
-                          className="block rounded-xl px-4 py-3 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                          className="block px-4 py-2.5 text-sm font-bold transition"
+                          style={{ color: "var(--asc-fg-2)" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "var(--asc-fg-0)";
+                            e.currentTarget.style.borderInlineStart = "2px solid var(--asc-accent)";
+                            e.currentTarget.style.paddingInlineStart = "calc(1rem - 2px)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = "var(--asc-fg-2)";
+                            e.currentTarget.style.borderInlineStart = "";
+                            e.currentTarget.style.paddingInlineStart = "";
+                          }}
                         >
                           {labels.links.adminPanel}
                         </Link>
-
                         <Link
                           href="/admin/bot"
-                          className="block rounded-xl px-4 py-3 text-sm font-bold text-emerald-200 transition hover:bg-emerald-500/10 hover:text-white"
+                          className="block px-4 py-2.5 text-sm font-bold transition"
+                          style={{ color: "var(--asc-green)" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "var(--asc-fg-0)";
+                            e.currentTarget.style.borderInlineStart = "2px solid var(--asc-green)";
+                            e.currentTarget.style.paddingInlineStart = "calc(1rem - 2px)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = "var(--asc-green)";
+                            e.currentTarget.style.borderInlineStart = "";
+                            e.currentTarget.style.paddingInlineStart = "";
+                          }}
                         >
                           {labels.links.botDashboard}
                         </Link>
                       </>
                     )}
 
-                    <div className="my-2 border-t border-white/10" />
-
+                    <div
+                      className="my-1"
+                      style={{ borderTop: "1px solid var(--asc-line-soft)" }}
+                    />
                     <button
                       type="button"
                       onClick={confirmLogout}
-                      className="w-full rounded-xl px-4 py-3 text-left text-sm font-bold text-red-300 transition hover:bg-red-500/10 rtl:text-right"
+                      className="w-full px-4 py-2.5 text-left text-sm font-bold transition rtl:text-right"
+                      style={{ color: "var(--asc-live)" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "oklch(0.25 0.18 25 / 0.18)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "";
+                      }}
                     >
                       {labels.actions.logout}
                     </button>
@@ -287,7 +354,11 @@ export default function NavbarClient({
             ) : (
               <Link
                 href="/login"
-                className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                className="px-4 py-2 text-sm font-bold transition"
+                style={{
+                  border: "1px solid var(--asc-line)",
+                  color: "var(--asc-fg-2)",
+                }}
               >
                 {labels.actions.login}
               </Link>
@@ -298,7 +369,14 @@ export default function NavbarClient({
                 href={discordInvite}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-xl bg-violet-600 px-5 py-2 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
+                className="px-5 py-2 text-sm font-black text-white transition"
+                style={{ background: "var(--asc-accent-2)" }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "var(--asc-accent)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "var(--asc-accent-2)";
+                }}
               >
                 {labels.actions.joinDiscord}
               </a>
@@ -309,17 +387,27 @@ export default function NavbarClient({
 
           <button
             type="button"
-            onClick={() => setIsMenuOpen((value) => !value)}
+            onClick={() => setIsMenuOpen((v) => !v)}
             aria-expanded={isMenuOpen}
-            className="rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10 ltr:ml-auto rtl:mr-auto lg:hidden"
+            className="px-4 py-2 text-sm font-bold transition ltr:ml-auto rtl:mr-auto lg:hidden"
+            style={{
+              border: "1px solid var(--asc-line-soft)",
+              color: "var(--asc-fg-1)",
+            }}
           >
             {isMenuOpen ? labels.actions.close : labels.actions.menu}
           </button>
         </nav>
 
         {isMenuOpen && (
-          <div className="border-t border-white/10 bg-[#070811] px-6 py-5 lg:hidden">
-            <div className="grid gap-2">
+          <div
+            className="px-6 py-5 lg:hidden"
+            style={{
+              borderTop: "1px solid var(--asc-line-soft)",
+              background: "var(--asc-bg-1)",
+            }}
+          >
+            <div className="grid gap-1">
               {mainLinks.map((link) => (
                 <NavLink
                   key={link.href}
@@ -329,13 +417,20 @@ export default function NavbarClient({
                 />
               ))}
 
-              <div className="mt-3 grid gap-2 border-t border-white/10 pt-4">
+              <div
+                className="mt-3 grid gap-2 pt-4"
+                style={{ borderTop: "1px solid var(--asc-line-soft)" }}
+              >
                 {isLoggedIn ? (
                   <>
                     <Link
                       href="/profile"
                       onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-center"
+                      className="flex items-center justify-center gap-3 px-4 py-3 text-center"
+                      style={{
+                        border: "1px solid var(--asc-line-soft)",
+                        background: "var(--asc-accent-dim)",
+                      }}
                     >
                       <UserAvatar
                         userName={userName}
@@ -343,8 +438,10 @@ export default function NavbarClient({
                         fallbackName={labels.account.fallbackName}
                         small
                       />
-
-                      <span className="text-sm font-bold text-gray-200">
+                      <span
+                        className="text-sm font-bold"
+                        style={{ color: "var(--asc-fg-1)" }}
+                      >
                         {labels.links.profile}
                       </span>
                     </Link>
@@ -354,15 +451,23 @@ export default function NavbarClient({
                         <Link
                           href="/admin"
                           onClick={() => setIsMenuOpen(false)}
-                          className="rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                          className="px-4 py-3 text-center text-sm font-bold transition"
+                          style={{
+                            border: "1px solid var(--asc-line-soft)",
+                            color: "var(--asc-fg-2)",
+                          }}
                         >
                           {labels.links.adminPanel}
                         </Link>
-
                         <Link
                           href="/admin/bot"
                           onClick={() => setIsMenuOpen(false)}
-                          className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-3 text-center text-sm font-bold text-emerald-200 transition hover:border-emerald-300/40 hover:bg-emerald-500/15 hover:text-white"
+                          className="px-4 py-3 text-center text-sm font-bold transition"
+                          style={{
+                            border: "1px solid oklch(0.55 0.14 150 / 0.4)",
+                            background: "oklch(0.25 0.12 150 / 0.15)",
+                            color: "var(--asc-green)",
+                          }}
                         >
                           {labels.links.botDashboard}
                         </Link>
@@ -372,7 +477,11 @@ export default function NavbarClient({
                     <button
                       type="button"
                       onClick={confirmLogout}
-                      className="rounded-xl border border-red-500/20 px-4 py-3 text-center text-sm font-bold text-red-300 transition hover:bg-red-500/10"
+                      className="px-4 py-3 text-center text-sm font-bold transition"
+                      style={{
+                        border: "1px solid oklch(0.50 0.20 25 / 0.4)",
+                        color: "var(--asc-live)",
+                      }}
                     >
                       {labels.actions.logout}
                     </button>
@@ -381,7 +490,11 @@ export default function NavbarClient({
                   <Link
                     href="/login"
                     onClick={() => setIsMenuOpen(false)}
-                    className="rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-bold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                    className="px-4 py-3 text-center text-sm font-bold transition"
+                    style={{
+                      border: "1px solid var(--asc-line-soft)",
+                      color: "var(--asc-fg-2)",
+                    }}
                   >
                     {labels.actions.login}
                   </Link>
@@ -392,17 +505,14 @@ export default function NavbarClient({
                     href={discordInvite}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-violet-500"
+                    className="px-4 py-3 text-center text-sm font-black text-white transition"
+                    style={{ background: "var(--asc-accent-2)" }}
                   >
                     {labels.actions.joinDiscord}
                   </a>
                 )}
 
-                <LanguageSwitcher
-                  locale={locale}
-                  labels={labels.language}
-                  compact
-                />
+                <LanguageSwitcher locale={locale} labels={labels.language} compact />
               </div>
             </div>
           </div>
@@ -411,28 +521,39 @@ export default function NavbarClient({
 
       {isLogoutConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-6">
-          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#11121d] p-6 shadow-2xl">
-            <h2 className="mb-3 text-2xl font-black text-white">
+          <div
+            className="w-full max-w-md p-6 shadow-2xl"
+            style={{
+              border: "1px solid var(--asc-line)",
+              background: "var(--asc-bg-2)",
+            }}
+          >
+            <h2
+              className="mb-3 text-2xl"
+              style={{ color: "var(--asc-fg-0)" }}
+            >
               {labels.account.logoutTitle}
             </h2>
-
-            <p className="mb-6 leading-7 text-gray-300">
+            <p className="mb-6 leading-7" style={{ color: "var(--asc-fg-2)" }}>
               {labels.account.logoutDescription}
             </p>
-
             <div className="grid gap-3 sm:flex sm:justify-end">
               <button
                 type="button"
                 onClick={() => setIsLogoutConfirmOpen(false)}
-                className="rounded-xl border border-white/10 px-5 py-3 font-bold text-gray-300 transition hover:bg-white/10"
+                className="px-5 py-3 font-bold transition"
+                style={{
+                  border: "1px solid var(--asc-line)",
+                  color: "var(--asc-fg-2)",
+                }}
               >
                 {labels.actions.cancel}
               </button>
-
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-xl bg-red-500 px-5 py-3 font-bold text-white transition hover:bg-red-400"
+                className="px-5 py-3 font-bold text-white transition"
+                style={{ background: "var(--asc-live)" }}
               >
                 {labels.actions.confirmLogout}
               </button>

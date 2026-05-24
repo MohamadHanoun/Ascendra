@@ -160,8 +160,10 @@ export default function CustomSelect({
       ? createPortal(
           <div
             data-select-menu
-            className="fixed z-[99999] rounded-2xl border border-violet-400/25 bg-[#0b0d17] p-2 shadow-2xl shadow-black/80"
+            className="fixed z-[99999] border p-2 shadow-2xl shadow-black/80"
             style={{
+              borderColor: "oklch(0.50 0.20 285 / 0.4)",
+              background: "var(--asc-bg-1)",
               top: position.top,
               left: position.left,
               width: position.width,
@@ -174,7 +176,7 @@ export default function CustomSelect({
               }}
             >
               {options.length === 0 ? (
-                <div className="rounded-xl px-4 py-3 text-sm font-bold text-gray-500">
+                <div className="px-4 py-3 text-sm font-bold" style={{ color: "var(--asc-fg-3)" }}>
                   {emptyLabel || getDefaultEmptyLabel()}
                 </div>
               ) : (
@@ -189,16 +191,17 @@ export default function CustomSelect({
                         setSelectedValue(option.value);
                         setOpen(false);
                       }}
-                      className={`grid w-full gap-1 rounded-xl px-4 py-3 text-left transition ${
+                      className="grid w-full gap-1 px-4 py-3 text-left transition"
+                      style={
                         active
-                          ? "border border-violet-400/30 bg-violet-500/15 text-white"
-                          : "text-gray-300 hover:bg-white/[0.06] hover:text-white"
-                      }`}
+                          ? { border: "1px solid oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }
+                          : { color: "var(--asc-fg-2)" }
+                      }
                     >
                       <span className="font-black">{option.label}</span>
 
                       {option.description && (
-                        <span className="text-xs font-bold text-gray-500">
+                        <span className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
                           {option.description}
                         </span>
                       )}
@@ -228,22 +231,23 @@ export default function CustomSelect({
           updateDropdownPosition();
           setOpen((current) => !current);
         }}
-        className={`flex w-full items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left transition ${
+        className="flex w-full items-center justify-between gap-4 border px-4 py-3 text-left transition"
+        style={
           open
-            ? "border-violet-400 bg-[#0b0d17] shadow-lg shadow-violet-950/30"
-            : "border-white/10 bg-black/30 hover:border-violet-400/40 hover:bg-white/[0.04]"
-        }`}
+            ? { borderColor: "var(--asc-accent)", background: "var(--asc-bg-1)" }
+            : { borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }
+        }
       >
         <span
-          className={`block truncate font-bold ${
-            selectedOption ? "text-white" : "text-gray-500"
-          }`}
+          className="block truncate font-bold"
+          style={{ color: selectedOption ? "var(--asc-fg-0)" : "var(--asc-fg-3)" }}
         >
           {selectedOption ? selectedOption.label : placeholder}
         </span>
 
         <span
-          className={`text-violet-300 transition ${open ? "rotate-180" : ""}`}
+          className={`transition ${open ? "rotate-180" : ""}`}
+          style={{ color: "var(--asc-accent)" }}
         >
           ▾
         </span>

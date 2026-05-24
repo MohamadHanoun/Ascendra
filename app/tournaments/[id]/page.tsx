@@ -48,18 +48,16 @@ function Pill({
   children: ReactNode;
   tone?: "green" | "red" | "blue" | "gray" | "violet";
 }) {
-  const styles = {
-    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    red: "border-red-400/25 bg-red-500/10 text-red-300",
-    blue: "border-blue-400/25 bg-blue-500/10 text-blue-300",
-    gray: "border-white/10 bg-white/5 text-gray-300",
-    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
+  const styleMap: Record<string, React.CSSProperties> = {
+    green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+    red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+    blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
+    gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
+    violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
   };
 
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={styleMap[tone]}>
       {children}
     </span>
   );
@@ -128,23 +126,21 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
         {label}
       </p>
-
-      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
     </div>
   );
 }
 
 function SectionTitle({ label, title }: { label: string; title: string }) {
   return (
-    <div className="border-b border-white/10 px-5 py-4">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+    <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+      <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
         {label}
       </p>
-
-      <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
+      <h2 className="mt-1 text-xl" style={{ color: "var(--asc-fg-0)" }}>{title}</h2>
     </div>
   );
 }
@@ -185,7 +181,7 @@ function ProgressBar({
 
   return (
     <div className="grid gap-2">
-      <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-500">
+      <div className="flex items-center justify-between gap-4 text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
         <span>
           {approvedSlots}/{maxSlots} {approvedLabel}
         </span>
@@ -193,13 +189,8 @@ function ProgressBar({
         <span>{Math.round(progress)}%</span>
       </div>
 
-      <div className="h-2 overflow-hidden rounded-full bg-white/10">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25"
-          style={{
-            width: `${progress}%`,
-          }}
-        />
+      <div className="asc-progress-track">
+        <div className="asc-progress-fill" style={{ width: `${progress}%` }} />
       </div>
     </div>
   );
@@ -493,60 +484,41 @@ export default async function TournamentDetailsPage({
     }));
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
-
+    <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
       <div className="relative z-10">
         <Navbar />
 
+        {/* Hero */}
         <section className="relative min-h-[560px] overflow-hidden">
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: `url("${tournamentImage}")`,
-            }}
-          />
-
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.62)_48%,rgba(7,8,17,0.82)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
+          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url("${tournamentImage}")` }} />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, oklch(0.06 0.03 287 / 0.94) 0%, oklch(0.06 0.03 287 / 0.64) 48%, oklch(0.06 0.03 287 / 0.84) 100%)" }} />
+          <div className="absolute inset-x-0 bottom-0 h-52" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
             <Link
               href="/tournaments"
-              className="mb-8 inline-flex rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
+              className="mb-8 inline-flex border px-4 py-2 text-sm font-black transition"
+              style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)" }}
             >
               {locale === "ar" ? "→" : "←"} {messages.labels.backToTournaments}
             </Link>
 
-            <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-6 shadow-2xl shadow-black/30 backdrop-blur">
+            <section
+              className="border p-6 shadow-2xl backdrop-blur"
+              style={{ borderColor: "var(--asc-line)", background: "oklch(0.09 0.035 287 / 0.75)" }}
+            >
               <div className="grid gap-8 lg:grid-cols-[1fr_420px] lg:items-end">
                 <div>
                   <div className="flex flex-wrap gap-2">
-                    <StatusBadge
-                      status={tournament.status}
-                      label={getTournamentStatusLabel(
-                        tournament.status,
-                        messages.statuses,
-                      )}
-                    />
-                    <StatusBadge
-                      status={`Registration ${tournament.registrationStatus}`}
-                      label={getRegistrationStatusLabel(
-                        tournament.registrationStatus,
-                        messages.statuses,
-                      )}
-                    />
-                    {tournament.game && (
-                      <Pill tone="violet">{tournament.game.name}</Pill>
-                    )}
+                    <StatusBadge status={tournament.status} label={getTournamentStatusLabel(tournament.status, messages.statuses)} />
+                    <StatusBadge status={`Registration ${tournament.registrationStatus}`} label={getRegistrationStatusLabel(tournament.registrationStatus, messages.statuses)} />
+                    {tournament.game && <Pill tone="violet">{tournament.game.name}</Pill>}
                   </div>
-
-                  <h1 className="mt-5 max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
+                  <h1 className="mt-5 max-w-5xl text-5xl md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
                     {tournament.title}
                   </h1>
-
                   {tournament.description && (
-                    <p className="mt-5 max-w-3xl text-base leading-7 text-gray-300">
+                    <p className="mt-5 max-w-3xl text-base leading-7" style={{ color: "var(--asc-fg-2)" }}>
                       {tournament.description}
                     </p>
                   )}
@@ -554,39 +526,15 @@ export default async function TournamentDetailsPage({
 
                 <div className="grid gap-5">
                   <div className="grid grid-cols-2 gap-5">
-                    <Stat
-                      label={messages.labels.date}
-                      value={
-                        tournament.startsAt
-                          ? tournament.startsAt.toLocaleDateString()
-                          : "—"
-                      }
-                    />
-                    <Stat
-                      label={messages.labels.prize}
-                      value={tournament.prize ?? "—"}
-                    />
-                    <Stat
-                      label={messages.labels.team}
-                      value={`${tournament.teamSize}v${tournament.teamSize}`}
-                    />
-                    <Stat
-                      label={messages.labels.slotsLeft}
-                      value={remainingSlots}
-                    />
+                    <Stat label={messages.labels.date} value={tournament.startsAt ? tournament.startsAt.toLocaleDateString() : "—"} />
+                    <Stat label={messages.labels.prize} value={tournament.prize ?? "—"} />
+                    <Stat label={messages.labels.team} value={`${tournament.teamSize}v${tournament.teamSize}`} />
+                    <Stat label={messages.labels.slotsLeft} value={remainingSlots} />
                   </div>
-
-                  <ProgressBar
-                    approvedSlots={approvedSlots}
-                    maxSlots={tournament.maxTeams}
-                    approvedLabel={messages.labels.approved}
-                  />
-
-                  <p className="text-sm text-gray-500">
+                  <ProgressBar approvedSlots={approvedSlots} maxSlots={tournament.maxTeams} approvedLabel={messages.labels.approved} />
+                  <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
                     {totalApplications}{" "}
-                    {totalApplications === 1
-                      ? messages.labels.applicationSubmitted
-                      : messages.labels.applicationsSubmitted}
+                    {totalApplications === 1 ? messages.labels.applicationSubmitted : messages.labels.applicationsSubmitted}
                   </p>
                 </div>
               </div>
@@ -595,28 +543,20 @@ export default async function TournamentDetailsPage({
         </section>
 
         <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
-          <ProfileNotice
-            message={noticeParams.message}
-            error={noticeParams.error}
-          />
-
+          <ProfileNotice message={noticeParams.message} error={noticeParams.error} />
           <TournamentDetailsRealtime tournamentId={tournament.id} />
 
           <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              <SectionTitle
-                label={messages.labels.registration}
-                title={messages.labels.registerYourTeam}
-              />
-
+            <section
+              className="overflow-hidden border shadow-2xl"
+              style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+            >
+              <SectionTitle label={messages.labels.registration} title={messages.labels.registerYourTeam} />
               <div className="p-5">
                 <TournamentRegistrationPanel
                   tournamentId={tournament.id}
                   tournamentStatus={tournament.status}
-                  tournamentStatusLabel={getTournamentStatusLabel(
-                    tournament.status,
-                    messages.statuses,
-                  )}
+                  tournamentStatusLabel={getTournamentStatusLabel(tournament.status, messages.statuses)}
                   registrationStatus={tournament.registrationStatus}
                   slotsRemaining={remainingSlots}
                   teamSize={tournament.teamSize}
@@ -633,51 +573,37 @@ export default async function TournamentDetailsPage({
               </div>
             </section>
 
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              <SectionTitle
-                label={messages.labels.teams}
-                title={messages.labels.applications}
-              />
-
+            <section
+              className="overflow-hidden border shadow-2xl"
+              style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+            >
+              <SectionTitle label={messages.labels.teams} title={messages.labels.applications} />
               {tournament.registrations.length === 0 ? (
-                <div className="p-5 text-gray-300">
+                <div className="p-5" style={{ color: "var(--asc-fg-2)" }}>
                   {messages.labels.noTeamsRegistered}
                 </div>
               ) : (
-                <div className="divide-y divide-white/10">
+                <div>
                   {tournament.registrations.map((registration) => {
-                    const teamName =
-                      registration.snapshotTeamName || registration.team.name;
-                    const teamGame =
-                      registration.snapshotTeamGame ?? tournament.game?.name ?? "—";
-                    const memberCount = getSnapshotMemberCount(
-                      registration.snapshotMembers,
-                      registration.team.members.length,
-                    );
+                    const teamName = registration.snapshotTeamName || registration.team.name;
+                    const teamGame = registration.snapshotTeamGame ?? tournament.game?.name ?? "—";
+                    const memberCount = getSnapshotMemberCount(registration.snapshotMembers, registration.team.members.length);
 
                     return (
                       <div
                         key={registration.id}
                         className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_110px_110px] md:items-center"
+                        style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                       >
                         <div>
-                          <p className="font-black text-white">{teamName}</p>
-
-                          <p className="mt-1 text-sm text-gray-400">
+                          <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>{teamName}</p>
+                          <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                             {teamGame} · {memberCount}/{tournament.teamSize}{" "}
                             {getPlayerLabel(memberCount, messages.labels)}
                           </p>
                         </div>
-
-                        <StatusBadge
-                          status={registration.status}
-                          label={getRegistrationReviewStatusLabel(
-                            registration.status,
-                            messages.statuses,
-                          )}
-                        />
-
-                        <p className="text-sm text-gray-500">
+                        <StatusBadge status={registration.status} label={getRegistrationReviewStatusLabel(registration.status, messages.statuses)} />
+                        <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
                           {formatDate(registration.createdAt, locale)}
                         </p>
                       </div>
@@ -691,43 +617,33 @@ export default async function TournamentDetailsPage({
           <TournamentMatchesSection matches={matches} locale={locale} />
 
           {tournament.results.length > 0 && (
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-              <SectionTitle
-                label={messages.labels.results}
-                title={messages.labels.finalStandings}
-              />
-
-              <div className="divide-y divide-white/10">
+            <section
+              className="overflow-hidden border shadow-2xl"
+              style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+            >
+              <SectionTitle label={messages.labels.results} title={messages.labels.finalStandings} />
+              <div>
                 {tournament.results.map((result) => {
                   const teamName = result.snapshotTeamName || result.team.name;
                   const teamGame = result.snapshotTeamGame ?? tournament.game?.name ?? "—";
-                  const memberCount = getSnapshotMemberCount(
-                    result.snapshotMembers,
-                    result.team.members.length,
-                  );
+                  const memberCount = getSnapshotMemberCount(result.snapshotMembers, result.team.members.length);
 
                   return (
                     <article
                       key={result.id}
                       className="grid gap-4 px-5 py-4 md:grid-cols-[100px_minmax(0,1fr)_120px] md:items-center"
+                      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                     >
                       <PlacementBadge placement={result.placement} />
-
                       <div>
-                        <p className="font-black text-white">{teamName}</p>
-
-                        <p className="mt-1 text-sm text-gray-400">
-                          {teamGame} · {memberCount}{" "}
-                          {getPlayerLabel(memberCount, messages.labels)}
+                        <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>{teamName}</p>
+                        <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+                          {teamGame} · {memberCount} {getPlayerLabel(memberCount, messages.labels)}
                         </p>
-
                         {result.note && (
-                          <p className="mt-2 text-sm text-gray-500">
-                            {result.note}
-                          </p>
+                          <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>{result.note}</p>
                         )}
                       </div>
-
                       <Pill tone="green">
                         {result.points} {messages.labels.points}
                       </Pill>

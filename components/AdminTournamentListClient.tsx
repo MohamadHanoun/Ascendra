@@ -26,22 +26,24 @@ type AdminTournamentListClientProps = {
 
 type StatusFilter = "all" | "open" | "upcoming" | "closed";
 
-const statusFilters: {
-  label: string;
-  value: StatusFilter;
-}[] = [
+const statusFilters: { label: string; value: StatusFilter }[] = [
   { label: "All", value: "all" },
   { label: "Open", value: "open" },
   { label: "Upcoming", value: "upcoming" },
   { label: "Closed", value: "closed" },
 ];
 
-function registrationBadge(status: string) {
-  if (status === "open") {
-    return "border-green-500/20 bg-green-500/10 text-green-300";
-  }
+const inputStyle: React.CSSProperties = {
+  borderColor: "var(--asc-line-soft)",
+  background: "var(--asc-bg-2)",
+  color: "var(--asc-fg-0)",
+};
 
-  return "border-red-500/20 bg-red-500/10 text-red-300";
+function registrationBadgeStyle(status: string): React.CSSProperties {
+  if (status === "open") {
+    return { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" };
+  }
+  return { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" };
 }
 
 export default function AdminTournamentListClient({
@@ -58,7 +60,6 @@ export default function AdminTournamentListClient({
 
     return items.filter((tournament) => {
       const matchesStatus = status === "all" || tournament.status === status;
-
       const matchesSearch =
         !searchValue ||
         tournament.title.toLowerCase().includes(searchValue) ||
@@ -73,36 +74,32 @@ export default function AdminTournamentListClient({
 
   return (
     <section className="mx-auto max-w-7xl px-6 pb-12">
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+      <div className="border p-6" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
         <div className="mb-8">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-cyan-300">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em]" style={{ color: "var(--asc-accent)" }}>
             Tournament List
           </p>
-
-          <h2 className="text-3xl font-black">Manage Tournaments</h2>
-
-          <p className="mt-3 max-w-2xl leading-7 text-gray-300">
+          <h2 className="text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>Manage Tournaments</h2>
+          <p className="mt-3 max-w-2xl leading-7" style={{ color: "var(--asc-fg-3)" }}>
             Search, filter, edit, or delete tournaments from the Ascendra database.
           </p>
         </div>
 
-        <div className="mb-8 rounded-2xl border border-white/10 bg-black/20 p-5">
+        <div className="mb-8 border p-5" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}>
           <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
             <label className="grid gap-2">
-              <span className="font-semibold text-gray-200">
-                Search tournaments
-              </span>
-
+              <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Search tournaments</span>
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search by title, game, prize, date..."
-                className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-cyan-400"
+                className="border px-4 py-3 text-white outline-none transition"
+                style={inputStyle}
               />
             </label>
 
             <div className="grid gap-2">
-              <span className="font-semibold text-gray-200">Filter status</span>
+              <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Filter status</span>
 
               <div className="flex flex-wrap gap-2">
                 {statusFilters.map((filter) => {
@@ -113,11 +110,12 @@ export default function AdminTournamentListClient({
                       key={filter.value}
                       type="button"
                       onClick={() => setStatus(filter.value)}
-                      className={`rounded-xl border px-4 py-3 font-bold transition ${
+                      className="border px-4 py-3 font-bold transition"
+                      style={
                         isActive
-                          ? "border-cyan-400/40 bg-cyan-500/20 text-cyan-200"
-                          : "border-white/10 bg-black/20 text-gray-300 hover:bg-white/10"
-                      }`}
+                          ? { borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }
+                          : { borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-3)" }
+                      }
                     >
                       {filter.label}
                     </button>
@@ -127,13 +125,13 @@ export default function AdminTournamentListClient({
             </div>
           </div>
 
-          <p className="mt-5 text-sm text-gray-400">
+          <p className="mt-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>
             Showing {filteredTournaments.length} of {items.length} tournaments.
           </p>
         </div>
 
         {filteredTournaments.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-6 text-gray-300">
+          <div className="border p-6" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)", color: "var(--asc-fg-3)" }}>
             No tournaments found.
           </div>
         ) : (
@@ -141,25 +139,24 @@ export default function AdminTournamentListClient({
             {filteredTournaments.map((tournament) => (
               <article
                 key={tournament.id}
-                className="rounded-2xl border border-white/10 bg-black/20 p-5"
+                className="border p-5"
+                style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}
               >
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-2xl font-black">{tournament.title}</h3>
-
-                    <p className="mt-2 text-gray-300">{tournament.gameName ?? "—"}</p>
+                    <h3 className="text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{tournament.title}</h3>
+                    <p className="mt-2" style={{ color: "var(--asc-fg-3)" }}>{tournament.gameName ?? "—"}</p>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-1 text-sm font-bold text-cyan-300">
+                    <span
+                      className="border px-4 py-1 text-sm font-bold"
+                      style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+                    >
                       {tournament.status}
                     </span>
 
-                    <span
-                      className={`rounded-full border px-4 py-1 text-sm font-bold ${registrationBadge(
-                        tournament.registrationStatus,
-                      )}`}
-                    >
+                    <span className="border px-4 py-1 text-sm font-bold" style={registrationBadgeStyle(tournament.registrationStatus)}>
                       Registration {tournament.registrationStatus}
                     </span>
                   </div>
@@ -170,20 +167,13 @@ export default function AdminTournamentListClient({
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2">
-                      <span className="font-semibold text-gray-200">Title</span>
-
-                      <input
-                        name="title"
-                        defaultValue={tournament.title}
-                        required
-                        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                      />
+                      <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Title</span>
+                      <input name="title" defaultValue={tournament.title} required className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
                     </label>
 
                     <label className="grid gap-2">
-                      <span className="font-semibold text-gray-200">Game</span>
-
-                      <p className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-gray-400">
+                      <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Game</span>
+                      <p className="border px-4 py-3" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}>
                         {tournament.gameName ?? "Not set"} — edit via Admin panel
                       </p>
                     </label>
@@ -191,57 +181,25 @@ export default function AdminTournamentListClient({
 
                   <div className="grid gap-4 md:grid-cols-3">
                     <label className="grid gap-2">
-                      <span className="font-semibold text-gray-200">Prize</span>
-
-                      <input
-                        name="prize"
-                        defaultValue={tournament.prize ?? ""}
-                        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                      />
+                      <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Prize</span>
+                      <input name="prize" defaultValue={tournament.prize ?? ""} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
                     </label>
 
                     <label className="grid gap-2">
-                      <span className="font-semibold text-gray-200">
-                        Max Teams
-                      </span>
-
-                      <input
-                        name="maxTeams"
-                        type="number"
-                        min="1"
-                        defaultValue={tournament.maxTeams}
-                        required
-                        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                      />
+                      <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Max Teams</span>
+                      <input name="maxTeams" type="number" min="1" defaultValue={tournament.maxTeams} required className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
                     </label>
 
                     <label className="grid gap-2">
-                      <span className="font-semibold text-gray-200">
-                        Team Size
-                      </span>
-
-                      <input
-                        name="teamSize"
-                        type="number"
-                        min="1"
-                        defaultValue={tournament.teamSize}
-                        required
-                        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                      />
+                      <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Team Size</span>
+                      <input name="teamSize" type="number" min="1" defaultValue={tournament.teamSize} required className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
                     </label>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2">
-                      <span className="font-semibold text-gray-200">
-                        Tournament Status
-                      </span>
-
-                      <select
-                        name="status"
-                        defaultValue={tournament.status}
-                        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                      >
+                      <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Tournament Status</span>
+                      <select name="status" defaultValue={tournament.status} className="border px-4 py-3 text-white outline-none transition" style={inputStyle}>
                         <option value="open">Open</option>
                         <option value="upcoming">Upcoming</option>
                         <option value="closed">Closed</option>
@@ -249,15 +207,8 @@ export default function AdminTournamentListClient({
                     </label>
 
                     <label className="grid gap-2">
-                      <span className="font-semibold text-gray-200">
-                        Registration Status
-                      </span>
-
-                      <select
-                        name="registrationStatus"
-                        defaultValue={tournament.registrationStatus}
-                        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                      >
+                      <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Registration Status</span>
+                      <select name="registrationStatus" defaultValue={tournament.registrationStatus} className="border px-4 py-3 text-white outline-none transition" style={inputStyle}>
                         <option value="open">Open</option>
                         <option value="closed">Closed</option>
                       </select>
@@ -265,23 +216,22 @@ export default function AdminTournamentListClient({
                   </div>
 
                   <label className="grid gap-2">
-                    <span className="font-semibold text-gray-200">
-                      Description
-                    </span>
-
+                    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Description</span>
                     <textarea
                       name="description"
                       defaultValue={tournament.description}
                       required
                       rows={4}
-                      className="resize-none rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
+                      className="resize-none border px-4 py-3 text-white outline-none transition"
+                      style={inputStyle}
                     />
                   </label>
 
                   <div className="grid gap-3 sm:flex sm:flex-wrap">
                     <button
                       type="submit"
-                      className="w-full rounded-xl border border-cyan-500/20 px-4 py-2 font-bold text-cyan-300 transition hover:bg-cyan-500/10 sm:w-auto"
+                      className="w-full border px-4 py-2 font-bold transition hover:opacity-90 sm:w-auto"
+                      style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
                     >
                       Save Changes
                     </button>
@@ -291,11 +241,7 @@ export default function AdminTournamentListClient({
                       action={deleteTournament}
                       message="Are you sure you want to delete this tournament?"
                       onDeleted={() => {
-                        setItems((currentItems) =>
-                          currentItems.filter(
-                            (item) => item.id !== tournament.id,
-                          ),
-                        );
+                        setItems((currentItems) => currentItems.filter((item) => item.id !== tournament.id));
                       }}
                     />
                   </div>

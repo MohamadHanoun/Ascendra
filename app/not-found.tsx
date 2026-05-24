@@ -52,7 +52,8 @@ function PrimaryLink({
   return (
     <Link
       href={href}
-      className="inline-flex justify-center rounded-xl bg-violet-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/40 transition hover:bg-violet-500"
+      className="inline-flex justify-center px-6 py-3 text-sm font-black text-white shadow-lg transition"
+      style={{ background: "var(--asc-accent-2)" }}
     >
       {children}
     </Link>
@@ -69,7 +70,8 @@ function SecondaryLink({
   return (
     <Link
       href={href}
-      className="inline-flex justify-center rounded-xl border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-black text-white transition hover:bg-white/10"
+      className="inline-flex justify-center px-6 py-3 text-sm font-black transition"
+      style={{ border: "1px solid var(--asc-line)", color: "var(--asc-fg-2)" }}
     >
       {children}
     </Link>
@@ -81,9 +83,7 @@ export default async function NotFound() {
   const messages = notFoundMessages[locale];
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
-
+    <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
       <div className="relative z-10">
         <Navbar />
 
@@ -95,19 +95,19 @@ export default async function NotFound() {
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.94)_0%,rgba(7,8,17,0.72)_48%,rgba(7,8,17,0.88)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.94) 0%,oklch(0.06 0.03 287 / 0.72) 48%,oklch(0.06 0.03 287 / 0.88) 100%)" }} />
+          <div className="absolute inset-x-0 bottom-0 h-52" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
 
           <div className="relative z-10 mx-auto flex min-h-[620px] max-w-[900px] flex-col items-center justify-center px-6 pb-28 pt-20 text-center lg:px-10">
-            <p className="mb-4 text-sm font-black uppercase tracking-[0.24em] text-violet-300">
+            <p className="mb-4 text-sm font-black uppercase tracking-[0.24em]" style={{ color: "var(--asc-accent)" }}>
               {messages.label}
             </p>
 
-            <h1 className="text-5xl font-black uppercase leading-[1.04] tracking-tight text-white md:text-7xl">
+            <h1 className="text-5xl font-black uppercase leading-[1.04] tracking-tight md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
               {messages.title}
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
+            <p className="mt-5 max-w-2xl text-base leading-7" style={{ color: "var(--asc-fg-1)" }}>
               {messages.description}
             </p>
 

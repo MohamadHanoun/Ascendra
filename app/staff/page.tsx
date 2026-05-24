@@ -118,15 +118,21 @@ function StaffRow({
   staffMemberLabel: string;
 }) {
   return (
-    <article className="grid gap-3 border-b border-white/10 px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_220px_120px] md:items-center">
+    <article
+      className="grid gap-3 px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_220px_120px] md:items-center"
+      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+    >
       <div>
-        <p className="font-black text-white">{name}</p>
-        <p className="mt-1 text-sm text-gray-500">{staffMemberLabel}</p>
+        <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>{name}</p>
+        <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>{staffMemberLabel}</p>
       </div>
 
-      <p className="text-sm font-bold text-gray-300">{role}</p>
+      <p className="text-sm font-bold" style={{ color: "var(--asc-fg-1)" }}>{role}</p>
 
-      <span className="w-fit rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1 text-xs font-black text-emerald-300">
+      <span
+        className="w-fit border px-3 py-1 text-xs font-black"
+        style={{ borderColor: "oklch(0.74 0.16 150 / 0.25)", background: "oklch(0.74 0.16 150 / 0.10)", color: "oklch(0.74 0.16 150)" }}
+      >
         {status}
       </span>
     </article>
@@ -142,9 +148,7 @@ export default async function StaffPage() {
   const messages = staffMessages[locale];
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
-
+    <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
       <div className="relative z-10">
         <Navbar />
 
@@ -156,43 +160,46 @@ export default async function StaffPage() {
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.62)_44%,rgba(7,8,17,0.82)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.62) 44%,oklch(0.06 0.03 287 / 0.82) 100%)" }} />
+          <div className="absolute inset-x-0 bottom-0 h-40" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-violet-300">
+            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
               {messages.hero.label}
             </p>
 
-            <h1 className="text-5xl font-black uppercase tracking-tight text-white md:text-7xl">
+            <h1 className="text-5xl font-black uppercase tracking-tight md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
               {messages.hero.title}
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
+            <p className="mt-5 max-w-2xl text-base leading-7" style={{ color: "var(--asc-fg-1)" }}>
               {messages.hero.description}
             </p>
           </div>
         </section>
 
         <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
-          <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
+          <section
+            className="p-5 shadow-2xl shadow-black/20"
+            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+          >
             <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_160px] md:items-end">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+                <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
                   {messages.summary.label}
                 </p>
 
-                <h2 className="mt-1 text-xl font-black text-white">
+                <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
                   {messages.summary.title}
                 </h2>
               </div>
 
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+                <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
                   {messages.summary.total}
                 </p>
 
-                <p className="mt-1 text-2xl font-black text-white">
+                <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
                   {staffMembers.length}
                 </p>
               </div>
@@ -205,7 +212,10 @@ export default async function StaffPage() {
               description={messages.empty.description}
             />
           ) : (
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 backdrop-blur">
+            <section
+              className="overflow-hidden shadow-2xl shadow-black/20 backdrop-blur"
+              style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+            >
               <div>
                 {staffMembers.map((member) => (
                   <StaffRow

@@ -29,10 +29,19 @@ const staffStatuses = [
   { value: "inactive", label: "Inactive" },
 ];
 
+const inputStyle: React.CSSProperties = {
+  borderColor: "var(--asc-line-soft)",
+  background: "var(--asc-bg-2)",
+  color: "var(--asc-fg-0)",
+};
+
 function StatusBadge({ active, status }: { active: boolean; status: string }) {
   if (!active) {
     return (
-      <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-black text-gray-300">
+      <span
+        className="inline-flex w-fit border px-3 py-1 text-xs font-black"
+        style={{ color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" }}
+      >
         Hidden
       </span>
     );
@@ -40,67 +49,50 @@ function StatusBadge({ active, status }: { active: boolean; status: string }) {
 
   const normalizedStatus = status.toLowerCase();
 
-  const styles: Record<string, string> = {
-    active: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    available: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    busy: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    inactive: "border-white/10 bg-white/5 text-gray-300",
+  const statusStyles: Record<string, React.CSSProperties> = {
+    active: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+    available: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+    busy: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
+    inactive: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
   };
 
+  const style = statusStyles[normalizedStatus] ?? { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" };
+
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize ${
-        styles[normalizedStatus] || "border-white/10 bg-white/5 text-gray-300"
-      }`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black capitalize" style={style}>
       {status}
     </span>
   );
 }
 
 function Notice({ notice }: { notice: AdminStaffActionResult | null }) {
-  if (!notice) {
-    return null;
-  }
-
+  if (!notice) return null;
   return (
     <div
-      className={`rounded-xl border px-4 py-3 text-sm font-bold ${
+      className="border px-4 py-3 text-sm font-bold"
+      style={
         notice.ok
-          ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
-          : "border-red-400/25 bg-red-500/10 text-red-300"
-      }`}
+          ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
+          : { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }
+      }
     >
       {notice.message}
     </div>
   );
 }
 
-function inputClass() {
-  return "rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400";
-}
-
 function moveItem(items: StaffItem[], fromIndex: number, toIndex: number) {
   const nextItems = [...items];
   const [movedItem] = nextItems.splice(fromIndex, 1);
 
-  if (!movedItem) {
-    return items;
-  }
+  if (!movedItem) return items;
 
   nextItems.splice(toIndex, 0, movedItem);
 
-  return nextItems.map((item, index) => ({
-    ...item,
-    order: index + 1,
-  }));
+  return nextItems.map((item, index) => ({ ...item, order: index + 1 }));
 }
 
-export default function AdminStaffDragList({
-  initialStaffMembers,
-}: {
-  initialStaffMembers: StaffItem[];
-}) {
+export default function AdminStaffDragList({ initialStaffMembers }: { initialStaffMembers: StaffItem[] }) {
   const router = useRouter();
 
   const [staffMembers, setStaffMembers] = useState(initialStaffMembers);
@@ -115,15 +107,10 @@ export default function AdminStaffDragList({
 
   function saveOrder(nextStaffMembers: StaffItem[]) {
     const formData = new FormData();
-
-    formData.set(
-      "orderedStaffIds",
-      JSON.stringify(nextStaffMembers.map((staffMember) => staffMember.id)),
-    );
+    formData.set("orderedStaffIds", JSON.stringify(nextStaffMembers.map((s) => s.id)));
 
     startTransition(async () => {
       const result = await reorderStaffInline(formData);
-
       setNotice(result);
 
       if (!result.ok) {
@@ -131,9 +118,7 @@ export default function AdminStaffDragList({
         return;
       }
 
-      window.setTimeout(() => {
-        router.refresh();
-      }, 300);
+      window.setTimeout(() => { router.refresh(); }, 300);
     });
   }
 
@@ -143,10 +128,7 @@ export default function AdminStaffDragList({
   }
 
   function handleDragOver(staffId: string) {
-    if (!draggedStaffId || draggedStaffId === staffId) {
-      return;
-    }
-
+    if (!draggedStaffId || draggedStaffId === staffId) return;
     setDragOverStaffId(staffId);
   }
 
@@ -157,13 +139,8 @@ export default function AdminStaffDragList({
       return;
     }
 
-    const fromIndex = staffMembers.findIndex(
-      (staffMember) => staffMember.id === draggedStaffId,
-    );
-
-    const toIndex = staffMembers.findIndex(
-      (staffMember) => staffMember.id === targetStaffId,
-    );
+    const fromIndex = staffMembers.findIndex((s) => s.id === draggedStaffId);
+    const toIndex = staffMembers.findIndex((s) => s.id === targetStaffId);
 
     if (fromIndex === -1 || toIndex === -1) {
       setDraggedStaffId(null);
@@ -172,7 +149,6 @@ export default function AdminStaffDragList({
     }
 
     const nextStaffMembers = moveItem(staffMembers, fromIndex, toIndex);
-
     setStaffMembers(nextStaffMembers);
     setDraggedStaffId(null);
     setDragOverStaffId(null);
@@ -186,7 +162,7 @@ export default function AdminStaffDragList({
 
   if (staffMembers.length === 0) {
     return (
-      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-gray-300 shadow-2xl shadow-black/20">
+      <div className="border p-6 shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-3)" }}>
         No staff members found.
       </div>
     );
@@ -194,34 +170,43 @@ export default function AdminStaffDragList({
 
   return (
     <div className="grid gap-4">
-      <div className="flex flex-col justify-between gap-3 rounded-3xl border border-white/10 bg-white/[0.04] px-5 py-4 shadow-2xl shadow-black/20 lg:flex-row lg:items-center">
+      <div
+        className="flex flex-col justify-between gap-3 border px-5 py-4 shadow-2xl shadow-black/20 lg:flex-row lg:items-center"
+        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+      >
         <div>
-          <p className="font-black text-white">Drag to reorder</p>
-          <p className="mt-1 text-sm text-gray-400">
-            Use the handle and drop the staff member in a new position.
-          </p>
+          <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>Drag to reorder</p>
+          <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>Use the handle and drop the staff member in a new position.</p>
         </div>
 
         <div className="flex flex-wrap gap-3">
           {pending && (
-            <div className="rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-3 text-sm font-bold text-violet-200">
+            <div
+              className="border px-4 py-3 text-sm font-bold"
+              style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+            >
               Saving order...
             </div>
           )}
-
           <Notice notice={notice} />
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-        <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 lg:grid lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:gap-5">
+      <section
+        className="overflow-hidden border shadow-2xl shadow-black/20"
+        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+      >
+        <div
+          className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] lg:grid lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:gap-5"
+          style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "oklch(0.08 0.02 287)", color: "var(--asc-fg-3)" }}
+        >
           <span>Order</span>
           <span>Staff member</span>
           <span>Status</span>
           <span>Actions</span>
         </div>
 
-        <div className="divide-y divide-white/10">
+        <div>
           {staffMembers.map((staffMember, index) => {
             const position = index + 1;
             const isDragging = draggedStaffId === staffMember.id;
@@ -232,27 +217,25 @@ export default function AdminStaffDragList({
                 key={staffMember.id}
                 draggable
                 onDragStart={() => handleDragStart(staffMember.id)}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  handleDragOver(staffMember.id);
-                }}
+                onDragOver={(event) => { event.preventDefault(); handleDragOver(staffMember.id); }}
                 onDrop={() => handleDrop(staffMember.id)}
                 onDragEnd={handleDragEnd}
-                className={`grid gap-4 px-5 py-4 transition lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:items-start lg:gap-5 ${
-                  isDragging ? "opacity-50" : ""
-                } ${
-                  isDragTarget ? "bg-violet-500/10" : "hover:bg-white/[0.035]"
-                }`}
+                className={`grid gap-4 px-5 py-4 transition lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:items-start lg:gap-5 ${isDragging ? "opacity-50" : ""} ${isDragTarget ? "bg-violet-500/10" : "hover:bg-white/[0.035]"}`}
+                style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
               >
                 <div className="flex items-center justify-between gap-3 lg:justify-start">
-                  <span className="grid h-10 w-10 place-items-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-sm font-black text-violet-200">
+                  <span
+                    className="grid h-10 w-10 place-items-center text-sm font-black"
+                    style={{ border: "1px solid oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+                  >
                     {String(position).padStart(2, "0")}
                   </span>
 
                   <button
                     type="button"
                     aria-label="Drag staff member"
-                    className="grid h-10 w-10 cursor-grab place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition hover:border-violet-400/40 hover:text-violet-200 active:cursor-grabbing lg:hidden"
+                    className="grid h-10 w-10 cursor-grab place-items-center text-lg font-black transition active:cursor-grabbing lg:hidden"
+                    style={{ border: "1px solid var(--asc-line-soft)", background: "oklch(0.09 0.02 287)", color: "var(--asc-fg-3)" }}
                   >
                     ≡
                   </button>
@@ -269,46 +252,20 @@ export default function AdminStaffDragList({
 
                   <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_180px]">
                     <label className="grid gap-2">
-                      <span className="text-sm font-bold text-gray-200">
-                        Name
-                      </span>
-
-                      <input
-                        name="name"
-                        required
-                        defaultValue={staffMember.name}
-                        className={inputClass()}
-                      />
+                      <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Name</span>
+                      <input name="name" required defaultValue={staffMember.name} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
                     </label>
 
                     <label className="grid gap-2">
-                      <span className="text-sm font-bold text-gray-200">
-                        Role
-                      </span>
-
-                      <input
-                        name="role"
-                        required
-                        defaultValue={staffMember.role}
-                        className={inputClass()}
-                      />
+                      <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Role</span>
+                      <input name="role" required defaultValue={staffMember.role} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
                     </label>
 
                     <label className="grid gap-2">
-                      <span className="text-sm font-bold text-gray-200">
-                        Status
-                      </span>
-
-                      <select
-                        name="status"
-                        required
-                        defaultValue={staffMember.status}
-                        className={inputClass()}
-                      >
+                      <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Status</span>
+                      <select name="status" required defaultValue={staffMember.status} className="border px-4 py-3 text-white outline-none transition" style={inputStyle}>
                         {staffStatuses.map((status) => (
-                          <option key={status.value} value={status.value}>
-                            {status.label}
-                          </option>
+                          <option key={status.value} value={status.value}>{status.label}</option>
                         ))}
                       </select>
                     </label>
@@ -316,15 +273,13 @@ export default function AdminStaffDragList({
                 </InlineAdminStaffForm>
 
                 <div className="flex items-center justify-between gap-3 lg:block">
-                  <StatusBadge
-                    active={staffMember.isActive}
-                    status={staffMember.status}
-                  />
+                  <StatusBadge active={staffMember.isActive} status={staffMember.status} />
 
                   <button
                     type="button"
                     aria-label="Drag staff member"
-                    className="hidden h-10 w-10 cursor-grab place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition hover:border-violet-400/40 hover:text-violet-200 active:cursor-grabbing lg:mt-4 lg:grid"
+                    className="hidden h-10 w-10 cursor-grab place-items-center text-lg font-black transition active:cursor-grabbing lg:mt-4 lg:grid"
+                    style={{ border: "1px solid var(--asc-line-soft)", background: "oklch(0.09 0.02 287)", color: "var(--asc-fg-3)" }}
                   >
                     ≡
                   </button>
@@ -339,11 +294,7 @@ export default function AdminStaffDragList({
                       variant="secondary"
                       className="grid gap-2"
                     >
-                      <input
-                        type="hidden"
-                        name="staffId"
-                        value={staffMember.id}
-                      />
+                      <input type="hidden" name="staffId" value={staffMember.id} />
                     </InlineAdminStaffForm>
                   ) : (
                     <InlineAdminStaffForm
@@ -353,11 +304,7 @@ export default function AdminStaffDragList({
                       variant="success"
                       className="grid gap-2"
                     >
-                      <input
-                        type="hidden"
-                        name="staffId"
-                        value={staffMember.id}
-                      />
+                      <input type="hidden" name="staffId" value={staffMember.id} />
                     </InlineAdminStaffForm>
                   )}
 
@@ -371,11 +318,7 @@ export default function AdminStaffDragList({
                     confirmDescription={`Delete ${staffMember.name}? This cannot be undone.`}
                     confirmLabel="Delete permanently"
                   >
-                    <input
-                      type="hidden"
-                      name="staffId"
-                      value={staffMember.id}
-                    />
+                    <input type="hidden" name="staffId" value={staffMember.id} />
                   </InlineAdminStaffForm>
                 </div>
               </article>

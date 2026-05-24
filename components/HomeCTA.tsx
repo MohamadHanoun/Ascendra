@@ -4,22 +4,24 @@ import { serverInfo } from "@/data/server";
 export default function HomeCTA() {
   return (
     <section className="mx-auto max-w-7xl px-6 pb-24">
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-500/20 via-purple-500/10 to-cyan-500/20 p-10 text-center shadow-2xl shadow-indigo-500/10">
-        <div className="absolute left-10 top-10 h-32 w-32 rounded-full bg-indigo-500/20 blur-3xl" />
-        <div className="absolute bottom-10 right-10 h-32 w-32 rounded-full bg-cyan-500/20 blur-3xl" />
+      <div
+        className="relative overflow-hidden border p-10 text-center shadow-2xl"
+        style={{ borderColor: "var(--asc-line)", background: "oklch(0.09 0.03 287)", boxShadow: "0 0 60px oklch(0.58 0.24 285 / 0.08)" }}
+      >
+        <div className="absolute left-10 top-10 h-32 w-32 opacity-20 blur-3xl" style={{ background: "var(--asc-accent)" }} />
+        <div className="absolute bottom-10 right-10 h-32 w-32 opacity-10 blur-3xl" style={{ background: "var(--asc-blue)" }} />
 
         <div className="relative">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-indigo-300">
+          <p className="mb-4 text-sm font-black uppercase tracking-[0.3em]" style={{ color: "var(--asc-accent)" }}>
             Join Ascendra
           </p>
 
-          <h2 className="mx-auto mb-6 max-w-3xl text-4xl font-black leading-tight md:text-6xl">
+          <h2 className="mx-auto mb-6 max-w-3xl text-4xl font-black leading-tight md:text-6xl" style={{ color: "var(--asc-fg-0)" }}>
             Ready to enter Ascendra?
           </h2>
 
-          <p className="mx-auto mb-8 max-w-2xl leading-8 text-gray-300">
-            Join the community, meet other players, follow future tournaments,
-            and be part of the Ascendra journey from the beginning.
+          <p className="mx-auto mb-8 max-w-2xl leading-8" style={{ color: "var(--asc-fg-2)" }}>
+            Join the community, meet other players, follow future tournaments, and be part of the Ascendra journey from the beginning.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4">
@@ -27,14 +29,16 @@ export default function HomeCTA() {
               href={serverInfo.inviteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-xl bg-indigo-500 px-7 py-4 font-bold transition hover:-translate-y-1 hover:bg-indigo-400"
+              className="px-7 py-4 font-bold transition hover:opacity-90"
+              style={{ background: "#5865F2", color: "#fff" }}
             >
               {currentContent.nav.joinDiscord}
             </a>
 
             <a
               href="/tournaments"
-              className="rounded-xl border border-white/10 px-7 py-4 font-bold text-gray-200 transition hover:-translate-y-1 hover:bg-white/10"
+              className="border px-7 py-4 font-bold transition hover:opacity-90"
+              style={{ borderColor: "var(--asc-line)", color: "var(--asc-fg-2)", background: "transparent" }}
             >
               View Tournaments
             </a>

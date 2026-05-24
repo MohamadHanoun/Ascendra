@@ -8,6 +8,14 @@ type AdminTeamReviewProps = {
   error?: string;
 };
 
+const pillStyleMap: Record<string, React.CSSProperties> = {
+  green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+  yellow: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
+  red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+  gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
+  violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+};
+
 function Pill({
   children,
   tone = "gray",
@@ -15,18 +23,8 @@ function Pill({
   children: React.ReactNode;
   tone?: "green" | "yellow" | "red" | "gray" | "violet";
 }) {
-  const styles = {
-    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    red: "border-red-400/25 bg-red-500/10 text-red-300",
-    gray: "border-white/10 bg-white/5 text-gray-300",
-    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-  };
-
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={pillStyleMap[tone]}>
       {children}
     </span>
   );
@@ -76,11 +74,10 @@ function RoleBadge({ leader }: { leader: boolean }) {
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
         {label}
       </p>
-
-      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
     </div>
   );
 }
@@ -93,8 +90,8 @@ function InfoRow({
   value: string | number;
 }) {
   return (
-    <p className="text-sm text-gray-400">
-      {label}: <span className="break-all font-black text-white">{value}</span>
+    <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
+      {label}: <span className="break-all font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</span>
     </p>
   );
 }
@@ -232,15 +229,15 @@ export default async function AdminTeamReview({
 
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
+          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
             Teams
           </p>
 
-          <h1 className="mt-2 text-3xl font-black text-white">
+          <h1 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
             Teams directory
           </h1>
 
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
+          <p className="mt-3 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
             Review teams, players, registrations, and official tournament
             results.
           </p>
@@ -256,12 +253,21 @@ export default async function AdminTeamReview({
       </div>
 
       {teamsWithStats.length === 0 ? (
-        <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-gray-300 shadow-2xl shadow-black/20">
+        <section
+          className="border p-6 shadow-2xl"
+          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-2)" }}
+        >
           No teams found.
         </section>
       ) : (
-        <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-          <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[minmax(0,1fr)_110px_110px_110px_110px] xl:gap-5">
+        <section
+          className="overflow-hidden border shadow-2xl"
+          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+        >
+          <div
+            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[minmax(0,1fr)_110px_110px_110px_110px] xl:gap-5"
+            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
+          >
             <span>Team</span>
             <span>Players</span>
             <span>Regs.</span>
@@ -269,16 +275,17 @@ export default async function AdminTeamReview({
             <span>Points</span>
           </div>
 
-          <div className="divide-y divide-white/10">
+          <div>
             {teamsWithStats.map((team) => (
               <article
                 key={team.id}
-                className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.035]"
+                className="grid gap-4 px-5 py-4 transition"
+                style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
               >
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_110px_110px_110px_110px] xl:items-center xl:gap-5">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="truncate text-xl font-black text-white">
+                      <h2 className="truncate text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
                         {team.name}
                       </h2>
 
@@ -286,31 +293,22 @@ export default async function AdminTeamReview({
                       <Pill tone="violet">{team.game?.name ?? "—"}</Pill>
                     </div>
 
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                       Leader {team.leader.username} · Created{" "}
                       {formatDate(team.createdAt)}
                     </p>
                   </div>
 
-                  <p className="text-sm text-gray-300">
-                    <span className="font-black text-white">
-                      {team.members.length}
-                    </span>{" "}
-                    players
+                  <p className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
+                    <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>{team.members.length}</span>{" "}players
                   </p>
 
-                  <p className="text-sm text-gray-300">
-                    <span className="font-black text-white">
-                      {team.registrations.length}
-                    </span>{" "}
-                    regs
+                  <p className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
+                    <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>{team.registrations.length}</span>{" "}regs
                   </p>
 
-                  <p className="text-sm text-gray-300">
-                    <span className="font-black text-white">
-                      {team.results.length}
-                    </span>{" "}
-                    results
+                  <p className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
+                    <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>{team.results.length}</span>{" "}results
                   </p>
 
                   <Pill tone={team.tournamentPoints > 0 ? "green" : "gray"}>
@@ -318,14 +316,20 @@ export default async function AdminTeamReview({
                   </Pill>
                 </div>
 
-                <details className="rounded-2xl border border-white/10 bg-black/20">
-                  <summary className="cursor-pointer px-4 py-3 text-sm font-black text-gray-300 transition hover:text-white">
+                <details
+                  className="border"
+                  style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+                >
+                  <summary
+                    className="cursor-pointer px-4 py-3 text-sm font-black transition hover:opacity-90"
+                    style={{ color: "var(--asc-fg-2)" }}
+                  >
                     Team details and actions
                   </summary>
 
-                  <div className="grid gap-6 border-t border-white/10 p-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)_260px]">
+                  <div className="grid gap-6 p-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)_260px]" style={{ borderTop: "1px solid var(--asc-line-soft)" }}>
                     <section className="grid content-start gap-3">
-                      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                      <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
                         Team info
                       </p>
 
@@ -353,16 +357,16 @@ export default async function AdminTeamReview({
                     </section>
 
                     <section className="grid content-start gap-3">
-                      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                      <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
                         Players
                       </p>
 
                       {team.members.length === 0 ? (
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
                           No players in this team.
                         </p>
                       ) : (
-                        <div className="divide-y divide-white/10">
+                        <div>
                           {team.members.map((member) => {
                             const isLeader = member.userId === team.leaderId;
 
@@ -370,13 +374,14 @@ export default async function AdminTeamReview({
                               <div
                                 key={member.id}
                                 className="grid gap-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                                style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                               >
                                 <div className="min-w-0">
-                                  <p className="truncate font-black text-white">
+                                  <p className="truncate font-black" style={{ color: "var(--asc-fg-0)" }}>
                                     {member.user.username}
                                   </p>
 
-                                  <p className="mt-1 break-all text-xs text-gray-500">
+                                  <p className="mt-1 break-all text-xs" style={{ color: "var(--asc-fg-3)" }}>
                                     {member.user.discordId}
                                   </p>
                                 </div>
@@ -391,23 +396,23 @@ export default async function AdminTeamReview({
 
                     <aside className="grid content-start gap-5">
                       <section className="grid gap-3">
-                        <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                        <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
                           Latest results
                         </p>
 
                         {team.results.length === 0 ? (
-                          <p className="text-sm text-gray-400">
+                          <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
                             No tournament results.
                           </p>
                         ) : (
                           <div className="grid gap-3">
                             {team.results.slice(0, 4).map((result) => (
                               <div key={result.id}>
-                                <p className="truncate text-sm font-black text-white">
+                                <p className="truncate text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
                                   {result.tournament.title}
                                 </p>
 
-                                <p className="mt-1 text-xs text-gray-500">
+                                <p className="mt-1 text-xs" style={{ color: "var(--asc-fg-3)" }}>
                                   #{result.placement} · {result.points} pts
                                 </p>
                               </div>
@@ -417,12 +422,12 @@ export default async function AdminTeamReview({
                       </section>
 
                       <section className="grid gap-3">
-                        <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                        <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
                           Latest registrations
                         </p>
 
                         {team.registrations.length === 0 ? (
-                          <p className="text-sm text-gray-400">
+                          <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
                             No tournament registrations.
                           </p>
                         ) : (
@@ -431,7 +436,7 @@ export default async function AdminTeamReview({
                               .slice(0, 4)
                               .map((registration) => (
                                 <div key={registration.id}>
-                                  <p className="truncate text-sm font-black text-white">
+                                  <p className="truncate text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
                                     {registration.tournament.title}
                                   </p>
 
@@ -446,12 +451,12 @@ export default async function AdminTeamReview({
                         )}
                       </section>
 
-                      <section className="border-t border-red-500/20 pt-5">
-                        <p className="text-xs font-black uppercase tracking-[0.14em] text-red-300">
+                      <section className="pt-5" style={{ borderTop: "1px solid oklch(0.50 0.20 25 / 0.3)" }}>
+                        <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-live)" }}>
                           Danger zone
                         </p>
 
-                        <p className="mt-2 text-sm leading-6 text-gray-400">
+                        <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
                           Delete this team and connected records.
                         </p>
 

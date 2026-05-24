@@ -24,32 +24,17 @@ type InlineTeamActionFormProps = {
   cancelLabel?: string;
 };
 
-function getButtonClass(variant: InlineTeamActionFormProps["variant"]) {
-  if (variant === "danger") {
-    return "rounded-xl border border-red-500/25 px-4 py-2 text-sm font-black text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50";
-  }
-
-  if (variant === "success") {
-    return "rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50";
-  }
-
-  if (variant === "secondary") {
-    return "rounded-xl border border-white/10 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
-  }
-
-  return "rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50";
+function getButtonStyle(variant: InlineTeamActionFormProps["variant"]): React.CSSProperties {
+  if (variant === "danger") return { borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" };
+  if (variant === "success") return { background: "oklch(0.55 0.14 150)", color: "#fff" };
+  if (variant === "secondary") return { borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" };
+  return { background: "var(--asc-accent-2)", color: "#fff", boxShadow: "0 0 16px var(--asc-accent-glow)" };
 }
 
-function getConfirmButtonClass(variant: InlineTeamActionFormProps["variant"]) {
-  if (variant === "danger") {
-    return "rounded-xl bg-red-500 px-5 py-3 text-sm font-black text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50";
-  }
-
-  if (variant === "success") {
-    return "rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50";
-  }
-
-  return "rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50";
+function getConfirmButtonStyle(variant: InlineTeamActionFormProps["variant"]): React.CSSProperties {
+  if (variant === "danger") return { background: "oklch(0.50 0.20 25)", color: "#fff" };
+  if (variant === "success") return { background: "oklch(0.55 0.14 150)", color: "#fff" };
+  return { background: "var(--asc-accent-2)", color: "#fff" };
 }
 
 export default function InlineTeamActionForm({
@@ -71,45 +56,37 @@ export default function InlineTeamActionForm({
   const [notice, setNotice] = useState<InlineActionResult | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  const isBordered = variant === "danger" || variant === "secondary";
+  const buttonStyle = getButtonStyle(variant);
+
   function runAction() {
     const form = formRef.current;
-
-    if (!form) {
-      return;
-    }
+    if (!form) return;
 
     const formData = new FormData(form);
 
     startTransition(async () => {
       const result = await action(formData);
-
       setNotice(result);
       setConfirmOpen(false);
 
       if (result.redirectTo) {
-        window.setTimeout(() => {
-          router.push(result.redirectTo || "/profile");
-        }, 350);
-
+        window.setTimeout(() => router.push(result.redirectTo || "/profile"), 350);
         return;
       }
 
       if (result.ok) {
-        window.setTimeout(() => {
-          router.refresh();
-        }, 500);
+        window.setTimeout(() => router.refresh(), 500);
       }
     });
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (confirmTitle || confirmDescription) {
       setConfirmOpen(true);
       return;
     }
-
     runAction();
   }
 
@@ -121,18 +98,20 @@ export default function InlineTeamActionForm({
         <button
           type="submit"
           disabled={pending}
-          className={getButtonClass(variant)}
+          className={`px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${isBordered ? "border" : ""}`}
+          style={buttonStyle}
         >
           {pending ? pendingLabel : buttonLabel}
         </button>
 
         {notice && (
           <div
-            className={`rounded-2xl border px-4 py-3 text-sm font-bold ${
+            className="border px-4 py-3 text-sm font-bold"
+            style={
               notice.ok
-                ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
-                : "border-red-400/25 bg-red-500/10 text-red-300"
-            }`}
+                ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
+                : { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }
+            }
           >
             {notice.message}
           </div>
@@ -141,18 +120,21 @@ export default function InlineTeamActionForm({
 
       {confirmOpen && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#11121d] shadow-2xl shadow-black/40">
-            <div className="border-b border-white/10 px-6 py-5">
-              <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
+          <div
+            className="w-full max-w-md overflow-hidden border shadow-2xl shadow-black/40"
+            style={{ borderColor: "var(--asc-line)", background: "var(--asc-bg-1)" }}
+          >
+            <div className="px-6 py-5" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+              <p className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
                 {confirmEyebrow}
               </p>
 
-              <h2 className="mt-2 text-2xl font-black text-white">
+              <h2 className="mt-2 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
                 {confirmTitle || confirmFallbackTitle}
               </h2>
 
               {confirmDescription && (
-                <p className="mt-2 leading-7 text-gray-300">
+                <p className="mt-2 leading-7" style={{ color: "var(--asc-fg-2)" }}>
                   {confirmDescription}
                 </p>
               )}
@@ -162,7 +144,8 @@ export default function InlineTeamActionForm({
               <button
                 type="button"
                 onClick={() => setConfirmOpen(false)}
-                className="rounded-xl border border-white/10 px-5 py-3 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
+                className="border px-5 py-3 text-sm font-black transition hover:opacity-90"
+                style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" }}
               >
                 {cancelLabel}
               </button>
@@ -171,7 +154,8 @@ export default function InlineTeamActionForm({
                 type="button"
                 disabled={pending}
                 onClick={runAction}
-                className={getConfirmButtonClass(variant)}
+                className="px-5 py-3 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                style={getConfirmButtonStyle(variant)}
               >
                 {pending ? pendingLabel : confirmLabel}
               </button>

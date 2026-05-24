@@ -92,11 +92,12 @@ function FilterButton({
     <Link
       href={href}
       scroll={false}
-      className={`rounded-xl border px-4 py-2 text-sm font-black transition ${
+      className="border px-4 py-2 text-sm font-black transition"
+      style={
         active
-          ? "border-violet-400/35 bg-violet-500/15 text-white shadow-lg shadow-violet-950/20"
-          : "border-white/10 bg-black/20 text-gray-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
-      }`}
+          ? { borderColor: "var(--asc-accent)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }
+          : { borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-3)" }
+      }
     >
       {label}
     </Link>
@@ -116,11 +117,12 @@ function TypeButton({
     <Link
       href={href}
       scroll={false}
-      className={`rounded-2xl border px-5 py-3 text-sm font-black transition ${
+      className="border px-5 py-3 text-sm font-black transition"
+      style={
         active
-          ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-200 shadow-lg shadow-emerald-950/20"
-          : "border-white/10 bg-black/20 text-gray-300 hover:border-emerald-400/25 hover:bg-white/10 hover:text-white"
-      }`}
+          ? { borderColor: "var(--asc-accent)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)", boxShadow: "0 0 16px var(--asc-accent-glow)" }
+          : { borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-3)" }
+      }
     >
       {label}
     </Link>
@@ -130,11 +132,10 @@ function TypeButton({
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
         {label}
       </p>
-
-      <p className="mt-1 truncate text-2xl font-black text-white">{value}</p>
+      <p className="mt-1 truncate text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
     </div>
   );
 }
@@ -438,45 +439,35 @@ export default async function LeaderboardPage({
       : teamLeaderboard[0]?.name || messages.fallback.none;
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(139,92,246,0.16)_0%,transparent_32%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
-
+    <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
       <div className="relative z-10">
         <Navbar />
 
+        {/* Hero */}
         <section className="relative min-h-[500px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage:
-                'url("/images/backgrounds/leaderboard-hero.webp")',
-            }}
+            style={{ backgroundImage: 'url("/images/backgrounds/leaderboard-hero.webp")' }}
           />
-
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.94)_0%,rgba(7,8,17,0.66)_44%,rgba(7,8,17,0.84)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.16),transparent_34%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-b from-transparent via-[#070811]/80 to-[#070811]" />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, oklch(0.06 0.03 287 / 0.96) 0%, oklch(0.06 0.03 287 / 0.68) 44%, oklch(0.06 0.03 287 / 0.86) 100%)" }} />
+          <div className="absolute inset-x-0 bottom-0 h-52" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-32 pt-20 lg:px-10 2xl:px-14">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-emerald-300">
+            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
               {messages.hero.label}
             </p>
-
-            <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight text-white md:text-7xl">
+            <h1 className="max-w-5xl text-5xl md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
               {messages.hero.title}
             </h1>
-
-            <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
+            <p className="mt-5 max-w-2xl text-base leading-7" style={{ color: "var(--asc-fg-2)" }}>
               {messages.hero.description}
             </p>
-
             <div className="mt-8 flex flex-wrap gap-3">
               <TypeButton
                 href={buildLeaderboardHref(selectedGame, "players")}
                 label={messages.types.playerRanking}
                 active={selectedType === "players"}
               />
-
               <TypeButton
                 href={buildLeaderboardHref(selectedGame, "teams")}
                 label={messages.types.teamRanking}
@@ -489,24 +480,23 @@ export default async function LeaderboardPage({
         <section className="relative -mt-24 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
           <LeaderboardRealtime />
 
-          <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/20 backdrop-blur">
+          {/* Filter panel */}
+          <section
+            className="border p-5 shadow-2xl"
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+          >
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">
-                  {selectedType === "players"
-                    ? messages.headings.players
-                    : messages.headings.teams}
+                <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
+                  {selectedType === "players" ? messages.headings.players : messages.headings.teams}
                 </p>
-
-                <h2 className="mt-2 text-3xl font-black text-white">
+                <h2 className="mt-2 text-3xl" style={{ color: "var(--asc-fg-0)" }}>
                   {getGameHeading(selectedGame, messages, locale)}
                 </h2>
-
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                   {messages.headings.rankedBy}
                 </p>
               </div>
-
               <div className="flex flex-wrap gap-2">
                 {games.map((game) => (
                   <FilterButton
@@ -520,47 +510,33 @@ export default async function LeaderboardPage({
             </div>
           </section>
 
-          <section className="grid gap-5 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 md:grid-cols-2 xl:grid-cols-4">
+          {/* Stats bar */}
+          <section
+            className="grid gap-5 border p-5 shadow-2xl md:grid-cols-2 xl:grid-cols-4"
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+          >
             <Stat
-              label={
-                selectedType === "players"
-                  ? messages.stats.players
-                  : messages.stats.teams
-              }
+              label={selectedType === "players" ? messages.stats.players : messages.stats.teams}
               value={activeLeaderboard.length}
             />
             <Stat label={messages.stats.totalPoints} value={totalPoints} />
             <Stat label={messages.stats.results} value={totalResults} />
             <Stat
-              label={
-                selectedType === "players"
-                  ? messages.stats.topPlayer
-                  : messages.stats.topTeam
-              }
+              label={selectedType === "players" ? messages.stats.topPlayer : messages.stats.topTeam}
               value={topItem}
             />
           </section>
 
           {activeLeaderboard.length > 0 ? (
             selectedType === "players" ? (
-              <LeaderboardTable
-                users={playerLeaderboard}
-                messages={messages.table}
-              />
+              <LeaderboardTable users={playerLeaderboard} messages={messages.table} />
             ) : (
-              <TeamLeaderboardTable
-                teams={teamLeaderboard}
-                messages={messages.table}
-              />
+              <TeamLeaderboardTable teams={teamLeaderboard} messages={messages.table} />
             )
           ) : (
             <EmptyState
               title={messages.empty.title}
-              description={
-                selectedGame === "Overall"
-                  ? messages.empty.overallDescription
-                  : messages.empty.gameDescription
-              }
+              description={selectedGame === "Overall" ? messages.empty.overallDescription : messages.empty.gameDescription}
               actionLabel={messages.empty.action}
               actionHref="/tournaments"
             />

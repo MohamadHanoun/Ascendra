@@ -18,22 +18,23 @@ type AdminTournamentImageFieldsProps = {
   onGameChange?: (game: GameOption | undefined) => void;
 };
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <span className="text-sm font-bold text-gray-200">{children}</span>;
-}
+const inputStyle: React.CSSProperties = {
+  borderColor: "var(--asc-line-soft)",
+  background: "var(--asc-bg-2)",
+  color: "var(--asc-fg-0)",
+};
 
-function inputClass() {
-  return "rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400";
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+      {children}
+    </span>
+  );
 }
 
 function isValidImageUrl(imageUrl: string) {
   if (!imageUrl) return true;
-
-  return (
-    imageUrl.startsWith("https://") ||
-    imageUrl.startsWith("http://") ||
-    imageUrl.startsWith("/")
-  );
+  return imageUrl.startsWith("https://") || imageUrl.startsWith("http://") || imageUrl.startsWith("/");
 }
 
 export default function AdminTournamentImageFields({
@@ -46,17 +47,11 @@ export default function AdminTournamentImageFields({
   const [imageUrl, setImageUrl] = useState(defaultImageUrl || "");
 
   const trimmedImageUrl = imageUrl.trim();
-
-  const hasInvalidImageUrl =
-    Boolean(trimmedImageUrl) && !isValidImageUrl(trimmedImageUrl);
-
+  const hasInvalidImageUrl = Boolean(trimmedImageUrl) && !isValidImageUrl(trimmedImageUrl);
   const selectedGame = games.find((g) => g.slug === gameSlug);
 
   const previewImageUrl = useMemo(() => {
-    if (trimmedImageUrl && isValidImageUrl(trimmedImageUrl)) {
-      return trimmedImageUrl;
-    }
-
+    if (trimmedImageUrl && isValidImageUrl(trimmedImageUrl)) return trimmedImageUrl;
     return getTournamentImageUrl(gameSlug || null, null);
   }, [gameSlug, trimmedImageUrl]);
 
@@ -65,7 +60,6 @@ export default function AdminTournamentImageFields({
       <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
         <label className="grid gap-2">
           <FieldLabel>Game</FieldLabel>
-
           <select
             name="gameSlug"
             required
@@ -75,51 +69,45 @@ export default function AdminTournamentImageFields({
               setGameSlug(slug);
               onGameChange?.(games.find((g) => g.slug === slug));
             }}
-            className={inputClass()}
+            className="border px-4 py-3 text-white outline-none transition"
+            style={inputStyle}
           >
-            <option value="" disabled>
-              Select game
-            </option>
-
+            <option value="" disabled>Select game</option>
             {games.map((game) => (
-              <option key={game.slug} value={game.slug}>
-                {game.name}
-              </option>
+              <option key={game.slug} value={game.slug}>{game.name}</option>
             ))}
           </select>
         </label>
 
         <label className="grid gap-2">
           <FieldLabel>Image URL</FieldLabel>
-
           <input
             name="imageUrl"
             value={imageUrl}
             onChange={(event) => setImageUrl(event.target.value)}
             placeholder="Optional custom image URL"
-            className={inputClass()}
+            className="border px-4 py-3 text-white outline-none transition"
+            style={inputStyle}
           />
         </label>
       </div>
 
-      <div className="grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 lg:grid-cols-[180px_minmax(0,1fr)] lg:items-center">
+      <div
+        className="grid gap-3 border p-4 lg:grid-cols-[180px_minmax(0,1fr)] lg:items-center"
+        style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}
+      >
         <div
-          className="h-28 rounded-xl border border-white/10 bg-cover bg-center"
+          className="h-28 border bg-cover bg-center"
           style={{
+            borderColor: "var(--asc-line-soft)",
             backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.08), rgba(7,8,17,0.62)), url("${previewImageUrl}")`,
           }}
         />
 
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-violet-300">
-            Image preview
-          </p>
-
-          <p className="mt-1 font-black text-white">
-            {selectedGame?.name || "Select a game"}
-          </p>
-
-          <p className="mt-1 text-sm leading-6 text-gray-400">
+          <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-accent)" }}>Image preview</p>
+          <p className="mt-1 font-black" style={{ color: "var(--asc-fg-0)" }}>{selectedGame?.name || "Select a game"}</p>
+          <p className="mt-1 text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
             {trimmedImageUrl && !hasInvalidImageUrl
               ? "Custom tournament image selected."
               : "Automatic game image will be used."}
@@ -128,7 +116,10 @@ export default function AdminTournamentImageFields({
       </div>
 
       {hasInvalidImageUrl && (
-        <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300">
+        <p
+          className="border px-4 py-3 text-sm font-bold"
+          style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }}
+        >
           Image URL must start with http://, https://, or /.
         </p>
       )}

@@ -15,16 +15,16 @@ function FooterColumn({
 }) {
   return (
     <div>
-      <h3 className="mb-4 text-sm font-black uppercase tracking-[0.16em] text-gray-300">
+      <h3 className="mb-4 text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
         {title}
       </h3>
-
       <div className="grid gap-3">
         {links.map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className="text-sm font-bold text-gray-500 transition hover:text-white"
+            className="text-sm font-bold transition hover:text-white"
+            style={{ color: "var(--asc-fg-3)" }}
           >
             {link.label}
           </Link>
@@ -61,7 +61,7 @@ export default async function Footer() {
   ];
 
   return (
-    <footer className="border-t border-white/10 bg-[#06070f] text-white">
+    <footer style={{ borderTop: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-1)" }}>
       <div className="grid gap-10 px-6 py-14 lg:grid-cols-[1.25fr_0.75fr_0.75fr_0.75fr_1fr] lg:px-10 2xl:px-14">
         <div>
           <Link href="/" className="inline-flex items-center gap-3">
@@ -72,7 +72,6 @@ export default async function Footer() {
               height={50}
               className="h-12 w-12 object-contain"
             />
-
             <Image
               src="/images/brand/ascendra-wordmark.png"
               alt="Ascendra"
@@ -82,33 +81,34 @@ export default async function Footer() {
             />
           </Link>
 
-          <p className="mt-6 max-w-md text-sm leading-7 text-gray-500">
+          <p className="mt-6 max-w-md text-sm leading-7" style={{ color: "var(--asc-fg-3)" }}>
             {messages.description}
           </p>
+
+          <div
+            className="mt-6 h-px w-12"
+            style={{ background: "var(--asc-accent)" }}
+          />
         </div>
 
         <FooterColumn title={messages.columns.platform} links={platformLinks} />
-        <FooterColumn
-          title={messages.columns.community}
-          links={communityLinks}
-        />
+        <FooterColumn title={messages.columns.community} links={communityLinks} />
         <FooterColumn title={messages.columns.legal} links={legalLinks} />
 
         <div>
-          <h3 className="mb-4 text-sm font-black uppercase tracking-[0.16em] text-gray-300">
+          <h3 className="mb-4 text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
             {messages.columns.discord}
           </h3>
-
-          <p className="mb-5 text-sm leading-7 text-gray-500">
+          <p className="mb-5 text-sm leading-7" style={{ color: "var(--asc-fg-3)" }}>
             {messages.discordDescription}
           </p>
-
           {discordInvite && (
             <a
               href={discordInvite}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
+              className="inline-flex px-5 py-3 text-sm font-black text-white transition"
+              style={{ background: "var(--asc-accent-2)" }}
             >
               {messages.joinDiscord}
             </a>
@@ -116,17 +116,22 @@ export default async function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-white/10 px-6 py-5 lg:px-10 2xl:px-14">
-        <div className="flex flex-col gap-3 text-sm text-gray-600 md:flex-row md:items-center md:justify-between">
+      <div
+        className="px-6 py-5 lg:px-10 2xl:px-14"
+        style={{ borderTop: "1px solid var(--asc-line-soft)" }}
+      >
+        <div
+          className="flex flex-col gap-3 text-sm md:flex-row md:items-center md:justify-between"
+          style={{ color: "var(--asc-fg-3)" }}
+        >
           <p>
             © {new Date().getFullYear()}{" "}
-            <span className="font-bold text-gray-400">Ascendra</span>.{" "}
+            <span className="font-bold" style={{ color: "var(--asc-fg-2)" }}>Ascendra</span>.{" "}
             {messages.rights}
           </p>
-
           <p>
             {messages.developedBy}{" "}
-            <span className="font-bold text-violet-300">Abu 3Day</span>
+            <span className="font-bold" style={{ color: "var(--asc-accent)" }}>Abu 3Day</span>
           </p>
         </div>
       </div>

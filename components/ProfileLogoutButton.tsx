@@ -13,7 +13,8 @@ export default function ProfileLogoutButton() {
     >
       <button
         type="submit"
-        className="rounded-xl border border-red-500/20 px-5 py-3 font-bold text-red-300 transition hover:bg-red-500/10"
+        className="border px-5 py-3 font-bold transition hover:opacity-90"
+        style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
       >
         Logout
       </button>

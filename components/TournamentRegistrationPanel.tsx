@@ -82,18 +82,16 @@ function Pill({
   children: ReactNode;
   tone?: "green" | "blue" | "red" | "gray" | "violet";
 }) {
-  const styles = {
-    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    blue: "border-blue-400/25 bg-blue-500/10 text-blue-300",
-    red: "border-red-400/25 bg-red-500/10 text-red-300",
-    gray: "border-white/10 bg-white/5 text-gray-300",
-    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
+  const styleMap: Record<string, React.CSSProperties> = {
+    green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+    blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
+    red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+    gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
+    violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
   };
 
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={styleMap[tone]}>
       {children}
     </span>
   );
@@ -136,14 +134,12 @@ function ActionNotice({
     return null;
   }
 
+  const style: React.CSSProperties = result.ok
+    ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
+    : { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" };
+
   return (
-    <div
-      className={`rounded-xl border px-4 py-3 text-sm font-bold ${
-        result.ok
-          ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
-          : "border-red-400/25 bg-red-500/10 text-red-300"
-      }`}
-    >
+    <div className="border px-4 py-3 text-sm font-bold" style={style}>
       {result.message}
     </div>
   );
@@ -160,18 +156,17 @@ function PanelNotice({
   tone?: "violet" | "red" | "gray" | "green";
   children?: ReactNode;
 }) {
-  const styles = {
-    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-    red: "border-red-400/25 bg-red-500/10 text-red-300",
-    gray: "border-white/10 bg-black/20 text-white",
-    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
+  const styleMap: Record<string, React.CSSProperties> = {
+    violet: { borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
+    red: { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" },
+    gray: { borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-0)" },
+    green: { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" },
   };
 
   return (
-    <div className={`rounded-2xl border p-4 ${styles[tone]}`}>
+    <div className="border p-4" style={styleMap[tone]}>
       <p className="font-black">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-gray-300">{description}</p>
-
+      <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>{description}</p>
       {children && <div className="mt-4 flex flex-wrap gap-3">{children}</div>}
     </div>
   );
@@ -186,19 +181,19 @@ function NoticeLink({
   children: ReactNode;
   external?: boolean;
 }) {
-  const className =
-    "rounded-xl bg-violet-600 px-4 py-2 text-sm font-black text-white transition hover:bg-violet-500";
+  const style: React.CSSProperties = { background: "var(--asc-accent-2)", color: "var(--asc-fg-0)" };
+  const className = "px-4 py-2 text-sm font-black transition hover:opacity-90";
 
   if (external) {
     return (
-      <a href={href} target="_blank" rel="noreferrer" className={className}>
+      <a href={href} target="_blank" rel="noreferrer" className={className} style={style}>
         {children}
       </a>
     );
   }
 
   return (
-    <Link href={href} className={className}>
+    <Link href={href} className={className} style={style}>
       {children}
     </Link>
   );
@@ -261,7 +256,7 @@ function RegisterForm({
       <input type="hidden" name="tournamentId" value={tournamentId} />
 
       <label className="grid gap-2">
-        <span className="text-sm font-bold text-gray-200">
+        <span className="text-sm font-bold" style={{ color: "var(--asc-fg-1)" }}>
           {messages.chooseTeam}
         </span>
 
@@ -284,7 +279,8 @@ function RegisterForm({
       <button
         type="submit"
         disabled={pending}
-        className="w-fit rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-fit px-5 py-3 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        style={{ background: "var(--asc-accent-2)", boxShadow: "0 0 20px var(--asc-accent-glow)" }}
       >
         {pending ? messages.registering : messages.registerTeam}
       </button>
@@ -357,7 +353,8 @@ function CancelRegistrationForm({
         <button
           type="submit"
           disabled={pending}
-          className="w-fit rounded-xl border border-red-500/25 px-4 py-2 text-sm font-black text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-fit border px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
         >
           {pending ? messages.cancelling : messages.cancelRegistration}
         </button>
@@ -367,20 +364,21 @@ function CancelRegistrationForm({
 
       {confirmOpen && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#11121d] shadow-2xl shadow-black/40">
-            <div className="border-b border-white/10 px-6 py-5">
-              <p className="text-sm font-black uppercase tracking-[0.16em] text-violet-300">
+          <div
+            className="w-full max-w-md overflow-hidden border shadow-2xl shadow-black/40"
+            style={{ borderColor: "var(--asc-line)", background: "var(--asc-bg-1)" }}
+          >
+            <div className="px-6 py-5" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+              <p className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
                 {messages.confirmation}
               </p>
 
-              <h2 className="mt-2 text-2xl font-black text-white">
+              <h2 className="mt-2 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
                 {messages.cancelRegistrationTitle}
               </h2>
 
-              <p className="mt-2 leading-7 text-gray-300">
-                {formatTemplate(messages.cancelRegistrationDescription, {
-                  teamName,
-                })}
+              <p className="mt-2 leading-7" style={{ color: "var(--asc-fg-2)" }}>
+                {formatTemplate(messages.cancelRegistrationDescription, { teamName })}
               </p>
             </div>
 
@@ -388,7 +386,8 @@ function CancelRegistrationForm({
               <button
                 type="button"
                 onClick={() => setConfirmOpen(false)}
-                className="rounded-xl border border-white/10 px-5 py-3 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
+                className="border px-5 py-3 text-sm font-black transition hover:opacity-90"
+                style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" }}
               >
                 {messages.keepRegistration}
               </button>
@@ -397,7 +396,8 @@ function CancelRegistrationForm({
                 type="button"
                 onClick={runAction}
                 disabled={pending}
-                className="rounded-xl bg-red-500 px-5 py-3 text-sm font-black text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                className="px-5 py-3 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ background: "oklch(0.50 0.20 25)" }}
               >
                 {pending ? messages.cancelling : messages.cancelRegistration}
               </button>
@@ -419,11 +419,14 @@ function ActiveRegistrationCard({
   statusLabels: TournamentDetailsMessages["statuses"];
 }) {
   return (
-    <div className="grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+    <div
+      className="grid gap-3 border p-4"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="font-black text-white">{registration.teamName}</p>
-          <p className="mt-1 text-sm text-gray-400">
+          <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>{registration.teamName}</p>
+          <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
             {messages.currentRegistrationStatus}
           </p>
         </div>
@@ -432,7 +435,10 @@ function ActiveRegistrationCard({
       </div>
 
       {registration.rejectionReason && (
-        <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-300">
+        <p
+          className="border px-4 py-3 text-sm leading-6"
+          style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }}
+        >
           {registration.rejectionReason}
         </p>
       )}
@@ -446,7 +452,7 @@ function ActiveRegistrationCard({
       )}
 
       {registration.status === "approved" && (
-        <p className="text-sm leading-6 text-emerald-300">
+        <p className="text-sm leading-6" style={{ color: "var(--asc-green)" }}>
           {messages.approvedByAdmin}
         </p>
       )}
@@ -470,20 +476,27 @@ function UnavailableTeamsList({
   }
 
   return (
-    <details className="rounded-2xl border border-white/10 bg-black/20">
-      <summary className="cursor-pointer px-4 py-3 text-sm font-black text-gray-300 transition hover:text-white">
+    <details
+      className="border"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+    >
+      <summary
+        className="cursor-pointer px-4 py-3 text-sm font-black transition hover:opacity-90"
+        style={{ color: "var(--asc-fg-2)" }}
+      >
         {messages.unavailableTeams} ({teams.length})
       </summary>
 
-      <div className="divide-y divide-white/10 border-t border-white/10">
+      <div style={{ borderTop: "1px solid var(--asc-line-soft)" }}>
         {teams.map((team) => (
           <div
             key={team.id}
             className="grid gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+            style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
           >
             <div>
-              <p className="font-black text-white">{team.name}</p>
-              <p className="mt-1 text-sm text-gray-400">
+              <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>{team.name}</p>
+              <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                 {team.game} · {team.memberCount}{" "}
                 {getPlayerLabel(team.memberCount, playerLabel, playersLabel)}
               </p>
@@ -505,12 +518,15 @@ function RequirementsList({
   messages: TournamentDetailsMessages["panel"];
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+    <div
+      className="border p-4"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+    >
+      <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
         {messages.requirements}
       </p>
 
-      <div className="mt-3 grid gap-2 text-sm leading-6 text-gray-300">
+      <div className="mt-3 grid gap-2 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
         <p>{messages.requirementSameGame}</p>
         <p>
           {formatTemplate(messages.requirementAtLeast, {
@@ -576,7 +592,10 @@ function TournamentRegistrationPanel({
             {messages.joinDiscord}
           </NoticeLink>
         ) : (
-          <span className="rounded-xl border border-white/10 px-4 py-2 text-sm font-black text-gray-400">
+          <span
+            className="border px-4 py-2 text-sm font-black"
+            style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-3)" }}
+          >
             {messages.discordInviteNotConfigured}
           </span>
         )}
@@ -649,9 +668,9 @@ function TournamentRegistrationPanel({
           </section>
         )}
 
-      <p className="text-sm text-gray-500">
+      <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
         {messages.tournamentStatus}:{" "}
-        <span className="font-black text-white">{tournamentStatusLabel}</span>
+        <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>{tournamentStatusLabel}</span>
       </p>
     </div>
   );

@@ -40,14 +40,12 @@ function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
 }
 
 function StatusBadge({ isGuildMember }: { isGuildMember: boolean }) {
+  const style: React.CSSProperties = isGuildMember
+    ? { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" }
+    : { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" };
+
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${
-        isGuildMember
-          ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-300"
-          : "border-yellow-400/25 bg-yellow-500/10 text-yellow-300"
-      }`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={style}>
       {isGuildMember ? "Member" : "Login only"}
     </span>
   );
@@ -55,15 +53,12 @@ function StatusBadge({ isGuildMember }: { isGuildMember: boolean }) {
 
 function RoleBadge({ role }: { role: string }) {
   const isAdmin = role.toLowerCase() === "admin";
+  const style: React.CSSProperties = isAdmin
+    ? { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" }
+    : { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" };
 
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${
-        isAdmin
-          ? "border-red-400/25 bg-red-500/10 text-red-300"
-          : "border-violet-400/25 bg-violet-500/10 text-violet-200"
-      }`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={style}>
       {role}
     </span>
   );
@@ -76,18 +71,16 @@ function Pill({
   children: React.ReactNode;
   tone?: "green" | "yellow" | "red" | "gray" | "violet";
 }) {
-  const styles = {
-    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    red: "border-red-400/25 bg-red-500/10 text-red-300",
-    gray: "border-white/10 bg-white/5 text-gray-300",
-    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
+  const styleMap: Record<string, React.CSSProperties> = {
+    green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+    yellow: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
+    red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+    gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
+    violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
   };
 
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={styleMap[tone]}>
       {children}
     </span>
   );
@@ -96,26 +89,28 @@ function Pill({
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
         {label}
       </p>
-
-      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
     </div>
   );
 }
 
 function InfoRow({ label, value }: { label: string; value: string | number }) {
   return (
-    <p className="text-sm text-gray-400">
-      {label}: <span className="break-all font-black text-white">{value}</span>
+    <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
+      {label}: <span className="break-all font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</span>
     </p>
   );
 }
 
 function AvatarFallback({ username }: { username: string }) {
   return (
-    <div className="grid h-[48px] w-[48px] shrink-0 place-items-center rounded-2xl border border-violet-400/25 bg-violet-500/10 text-sm font-black uppercase text-violet-200">
+    <div
+      className="grid h-[48px] w-[48px] shrink-0 place-items-center text-sm font-black uppercase"
+      style={{ border: "1px solid oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+    >
       {username.slice(0, 2)}
     </div>
   );
@@ -238,15 +233,15 @@ export default async function AdminPlayersList() {
     <section className="grid gap-6">
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
+          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
             Players
           </p>
 
-          <h2 className="mt-2 text-3xl font-black text-white">
+          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
             Registered players
           </h2>
 
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
+          <p className="mt-3 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
             Discord accounts, team activity, registrations, and official points.
           </p>
         </div>
@@ -266,8 +261,14 @@ export default async function AdminPlayersList() {
           description="Players will appear here after they login with Discord."
         />
       ) : (
-        <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-          <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[minmax(0,1fr)_110px_110px_110px_110px] xl:gap-5">
+        <section
+          className="overflow-hidden border shadow-2xl"
+          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+        >
+          <div
+            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[minmax(0,1fr)_110px_110px_110px_110px] xl:gap-5"
+            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
+          >
             <span>Player</span>
             <span>Teams</span>
             <span>Regs.</span>
@@ -275,11 +276,12 @@ export default async function AdminPlayersList() {
             <span>Points</span>
           </div>
 
-          <div className="divide-y divide-white/10">
+          <div>
             {playersWithPoints.map((player) => (
               <article
                 key={player.id}
-                className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.035]"
+                className="grid gap-4 px-5 py-4 transition"
+                style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
               >
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_110px_110px_110px_110px] xl:items-center xl:gap-5">
                   <div className="flex min-w-0 items-center gap-4">
@@ -289,7 +291,7 @@ export default async function AdminPlayersList() {
                         alt={player.username}
                         width={48}
                         height={48}
-                        className="shrink-0 rounded-2xl"
+                        className="shrink-0"
                       />
                     ) : (
                       <AvatarFallback username={player.username} />
@@ -297,7 +299,7 @@ export default async function AdminPlayersList() {
 
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="truncate text-xl font-black text-white">
+                        <h3 className="truncate text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
                           {player.username}
                         </h3>
 
@@ -305,28 +307,28 @@ export default async function AdminPlayersList() {
                         <RoleBadge role={player.role} />
                       </div>
 
-                      <p className="mt-1 text-sm text-gray-500">
+                      <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                         Joined {formatDate(player.createdAt)}
                       </p>
                     </div>
                   </div>
 
-                  <p className="text-sm text-gray-300">
-                    <span className="font-black text-white">
+                  <p className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
+                    <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>
                       {player._count.teamMemberships}
                     </span>{" "}
                     teams
                   </p>
 
-                  <p className="text-sm text-gray-300">
-                    <span className="font-black text-white">
+                  <p className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
+                    <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>
                       {player._count.tournamentRegistrations}
                     </span>{" "}
                     regs
                   </p>
 
-                  <p className="text-sm text-gray-300">
-                    <span className="font-black text-white">
+                  <p className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
+                    <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>
                       {player.tournamentResults}
                     </span>{" "}
                     results
@@ -337,14 +339,20 @@ export default async function AdminPlayersList() {
                   </Pill>
                 </div>
 
-                <details className="rounded-2xl border border-white/10 bg-black/20">
-                  <summary className="cursor-pointer px-4 py-3 text-sm font-black text-gray-300 transition hover:text-white">
+                <details
+                  className="border"
+                  style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+                >
+                  <summary
+                    className="cursor-pointer px-4 py-3 text-sm font-black transition hover:opacity-90"
+                    style={{ color: "var(--asc-fg-2)" }}
+                  >
                     Player details
                   </summary>
 
-                  <div className="grid gap-5 border-t border-white/10 p-4 lg:grid-cols-2">
+                  <div className="grid gap-5 p-4 lg:grid-cols-2" style={{ borderTop: "1px solid var(--asc-line-soft)" }}>
                     <section className="grid gap-3">
-                      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                      <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
                         Account
                       </p>
 
@@ -358,7 +366,7 @@ export default async function AdminPlayersList() {
                     </section>
 
                     <section className="grid gap-3">
-                      <p className="text-xs font-black uppercase tracking-[0.14em] text-gray-500">
+                      <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
                         Activity
                       </p>
 

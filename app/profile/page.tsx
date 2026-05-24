@@ -267,18 +267,16 @@ function Pill({
   label: string;
   tone?: "green" | "blue" | "red" | "gray" | "violet";
 }) {
-  const styles = {
-    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    blue: "border-blue-400/25 bg-blue-500/10 text-blue-300",
-    red: "border-red-400/25 bg-red-500/10 text-red-300",
-    gray: "border-white/10 bg-white/5 text-gray-300",
-    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
+  const styleMap: Record<string, React.CSSProperties> = {
+    green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+    blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
+    red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+    gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
+    violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
   };
 
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${styles[tone]}`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={styleMap[tone]}>
       {label}
     </span>
   );
@@ -316,11 +314,10 @@ function StatusBadge({
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
+      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
         {label}
       </p>
-
-      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
     </div>
   );
 }
@@ -337,14 +334,17 @@ function Avatar({
       <img
         src={avatar}
         alt={username}
-        className="h-20 w-20 shrink-0 rounded-2xl object-cover"
+        className="h-20 w-20 shrink-0 object-cover"
       />
     );
   }
 
   return (
-    <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border border-violet-400/25 bg-violet-500/10">
-      <span className="text-xl font-black uppercase text-white">
+    <div
+      className="grid h-20 w-20 shrink-0 place-items-center"
+      style={{ border: "1px solid oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" }}
+    >
+      <span className="text-xl font-black uppercase" style={{ color: "var(--asc-accent)" }}>
         {username.slice(0, 2)}
       </span>
     </div>
@@ -367,25 +367,27 @@ function CollapsibleSection({
   return (
     <details
       open={defaultOpen}
-      className="group overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20"
+      className="group overflow-hidden border shadow-2xl"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition hover:bg-white/[0.035]">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">
+          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
             {label}
           </p>
-
-          <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
-
-          {meta && <p className="mt-1 text-sm text-gray-500">{meta}</p>}
+          <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>{title}</h2>
+          {meta && <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>{meta}</p>}
         </div>
 
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-black/25 text-lg font-black text-gray-300 transition group-open:rotate-45 group-hover:border-violet-400/30 group-hover:text-white">
+        <span
+          className="grid h-10 w-10 shrink-0 place-items-center border text-lg font-black transition group-open:rotate-45"
+          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-2)" }}
+        >
           +
         </span>
       </summary>
 
-      <div className="border-t border-white/10">{children}</div>
+      <div style={{ borderTop: "1px solid var(--asc-line-soft)" }}>{children}</div>
     </details>
   );
 }
@@ -517,11 +519,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       : null;
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#070811] text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.16)_0%,transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.12)_0%,transparent_30%),linear-gradient(to_bottom,#070811,#090b15_42%,#070811)]" />
-
-      <div className="relative z-10">
-        <Navbar />
+    <main className="asc-ambient min-h-screen overflow-hidden text-white" style={{ background: "var(--asc-bg-0)" }}>
+      <Navbar />
 
         <section className="relative min-h-[400px] overflow-hidden">
           <div
@@ -531,24 +530,24 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             }}
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,17,0.92)_0%,rgba(7,8,17,0.66)_48%,rgba(7,8,17,0.82)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-[#070811]/75 to-[#070811]" />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.66) 44%,oklch(0.06 0.03 287 / 0.82) 100%)" }} />
+          <div className="absolute inset-x-0 bottom-0 h-40" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
 
           <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-14 lg:px-10">
             <ProfileNotice message={params.message} error={params.error} />
             <ProfileRealtime />
 
-            <section className="mt-4 rounded-3xl border border-white/10 bg-white/[0.045] p-6 shadow-2xl shadow-black/30 backdrop-blur">
+            <section className="mt-4 border p-6 shadow-2xl backdrop-blur" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.09 0.035 287 / 0.75)" }}>
               <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
                 <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center">
                   <Avatar username={user.username} avatar={user.avatar} />
 
                   <div className="min-w-0">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-300">
+                    <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
                       {messages.hero.label}
                     </p>
 
-                    <h1 className="mt-2 truncate text-4xl font-black uppercase tracking-tight text-white md:text-5xl">
+                    <h1 className="mt-2 truncate text-4xl font-black uppercase tracking-tight md:text-5xl" style={{ color: "var(--asc-fg-0)" }}>
                       {user.username}
                     </h1>
 
@@ -582,7 +581,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 </div>
 
                 <div className="grid gap-2 lg:justify-items-end">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-500">
+                  <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-fg-3)" }}>
                     {messages.hero.discordId}
                   </p>
 
@@ -606,22 +605,23 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               defaultOpen={invitations.length > 0}
             >
               {invitations.length === 0 ? (
-                <div className="p-5 text-sm text-gray-400">
+                <div className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                   {messages.sections.noPendingInvitations}
                 </div>
               ) : (
-                <div className="divide-y divide-white/10">
+                <div>
                   {invitations.map((invite) => (
                     <div
                       key={invite.id}
                       className="grid gap-4 px-5 py-4 md:grid-cols-[1fr_auto] md:items-center"
+                      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                     >
                       <div>
-                        <p className="font-black text-white">
+                        <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
                           {invite.team.name}
                         </p>
 
-                        <p className="mt-1 text-sm text-gray-400">
+                        <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                           {invite.team.game?.name ?? "—"} · {invite.team.members.length}{" "}
                           {getCountLabel(
                             invite.team.members.length,
@@ -647,7 +647,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
                           <button
                             type="submit"
-                            className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-white transition hover:bg-emerald-400"
+                            className="px-4 py-2 text-sm font-black transition hover:opacity-90"
+                            style={{ background: "oklch(0.55 0.14 150)", color: "#fff" }}
                           >
                             {messages.labels.accept}
                           </button>
@@ -667,7 +668,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
                           <button
                             type="submit"
-                            className="rounded-xl border border-red-500/20 px-4 py-2 text-sm font-black text-red-300 transition hover:bg-red-500/10"
+                            className="border px-4 py-2 text-sm font-black transition hover:opacity-90"
+                            style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
                           >
                             {messages.labels.decline}
                           </button>
@@ -691,15 +693,15 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             >
               {teams.length === 0 ? (
                 <div className="p-5">
-                  <p className="font-black text-white">
+                  <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
                     {messages.sections.noTeamsTitle}
                   </p>
-                  <p className="mt-2 text-sm text-gray-400">
+                  <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                     {messages.sections.noTeamsDescription}
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-white/10">
+                <div>
                   {teams.map((team) => {
                     const membership = team.members.find(
                       (member) => member.userId === user.id,
@@ -710,14 +712,15 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     return (
                       <article
                         key={team.id}
-                        className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.035] md:grid-cols-[minmax(0,1fr)_130px_110px_90px] md:items-center"
+                        className="grid gap-4 px-5 py-4 transition md:grid-cols-[minmax(0,1fr)_130px_110px_90px] md:items-center"
+                        style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                       >
                         <div className="min-w-0">
-                          <p className="truncate font-black text-white">
+                          <p className="truncate font-black" style={{ color: "var(--asc-fg-0)" }}>
                             {team.name}
                           </p>
 
-                          <p className="mt-1 text-sm text-gray-400">
+                          <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                             {team.game?.name ?? "—"} · {team.members.length}{" "}
                             {getCountLabel(
                               team.members.length,
@@ -727,7 +730,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                           </p>
 
                           {team.rejectionReason && (
-                            <p className="mt-1 text-sm text-red-300">
+                            <p className="mt-1 text-sm" style={{ color: "var(--asc-live)" }}>
                               {team.rejectionReason}
                             </p>
                           )}
@@ -735,7 +738,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
                         <StatusBadge status={team.status} messages={messages} />
 
-                        <p className="text-sm font-bold text-gray-400">
+                        <p className="text-sm font-bold" style={{ color: "var(--asc-fg-3)" }}>
                           {isLeader
                             ? messages.labels.leader
                             : membership?.role || messages.statuses.member}
@@ -743,7 +746,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
                         <Link
                           href={`/profile/teams/${team.id}`}
-                          className="rounded-xl bg-violet-600 px-4 py-2 text-center text-sm font-black text-white transition hover:bg-violet-500"
+                          className="px-4 py-2 text-center text-sm font-black transition hover:opacity-90"
+                          style={{ background: "var(--asc-accent-2)", color: "#fff" }}
                         >
                           {messages.labels.open}
                         </Link>
@@ -767,7 +771,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 <form action={createTeam} className="grid gap-5 p-5">
                   <div className="relative z-50 grid gap-5 md:grid-cols-2">
                     <label className="grid gap-2">
-                      <span className="text-sm font-bold text-gray-200">
+                      <span className="text-sm font-bold" style={{ color: "var(--asc-fg-1)" }}>
                         {messages.labels.teamName}
                       </span>
 
@@ -775,12 +779,13 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                         name="name"
                         required
                         placeholder={messages.labels.teamNamePlaceholder}
-                        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400"
+                        className="border px-4 py-3 text-white outline-none transition"
+                        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
                       />
                     </label>
 
                     <label className="grid gap-2">
-                      <span className="text-sm font-bold text-gray-200">
+                      <span className="text-sm font-bold" style={{ color: "var(--asc-fg-1)" }}>
                         {messages.labels.game}
                       </span>
 
@@ -799,19 +804,20 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
                   <button
                     type="submit"
-                    className="w-fit rounded-xl bg-violet-600 px-5 py-3 font-black text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-500"
+                    className="w-fit px-5 py-3 font-black text-white transition hover:opacity-90"
+                    style={{ background: "var(--asc-accent-2)", boxShadow: "0 0 20px var(--asc-accent-glow)" }}
                   >
                     {messages.labels.createTeam}
                   </button>
                 </form>
               ) : (
                 <div className="p-5">
-                  <div className="rounded-2xl border border-violet-400/25 bg-violet-500/10 p-4">
-                    <p className="font-black text-violet-200">
+                  <div className="border p-4" style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" }}>
+                    <p className="font-black" style={{ color: "var(--asc-accent)" }}>
                       {messages.labels.ascendraDiscordRequired}
                     </p>
 
-                    <p className="mt-2 text-sm leading-6 text-gray-300">
+                    <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
                       {messages.labels.discordRequiredDescription}
                     </p>
                   </div>
@@ -831,7 +837,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               )} · ${tournamentPoints} ${messages.hero.points}`}
               defaultOpen
             >
-              <div className="grid grid-cols-3 gap-5 border-b border-white/10 p-5">
+              <div className="grid grid-cols-3 gap-5 p-5" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
                 <Stat label={messages.hero.points} value={tournamentPoints} />
                 <Stat
                   label={messages.labels.results}
@@ -844,11 +850,11 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               </div>
 
               {tournamentResults.length === 0 ? (
-                <div className="p-5 text-sm text-gray-400">
+                <div className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                   {messages.sections.noTournamentResults}
                 </div>
               ) : (
-                <div className="divide-y divide-white/10">
+                <div>
                   {tournamentResults.slice(0, 6).map((result) => {
                     const teamName =
                       result.snapshotTeamName || result.team.name;
@@ -859,13 +865,14 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                       <Link
                         key={result.id}
                         href={`/tournaments/${result.tournament.id}`}
-                        className="block px-5 py-4 transition hover:bg-white/[0.035]"
+                        className="block px-5 py-4 transition"
+                        style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                       >
-                        <p className="truncate font-black text-white">
+                        <p className="truncate font-black" style={{ color: "var(--asc-fg-0)" }}>
                           {result.tournament.title}
                         </p>
 
-                        <p className="mt-1 text-xs text-gray-400">
+                        <p className="mt-1 text-xs" style={{ color: "var(--asc-fg-3)" }}>
                           {teamName} · {teamGame}
                         </p>
 
@@ -886,7 +893,6 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         </section>
 
         <Footer />
-      </div>
     </main>
   );
 }

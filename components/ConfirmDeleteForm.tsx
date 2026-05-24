@@ -24,9 +24,7 @@ export default function ConfirmDeleteForm({
     startTransition(async () => {
       const formData = new FormData();
       formData.append("id", id);
-
       await action(formData);
-
       onDeleted?.();
       setIsOpen(false);
       router.refresh();
@@ -38,26 +36,31 @@ export default function ConfirmDeleteForm({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="w-full rounded-xl border border-red-500/20 px-4 py-2 font-bold text-red-300 transition hover:bg-red-500/10 sm:w-auto"
+        className="w-full border px-4 py-2 font-bold transition hover:opacity-90 sm:w-auto"
+        style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
       >
         Delete
       </button>
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6">
-          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#111827] p-6 shadow-2xl">
-            <h2 className="mb-3 text-2xl font-black text-white">
+          <div
+            className="w-full max-w-md border p-6 shadow-2xl"
+            style={{ borderColor: "var(--asc-line)", background: "var(--asc-bg-1)" }}
+          >
+            <h2 className="mb-3 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
               Confirm Delete
             </h2>
 
-            <p className="mb-6 leading-7 text-gray-300">{message}</p>
+            <p className="mb-6 leading-7" style={{ color: "var(--asc-fg-2)" }}>{message}</p>
 
             <div className="flex flex-wrap justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
                 disabled={isPending}
-                className="rounded-xl border border-white/10 px-5 py-3 font-bold text-gray-300 transition hover:bg-white/10 disabled:opacity-50"
+                className="border px-5 py-3 font-bold transition hover:opacity-90 disabled:opacity-50"
+                style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" }}
               >
                 Cancel
               </button>
@@ -66,7 +69,8 @@ export default function ConfirmDeleteForm({
                 type="button"
                 onClick={handleDelete}
                 disabled={isPending}
-                className="rounded-xl bg-red-500 px-5 py-3 font-bold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                className="px-5 py-3 font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ background: "oklch(0.50 0.20 25)" }}
               >
                 {isPending ? "Deleting..." : "Yes, Delete"}
               </button>

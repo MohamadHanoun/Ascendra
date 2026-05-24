@@ -5,18 +5,14 @@ import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
 type Tone = "green" | "yellow" | "red" | "blue" | "gray" | "violet";
 
-function toneClass(tone: Tone) {
-  const styles: Record<Tone, string> = {
-    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-300",
-    yellow: "border-yellow-400/25 bg-yellow-500/10 text-yellow-300",
-    red: "border-red-400/25 bg-red-500/10 text-red-300",
-    blue: "border-blue-400/25 bg-blue-500/10 text-blue-300",
-    gray: "border-white/10 bg-white/5 text-gray-300",
-    violet: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-  };
-
-  return styles[tone];
-}
+const toneStyleMap: Record<Tone, React.CSSProperties> = {
+  green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+  yellow: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
+  red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+  blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
+  gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
+  violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+};
 
 function StatusBadge({ status }: { status: string }) {
   const normalizedStatus = status.toLowerCase();
@@ -32,12 +28,10 @@ function StatusBadge({ status }: { status: string }) {
     rejected: "red",
   };
 
+  const tone = tones[normalizedStatus] ?? "gray";
+
   return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black capitalize ${toneClass(
-        tones[normalizedStatus] || "gray",
-      )}`}
-    >
+    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black capitalize" style={toneStyleMap[tone]}>
       {status}
     </span>
   );
@@ -46,51 +40,31 @@ function StatusBadge({ status }: { status: string }) {
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-500">
-        {label}
-      </p>
-
-      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>{label}</p>
+      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
     </div>
   );
 }
 
-function ProgressBar({
-  approvedSlots,
-  maxSlots,
-}: {
-  approvedSlots: number;
-  maxSlots: number;
-}) {
-  const progress =
-    maxSlots > 0 ? Math.min((approvedSlots / maxSlots) * 100, 100) : 0;
+function ProgressBar({ approvedSlots, maxSlots }: { approvedSlots: number; maxSlots: number }) {
+  const progress = maxSlots > 0 ? Math.min((approvedSlots / maxSlots) * 100, 100) : 0;
 
   return (
     <div className="grid gap-2">
-      <div className="flex items-center justify-between gap-4 text-xs font-bold text-gray-500">
-        <span>
-          {approvedSlots}/{maxSlots} approved
-        </span>
-
+      <div className="flex items-center justify-between gap-4 text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
+        <span>{approvedSlots}/{maxSlots} approved</span>
         <span>{Math.round(progress)}%</span>
       </div>
 
-      <div className="h-2 overflow-hidden rounded-full bg-white/10">
-        <div
-          className="h-full rounded-full bg-violet-500 shadow-lg shadow-violet-500/25"
-          style={{ width: `${progress}%` }}
-        />
+      <div className="h-2 overflow-hidden" style={{ background: "var(--asc-line-soft)" }}>
+        <div className="h-full" style={{ width: `${progress}%`, background: "var(--asc-accent-2)" }} />
       </div>
     </div>
   );
 }
 
 function formatDate(date: Date) {
-  return date.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
 function getSortPriority(status: string) {
@@ -122,56 +96,40 @@ export default async function AdminTournamentList() {
         where: { status: { in: ["registered", "approved", "rejected"] } },
         select: { id: true, status: true },
       },
-      results: {
-        select: { id: true, points: true },
-      },
+      results: { select: { id: true, points: true } },
     },
   });
 
   const sortedTournaments = [...tournaments].sort((a, b) => {
     const statusA = getSortPriority(a.status);
     const statusB = getSortPriority(b.status);
-
     if (statusA !== statusB) return statusA - statusB;
-
     return b.createdAt.getTime() - a.createdAt.getTime();
   });
 
-  const openTournaments = tournaments.filter(
-    (t) => t.status === "open",
-  ).length;
+  const openTournaments = tournaments.filter((t) => t.status === "open").length;
 
   const pendingApplications = tournaments.reduce(
-    (total, t) =>
-      total +
-      t.registrations.filter((r) => r.status === "registered").length,
+    (total, t) => total + t.registrations.filter((r) => r.status === "registered").length,
     0,
   );
 
   const totalApproved = tournaments.reduce(
-    (total, t) =>
-      total + t.registrations.filter((r) => r.status === "approved").length,
+    (total, t) => total + t.registrations.filter((r) => r.status === "approved").length,
     0,
   );
 
-  const totalResults = tournaments.reduce(
-    (total, t) => total + t.results.length,
-    0,
-  );
+  const totalResults = tournaments.reduce((total, t) => total + t.results.length, 0);
 
   return (
     <section className="grid gap-6">
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-violet-300">
+          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
             Manage tournaments
           </p>
-
-          <h2 className="mt-2 text-3xl font-black text-white">
-            Tournament list
-          </h2>
-
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-400">
+          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>Tournament list</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
             Open a tournament to manage details, registrations, and results.
           </p>
         </div>
@@ -185,12 +143,15 @@ export default async function AdminTournamentList() {
       </div>
 
       {sortedTournaments.length === 0 ? (
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-gray-300 shadow-2xl shadow-black/20">
+        <div className="border p-6 shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-3)" }}>
           No tournaments found.
         </div>
       ) : (
-        <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
-          <div className="hidden border-b border-white/10 bg-black/20 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-gray-500 xl:grid xl:grid-cols-[90px_minmax(0,1fr)_170px_220px_150px_120px] xl:gap-5">
+        <section className="overflow-hidden border shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
+          <div
+            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[90px_minmax(0,1fr)_170px_220px_150px_120px] xl:gap-5"
+            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "oklch(0.08 0.02 287)", color: "var(--asc-fg-3)" }}
+          >
             <span>Image</span>
             <span>Tournament</span>
             <span>Status</span>
@@ -199,58 +160,35 @@ export default async function AdminTournamentList() {
             <span>Action</span>
           </div>
 
-          <div className="divide-y divide-white/10">
-            {sortedTournaments.map((tournament) => {
-              const approvedSlots = tournament.registrations.filter(
-                (r) => r.status === "approved",
-              ).length;
-
-              const pendingCount = tournament.registrations.filter(
-                (r) => r.status === "registered",
-              ).length;
-
-              const rejectedCount = tournament.registrations.filter(
-                (r) => r.status === "rejected",
-              ).length;
-
+          <div>
+            {sortedTournaments.map((tournament, idx) => {
+              const approvedSlots = tournament.registrations.filter((r) => r.status === "approved").length;
+              const pendingCount = tournament.registrations.filter((r) => r.status === "registered").length;
+              const rejectedCount = tournament.registrations.filter((r) => r.status === "rejected").length;
               const applications = tournament.registrations.length;
-              const remainingSlots = Math.max(
-                tournament.maxTeams - approvedSlots,
-                0,
-              );
-
-              const tournamentImage = getTournamentImageUrl(
-                tournament.game?.slug ?? null,
-                tournament.imageUrl,
-              );
-
-              const tournamentPoints = tournament.results.reduce(
-                (total, r) => total + r.points,
-                0,
-              );
+              const remainingSlots = Math.max(tournament.maxTeams - approvedSlots, 0);
+              const tournamentImage = getTournamentImageUrl(tournament.game?.slug ?? null, tournament.imageUrl);
+              const tournamentPoints = tournament.results.reduce((total, r) => total + r.points, 0);
 
               return (
                 <article
                   key={tournament.id}
                   className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.035] xl:grid-cols-[90px_minmax(0,1fr)_170px_220px_150px_120px] xl:items-center xl:gap-5"
+                  style={idx < sortedTournaments.length - 1 ? { borderBottom: "1px solid var(--asc-line-soft)" } : {}}
                 >
                   <div
-                    className="h-16 rounded-2xl border border-white/10 bg-cover bg-center xl:w-[90px]"
+                    className="h-16 border bg-cover bg-center xl:w-[90px]"
                     style={{
+                      borderColor: "var(--asc-line-soft)",
                       backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.06), rgba(7,8,17,0.62)), url("${tournamentImage}")`,
                     }}
                   />
 
                   <div className="min-w-0">
-                    <h3 className="truncate text-xl font-black text-white">
-                      {tournament.title}
-                    </h3>
-
-                    <p className="mt-1 text-sm text-gray-400">
-                      {tournament.game?.name ?? "—"} ·{" "}
-                      {tournament.teamSize}v{tournament.teamSize}
-                      {tournament.startsAt &&
-                        ` · ${formatDate(tournament.startsAt)}`}
+                    <h3 className="truncate text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>{tournament.title}</h3>
+                    <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+                      {tournament.game?.name ?? "—"} · {tournament.teamSize}v{tournament.teamSize}
+                      {tournament.startsAt && ` · ${formatDate(tournament.startsAt)}`}
                     </p>
                   </div>
 
@@ -260,39 +198,30 @@ export default async function AdminTournamentList() {
                   </div>
 
                   <div className="grid gap-2">
-                    <ProgressBar
-                      approvedSlots={approvedSlots}
-                      maxSlots={tournament.maxTeams}
-                    />
-
-                    <p className="text-xs font-bold text-gray-500">
-                      {remainingSlots} slot{remainingSlots === 1 ? "" : "s"}{" "}
-                      left
+                    <ProgressBar approvedSlots={approvedSlots} maxSlots={tournament.maxTeams} />
+                    <p className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
+                      {remainingSlots} slot{remainingSlots === 1 ? "" : "s"} left
                     </p>
                   </div>
 
                   <div className="grid gap-1 text-sm">
-                    <p className="font-bold text-white">
-                      {applications} application
-                      {applications === 1 ? "" : "s"}
+                    <p className="font-bold" style={{ color: "var(--asc-fg-0)" }}>
+                      {applications} application{applications === 1 ? "" : "s"}
                     </p>
-
-                    <p className="text-gray-500">
+                    <p style={{ color: "var(--asc-fg-3)" }}>
                       {pendingCount} pending · {rejectedCount} rejected
                     </p>
-
                     {tournament.results.length > 0 && (
-                      <p className="font-bold text-emerald-300">
-                        {tournament.results.length} result
-                        {tournament.results.length === 1 ? "" : "s"} ·{" "}
-                        {tournamentPoints} pts
+                      <p className="font-bold" style={{ color: "var(--asc-green)" }}>
+                        {tournament.results.length} result{tournament.results.length === 1 ? "" : "s"} · {tournamentPoints} pts
                       </p>
                     )}
                   </div>
 
                   <Link
                     href={`/admin/tournaments/${tournament.id}`}
-                    className="rounded-xl bg-violet-600 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-violet-500"
+                    className="px-5 py-3 text-center text-sm font-black text-white transition hover:opacity-90"
+                    style={{ background: "var(--asc-accent-2)" }}
                   >
                     Manage
                   </Link>
@@ -304,9 +233,8 @@ export default async function AdminTournamentList() {
       )}
 
       {totalResults > 0 && (
-        <p className="text-sm text-gray-500">
-          Saved tournament results:{" "}
-          <span className="font-black text-white">{totalResults}</span>
+        <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
+          Saved tournament results: <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>{totalResults}</span>
         </p>
       )}
     </section>
