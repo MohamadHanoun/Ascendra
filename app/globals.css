@@ -239,3 +239,19 @@ article.overflow-hidden[class*="border"]::before {
   background: var(--asc-accent);
   box-shadow: 0 0 10px var(--asc-accent-glow);
 }
+
+/* ── Ticker bar ── */
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.asc-ticker-track {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.asc-ticker-inner {
+  display: inline-flex;
+  gap: 0;
+  animation: ticker 40s linear infinite;
+}
+.asc-ticker-inner:hover { animation-play-state: paused; }

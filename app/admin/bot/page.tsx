@@ -105,12 +105,13 @@ export default async function AdminBotPage({
           <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
             <Link
               href="/admin"
-              className="mb-6 inline-flex rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-sm font-black text-gray-300 transition hover:bg-white/10 hover:text-white"
+              className="mb-6 inline-flex border px-4 py-2 text-sm font-black transition hover:opacity-80"
+              style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-2)" }}
             >
               ← Back to Admin Panel
             </Link>
 
-            <p className="mb-4 text-sm font-black uppercase tracking-[0.22em] text-violet-300">
+            <p className="mb-4 text-sm font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
               Bot operations
             </p>
 
@@ -118,7 +119,7 @@ export default async function AdminBotPage({
               Bot Dashboard
             </h1>
 
-            <p className="mt-5 max-w-3xl text-base leading-7 text-gray-300">
+            <p className="mt-5 max-w-3xl text-base leading-7" style={{ color: "var(--asc-fg-2)" }}>
               Manage Discord bot settings, runtime controls, and queue activity.
             </p>
           </div>

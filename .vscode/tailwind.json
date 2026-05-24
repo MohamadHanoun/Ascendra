@@ -1,0 +1,29 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@theme",
+      "description": "Tailwind CSS v4: defines design tokens and theme variables inline in CSS."
+    },
+    {
+      "name": "@utility",
+      "description": "Tailwind CSS v4: registers a custom utility class."
+    },
+    {
+      "name": "@variant",
+      "description": "Tailwind CSS v4: defines a custom variant."
+    },
+    {
+      "name": "@source",
+      "description": "Tailwind CSS v4: explicitly adds a source path for content scanning."
+    },
+    {
+      "name": "@plugin",
+      "description": "Tailwind CSS v4: loads a Tailwind plugin."
+    },
+    {
+      "name": "@config",
+      "description": "Tailwind CSS v4: loads a Tailwind config file."
+    }
+  ]
+}
