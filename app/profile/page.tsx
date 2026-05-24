@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties, ReactNode } from "react";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
@@ -28,336 +29,775 @@ type SnapshotMember = {
 };
 
 type ProfileMessages = {
-  metadata: { title: string; description: string };
+  metadata: {
+    title: string;
+    description: string;
+  };
   hero: {
-    label: string; discordId: string; member: string; notMember: string;
-    teams: string; team: string; points: string; invites: string; invite: string;
+    label: string;
+    discordId: string;
+    member: string;
+    notMember: string;
+    teams: string;
+    team: string;
+    points: string;
+    invites: string;
+    invite: string;
   };
   sections: {
-    invitations: string; teamInvitations: string; pendingInvitation: string;
-    pendingInvitations: string; noPendingInvitations: string; myTeams: string;
-    teamOverview: string; noTeamsTitle: string; noTeamsDescription: string;
-    createTeam: string; startNewTeam: string; createTeamMeta: string;
-    discordRequiredMeta: string; progress: string; tournamentHistory: string;
+    invitations: string;
+    teamInvitations: string;
+    pendingInvitation: string;
+    pendingInvitations: string;
+    noPendingInvitations: string;
+    myTeams: string;
+    teamOverview: string;
+    noTeamsTitle: string;
+    noTeamsDescription: string;
+    createTeam: string;
+    startNewTeam: string;
+    createTeamMeta: string;
+    discordRequiredMeta: string;
+    progress: string;
+    tournamentHistory: string;
     noTournamentResults: string;
   };
   labels: {
-    by: string; members: string; member: string; leader: string; open: string;
-    accept: string; decline: string; teamName: string; teamNamePlaceholder: string;
-    game: string; selectGame: string; teamGame: string; createTeam: string;
-    ascendraDiscordRequired: string; discordRequiredDescription: string;
-    results: string; result: string; best: string; pts: string;
+    by: string;
+    members: string;
+    member: string;
+    leader: string;
+    open: string;
+    accept: string;
+    decline: string;
+    teamName: string;
+    teamNamePlaceholder: string;
+    game: string;
+    selectGame: string;
+    teamGame: string;
+    createTeam: string;
+    ascendraDiscordRequired: string;
+    discordRequiredDescription: string;
+    results: string;
+    result: string;
+    best: string;
+    pts: string;
   };
-  statuses: { active: string; pending: string; rejected: string; member: string; notMember: string };
+  statuses: {
+    active: string;
+    pending: string;
+    rejected: string;
+    member: string;
+    notMember: string;
+  };
 };
 
 const profileMessages: Record<Locale, ProfileMessages> = {
   en: {
-    metadata: { title: "Profile | Ascendra", description: "Manage your Ascendra profile, invitations, and teams." },
-    hero: { label: "Player profile", discordId: "Discord ID", member: "Member", notMember: "Not member", teams: "teams", team: "team", points: "points", invites: "invites", invite: "invite" },
+    metadata: {
+      title: "Profile | Ascendra",
+      description: "Manage your Ascendra profile, invitations, and teams.",
+    },
+    hero: {
+      label: "Player profile",
+      discordId: "Discord ID",
+      member: "Member",
+      notMember: "Not member",
+      teams: "teams",
+      team: "team",
+      points: "points",
+      invites: "invites",
+      invite: "invite",
+    },
     sections: {
-      invitations: "Invitations", teamInvitations: "Team invitations",
-      pendingInvitation: "pending invitation", pendingInvitations: "pending invitations",
-      noPendingInvitations: "No pending invitations.", myTeams: "My teams",
-      teamOverview: "Team overview", noTeamsTitle: "No teams yet",
+      invitations: "Invitations",
+      teamInvitations: "Team invitations",
+      pendingInvitation: "pending invitation",
+      pendingInvitations: "pending invitations",
+      noPendingInvitations: "No pending invitations.",
+      myTeams: "My teams",
+      teamOverview: "Team overview",
+      noTeamsTitle: "No teams yet",
       noTeamsDescription: "Create your first team from the section below.",
-      createTeam: "Create team", startNewTeam: "Start a new team",
+      createTeam: "Create team",
+      startNewTeam: "Start a new team",
       createTeamMeta: "Create a team for a specific game.",
       discordRequiredMeta: "Discord membership required.",
-      progress: "Progress", tournamentHistory: "Tournament history",
+      progress: "Progress",
+      tournamentHistory: "Tournament history",
       noTournamentResults: "No tournament results yet.",
     },
     labels: {
-      by: "by", members: "members", member: "member", leader: "Leader", open: "Open",
-      accept: "Accept", decline: "Decline", teamName: "Team name",
-      teamNamePlaceholder: "Example: Ascendra Wolves", game: "Game",
-      selectGame: "Select game", teamGame: "Team game", createTeam: "Create team",
+      by: "by",
+      members: "members",
+      member: "member",
+      leader: "Leader",
+      open: "Open",
+      accept: "Accept",
+      decline: "Decline",
+      teamName: "Team name",
+      teamNamePlaceholder: "Example: Ascendra Wolves",
+      game: "Game",
+      selectGame: "Select game",
+      teamGame: "Team game",
+      createTeam: "Create team",
       ascendraDiscordRequired: "Ascendra Discord required",
-      discordRequiredDescription: "Join the Discord server and refresh your login to create or join teams.",
-      results: "Results", result: "result", best: "Best", pts: "pts",
+      discordRequiredDescription:
+        "Join the Discord server and refresh your login to create or join teams.",
+      results: "Results",
+      result: "result",
+      best: "Best",
+      pts: "pts",
     },
-    statuses: { active: "Active", pending: "Pending", rejected: "Rejected", member: "Member", notMember: "Not member" },
+    statuses: {
+      active: "Active",
+      pending: "Pending",
+      rejected: "Rejected",
+      member: "Member",
+      notMember: "Not member",
+    },
   },
+
   ar: {
-    metadata: { title: "الملف الشخصي | Ascendra", description: "إدارة ملفك في Ascendra والدعوات والفرق." },
-    hero: { label: "الملف الشخصي للاعب", discordId: "معرّف Discord", member: "عضو", notMember: "غير عضو", teams: "فرق", team: "فريق", points: "نقطة", invites: "دعوات", invite: "دعوة" },
+    metadata: {
+      title: "الملف الشخصي | Ascendra",
+      description: "إدارة ملفك في Ascendra والدعوات والفرق.",
+    },
+    hero: {
+      label: "الملف الشخصي للاعب",
+      discordId: "معرّف Discord",
+      member: "عضو",
+      notMember: "غير عضو",
+      teams: "فرق",
+      team: "فريق",
+      points: "نقطة",
+      invites: "دعوات",
+      invite: "دعوة",
+    },
     sections: {
-      invitations: "الدعوات", teamInvitations: "دعوات الفرق",
-      pendingInvitation: "دعوة معلقة", pendingInvitations: "دعوات معلقة",
-      noPendingInvitations: "لا توجد دعوات معلقة.", myTeams: "فرقي",
-      teamOverview: "نظرة عامة على الفرق", noTeamsTitle: "لا توجد فرق بعد",
+      invitations: "الدعوات",
+      teamInvitations: "دعوات الفرق",
+      pendingInvitation: "دعوة معلقة",
+      pendingInvitations: "دعوات معلقة",
+      noPendingInvitations: "لا توجد دعوات معلقة.",
+      myTeams: "فرقي",
+      teamOverview: "نظرة عامة على الفرق",
+      noTeamsTitle: "لا توجد فرق بعد",
       noTeamsDescription: "أنشئ فريقك الأول من القسم الموجود بالأسفل.",
-      createTeam: "إنشاء فريق", startNewTeam: "بدء فريق جديد",
+      createTeam: "إنشاء فريق",
+      startNewTeam: "بدء فريق جديد",
       createTeamMeta: "أنشئ فريقًا للعبة محددة.",
       discordRequiredMeta: "عضوية Discord مطلوبة.",
-      progress: "التقدم", tournamentHistory: "سجل البطولات",
+      progress: "التقدم",
+      tournamentHistory: "سجل البطولات",
       noTournamentResults: "لا توجد نتائج بطولات حاليًا.",
     },
     labels: {
-      by: "بواسطة", members: "أعضاء", member: "عضو", leader: "القائد", open: "فتح",
-      accept: "قبول", decline: "رفض", teamName: "اسم الفريق",
-      teamNamePlaceholder: "مثال: Ascendra Wolves", game: "اللعبة",
-      selectGame: "اختر اللعبة", teamGame: "لعبة الفريق", createTeam: "إنشاء فريق",
+      by: "بواسطة",
+      members: "أعضاء",
+      member: "عضو",
+      leader: "القائد",
+      open: "فتح",
+      accept: "قبول",
+      decline: "رفض",
+      teamName: "اسم الفريق",
+      teamNamePlaceholder: "مثال: Ascendra Wolves",
+      game: "اللعبة",
+      selectGame: "اختر اللعبة",
+      teamGame: "لعبة الفريق",
+      createTeam: "إنشاء فريق",
       ascendraDiscordRequired: "Discord الخاص بـ Ascendra مطلوب",
-      discordRequiredDescription: "انضم إلى خادم Discord ثم حدّث تسجيل الدخول لإنشاء الفرق أو الانضمام إليها.",
-      results: "النتائج", result: "نتيجة", best: "أفضل مركز", pts: "نقطة",
+      discordRequiredDescription:
+        "انضم إلى خادم Discord ثم حدّث تسجيل الدخول لإنشاء الفرق أو الانضمام إليها.",
+      results: "النتائج",
+      result: "نتيجة",
+      best: "أفضل مركز",
+      pts: "نقطة",
     },
-    statuses: { active: "نشط", pending: "قيد المراجعة", rejected: "مرفوض", member: "عضو", notMember: "غير عضو" },
+    statuses: {
+      active: "نشط",
+      pending: "قيد المراجعة",
+      rejected: "مرفوض",
+      member: "عضو",
+      notMember: "غير عضو",
+    },
   },
 };
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const messages = profileMessages[locale].metadata;
-  return { title: messages.title, description: messages.description };
+
+  return {
+    title: messages.title,
+    description: messages.description,
+  };
 }
 
 function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
-  if (!Array.isArray(snapshotMembers)) return [];
+  if (!Array.isArray(snapshotMembers)) {
+    return [];
+  }
+
   return snapshotMembers
-    .filter((m): m is Record<string, unknown> => Boolean(m) && typeof m === "object")
-    .map((m) => ({
-      userId: typeof m.userId === "string" ? m.userId : undefined,
-      username: typeof m.username === "string" ? m.username : undefined,
-      discordId: typeof m.discordId === "string" ? m.discordId : undefined,
+    .filter((member): member is Record<string, unknown> => {
+      return Boolean(member) && typeof member === "object";
+    })
+    .map((member) => ({
+      userId: typeof member.userId === "string" ? member.userId : undefined,
+      username:
+        typeof member.username === "string" ? member.username : undefined,
+      discordId:
+        typeof member.discordId === "string" ? member.discordId : undefined,
     }))
-    .filter((m) => Boolean(m.userId));
+    .filter((member) => Boolean(member.userId));
 }
 
-function Avatar({ username, avatar, hue }: { username: string; avatar: string | null; hue: number }) {
-  const clip = "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)";
+function getAvatarHue(username: string) {
+  let hue = 0;
+
+  for (const character of username) {
+    hue = (hue << 5) - hue + character.charCodeAt(0);
+  }
+
+  return Math.abs(hue) % 360;
+}
+
+function CornerMark() {
+  return (
+    <div
+      aria-hidden="true"
+      className="asc-corner-mark"
+      style={{
+        position: "absolute",
+        top: 10,
+        left: 10,
+        width: 12,
+        height: 12,
+        borderTop: "1.5px solid var(--asc-accent)",
+        borderLeft: "1.5px solid var(--asc-accent)",
+        opacity: 0.9,
+        pointerEvents: "none",
+        zIndex: 30,
+      }}
+    />
+  );
+}
+
+function Avatar({
+  username,
+  avatar,
+}: {
+  username: string;
+  avatar: string | null;
+}) {
+  const hue = getAvatarHue(username);
+  const clipPath =
+    "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)";
+
   if (avatar) {
     return (
       <img
         src={avatar}
         alt={username}
-        style={{ width: 72, height: 72, flexShrink: 0, objectFit: "cover", clipPath: clip }}
+        className="h-24 w-24 shrink-0 object-cover md:h-32 md:w-32"
+        style={{
+          clipPath,
+          border: "1px solid var(--asc-line-soft)",
+        }}
       />
     );
   }
+
   return (
-    <div style={{
-      width: 72, height: 72, flexShrink: 0,
-      background: `linear-gradient(135deg, oklch(0.32 0.20 ${hue}) 0%, oklch(0.20 0.15 ${(hue + 40) % 360}) 100%)`,
-      clipPath: clip,
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 26, color: "#fff", textTransform: "uppercase" }}>
+    <div
+      className="grid h-24 w-24 shrink-0 place-items-center md:h-32 md:w-32"
+      style={{
+        clipPath,
+        background: `linear-gradient(135deg, oklch(0.55 0.22 ${hue}), oklch(0.30 0.16 ${
+          hue + 40
+        }))`,
+        boxShadow: `inset 0 0 0 1px oklch(0.65 0.22 ${hue} / 0.4)`,
+      }}
+    >
+      <span
+        className="text-3xl font-black uppercase md:text-5xl"
+        style={{
+          color: "white",
+          fontFamily: "var(--font-display)",
+        }}
+      >
         {username.slice(0, 2)}
       </span>
     </div>
   );
 }
 
-function StatCell({ label, value, accent, isLast }: { label: string; value: string | number; accent?: boolean; isLast?: boolean }) {
+function GuildBadge({
+  isMember,
+  memberLabel,
+  notMemberLabel,
+}: {
+  isMember: boolean;
+  memberLabel: string;
+  notMemberLabel: string;
+}) {
+  const style: CSSProperties = isMember
+    ? {
+        color: "var(--asc-green)",
+        borderColor: "oklch(0.55 0.14 150 / 0.5)",
+        background: "oklch(0.25 0.12 150 / 0.18)",
+      }
+    : {
+        color: "var(--asc-fg-3)",
+        borderColor: "var(--asc-line-soft)",
+        background: "transparent",
+      };
+
   return (
-    <div style={{
-      display: "flex", flexDirection: "column", justifyContent: "center",
-      padding: "16px 20px",
-      borderRight: isLast ? "none" : "1px solid var(--asc-line-soft)",
-    }}>
-      <p style={{ fontFamily: "var(--font-mono, monospace)", fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--asc-fg-3)", margin: 0 }}>
+    <span
+      className="inline-flex w-fit border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
+      style={style}
+    >
+      {isMember ? memberLabel : notMemberLabel}
+    </span>
+  );
+}
+
+function HeroStat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: ReactNode;
+  accent?: boolean;
+}) {
+  return (
+    <div>
+      <p
+        className="text-[10px] font-black uppercase tracking-[0.16em]"
+        style={{ color: "var(--asc-fg-3)" }}
+      >
         {label}
       </p>
-      <p style={{
-        marginTop: 4, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 24,
-        fontVariantNumeric: "tabular-nums", lineHeight: 1,
-        color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)", margin: "4px 0 0",
-      }}>
+
+      <p
+        className="mt-1 text-4xl font-black tabular-nums md:text-5xl"
+        style={{
+          color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
+          fontFamily: "var(--font-display)",
+        }}
+      >
         {value}
       </p>
     </div>
   );
 }
 
-function GuildBadge({ isMember, memberLabel, notMemberLabel }: { isMember: boolean; memberLabel: string; notMemberLabel: string }) {
-  const style: React.CSSProperties = isMember
-    ? { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" }
-    : { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" };
+function StatCell({
+  label,
+  value,
+  accent,
+  isLast,
+}: {
+  label: string;
+  value: ReactNode;
+  accent?: boolean;
+  isLast?: boolean;
+}) {
   return (
-    <span style={{ display: "inline-flex", border: "1px solid", padding: "3px 10px", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", ...style }}>
-      {isMember ? memberLabel : notMemberLabel}
-    </span>
+    <div
+      className="flex flex-col justify-center px-5 py-4"
+      style={{
+        borderRight: isLast ? "none" : "1px solid var(--asc-line-soft)",
+      }}
+    >
+      <p
+        className="text-[10px] font-black uppercase tracking-[0.16em]"
+        style={{ color: "var(--asc-fg-3)" }}
+      >
+        {label}
+      </p>
+
+      <p
+        className="mt-1 text-2xl font-black tabular-nums"
+        style={{
+          color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
+          fontFamily: "var(--font-display)",
+        }}
+      >
+        {value}
+      </p>
+    </div>
   );
 }
 
 export default async function ProfilePage({ searchParams }: ProfilePageProps) {
-  const [params, locale, session] = await Promise.all([searchParams, getLocale(), auth()]);
+  const [params, locale, session] = await Promise.all([
+    searchParams,
+    getLocale(),
+    auth(),
+  ]);
+
   const messages = profileMessages[locale];
 
-  if (!session?.user?.databaseId) redirect("/login");
+  if (!session?.user?.databaseId) {
+    redirect("/login");
+  }
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.databaseId } });
-  if (!user) redirect("/login");
+  const user = await prisma.user.findUnique({
+    where: {
+      id: session.user.databaseId,
+    },
+  });
 
-  const [teams, invitations, allTournamentResults, dbGames] = await Promise.all([
-    prisma.team.findMany({
-      where: { members: { some: { userId: user.id } } },
-      include: { game: { select: { name: true } }, members: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.teamInvite.findMany({
-      where: { invitedUserId: user.id, status: "pending" },
-      include: { team: { include: { game: { select: { name: true } }, members: true } }, invitedBy: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.tournamentResult.findMany({
-      select: {
-        id: true, placement: true, points: true, note: true, awardedAt: true,
-        snapshotTeamName: true, snapshotTeamGame: true, snapshotMembers: true,
-        team: { select: { name: true, game: { select: { name: true } }, members: { select: { userId: true } } } },
-        tournament: { select: { id: true, title: true, game: { select: { name: true } } } },
-      },
-      orderBy: { awardedAt: "desc" },
-    }),
-    prisma.game.findMany({ where: { isActive: true }, select: { slug: true, name: true }, orderBy: { name: "asc" } }),
-  ]);
+  if (!user) {
+    redirect("/login");
+  }
+
+  const [teams, invitations, allTournamentResults, dbGames] = await Promise.all(
+    [
+      prisma.team.findMany({
+        where: {
+          members: {
+            some: {
+              userId: user.id,
+            },
+          },
+        },
+        include: {
+          game: {
+            select: {
+              name: true,
+            },
+          },
+          members: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+
+      prisma.teamInvite.findMany({
+        where: {
+          invitedUserId: user.id,
+          status: "pending",
+        },
+        include: {
+          team: {
+            include: {
+              game: {
+                select: {
+                  name: true,
+                },
+              },
+              members: true,
+            },
+          },
+          invitedBy: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+
+      prisma.tournamentResult.findMany({
+        select: {
+          id: true,
+          placement: true,
+          points: true,
+          note: true,
+          awardedAt: true,
+          snapshotTeamName: true,
+          snapshotTeamGame: true,
+          snapshotMembers: true,
+          team: {
+            select: {
+              name: true,
+              game: {
+                select: {
+                  name: true,
+                },
+              },
+              members: {
+                select: {
+                  userId: true,
+                },
+              },
+            },
+          },
+          tournament: {
+            select: {
+              id: true,
+              title: true,
+              game: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          awardedAt: "desc",
+        },
+      }),
+
+      prisma.game.findMany({
+        where: {
+          isActive: true,
+        },
+        select: {
+          slug: true,
+          name: true,
+        },
+        orderBy: {
+          name: "asc",
+        },
+      }),
+    ],
+  );
 
   const tournamentResults = allTournamentResults.filter((result) => {
     const snapshotMembers = parseSnapshotMembers(result.snapshotMembers);
-    const ids = snapshotMembers.length > 0
-      ? snapshotMembers.map((m) => m.userId).filter((id): id is string => Boolean(id))
-      : result.team.members.map((m) => m.userId);
-    return ids.includes(user.id);
+
+    const resultUserIds =
+      snapshotMembers.length > 0
+        ? snapshotMembers
+            .map((member) => member.userId)
+            .filter((memberUserId): memberUserId is string =>
+              Boolean(memberUserId),
+            )
+        : result.team.members.map((member) => member.userId);
+
+    return resultUserIds.includes(user.id);
   });
 
-  const tournamentPoints = tournamentResults.reduce((total, r) => total + r.points, 0);
-  const bestPlacement = tournamentResults.length > 0
-    ? Math.min(...tournamentResults.map((r) => r.placement))
-    : null;
+  const tournamentPoints = tournamentResults.reduce(
+    (total, result) => total + result.points,
+    0,
+  );
 
-  const serializedResults = tournamentResults.map((r) => ({ ...r, awardedAt: r.awardedAt.toISOString() }));
+  const bestPlacement =
+    tournamentResults.length > 0
+      ? Math.min(...tournamentResults.map((result) => result.placement))
+      : null;
 
-  // Derived stats (no MMR/K/D/Win% in DB — derive deterministically)
-  const nameHash = user.username.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const derivedMMR = tournamentPoints > 0
-    ? Math.min(Math.max(1200 + tournamentPoints * 15, 1200), 9800)
-    : (nameHash * 47 % 3200) + 1100;
-  const kd = ((nameHash * 31 % 200) / 100 + 0.80).toFixed(2);
-  const winPct = tournamentResults.length > 0
-    ? Math.round((tournamentResults.filter((r) => r.placement === 1).length / tournamentResults.length) * 100)
-    : (nameHash * 17 % 45) + 40;
-  const avatarHue = (nameHash * 47) % 360;
-
-  const tierLabel =
-    derivedMMR >= 6000 ? "APEX" :
-    derivedMMR >= 4500 ? "DIAMOND" :
-    derivedMMR >= 3000 ? "PLATINUM" :
-    derivedMMR >= 2000 ? "GOLD" :
-    derivedMMR >= 1500 ? "SILVER" : "BRONZE";
-  const tierColor =
-    derivedMMR >= 6000 ? "oklch(0.84 0.14 85)" :
-    derivedMMR >= 4500 ? "oklch(0.75 0.12 220)" :
-    derivedMMR >= 3000 ? "oklch(0.75 0.14 190)" :
-    derivedMMR >= 2000 ? "oklch(0.80 0.12 85)" :
-    derivedMMR >= 1500 ? "oklch(0.78 0.04 290)" : "oklch(0.62 0.10 50)";
+  const serializedResults = tournamentResults.map((result) => ({
+    ...result,
+    awardedAt: result.awardedAt.toISOString(),
+  }));
 
   return (
-    <main style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)", minHeight: "100vh" }}>
-      <Navbar />
+    <main
+      className="asc-ambient min-h-screen overflow-hidden"
+      style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
+    >
+      <div className="relative z-10">
+        <Navbar />
 
-      {/* ── HERO ── */}
-      <section style={{ position: "relative", minHeight: 420, overflow: "hidden" }}>
-        <div style={{
-          position: "absolute", inset: 0,
-          backgroundImage: 'url("/images/backgrounds/profile-hero.webp")',
-          backgroundSize: "cover", backgroundPosition: "center",
-        }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.35) 0%, oklch(0.07 0.025 285 / 0.65) 55%, var(--asc-bg-0) 100%)" }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, var(--asc-bg-0) 0%, transparent 55%)" }} />
+        <section className="relative min-h-[520px] overflow-hidden">
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: 'url("/images/backgrounds/profile-hero.webp")',
+            }}
+          />
 
-        <div style={{ position: "relative", zIndex: 10, maxWidth: 1440, margin: "0 auto", padding: "80px 40px 80px" }}>
-          <ProfileNotice message={params.message} error={params.error} />
-          <ProfileRealtime />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: [
+                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.30) 0%, oklch(0.07 0.025 285 / 0.64) 54%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.45) 40%, transparent 72%)",
+              ].join(", "),
+            }}
+          />
 
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 20, marginTop: 8 }}>
-            <Avatar username={user.username} avatar={user.avatar} hue={avatarHue} />
+          <div
+            className="absolute inset-x-0 bottom-0 h-48"
+            style={{
+              background:
+                "linear-gradient(to bottom, transparent, var(--asc-bg-0))",
+            }}
+          />
 
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--asc-accent)", marginBottom: 10 }}>
-                ▲ PLAYER PROFILE · COMPETITIVE
+          <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-32 pt-24 lg:px-10">
+            <ProfileNotice message={params.message} error={params.error} />
+            <ProfileRealtime />
+
+            <section
+              className="relative mt-4 overflow-hidden border p-6 shadow-2xl shadow-black/20 md:p-8"
+              style={{
+                borderColor: "var(--asc-line-soft)",
+                background: "oklch(0.09 0.035 287 / 0.78)",
+                backdropFilter: "blur(16px)",
+                clipPath:
+                  "polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px)",
+              }}
+            >
+              <CornerMark />
+
+              <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
+                <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-center">
+                  <Avatar username={user.username} avatar={user.avatar} />
+
+                  <div className="min-w-0">
+                    <p
+                      className="text-xs font-black uppercase tracking-[0.2em]"
+                      style={{ color: "var(--asc-accent)" }}
+                    >
+                      ▲ {messages.hero.label}
+                    </p>
+
+                    <h1
+                      className="mt-3 truncate text-5xl md:text-7xl"
+                      style={{ color: "var(--asc-fg-0)" }}
+                    >
+                      {user.username}
+                    </h1>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <GuildBadge
+                        isMember={user.isGuildMember}
+                        memberLabel={messages.statuses.member}
+                        notMemberLabel={messages.statuses.notMember}
+                      />
+
+                      <span
+                        className="inline-flex border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
+                        style={{
+                          borderColor: "var(--asc-line-soft)",
+                          color: "var(--asc-fg-3)",
+                        }}
+                      >
+                        {tournamentResults.length} {messages.labels.results}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 lg:justify-items-end">
+                  <p
+                    className="text-[10px] font-black uppercase tracking-[0.16em]"
+                    style={{ color: "var(--asc-fg-3)" }}
+                  >
+                    {messages.hero.discordId}
+                  </p>
+
+                  <ProfileIdentityActions discordId={user.discordId} />
+                </div>
               </div>
-              <h1 style={{
-                fontFamily: "var(--font-display)", fontWeight: 700,
-                fontSize: "clamp(36px, 4vw, 56px)", lineHeight: 1,
-                textTransform: "uppercase", letterSpacing: "-0.01em",
-                color: "var(--asc-fg-0)", margin: 0,
-              }}>
-                {user.username}
-              </h1>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-                <span style={{
-                  fontFamily: "var(--font-mono, monospace)", fontSize: 10, fontWeight: 700,
-                  letterSpacing: "0.14em", textTransform: "uppercase",
-                  padding: "3px 9px",
-                  background: `${tierColor}22`,
-                  border: `1px solid ${tierColor}55`,
-                  color: tierColor,
-                }}>
-                  {tierLabel}
-                </span>
-                <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: "var(--asc-accent)" }}>
-                  {derivedMMR.toLocaleString()} MMR
-                </span>
-                <GuildBadge isMember={user.isGuildMember} memberLabel={messages.statuses.member} notMemberLabel={messages.statuses.notMember} />
+
+              <div className="mt-10 grid gap-6 sm:grid-cols-3">
+                <HeroStat
+                  label={messages.hero.points}
+                  value={tournamentPoints.toLocaleString()}
+                  accent
+                />
+
+                <HeroStat
+                  label={messages.labels.results}
+                  value={tournamentResults.length}
+                />
+
+                <HeroStat
+                  label={messages.labels.best}
+                  value={bestPlacement ? `#${bestPlacement}` : "—"}
+                />
               </div>
-              <div style={{ marginTop: 14 }}>
-                <ProfileIdentityActions discordId={user.discordId} />
-              </div>
+            </section>
+          </div>
+        </section>
+
+        <section className="relative -mt-16 mx-auto max-w-[1440px] px-6 pb-20 lg:px-10">
+          <div
+            className="relative overflow-hidden border"
+            style={{
+              borderColor: "var(--asc-line-soft)",
+              background: "var(--asc-bg-1)",
+              clipPath:
+                "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+            }}
+          >
+            <CornerMark />
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+              <StatCell
+                label="PTS"
+                value={tournamentPoints.toLocaleString()}
+                accent
+              />
+              <StatCell
+                label={messages.labels.results}
+                value={tournamentResults.length}
+              />
+              <StatCell
+                label={messages.labels.best}
+                value={bestPlacement ? `#${bestPlacement}` : "—"}
+              />
+              <StatCell label={messages.hero.teams} value={teams.length} />
+              <StatCell
+                label={messages.hero.invites}
+                value={invitations.length}
+              />
+              <StatCell
+                label="Discord"
+                value={
+                  user.isGuildMember
+                    ? messages.statuses.member
+                    : messages.statuses.notMember
+                }
+                isLast
+              />
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* ── STAT BAR — overlaps hero ── */}
-      <div style={{ position: "relative", zIndex: 10, marginTop: -24 }}>
-        <div style={{ maxWidth: 1440, margin: "0 auto", padding: "0 40px" }}>
-          <div style={{
-            position: "relative",
-            background: "var(--asc-bg-1)",
-            border: "1px solid var(--asc-line-soft)",
-            display: "grid",
-            gridTemplateColumns: "repeat(6, 1fr)",
-          }}>
-            <div aria-hidden="true" style={{ position: "absolute", top: 10, left: 10, width: 14, height: 14, zIndex: 1, opacity: 0.6 }}>
-              <div style={{ position: "absolute", left: 0, top: 0, width: 8, height: 1, background: "var(--asc-accent)" }} />
-              <div style={{ position: "absolute", left: 0, top: 0, width: 1, height: 8, background: "var(--asc-accent)" }} />
-            </div>
-            <StatCell label="MMR" value={derivedMMR.toLocaleString()} accent />
-            <StatCell label="RANK" value={bestPlacement ? `#${bestPlacement}` : "—"} />
-            <StatCell label="K/D" value={kd} />
-            <StatCell label="WIN%" value={`${winPct}%`} />
-            <StatCell label="TOURNAMENTS" value={tournamentResults.length} />
-            <StatCell label="TEAMS" value={teams.length} isLast />
+          <div className="mt-10">
+            <ProfileTabs
+              tournamentResults={serializedResults}
+              teams={teams.map((team) => ({
+                id: team.id,
+                name: team.name,
+                status: team.status,
+                leaderId: team.leaderId,
+                rejectionReason: team.rejectionReason,
+                game: team.game,
+                members: team.members.map((member) => ({
+                  userId: member.userId,
+                  role: member.role,
+                })),
+              }))}
+              invitations={invitations.map((invitation) => ({
+                id: invitation.id,
+                team: {
+                  name: invitation.team.name,
+                  game: invitation.team.game,
+                  members: invitation.team.members.map((member) => ({
+                    userId: member.userId,
+                  })),
+                },
+                invitedBy: {
+                  username: invitation.invitedBy.username,
+                },
+              }))}
+              userId={user.id}
+              isGuildMember={user.isGuildMember}
+              dbGames={dbGames}
+              labels={messages.labels}
+              sectionLabels={messages.sections}
+              statuses={messages.statuses}
+              heroLabels={{
+                team: messages.hero.team,
+                teams: messages.hero.teams,
+              }}
+            />
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* ── TABS ── */}
-      <div style={{ maxWidth: 1440, margin: "0 auto", padding: "32px 40px 64px" }}>
-        <ProfileTabs
-          tournamentResults={serializedResults}
-          teams={teams.map((t) => ({
-            id: t.id, name: t.name, status: t.status, leaderId: t.leaderId,
-            rejectionReason: t.rejectionReason, game: t.game,
-            members: t.members.map((m) => ({ userId: m.userId, role: m.role })),
-          }))}
-          invitations={invitations.map((inv) => ({
-            id: inv.id,
-            team: { name: inv.team.name, game: inv.team.game, members: inv.team.members.map((m) => ({ userId: m.userId })) },
-            invitedBy: { username: inv.invitedBy.username },
-          }))}
-          userId={user.id}
-          isGuildMember={user.isGuildMember}
-          dbGames={dbGames}
-          labels={messages.labels}
-          sectionLabels={messages.sections}
-          statuses={messages.statuses}
-          heroLabels={{ team: messages.hero.team, teams: messages.hero.teams }}
-        />
+        <Footer />
       </div>
-
-      <Footer />
     </main>
   );
 }
