@@ -173,12 +173,18 @@ function SmallAction({
   label,
   pendingLabel,
   variant = "secondary",
+  confirmTitle,
+  confirmDescription,
+  confirmLabel,
 }: {
   action: TournamentAction;
   tournamentId: string;
   label: string;
   pendingLabel: string;
   variant?: "primary" | "success" | "danger" | "secondary";
+  confirmTitle?: string;
+  confirmDescription?: string;
+  confirmLabel?: string;
 }) {
   return (
     <InlineAdminTournamentForm
@@ -187,6 +193,9 @@ function SmallAction({
       pendingLabel={pendingLabel}
       variant={variant}
       className="grid gap-2"
+      confirmTitle={confirmTitle}
+      confirmDescription={confirmDescription}
+      confirmLabel={confirmLabel}
     >
       <input type="hidden" name="tournamentId" value={tournamentId} />
     </InlineAdminTournamentForm>
@@ -327,7 +336,10 @@ export default async function ManageTournamentPage({
   const isCancelled = tournament.status === "cancelled";
 
   return (
-    <main className="asc-ambient min-h-screen overflow-hidden text-white" style={{ background: "var(--asc-bg-0)" }}>
+    <main
+      className="asc-ambient min-h-screen overflow-hidden text-white"
+      style={{ background: "var(--asc-bg-0)" }}
+    >
       <Navbar />
 
       <section className="relative min-h-[480px] overflow-hidden">
@@ -335,29 +347,54 @@ export default async function ManageTournamentPage({
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url("${tournamentImage}")` }}
         />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.62) 48%,oklch(0.06 0.03 287 / 0.82) 100%)" }} />
-        <div className="absolute inset-x-0 bottom-0 h-52" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.62) 48%,oklch(0.06 0.03 287 / 0.82) 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-52"
+          style={{
+            background:
+              "linear-gradient(to bottom, transparent, var(--asc-bg-0))",
+          }}
+        />
 
         <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
           <Link
             href="/admin?tab=tournaments"
             className="mb-8 inline-flex border px-4 py-2 text-sm font-black transition hover:opacity-90"
-            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-2)" }}
+            style={{
+              borderColor: "var(--asc-line-soft)",
+              background: "var(--asc-bg-2)",
+              color: "var(--asc-fg-2)",
+            }}
           >
             ← Back to tournament list
           </Link>
 
           <section
             className="border p-6 shadow-2xl backdrop-blur"
-            style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.09 0.035 287 / 0.75)" }}
+            style={{
+              borderColor: "var(--asc-line-soft)",
+              background: "oklch(0.09 0.035 287 / 0.75)",
+            }}
           >
             <div className="grid gap-8 lg:grid-cols-[1fr_420px] lg:items-end">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
+                <p
+                  className="text-xs font-black uppercase tracking-[0.18em]"
+                  style={{ color: "var(--asc-accent)" }}
+                >
                   Manage tournament
                 </p>
 
-                <h1 className="mt-3 max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
+                <h1
+                  className="mt-3 max-w-5xl text-5xl font-black uppercase leading-[1.02] tracking-tight md:text-7xl"
+                  style={{ color: "var(--asc-fg-0)" }}
+                >
                   {tournament.title}
                 </h1>
 
@@ -389,274 +426,312 @@ export default async function ManageTournamentPage({
 
       <section className="mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-10">
         <div className="grid content-start gap-5">
-            <CollapsibleSection
-              label="Details"
-              title="Tournament setup"
-              meta="Edit title, game, dates, format, slots, and visibility."
+          <CollapsibleSection
+            label="Details"
+            title="Tournament setup"
+            meta="Edit title, game, dates, format, slots, and visibility."
+          >
+            <InlineAdminTournamentForm
+              action={updateTournamentInline}
+              buttonLabel="Save changes"
+              pendingLabel="Saving..."
+              className="grid gap-5"
             >
-              <InlineAdminTournamentForm
-                action={updateTournamentInline}
-                buttonLabel="Save changes"
-                pendingLabel="Saving..."
-                className="grid gap-5"
-              >
-                <input type="hidden" name="tournamentId" value={tournament.id} />
-                <input type="hidden" name="status" value={tournament.status} />
-                <input
-                  type="hidden"
-                  name="registrationStatus"
-                  value={tournament.registrationStatus}
-                />
+              <input type="hidden" name="tournamentId" value={tournament.id} />
+              <input type="hidden" name="status" value={tournament.status} />
+              <input
+                type="hidden"
+                name="registrationStatus"
+                value={tournament.registrationStatus}
+              />
 
+              <label className="grid gap-2">
+                <FieldLabel>Title</FieldLabel>
+
+                <input
+                  name="title"
+                  required
+                  defaultValue={tournament.title}
+                  className={inputClass()}
+                  style={inputStyle}
+                />
+              </label>
+
+              <AdminTournamentImageFields
+                games={games}
+                defaultGameSlug={tournament.game?.slug ?? ""}
+                defaultImageUrl={tournament.imageUrl}
+              />
+
+              <label className="grid gap-2">
+                <FieldLabel>Description</FieldLabel>
+
+                <textarea
+                  name="description"
+                  required
+                  defaultValue={tournament.description}
+                  className={`${inputClass()} min-h-28 resize-y text-sm leading-6`}
+                />
+              </label>
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <label className="grid gap-2">
-                  <FieldLabel>Title</FieldLabel>
+                  <FieldLabel>Prize</FieldLabel>
 
                   <input
-                    name="title"
-                    required
-                    defaultValue={tournament.title}
-                    className={inputClass()} style={inputStyle}
+                    name="prize"
+                    defaultValue={tournament.prize ?? ""}
+                    placeholder="Optional"
+                    className={inputClass()}
+                    style={inputStyle}
                   />
                 </label>
-
-                <AdminTournamentImageFields
-                  games={games}
-                  defaultGameSlug={tournament.game?.slug ?? ""}
-                  defaultImageUrl={tournament.imageUrl}
-                />
 
                 <label className="grid gap-2">
-                  <FieldLabel>Description</FieldLabel>
+                  <FieldLabel>Max teams</FieldLabel>
 
-                  <textarea
-                    name="description"
+                  <input
+                    name="maxTeams"
+                    type="number"
+                    min="1"
                     required
-                    defaultValue={tournament.description}
-                    className={`${inputClass()} min-h-28 resize-y text-sm leading-6`}
+                    defaultValue={tournament.maxTeams}
+                    className={inputClass()}
+                    style={inputStyle}
                   />
                 </label>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  <label className="grid gap-2">
-                    <FieldLabel>Prize</FieldLabel>
+                <label className="grid gap-2">
+                  <FieldLabel>Min teams</FieldLabel>
 
-                    <input
-                      name="prize"
-                      defaultValue={tournament.prize ?? ""}
-                      placeholder="Optional"
-                      className={inputClass()} style={inputStyle}
-                    />
-                  </label>
+                  <input
+                    name="minTeams"
+                    type="number"
+                    min="1"
+                    defaultValue={tournament.minTeams}
+                    className={inputClass()}
+                    style={inputStyle}
+                  />
+                </label>
+              </div>
 
-                  <label className="grid gap-2">
-                    <FieldLabel>Max teams</FieldLabel>
+              <div className="grid gap-4 md:grid-cols-3">
+                <label className="grid gap-2">
+                  <FieldLabel>Team size</FieldLabel>
 
-                    <input
-                      name="maxTeams"
-                      type="number"
-                      min="1"
-                      required
-                      defaultValue={tournament.maxTeams}
-                      className={inputClass()} style={inputStyle}
-                    />
-                  </label>
+                  <input
+                    name="teamSize"
+                    type="number"
+                    min="1"
+                    required
+                    defaultValue={tournament.teamSize}
+                    className={inputClass()}
+                    style={inputStyle}
+                  />
+                </label>
 
-                  <label className="grid gap-2">
-                    <FieldLabel>Min teams</FieldLabel>
+                <label className="grid gap-2">
+                  <FieldLabel>Substitutes per team</FieldLabel>
 
-                    <input
-                      name="minTeams"
-                      type="number"
-                      min="1"
-                      defaultValue={tournament.minTeams}
-                      className={inputClass()} style={inputStyle}
-                    />
-                  </label>
-                </div>
+                  <input
+                    name="substitutesAllowed"
+                    type="number"
+                    min="0"
+                    defaultValue={tournament.substitutesAllowed}
+                    className={inputClass()}
+                    style={inputStyle}
+                  />
+                </label>
 
-                <div className="grid gap-4 md:grid-cols-3">
-                  <label className="grid gap-2">
-                    <FieldLabel>Team size</FieldLabel>
+                <label className="grid gap-2">
+                  <FieldLabel>Best of</FieldLabel>
 
-                    <input
-                      name="teamSize"
-                      type="number"
-                      min="1"
-                      required
-                      defaultValue={tournament.teamSize}
-                      className={inputClass()} style={inputStyle}
-                    />
-                  </label>
+                  <select
+                    name="bestOf"
+                    defaultValue={String(tournament.bestOf)}
+                    className={inputClass()}
+                    style={inputStyle}
+                  >
+                    {[1, 3, 5, 7].map((n) => (
+                      <option key={n} value={n}>
+                        BO{n}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
 
-                  <label className="grid gap-2">
-                    <FieldLabel>Substitutes per team</FieldLabel>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <label className="grid gap-2">
+                  <FieldLabel>Format</FieldLabel>
 
-                    <input
-                      name="substitutesAllowed"
-                      type="number"
-                      min="0"
-                      defaultValue={tournament.substitutesAllowed}
-                      className={inputClass()} style={inputStyle}
-                    />
-                  </label>
+                  <select
+                    name="format"
+                    defaultValue={tournament.format}
+                    className={inputClass()}
+                    style={inputStyle}
+                  >
+                    {tournamentFormats.map((f) => (
+                      <option key={f.value} value={f.value}>
+                        {f.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-                  <label className="grid gap-2">
-                    <FieldLabel>Best of</FieldLabel>
+                <label className="grid gap-2">
+                  <FieldLabel>Visibility</FieldLabel>
 
-                    <select
-                      name="bestOf"
-                      defaultValue={String(tournament.bestOf)}
-                      className={inputClass()} style={inputStyle}
-                    >
-                      {[1, 3, 5, 7].map((n) => (
-                        <option key={n} value={n}>
-                          BO{n}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
+                  <select
+                    name="visibility"
+                    defaultValue={tournament.visibility}
+                    className={inputClass()}
+                    style={inputStyle}
+                  >
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                  </select>
+                </label>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  <label className="grid gap-2">
-                    <FieldLabel>Format</FieldLabel>
+                <label className="grid gap-2">
+                  <FieldLabel>Region</FieldLabel>
 
-                    <select
-                      name="format"
-                      defaultValue={tournament.format}
-                      className={inputClass()} style={inputStyle}
-                    >
-                      {tournamentFormats.map((f) => (
-                        <option key={f.value} value={f.value}>
-                          {f.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <input
+                    name="region"
+                    defaultValue={tournament.region ?? ""}
+                    placeholder="e.g. MENA, EU, NA"
+                    className={inputClass()}
+                    style={inputStyle}
+                  />
+                </label>
 
-                  <label className="grid gap-2">
-                    <FieldLabel>Visibility</FieldLabel>
+                <label className="grid gap-2">
+                  <FieldLabel>Platform</FieldLabel>
 
-                    <select
-                      name="visibility"
-                      defaultValue={tournament.visibility}
-                      className={inputClass()} style={inputStyle}
-                    >
-                      <option value="public">Public</option>
-                      <option value="private">Private</option>
-                    </select>
-                  </label>
+                  <select
+                    name="platform"
+                    defaultValue={tournament.platform ?? ""}
+                    className={inputClass()}
+                    style={inputStyle}
+                  >
+                    <option value="">No platform</option>
 
-                  <label className="grid gap-2">
-                    <FieldLabel>Region</FieldLabel>
+                    {platforms.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
 
-                    <input
-                      name="region"
-                      defaultValue={tournament.region ?? ""}
-                      placeholder="e.g. MENA, EU, NA"
-                      className={inputClass()} style={inputStyle}
-                    />
-                  </label>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-2">
+                  <FieldLabel>Start date</FieldLabel>
 
-                  <label className="grid gap-2">
-                    <FieldLabel>Platform</FieldLabel>
+                  <input
+                    name="startsAt"
+                    type="datetime-local"
+                    defaultValue={formatDateTimeLocal(tournament.startsAt)}
+                    className={inputClass()}
+                    style={inputStyle}
+                  />
+                </label>
 
-                    <select
-                      name="platform"
-                      defaultValue={tournament.platform ?? ""}
-                      className={inputClass()} style={inputStyle}
-                    >
-                      <option value="">No platform</option>
+                <label className="grid gap-2">
+                  <FieldLabel>End date</FieldLabel>
 
-                      {platforms.map((p) => (
-                        <option key={p} value={p}>
-                          {p}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
+                  <input
+                    name="endsAt"
+                    type="datetime-local"
+                    defaultValue={formatDateTimeLocal(tournament.endsAt)}
+                    className={inputClass()}
+                    style={inputStyle}
+                  />
+                </label>
+              </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="grid gap-2">
-                    <FieldLabel>Start date</FieldLabel>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-2">
+                  <FieldLabel>Registration opens</FieldLabel>
 
-                    <input
-                      name="startsAt"
-                      type="datetime-local"
-                      defaultValue={formatDateTimeLocal(tournament.startsAt)}
-                      className={inputClass()} style={inputStyle}
-                    />
-                  </label>
+                  <input
+                    name="registrationOpensAt"
+                    type="datetime-local"
+                    defaultValue={formatDateTimeLocal(
+                      tournament.registrationOpensAt,
+                    )}
+                    className={inputClass()}
+                    style={inputStyle}
+                  />
+                </label>
 
-                  <label className="grid gap-2">
-                    <FieldLabel>End date</FieldLabel>
+                <label className="grid gap-2">
+                  <FieldLabel>Registration closes</FieldLabel>
 
-                    <input
-                      name="endsAt"
-                      type="datetime-local"
-                      defaultValue={formatDateTimeLocal(tournament.endsAt)}
-                      className={inputClass()} style={inputStyle}
-                    />
-                  </label>
-                </div>
+                  <input
+                    name="registrationClosesAt"
+                    type="datetime-local"
+                    defaultValue={formatDateTimeLocal(
+                      tournament.registrationClosesAt,
+                    )}
+                    className={inputClass()}
+                    style={inputStyle}
+                  />
+                </label>
+              </div>
+            </InlineAdminTournamentForm>
+          </CollapsibleSection>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="grid gap-2">
-                    <FieldLabel>Registration opens</FieldLabel>
-
-                    <input
-                      name="registrationOpensAt"
-                      type="datetime-local"
-                      defaultValue={formatDateTimeLocal(
-                        tournament.registrationOpensAt,
-                      )}
-                      className={inputClass()} style={inputStyle}
-                    />
-                  </label>
-
-                  <label className="grid gap-2">
-                    <FieldLabel>Registration closes</FieldLabel>
-
-                    <input
-                      name="registrationClosesAt"
-                      type="datetime-local"
-                      defaultValue={formatDateTimeLocal(
-                        tournament.registrationClosesAt,
-                      )}
-                      className={inputClass()} style={inputStyle}
-                    />
-                  </label>
-                </div>
-              </InlineAdminTournamentForm>
-            </CollapsibleSection>
-
-            <CollapsibleSection
-              label="Registrations"
-              title="Applications"
-              meta={`${tournament.registrations.length} total · ${approvedRegistrations.length} approved · ${pendingRegistrations.length} pending`}
-            >
-              {tournament.registrations.length === 0 ? (
-                <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>No registrations yet.</p>
-              ) : (
-                <div className="overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}>
-                  {tournament.registrations.map((registration: RegistrationWithTeam, idx) => (
+          <CollapsibleSection
+            label="Registrations"
+            title="Applications"
+            meta={`${tournament.registrations.length} total · ${approvedRegistrations.length} approved · ${pendingRegistrations.length} pending`}
+          >
+            {tournament.registrations.length === 0 ? (
+              <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
+                No registrations yet.
+              </p>
+            ) : (
+              <div
+                className="overflow-hidden border"
+                style={{
+                  borderColor: "var(--asc-line-soft)",
+                  background: "var(--asc-bg-2)",
+                }}
+              >
+                {tournament.registrations.map(
+                  (registration: RegistrationWithTeam, idx) => (
                     <article
                       key={registration.id}
                       className="grid gap-4 px-4 py-4 md:grid-cols-[minmax(0,1fr)_120px_140px] md:items-center"
-                      style={idx < tournament.registrations.length - 1 ? { borderBottom: "1px solid var(--asc-line-soft)" } : {}}
+                      style={
+                        idx < tournament.registrations.length - 1
+                          ? { borderBottom: "1px solid var(--asc-line-soft)" }
+                          : {}
+                      }
                     >
                       <div>
-                        <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
-                          {registration.snapshotTeamName || registration.team.name}
+                        <p
+                          className="font-black"
+                          style={{ color: "var(--asc-fg-0)" }}
+                        >
+                          {registration.snapshotTeamName ||
+                            registration.team.name}
                         </p>
 
-                        <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+                        <p
+                          className="mt-1 text-sm"
+                          style={{ color: "var(--asc-fg-3)" }}
+                        >
                           {registration.snapshotTeamGame ?? "—"}
                         </p>
 
                         {registration.rejectionReason && (
-                          <p className="mt-2 text-sm" style={{ color: "var(--asc-live)" }}>
+                          <p
+                            className="mt-2 text-sm"
+                            style={{ color: "var(--asc-live)" }}
+                          >
                             {registration.rejectionReason}
                           </p>
                         )}
@@ -664,47 +739,57 @@ export default async function ManageTournamentPage({
 
                       <StatusBadge status={registration.status} />
 
-                      <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
+                      <p
+                        className="text-sm"
+                        style={{ color: "var(--asc-fg-3)" }}
+                      >
                         {formatDate(registration.createdAt)}
                       </p>
                     </article>
-                  ))}
-                </div>
-              )}
-            </CollapsibleSection>
+                  ),
+                )}
+              </div>
+            )}
+          </CollapsibleSection>
 
-            <CollapsibleSection
-              label="Results"
-              title="Tournament standings"
-              meta={`${tournament.results.length} saved results · ${tournamentPoints} total points`}
-            >
-              <AdminTournamentResultsPanel
-                tournamentId={tournament.id}
-                tournamentTitle={tournament.title}
-                registrations={tournament.registrations}
-                results={tournament.results}
-              />
-            </CollapsibleSection>
+          <CollapsibleSection
+            label="Results"
+            title="Tournament standings"
+            meta={`${tournament.results.length} saved results · ${tournamentPoints} total points`}
+          >
+            <AdminTournamentResultsPanel
+              tournamentId={tournament.id}
+              tournamentTitle={tournament.title}
+              registrations={tournament.registrations}
+              results={tournament.results}
+            />
+          </CollapsibleSection>
 
-            <CollapsibleSection
-              label="Matches"
-              title="Match schedule"
-              meta={`${matches.length} match${matches.length === 1 ? "" : "es"}`}
-            >
-              <AdminMatchPanel
-                tournamentId={tournament.id}
-                matches={matches}
-                registeredTeams={registeredTeams}
-              />
-            </CollapsibleSection>
+          <CollapsibleSection
+            label="Matches"
+            title="Match schedule"
+            meta={`${matches.length} match${matches.length === 1 ? "" : "es"}`}
+          >
+            <AdminMatchPanel
+              tournamentId={tournament.id}
+              matches={matches}
+              registeredTeams={registeredTeams}
+            />
+          </CollapsibleSection>
         </div>
 
         <aside className="grid content-start gap-5 lg:sticky lg:top-24">
           <section
             className="border p-5 shadow-2xl"
-            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+            style={{
+              borderColor: "var(--asc-line-soft)",
+              background: "var(--asc-bg-1)",
+            }}
           >
-            <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+            <p
+              className="text-xs font-black uppercase tracking-[0.14em]"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
               Slots
             </p>
 
@@ -725,138 +810,174 @@ export default async function ManageTournamentPage({
             label="Registration"
             title="Controls"
             meta={
-              isEnded || isCancelled
-                ? "Closed"
-                : tournament.registrationStatus
+              isEnded || isCancelled ? "Closed" : tournament.registrationStatus
             }
           >
             <div className="grid gap-2">
               {isEnded || isCancelled ? (
                 <div
                   className="border px-4 py-3 text-sm font-black"
-                  style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
+                  style={{
+                    borderColor: "var(--asc-line-soft)",
+                    background: "var(--asc-bg-2)",
+                    color: "var(--asc-fg-3)",
+                  }}
                 >
                   Registration closed.
                 </div>
               ) : tournament.registrationStatus === "open" ? (
-                  <SmallAction
-                    action={closeTournamentRegistrationInline}
-                    tournamentId={tournament.id}
-                    label="Close registration"
-                    pendingLabel="Closing..."
-                    variant="danger"
-                  />
-                ) : (
-                  <SmallAction
-                    action={openTournamentRegistrationInline}
-                    tournamentId={tournament.id}
-                    label="Open registration"
-                    pendingLabel="Opening..."
-                    variant="success"
-                  />
-                )}
-              </div>
-            </CollapsibleSection>
+                <SmallAction
+                  action={closeTournamentRegistrationInline}
+                  tournamentId={tournament.id}
+                  label="Close registration"
+                  pendingLabel="Closing..."
+                  variant="danger"
+                  confirmTitle="Close registration?"
+                  confirmDescription={`Close registration for ${tournament.title}? Players will no longer be able to register teams.`}
+                  confirmLabel="Close registration"
+                />
+              ) : (
+                <SmallAction
+                  action={openTournamentRegistrationInline}
+                  tournamentId={tournament.id}
+                  label="Open registration"
+                  pendingLabel="Opening..."
+                  variant="success"
+                  confirmTitle="Open registration?"
+                  confirmDescription={`Open registration for ${tournament.title}? Players will be able to register eligible teams.`}
+                  confirmLabel="Open registration"
+                />
+              )}
+            </div>
+          </CollapsibleSection>
 
-            <CollapsibleSection
-              label="Status"
-              title="Tournament status"
-              meta={`Current: ${tournament.status}`}
-            >
-              <div className="grid gap-2">
-                {tournament.status !== "upcoming" && (
-                  <SmallAction
-                    action={setTournamentUpcomingInline}
-                    tournamentId={tournament.id}
-                    label="Set upcoming"
-                    pendingLabel="Updating..."
-                  />
-                )}
+          <CollapsibleSection
+            label="Status"
+            title="Tournament status"
+            meta={`Current: ${tournament.status}`}
+          >
+            <div className="grid gap-2">
+              {tournament.status !== "upcoming" && (
+                <SmallAction
+                  action={setTournamentUpcomingInline}
+                  tournamentId={tournament.id}
+                  label="Set upcoming"
+                  pendingLabel="Updating..."
+                  confirmTitle="Set tournament as upcoming?"
+                  confirmDescription={`Set ${tournament.title} as upcoming?`}
+                  confirmLabel="Set upcoming"
+                />
+              )}
 
-                {tournament.status !== "open" && (
-                  <SmallAction
-                    action={setTournamentOpenInline}
-                    tournamentId={tournament.id}
-                    label="Set open"
-                    pendingLabel="Updating..."
-                    variant="success"
-                  />
-                )}
+              {tournament.status !== "open" && (
+                <SmallAction
+                  action={setTournamentOpenInline}
+                  tournamentId={tournament.id}
+                  label="Set open"
+                  pendingLabel="Updating..."
+                  variant="success"
+                  confirmTitle="Set tournament as open?"
+                  confirmDescription={`Set ${tournament.title} as open?`}
+                  confirmLabel="Set open"
+                />
+              )}
 
-                {tournament.status !== "closed" && (
-                  <SmallAction
-                    action={setTournamentClosedInline}
-                    tournamentId={tournament.id}
-                    label="Set closed"
-                    pendingLabel="Updating..."
-                    variant="danger"
-                  />
-                )}
+              {tournament.status !== "closed" && (
+                <SmallAction
+                  action={setTournamentClosedInline}
+                  tournamentId={tournament.id}
+                  label="Set closed"
+                  pendingLabel="Updating..."
+                  variant="danger"
+                  confirmTitle="Set tournament as closed?"
+                  confirmDescription={`Close ${tournament.title}? This will stop active tournament access depending on your current flow.`}
+                  confirmLabel="Set closed"
+                />
+              )}
 
-                {tournament.status !== "ended" && (
-                  <SmallAction
-                    action={setTournamentEndedInline}
-                    tournamentId={tournament.id}
-                    label="Set ended"
-                    pendingLabel="Updating..."
-                    variant="secondary"
-                  />
-                )}
+              {tournament.status !== "ended" && (
+                <SmallAction
+                  action={setTournamentEndedInline}
+                  tournamentId={tournament.id}
+                  label="Set ended"
+                  pendingLabel="Updating..."
+                  variant="secondary"
+                  confirmTitle="End tournament?"
+                  confirmDescription={`Mark ${tournament.title} as ended? Registered players may receive tournament-ended notifications.`}
+                  confirmLabel="End tournament"
+                />
+              )}
 
-                {tournament.status !== "cancelled" && (
-                  <SmallAction
-                    action={setTournamentCancelledInline}
-                    tournamentId={tournament.id}
-                    label="Set cancelled"
-                    pendingLabel="Updating..."
-                    variant="danger"
-                  />
-                )}
-              </div>
-            </CollapsibleSection>
+              {tournament.status !== "cancelled" && (
+                <SmallAction
+                  action={setTournamentCancelledInline}
+                  tournamentId={tournament.id}
+                  label="Set cancelled"
+                  pendingLabel="Updating..."
+                  variant="danger"
+                />
+              )}
+            </div>
+          </CollapsibleSection>
 
           <details
             className="group overflow-hidden border shadow-2xl"
-            style={{ borderColor: "oklch(0.50 0.20 25 / 0.3)", background: "oklch(0.10 0.05 25 / 0.05)" }}
+            style={{
+              borderColor: "oklch(0.50 0.20 25 / 0.3)",
+              background: "oklch(0.10 0.05 25 / 0.05)",
+            }}
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-live)" }}>
+                <p
+                  className="text-xs font-black uppercase tracking-[0.14em]"
+                  style={{ color: "var(--asc-live)" }}
+                >
                   Danger zone
                 </p>
 
-                <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
+                <h2
+                  className="mt-1 text-xl font-black"
+                  style={{ color: "var(--asc-fg-0)" }}
+                >
                   Delete tournament
                 </h2>
               </div>
 
               <span
                 className="grid h-10 w-10 shrink-0 place-items-center border text-lg font-black transition group-open:rotate-45"
-                style={{ borderColor: "oklch(0.50 0.20 25 / 0.4)", background: "oklch(0.25 0.18 25 / 0.15)", color: "var(--asc-live)" }}
+                style={{
+                  borderColor: "oklch(0.50 0.20 25 / 0.4)",
+                  background: "oklch(0.25 0.18 25 / 0.15)",
+                  color: "var(--asc-live)",
+                }}
               >
                 +
               </span>
             </summary>
 
-            <div className="p-5" style={{ borderTop: "1px solid oklch(0.50 0.20 25 / 0.3)" }}>
-                <InlineAdminTournamentForm
-                  action={deleteTournamentInline}
-                  buttonLabel="Delete tournament"
-                  pendingLabel="Deleting..."
-                  variant="danger"
-                  className="grid gap-2"
-                  confirmTitle="Delete tournament?"
-                  confirmDescription={`Are you sure you want to delete ${tournament.title}? This removes registrations and results connected to it.`}
-                  confirmLabel="Delete permanently"
-                >
-                  <input
-                    type="hidden"
-                    name="tournamentId"
-                    value={tournament.id}
-                  />
-                </InlineAdminTournamentForm>
-              </div>
-            </details>
+            <div
+              className="p-5"
+              style={{ borderTop: "1px solid oklch(0.50 0.20 25 / 0.3)" }}
+            >
+              <InlineAdminTournamentForm
+                action={deleteTournamentInline}
+                buttonLabel="Delete tournament"
+                pendingLabel="Deleting..."
+                variant="danger"
+                className="grid gap-2"
+                confirmTitle="Delete tournament?"
+                confirmDescription={`Are you sure you want to delete ${tournament.title}? This removes registrations and results connected to it.`}
+                confirmLabel="Delete permanently"
+              >
+                <input
+                  type="hidden"
+                  name="tournamentId"
+                  value={tournament.id}
+                />
+              </InlineAdminTournamentForm>
+            </div>
+          </details>
         </aside>
       </section>
 
