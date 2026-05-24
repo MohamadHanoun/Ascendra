@@ -16,6 +16,7 @@ import AdminRuleList from "@/components/AdminRuleList";
 import AdminStaffForm from "@/components/AdminStaffForm";
 import AdminStaffList from "@/components/AdminStaffList";
 import AdminTabNavigation from "@/components/AdminTabNavigation";
+import AdminMatchesPanel from "@/components/AdminMatchesPanel";
 import AdminTeamReview from "@/components/AdminTeamReview";
 import AdminToast from "@/components/AdminToast";
 import AdminTournamentForm from "@/components/AdminTournamentForm";
@@ -58,6 +59,7 @@ const allowedTabs = [
   "registrations",
   "teams",
   "players",
+  "matches",
   "rules",
   "roles",
   "staff",
@@ -278,6 +280,14 @@ async function renderAdminTab(
     return (
       <section className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
         <AdminPlayersList />
+      </section>
+    );
+  }
+
+  if (activeTab === "matches") {
+    return (
+      <section className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
+        <AdminMatchesPanel />
       </section>
     );
   }

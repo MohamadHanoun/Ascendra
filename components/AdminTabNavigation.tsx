@@ -23,6 +23,7 @@ const groups: AdminTabGroup[] = [
       { label: "Registrations", value: "registrations" },
       { label: "Teams", value: "teams" },
       { label: "Players", value: "players" },
+      { label: "Matches", value: "matches" },
     ],
   },
   {

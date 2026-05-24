@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
 import { redirect } from "next/navigation";
 
+import { GameProvider } from "@prisma/client";
+
 import { auth } from "@/auth";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
@@ -456,7 +458,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     redirect("/login");
   }
 
-  const [teams, invitations, allTournamentResults, dbGames] = await Promise.all(
+  const [teams, invitations, allTournamentResults, dbGames, linkedAccounts] = await Promise.all(
     [
       prisma.team.findMany({
         where: {
@@ -554,6 +556,17 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         },
         orderBy: {
           name: "asc",
+        },
+      }),
+
+      prisma.playerGameAccount.findMany({
+        where: { userId: user.id },
+        select: {
+          id: true,
+          provider: true,
+          externalId: true,
+          displayName: true,
+          verifiedAt: true,
         },
       }),
     ],
@@ -793,6 +806,96 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 teams: messages.hero.teams,
               }}
             />
+          </div>
+
+          {/* Connected Game Accounts */}
+          <div className="mt-10">
+            <div className="relative overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
+              <CornerMark />
+              <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
+                <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ Linked Accounts</p>
+                <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>Connected Game Accounts</h2>
+              </div>
+
+              <div className="grid gap-px" style={{ background: "var(--asc-line-soft)" }}>
+                {/* Riot (League of Legends / VALORANT) */}
+                {(() => {
+                  const riotAccount = linkedAccounts.find(
+                    (a: { provider: string }) => a.provider === GameProvider.riot_lol,
+                  );
+                  return (
+                    <div className="flex flex-wrap items-center justify-between gap-4 bg-[var(--asc-bg-1)] px-5 py-4">
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="grid h-10 w-10 shrink-0 place-items-center border text-xs font-black"
+                          style={{
+                            borderColor: riotAccount
+                              ? "oklch(0.55 0.14 150 / 0.5)"
+                              : "var(--asc-line-soft)",
+                            background: riotAccount
+                              ? "oklch(0.25 0.12 150 / 0.18)"
+                              : "transparent",
+                            color: riotAccount
+                              ? "var(--asc-green)"
+                              : "var(--asc-fg-3)",
+                          }}
+                        >
+                          R
+                        </div>
+                        <div>
+                          <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
+                            Riot Account
+                          </p>
+                          <p className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
+                            League of Legends · VALORANT
+                          </p>
+                        </div>
+                      </div>
+
+                      {riotAccount ? (
+                        <div className="flex flex-wrap items-center gap-3">
+                          <div className="text-right">
+                            <p
+                              className="font-mono font-black"
+                              style={{ color: "var(--asc-accent)" }}
+                            >
+                              {riotAccount.displayName ?? riotAccount.externalId.slice(0, 8) + "…"}
+                            </p>
+                            {riotAccount.verifiedAt && (
+                              <p className="text-[10px]" style={{ color: "var(--asc-fg-3)" }}>
+                                Linked {riotAccount.verifiedAt.toLocaleDateString("en", { dateStyle: "medium" })}
+                              </p>
+                            )}
+                          </div>
+                          <span
+                            className="border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
+                            style={{
+                              borderColor: "oklch(0.55 0.14 150 / 0.5)",
+                              background: "oklch(0.25 0.12 150 / 0.18)",
+                              color: "var(--asc-green)",
+                            }}
+                          >
+                            Connected
+                          </span>
+                        </div>
+                      ) : (
+                        <a
+                          href="/api/auth/riot/start"
+                          className="border px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80"
+                          style={{
+                            borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                            background: "var(--asc-accent-dim)",
+                            color: "var(--asc-accent)",
+                          }}
+                        >
+                          Connect Riot Account →
+                        </a>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
           </div>
         </section>
 

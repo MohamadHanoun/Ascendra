@@ -1,0 +1,67 @@
+import crypto from "node:crypto";
+
+import { NextResponse } from "next/server";
+
+import { auth } from "@/auth";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const RIOT_AUTH_URL = "https://auth.riotgames.com/authorize";
+const STATE_COOKIE = "riot_oauth_state";
+const STATE_TTL_SECONDS = 300; // 5 minutes
+
+export async function GET(request: Request) {
+  const session = await auth();
+  const userId = (session?.user as { databaseId?: string } | undefined)
+    ?.databaseId;
+
+  if (!userId) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("error", "Please sign in first.");
+    return NextResponse.redirect(loginUrl);
+  }
+
+  const clientId = process.env.RIOT_RSO_CLIENT_ID?.trim();
+  const redirectUri = process.env.RIOT_RSO_REDIRECT_URI?.trim();
+
+  if (!clientId || !redirectUri) {
+    const profileUrl = new URL("/profile", request.url);
+    profileUrl.searchParams.set(
+      "error",
+      "Riot account linking is not configured on this server.",
+    );
+    return NextResponse.redirect(profileUrl);
+  }
+
+  // Generate a cryptographically-random state. We sign it with the client
+  // secret so we can verify it on the callback without storing a DB record.
+  const nonce = crypto.randomBytes(16).toString("hex");
+  const secret = process.env.RIOT_RSO_CLIENT_SECRET?.trim() ?? "fallback";
+  const sig = crypto
+    .createHmac("sha256", secret)
+    .update(`${userId}:${nonce}`)
+    .digest("hex");
+  const state = `${nonce}.${sig}`;
+
+  const authorizeUrl = new URL(RIOT_AUTH_URL);
+  authorizeUrl.searchParams.set("client_id", clientId);
+  authorizeUrl.searchParams.set("redirect_uri", redirectUri);
+  authorizeUrl.searchParams.set("response_type", "code");
+  authorizeUrl.searchParams.set("scope", "openid");
+  authorizeUrl.searchParams.set("state", state);
+
+  const response = NextResponse.redirect(authorizeUrl.toString());
+
+  // Store state + userId in an HttpOnly cookie (never readable by JS).
+  const cookieValue = `${state}|${userId}`;
+  response.cookies.set(STATE_COOKIE, cookieValue, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: STATE_TTL_SECONDS,
+    path: "/",
+  });
+
+  return response;
+}
