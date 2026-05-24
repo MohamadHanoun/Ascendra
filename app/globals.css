@@ -118,15 +118,16 @@ section.overflow-hidden[class*="border"]::before,
 section.overflow-hidden[class*="bg-white"]::before {
   content: '';
   position: absolute;
-  top: 0;
-  inset-inline-start: 0;
-  width: var(--asc-bracket);
-  height: var(--asc-bracket);
-  border-top: 2px solid var(--asc-accent);
-  border-inline-start: 2px solid var(--asc-accent);
+  top: 10px;
+  inset-inline-start: 10px;
+  width: 26px;
+  height: 26px;
+  border-top: 3px solid var(--asc-accent);
+  border-inline-start: 3px solid var(--asc-accent);
   pointer-events: none;
-  z-index: 10;
-  opacity: 0.75;
+  z-index: 40;
+  opacity: 1;
+  filter: drop-shadow(0 0 8px var(--asc-accent-glow));
 }
 
 /* article cards (tournament cards, etc.) */
@@ -137,15 +138,16 @@ article.overflow-hidden[class*="border"] {
 article.overflow-hidden[class*="border"]::before {
   content: '';
   position: absolute;
-  top: 0;
-  inset-inline-start: 0;
-  width: var(--asc-bracket);
-  height: var(--asc-bracket);
-  border-top: 2px solid var(--asc-accent);
-  border-inline-start: 2px solid var(--asc-accent);
+  top: 10px;
+  inset-inline-start: 10px;
+  width: 26px;
+  height: 26px;
+  border-top: 3px solid var(--asc-accent);
+  border-inline-start: 3px solid var(--asc-accent);
   pointer-events: none;
-  z-index: 10;
-  opacity: 0.75;
+  z-index: 40;
+  opacity: 1;
+  filter: drop-shadow(0 0 8px var(--asc-accent-glow));
 }
 
 /* Explicit utility class */
@@ -255,3 +257,17 @@ article.overflow-hidden[class*="border"]::before {
   animation: ticker 40s linear infinite;
 }
 .asc-ticker-inner:hover { animation-play-state: paused; }
+
+
+.asc-card::before,
+section.overflow-hidden[class*="border"]::before,
+section.overflow-hidden[class*="bg-white"]::before,
+article.overflow-hidden[class*="border"]::before {
+  width: 12px;
+  height: 12px;
+  border-top-width: 1.5px;
+  border-inline-start-width: 1.5px;
+  border-color: var(--asc-accent);
+  opacity: 0.9;
+  filter: none;
+}

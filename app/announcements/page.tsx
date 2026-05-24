@@ -134,14 +134,15 @@ function CornerMark() {
       aria-hidden="true"
       style={{
         position: "absolute",
-        top: -1,
-        left: -1,
-        width: 18,
-        height: 18,
-        borderTop: "2px solid var(--asc-accent)",
-        borderLeft: "2px solid var(--asc-accent)",
-        opacity: 0.72,
+        top: 10,
+        left: 10,
+        width: 12,
+        height: 12,
+        borderTop: "1.5px solid var(--asc-accent)",
+        borderLeft: "1.5px solid var(--asc-accent)",
+        opacity: 0.9,
         pointerEvents: "none",
+        zIndex: 20,
       }}
     />
   );
