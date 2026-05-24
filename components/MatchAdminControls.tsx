@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 
 import {
   adminOverrideMatchResult,
   confirmMatchResult,
   type MatchActionResult,
 } from "@/actions/matchActions";
+import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
 
 type Team = { id: string; name: string };
 
@@ -84,21 +85,71 @@ export default function MatchAdminControls({
   teamB,
   status,
 }: MatchAdminControlsProps) {
+  const confirmFormRef = useRef<HTMLFormElement>(null);
+  const overrideFormRef = useRef<HTMLFormElement>(null);
+
+  const [, startTransition] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [overrideOpen, setOverrideOpen] = useState(false);
+
   const [confirmState, confirmAction, confirmPending] = useActionState(
     confirmMatchResult,
     initial,
   );
+
   const [overrideState, overrideAction, overridePending] = useActionState(
     adminOverrideMatchResult,
     initial,
   );
 
   const canConfirm = confirmableStatuses.has(status);
-  const canOverride = status !== "completed" && status !== "cancelled" && status !== "bye";
+  const canOverride =
+    status !== "completed" && status !== "cancelled" && status !== "bye";
+
+  function handleConfirmSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setConfirmOpen(true);
+  }
+
+  function handleOverrideSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setOverrideOpen(true);
+  }
+
+  function runConfirmAction() {
+    const form = confirmFormRef.current;
+
+    if (!form) {
+      return;
+    }
+
+    const formData = new FormData(form);
+
+    setConfirmOpen(false);
+
+    startTransition(() => {
+      confirmAction(formData);
+    });
+  }
+
+  function runOverrideAction() {
+    const form = overrideFormRef.current;
+
+    if (!form) {
+      return;
+    }
+
+    const formData = new FormData(form);
+
+    setOverrideOpen(false);
+
+    startTransition(() => {
+      overrideAction(formData);
+    });
+  }
 
   return (
     <div className="grid gap-6">
-      {/* Confirm */}
       {canConfirm && (
         <div className="grid gap-3">
           <p
@@ -107,10 +158,13 @@ export default function MatchAdminControls({
           >
             Confirm reported result
           </p>
+
           <Feedback result={confirmState} />
+
           {!confirmState.ok && (
-            <form action={confirmAction}>
+            <form ref={confirmFormRef} onSubmit={handleConfirmSubmit}>
               <input type="hidden" name="matchId" value={matchId} />
+
               <button
                 type="submit"
                 disabled={confirmPending}
@@ -129,7 +183,6 @@ export default function MatchAdminControls({
         </div>
       )}
 
-      {/* Override */}
       {canOverride && (
         <div className="grid gap-3">
           <p
@@ -142,7 +195,11 @@ export default function MatchAdminControls({
           <Feedback result={overrideState} />
 
           {!overrideState.ok && (
-            <form action={overrideAction} className="grid gap-4">
+            <form
+              ref={overrideFormRef}
+              onSubmit={handleOverrideSubmit}
+              className="grid gap-4"
+            >
               <input type="hidden" name="matchId" value={matchId} />
 
               <div>
@@ -167,6 +224,7 @@ export default function MatchAdminControls({
                     style={inputStyle()}
                   />
                 </div>
+
                 <div>
                   <label style={labelStyle()}>{teamB.name} score</label>
                   <input
@@ -200,6 +258,8 @@ export default function MatchAdminControls({
                   borderColor: "oklch(0.65 0.14 75 / 0.5)",
                   color: "var(--asc-amber)",
                   background: "oklch(0.25 0.12 75 / 0.10)",
+                  clipPath:
+                    "polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)",
                 }}
               >
                 {overridePending ? "Overriding…" : "⚠ Force Override"}
@@ -214,6 +274,34 @@ export default function MatchAdminControls({
           This match is in a terminal state — no admin actions are available.
         </p>
       )}
+
+      <ConfirmDialogPortal
+        open={confirmOpen}
+        eyebrow="Confirmation"
+        title="Confirm match result?"
+        description={`Confirm the reported result for ${teamA.name} vs ${teamB.name}. This may advance the bracket.`}
+        confirmLabel="Confirm result"
+        cancelLabel="Cancel"
+        pendingLabel="Confirming..."
+        pending={confirmPending}
+        variant="primary"
+        onConfirm={runConfirmAction}
+        onCancel={() => setConfirmOpen(false)}
+      />
+
+      <ConfirmDialogPortal
+        open={overrideOpen}
+        eyebrow="Confirmation"
+        title="Force override result?"
+        description={`Override the official result for ${teamA.name} vs ${teamB.name}. Use this only after admin review.`}
+        confirmLabel="Force override"
+        cancelLabel="Cancel"
+        pendingLabel="Overriding..."
+        pending={overridePending}
+        variant="danger"
+        onConfirm={runOverrideAction}
+        onCancel={() => setOverrideOpen(false)}
+      />
     </div>
   );
 }

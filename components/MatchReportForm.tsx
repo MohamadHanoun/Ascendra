@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 
 import {
   disputeMatchResult,
   submitMatchReport,
   type MatchActionResult,
 } from "@/actions/matchActions";
+import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
 
 type Team = { id: string; name: string };
 
@@ -77,10 +78,35 @@ export function MatchReportForm({
   teamB,
   hasExistingReport,
 }: MatchReportFormProps) {
+  const reportFormRef = useRef<HTMLFormElement>(null);
+  const [, startTransition] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   const [reportState, reportAction, reportPending] = useActionState(
     submitMatchReport,
     initialState,
   );
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setConfirmOpen(true);
+  }
+
+  function runReportAction() {
+    const form = reportFormRef.current;
+
+    if (!form) {
+      return;
+    }
+
+    const formData = new FormData(form);
+
+    setConfirmOpen(false);
+
+    startTransition(() => {
+      reportAction(formData);
+    });
+  }
 
   return (
     <div className="grid gap-5">
@@ -101,7 +127,11 @@ export function MatchReportForm({
       <ActionFeedback result={reportState} />
 
       {!reportState.ok && (
-        <form action={reportAction} className="grid gap-5">
+        <form
+          ref={reportFormRef}
+          onSubmit={handleSubmit}
+          className="grid gap-5"
+        >
           <input type="hidden" name="matchId" value={matchId} />
           <input type="hidden" name="teamId" value={userTeamId} />
 
@@ -127,6 +157,7 @@ export function MatchReportForm({
                 style={inputStyle()}
               />
             </div>
+
             <div>
               <label style={labelStyle()}>{teamB.name} score</label>
               <input
@@ -177,6 +208,20 @@ export function MatchReportForm({
           </button>
         </form>
       )}
+
+      <ConfirmDialogPortal
+        open={confirmOpen}
+        eyebrow="Confirmation"
+        title="Submit match result?"
+        description={`Submit this result for ${teamA.name} vs ${teamB.name}. Admins may review it if the opponent disputes it.`}
+        confirmLabel="Submit result"
+        cancelLabel="Cancel"
+        pendingLabel="Submitting..."
+        pending={reportPending}
+        variant="primary"
+        onConfirm={runReportAction}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }
@@ -186,17 +231,46 @@ type DisputeFormProps = {
 };
 
 export function DisputeForm({ matchId }: DisputeFormProps) {
+  const disputeFormRef = useRef<HTMLFormElement>(null);
+  const [, startTransition] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   const [state, formAction, pending] = useActionState(
     disputeMatchResult,
     initialState,
   );
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setConfirmOpen(true);
+  }
+
+  function runDisputeAction() {
+    const form = disputeFormRef.current;
+
+    if (!form) {
+      return;
+    }
+
+    const formData = new FormData(form);
+
+    setConfirmOpen(false);
+
+    startTransition(() => {
+      formAction(formData);
+    });
+  }
 
   return (
     <div className="grid gap-4">
       <ActionFeedback result={state} />
 
       {!state.ok && (
-        <form action={formAction} className="grid gap-4">
+        <form
+          ref={disputeFormRef}
+          onSubmit={handleSubmit}
+          className="grid gap-4"
+        >
           <input type="hidden" name="matchId" value={matchId} />
 
           <div>
@@ -219,12 +293,28 @@ export function DisputeForm({ matchId }: DisputeFormProps) {
               borderColor: "oklch(0.50 0.20 25 / 0.5)",
               color: "var(--asc-live)",
               background: "transparent",
+              clipPath:
+                "polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)",
             }}
           >
             {pending ? "Filing dispute…" : "File Dispute"}
           </button>
         </form>
       )}
+
+      <ConfirmDialogPortal
+        open={confirmOpen}
+        eyebrow="Confirmation"
+        title="File dispute?"
+        description="Submit this dispute for admin review. Use this only when the reported result is incorrect or incomplete."
+        confirmLabel="File dispute"
+        cancelLabel="Cancel"
+        pendingLabel="Filing dispute..."
+        pending={pending}
+        variant="danger"
+        onConfirm={runDisputeAction}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }
