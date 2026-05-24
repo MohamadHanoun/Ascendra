@@ -222,6 +222,8 @@ function NavLink({
   );
 }
 
+const CUT6 = "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)";
+
 function UserAvatar({
   userName,
   userImage,
@@ -242,18 +244,19 @@ function UserAvatar({
         alt={userName || fallbackName}
         width={size}
         height={size}
-        className="rounded-full"
+        style={{ objectFit: "cover", clipPath: CUT6 }}
       />
     );
   }
 
   return (
     <span
-      className="grid place-items-center rounded-full"
+      className="grid place-items-center"
       style={{
         width: small ? "2rem" : "2.25rem",
         height: small ? "2rem" : "2.25rem",
         background: "var(--asc-accent-dim)",
+        clipPath: CUT6,
       }}
     >
       <Image

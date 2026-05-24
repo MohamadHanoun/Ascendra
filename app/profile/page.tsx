@@ -313,11 +313,16 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       <div style={{ position: "relative", zIndex: 10, marginTop: -24 }}>
         <div style={{ maxWidth: 1440, margin: "0 auto", padding: "0 40px" }}>
           <div style={{
+            position: "relative",
             background: "var(--asc-bg-1)",
             border: "1px solid var(--asc-line-soft)",
             display: "grid",
             gridTemplateColumns: "repeat(6, 1fr)",
           }}>
+            <div aria-hidden="true" style={{ position: "absolute", top: 10, left: 10, width: 14, height: 14, zIndex: 1, opacity: 0.6 }}>
+              <div style={{ position: "absolute", left: 0, top: 0, width: 8, height: 1, background: "var(--asc-accent)" }} />
+              <div style={{ position: "absolute", left: 0, top: 0, width: 1, height: 8, background: "var(--asc-accent)" }} />
+            </div>
             <StatCell label="MMR" value={derivedMMR.toLocaleString()} accent />
             <StatCell label="RANK" value={bestPlacement ? `#${bestPlacement}` : "—"} />
             <StatCell label="K/D" value={kd} />

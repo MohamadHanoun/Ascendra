@@ -184,6 +184,8 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
   );
 }
 
+const CUT8 = "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)";
+
 function PrimaryLink({
   href,
   children,
@@ -195,7 +197,7 @@ function PrimaryLink({
     <Link
       href={href}
       className="inline-flex justify-center px-6 py-3 text-sm font-black text-white transition"
-      style={{ background: "var(--asc-accent-2)", boxShadow: "0 0 20px var(--asc-accent-glow)" }}
+      style={{ background: "var(--asc-accent-2)", boxShadow: "0 0 20px var(--asc-accent-glow)", clipPath: CUT8 }}
     >
       {children}
     </Link>
@@ -213,7 +215,7 @@ function SecondaryLink({
     <Link
       href={href}
       className="inline-flex justify-center px-6 py-3 text-sm font-black transition"
-      style={{ border: "1px solid var(--asc-line)", color: "var(--asc-fg-2)" }}
+      style={{ border: "1px solid var(--asc-line)", color: "var(--asc-fg-2)", clipPath: CUT8 }}
     >
       {children}
     </Link>
@@ -1381,7 +1383,11 @@ export default async function HomePage() {
                   </Link>
                 </div>
 
-                <div className="border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
+                <div className="border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", position: "relative" }}>
+                  <div aria-hidden="true" style={{ position: "absolute", top: 10, left: 10, width: 14, height: 14, zIndex: 1, opacity: 0.6 }}>
+                    <div style={{ position: "absolute", left: 0, top: 0, width: 8, height: 1, background: "var(--asc-accent)" }} />
+                    <div style={{ position: "absolute", left: 0, top: 0, width: 1, height: 8, background: "var(--asc-accent)" }} />
+                  </div>
                   {topPlayers.length === 0 ? (
                     <div className="p-8 text-center">
                       <p className="text-sm font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
@@ -1442,6 +1448,10 @@ export default async function HomePage() {
                   className="overflow-hidden border p-6"
                   style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", position: "relative" }}
                 >
+                  <div aria-hidden="true" style={{ position: "absolute", top: 10, left: 10, width: 14, height: 14, zIndex: 1, opacity: 0.6 }}>
+                    <div style={{ position: "absolute", left: 0, top: 0, width: 8, height: 1, background: "var(--asc-accent)" }} />
+                    <div style={{ position: "absolute", left: 0, top: 0, width: 1, height: 8, background: "var(--asc-accent)" }} />
+                  </div>
                   <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
                     🎮 COMMUNITY
                   </p>
@@ -1468,7 +1478,7 @@ export default async function HomePage() {
                   <Link
                     href="/community"
                     className="mt-5 flex w-full items-center justify-center py-3 text-sm font-black text-white transition hover:opacity-90"
-                    style={{ background: "var(--asc-accent-2)" }}
+                    style={{ background: "var(--asc-accent-2)", clipPath: CUT8 }}
                   >
                     JOIN THE SERVER ›
                   </Link>
