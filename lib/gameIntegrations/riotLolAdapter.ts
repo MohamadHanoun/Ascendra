@@ -389,19 +389,26 @@ export function verifyCodeMetadata(
       : undefined;
 
   const secret = getCallbackSecret();
-  if (secret) {
-    const provided =
-      typeof parsedMetadata.sig === "string" ? parsedMetadata.sig : "";
-    if (!provided) return { ok: false, error: "missing_signature" };
-    const expected = crypto
-      .createHmac("sha256", secret)
-      .update(`${matchId}|${matchGameId ?? ""}|${gameNumber ?? ""}`)
-      .digest("hex");
-    const a = Buffer.from(expected, "hex");
-    const b = Buffer.from(provided, "hex");
-    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-      return { ok: false, error: "invalid_signature" };
+  // SECURITY: in production the secret MUST be configured or every POST to
+  // the callback endpoint can forge results. Only allow no-secret in dev.
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      return { ok: false, error: "callback_secret_not_configured" };
     }
+    return { ok: true, matchId, matchGameId, gameNumber };
+  }
+
+  const provided =
+    typeof parsedMetadata.sig === "string" ? parsedMetadata.sig : "";
+  if (!provided) return { ok: false, error: "missing_signature" };
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(`${matchId}|${matchGameId ?? ""}|${gameNumber ?? ""}`)
+    .digest("hex");
+  const a = Buffer.from(expected, "hex");
+  const b = Buffer.from(provided, "hex");
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return { ok: false, error: "invalid_signature" };
   }
 
   return { ok: true, matchId, matchGameId, gameNumber };

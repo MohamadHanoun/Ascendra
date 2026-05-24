@@ -414,3 +414,99 @@ export async function generateLolCodesInline(
     `Generated ${generated.length} League of Legends tournament code${generated.length === 1 ? "" : "s"}.`,
   );
 }
+
+// ─── Create / recreate CS2 game room ─────────────────────────────────────────
+//
+// GameRoom.metadata shape stored:
+//   mode:             "manual" | "dedicated_server"
+//   serverIp:         string   — e.g. "192.0.2.10"
+//   serverPort:       string   — default "27015"
+//   password:         string   — connect password shown to players
+//   gotvUrl:          string   — GOTV spectator address shown to players
+//   logSource:        string   — future log-relay identifier (not active)
+//   createdByAdminId: string
+//
+// roomCode is set to "IP:Port" for quick display in the room panel.
+
+export async function createCs2RoomInline(
+  formData: FormData,
+): Promise<AdminMatchInlineResult> {
+  const admin = await requireAdmin();
+  if (!admin) return fail("Admin access required.");
+
+  const matchId = str(formData, "matchId");
+  const serverIp = str(formData, "serverIp") || null;
+  const serverPort = str(formData, "serverPort") || "27015";
+  const password = str(formData, "password") || null;
+  const gotvUrl = str(formData, "gotvUrl") || null;
+  const logSource = str(formData, "logSource") || null;
+  const mode = str(formData, "mode") === "dedicated_server" ? "dedicated_server" : "manual";
+  const forceRecreate = str(formData, "forceRecreate") === "true";
+
+  if (!matchId) return fail("Match ID is missing.");
+  if (!serverIp) return fail("Server IP is required.");
+
+  const match = await prisma.tournamentMatch.findUnique({
+    where: { id: matchId },
+    select: {
+      id: true,
+      tournamentId: true,
+      roundNumber: true,
+      matchNumber: true,
+      teamAId: true,
+      teamBId: true,
+      room: { select: { id: true } },
+    },
+  });
+  if (!match) return fail("Match not found.");
+  if (!match.teamAId || !match.teamBId) {
+    return fail("Both teams must be assigned before creating a room.");
+  }
+
+  if (match.room) {
+    if (!forceRecreate) {
+      return fail("This match already has a room. Set force-recreate to replace it.");
+    }
+    await prisma.gameRoom.delete({ where: { id: match.room.id } });
+  }
+
+  const roomCode = `${serverIp}:${serverPort}`;
+
+  await prisma.gameRoom.create({
+    data: {
+      matchId,
+      provider: GameProvider.steam_cs2,
+      roomCode,
+      password,
+      joinUrl: null,
+      status: "open",
+      metadata: {
+        mode,
+        serverIp,
+        serverPort,
+        password,
+        gotvUrl,
+        logSource,
+        createdByAdminId: admin.id,
+      } as Prisma.InputJsonValue,
+    },
+  });
+
+  await notifyMatchRoomReady(match);
+
+  await writeAudit({
+    action: "match.cs2.room.created",
+    request: {
+      matchId,
+      adminId: admin.id,
+      serverIp,
+      serverPort,
+      mode,
+      forceRecreate,
+    },
+    ok: true,
+  });
+
+  revalidate(match.tournamentId);
+  return ok(`CS2 room created (${mode} mode) — ${roomCode}.`);
+}

@@ -393,6 +393,7 @@ enum GameProvider {
   manual
   riot_lol
   riot_valorant
+  steam
   steam_dota2
   steam_cs2
   dedicated_server

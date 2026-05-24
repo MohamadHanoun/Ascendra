@@ -4,8 +4,10 @@ import { redirect } from "next/navigation";
 
 import { GameProvider } from "@prisma/client";
 
+import { unlinkRiotAccount, unlinkSteamAccount } from "@/actions/profileAccountActions";
 import { auth } from "@/auth";
 import Footer from "@/components/Footer";
+import LinkedAccountRow from "@/components/LinkedAccountRow";
 import Navbar from "@/components/Navbar";
 import ProfileIdentityActions from "@/components/ProfileIdentityActions";
 import ProfileNotice from "@/components/ProfileNotice";
@@ -824,74 +826,49 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     (a: { provider: string }) => a.provider === GameProvider.riot_lol,
                   );
                   return (
-                    <div className="flex flex-wrap items-center justify-between gap-4 bg-[var(--asc-bg-1)] px-5 py-4">
-                      <div className="flex items-center gap-4">
-                        <div
-                          className="grid h-10 w-10 shrink-0 place-items-center border text-xs font-black"
-                          style={{
-                            borderColor: riotAccount
-                              ? "oklch(0.55 0.14 150 / 0.5)"
-                              : "var(--asc-line-soft)",
-                            background: riotAccount
-                              ? "oklch(0.25 0.12 150 / 0.18)"
-                              : "transparent",
-                            color: riotAccount
-                              ? "var(--asc-green)"
-                              : "var(--asc-fg-3)",
-                          }}
-                        >
-                          R
-                        </div>
-                        <div>
-                          <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
-                            Riot Account
-                          </p>
-                          <p className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
-                            League of Legends · VALORANT
-                          </p>
-                        </div>
-                      </div>
+                    <LinkedAccountRow
+                      icon="R"
+                      title="Riot Account"
+                      subtitle="League of Legends · VALORANT"
+                      connected={Boolean(riotAccount)}
+                      displayName={
+                        riotAccount?.displayName ??
+                        (riotAccount ? riotAccount.externalId.slice(0, 8) + "…" : null)
+                      }
+                      linkedDate={
+                        riotAccount?.verifiedAt
+                          ? riotAccount.verifiedAt.toLocaleDateString("en", { dateStyle: "medium" })
+                          : null
+                      }
+                      connectHref="/api/auth/riot/start"
+                      unlinkAction={unlinkRiotAccount}
+                    />
+                  );
+                })()}
 
-                      {riotAccount ? (
-                        <div className="flex flex-wrap items-center gap-3">
-                          <div className="text-right">
-                            <p
-                              className="font-mono font-black"
-                              style={{ color: "var(--asc-accent)" }}
-                            >
-                              {riotAccount.displayName ?? riotAccount.externalId.slice(0, 8) + "…"}
-                            </p>
-                            {riotAccount.verifiedAt && (
-                              <p className="text-[10px]" style={{ color: "var(--asc-fg-3)" }}>
-                                Linked {riotAccount.verifiedAt.toLocaleDateString("en", { dateStyle: "medium" })}
-                              </p>
-                            )}
-                          </div>
-                          <span
-                            className="border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
-                            style={{
-                              borderColor: "oklch(0.55 0.14 150 / 0.5)",
-                              background: "oklch(0.25 0.12 150 / 0.18)",
-                              color: "var(--asc-green)",
-                            }}
-                          >
-                            Connected
-                          </span>
-                        </div>
-                      ) : (
-                        <a
-                          href="/api/auth/riot/start"
-                          className="border px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80"
-                          style={{
-                            borderColor: "oklch(0.50 0.20 285 / 0.4)",
-                            background: "var(--asc-accent-dim)",
-                            color: "var(--asc-accent)",
-                          }}
-                        >
-                          Connect Riot Account →
-                        </a>
-                      )}
-                    </div>
+                {/* Steam */}
+                {(() => {
+                  const steamAccount = linkedAccounts.find(
+                    (a: { provider: string }) => a.provider === GameProvider.steam,
+                  );
+                  return (
+                    <LinkedAccountRow
+                      icon="S"
+                      title="Steam Account"
+                      subtitle="Dota 2 · CS2 · and more"
+                      connected={Boolean(steamAccount)}
+                      displayName={
+                        steamAccount?.displayName ??
+                        (steamAccount ? steamAccount.externalId.slice(0, 8) + "…" : null)
+                      }
+                      linkedDate={
+                        steamAccount?.verifiedAt
+                          ? steamAccount.verifiedAt.toLocaleDateString("en", { dateStyle: "medium" })
+                          : null
+                      }
+                      connectHref="/api/auth/steam/start"
+                      unlinkAction={unlinkSteamAccount}
+                    />
                   );
                 })()}
               </div>

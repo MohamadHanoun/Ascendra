@@ -6,7 +6,9 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import Footer from "@/components/Footer";
 import MatchAdminControls from "@/components/MatchAdminControls";
+import { parseCs2Metadata } from "@/lib/gameIntegrations/steamCs2Adapter";
 import { DisputeForm, MatchReportForm } from "@/components/MatchReportForm";
+import DotaMatchIdForm from "@/components/DotaMatchIdForm";
 import ValorantMatchIdForm from "@/components/ValorantMatchIdForm";
 import Navbar from "@/components/Navbar";
 import { prisma } from "@/lib/prisma";
@@ -195,6 +197,21 @@ export default async function MatchDetailPage({
   const isValorant =
     tournament.game?.slug?.toLowerCase().includes("valorant") ||
     tournament.game?.name?.toLowerCase().includes("valorant");
+
+  const isDota =
+    tournament.game?.slug?.toLowerCase().includes("dota") ||
+    tournament.game?.name?.toLowerCase().includes("dota");
+
+  const isCs2 =
+    tournament.game?.slug?.toLowerCase().includes("cs2") ||
+    tournament.game?.slug?.toLowerCase().includes("counter-strike") ||
+    tournament.game?.name?.toLowerCase().includes("cs2") ||
+    tournament.game?.name?.toLowerCase().includes("counter-strike");
+
+  const cs2Meta =
+    match.room?.provider === "steam_cs2"
+      ? parseCs2Metadata(match.room.metadata)
+      : null;
 
   const { label: statusLabel, tone: statusTone } = matchStatusInfo(match.status);
   const isTerminal = ["completed", "confirmed", "forfeit", "bye", "cancelled"].includes(match.status);
@@ -475,6 +492,115 @@ export default async function MatchDetailPage({
                       </a>
                     </div>
                   )}
+                </div>
+              </Panel>
+            )}
+
+            {/* CS2 server details */}
+            {cs2Meta && (
+              <Panel
+                eyebrow={`CS2 · ${cs2Meta.mode === "dedicated_server" ? "Dedicated Server" : "Manual Lobby"}`}
+                title="Server Details"
+              >
+                <div className="grid gap-4">
+                  <p className="text-xs leading-5" style={{ color: "var(--asc-fg-3)" }}>
+                    {cs2Meta.mode === "dedicated_server"
+                      ? "Connect using the details below. Result reporting via SRCDS log ingestion — submit manually if automation is unavailable."
+                      : "Connect using the details below. After the match, submit your result via the Match Report form with a screenshot as evidence."}
+                  </p>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {cs2Meta.serverIp && (
+                      <div>
+                        <p
+                          className="text-[10px] font-black uppercase tracking-[0.14em]"
+                          style={{ color: "var(--asc-fg-3)" }}
+                        >
+                          Server Address
+                        </p>
+                        <p
+                          className="mt-1 font-mono text-base font-black"
+                          style={{ color: "var(--asc-accent)" }}
+                        >
+                          {cs2Meta.serverIp}
+                          {cs2Meta.serverPort ? `:${cs2Meta.serverPort}` : ""}
+                        </p>
+                        <p
+                          className="mt-0.5 text-[10px]"
+                          style={{ color: "var(--asc-fg-3)" }}
+                        >
+                          connect {cs2Meta.serverIp}
+                          {cs2Meta.serverPort ? `:${cs2Meta.serverPort}` : ""}
+                          {cs2Meta.password ? `; password ${cs2Meta.password}` : ""}
+                        </p>
+                      </div>
+                    )}
+
+                    {cs2Meta.password && (
+                      <div>
+                        <p
+                          className="text-[10px] font-black uppercase tracking-[0.14em]"
+                          style={{ color: "var(--asc-fg-3)" }}
+                        >
+                          Password
+                        </p>
+                        <p
+                          className="mt-1 font-mono text-base font-black"
+                          style={{ color: "var(--asc-fg-0)" }}
+                        >
+                          {cs2Meta.password}
+                        </p>
+                      </div>
+                    )}
+
+                    {cs2Meta.gotvUrl && (
+                      <div className="sm:col-span-2">
+                        <p
+                          className="text-[10px] font-black uppercase tracking-[0.14em]"
+                          style={{ color: "var(--asc-fg-3)" }}
+                        >
+                          GOTV Spectator
+                        </p>
+                        <p
+                          className="mt-1 font-mono text-sm"
+                          style={{ color: "var(--asc-blue)" }}
+                        >
+                          {cs2Meta.gotvUrl}
+                        </p>
+                      </div>
+                    )}
+
+                    {cs2Meta.mode === "dedicated_server" && cs2Meta.logSource && (
+                      <div className="sm:col-span-2">
+                        <p
+                          className="text-[10px] font-black uppercase tracking-[0.14em]"
+                          style={{ color: "var(--asc-fg-3)" }}
+                        >
+                          Log Source
+                        </p>
+                        <p
+                          className="mt-1 font-mono text-xs"
+                          style={{ color: "var(--asc-fg-3)" }}
+                        >
+                          {cs2Meta.logSource}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    className="border px-3 py-2 text-xs leading-5"
+                    style={{
+                      borderColor: "oklch(0.65 0.14 75 / 0.4)",
+                      background: "oklch(0.25 0.12 75 / 0.10)",
+                      color: "var(--asc-amber)",
+                    }}
+                  >
+                    After the match ends, submit your result using the{" "}
+                    <strong>Match Report</strong> form with a screenshot as evidence.
+                    Both teams must report — if they agree, the result is confirmed
+                    automatically.
+                  </div>
                 </div>
               </Panel>
             )}
@@ -763,6 +889,79 @@ export default async function MatchDetailPage({
             {/* VALORANT game-by-game verification status — shown for terminated matches too */}
             {isValorant && match.games.length > 0 && (
               <Panel eyebrow="VALORANT Verification" title="Game Status">
+                <div className="grid gap-2">
+                  {match.games.map((g) => {
+                    const hasId = Boolean(g.externalMatchId);
+                    return (
+                      <div
+                        key={g.id}
+                        className="flex flex-wrap items-center justify-between gap-2 border px-3 py-2 text-xs"
+                        style={{
+                          borderColor: "var(--asc-line-soft)",
+                          background: "var(--asc-bg-2)",
+                        }}
+                      >
+                        <span
+                          className="font-black uppercase tracking-widest"
+                          style={{ color: "var(--asc-fg-3)" }}
+                        >
+                          Game {g.gameNumber}
+                        </span>
+                        {hasId ? (
+                          <span
+                            className="font-mono"
+                            style={{ color: "var(--asc-fg-2)" }}
+                          >
+                            {g.externalMatchId}
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--asc-fg-3)" }}>
+                            No match ID submitted
+                          </span>
+                        )}
+                        <span
+                          className="font-black uppercase tracking-widest"
+                          style={{
+                            color:
+                              g.status === "completed"
+                                ? "var(--asc-green)"
+                                : g.status === "cancelled"
+                                  ? "var(--asc-live)"
+                                  : "var(--asc-fg-3)",
+                          }}
+                        >
+                          {g.status}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Panel>
+            )}
+
+            {/* Dota 2 match ID — shown for Dota tournaments on active matches */}
+            {isDota && !isTerminal && teamA && teamB && (
+              <Panel eyebrow="Dota 2" title="Submit Match ID">
+                <DotaMatchIdForm
+                  matchId={match.id}
+                  gameNumber={
+                    match.games.length > 0
+                      ? match.games[match.games.length - 1].gameNumber + 1
+                      : 1
+                  }
+                  isAdmin={isAdmin}
+                  isParticipant={userTeamId !== null}
+                  currentExternalMatchId={
+                    match.games.find((g) => g.externalMatchId)
+                      ?.externalMatchId ?? null
+                  }
+                />
+              </Panel>
+            )}
+
+            {/* Dota 2 game-by-game verification status */}
+            {isDota && match.games.length > 0 && (
+              <Panel eyebrow="Dota 2 Verification" title="Game Status">
                 <div className="grid gap-2">
                   {match.games.map((g) => {
                     const hasId = Boolean(g.externalMatchId);

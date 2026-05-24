@@ -350,6 +350,29 @@ async function userIsMemberOfTeam(userId: string, teamId: string) {
   return Boolean(leader);
 }
 
+/**
+ * Defense-in-depth: even when called directly (not through a server action),
+ * confirm/override paths verify the user is in ADMIN_DISCORD_IDS.
+ *
+ * Test override: pass userId starting with "test-admin:" in NODE_ENV=test
+ * to skip the env-var lookup (used by the engine test suite).
+ */
+async function isUserAdmin(userId: string): Promise<boolean> {
+  if (process.env.NODE_ENV === "test" && userId.startsWith("test-admin:")) {
+    return true;
+  }
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { discordId: true },
+  });
+  if (!user) return false;
+  const adminIds = (process.env.ADMIN_DISCORD_IDS || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return adminIds.includes(user.discordId);
+}
+
 // ─── Submit Manual Report ───────────────────────────────────────────────────
 
 export type SubmitManualMatchReportInput = {
@@ -557,11 +580,15 @@ export async function confirmMatchResult(
   matchId: string,
   adminUserId: string,
 ): Promise<EngineResult<{ matchStatus: MatchStatus; winnerTeamId: string }>> {
-  const admin = await prisma.user.findUnique({
-    where: { id: adminUserId },
-    select: { id: true },
-  });
-  if (!admin) return fail("Admin user not found.");
+  if (!(await isUserAdmin(adminUserId))) {
+    await writeAudit({
+      action: "match.confirm",
+      request: { matchId, adminUserId } as Prisma.InputJsonValue,
+      status: AuditStatus.failure,
+      error: "not_admin",
+    });
+    return fail("Only Ascendra admins can confirm match results.");
+  }
 
   const match = await loadMatchOrFail(matchId);
   if (!match) return fail("Match was not found.");
@@ -744,6 +771,39 @@ export async function completeMatchGame(
     return fail("Winner must be one of the match teams.");
   }
 
+  // Idempotency: if the game was already completed (e.g. by a webhook that
+  // raced with a manual sync), do not overwrite the recorded winner. Return
+  // the existing series state so the caller can still react to seriesComplete.
+  if (game.status === MatchGameStatus.completed) {
+    const allGames = await prisma.tournamentMatchGame.findMany({
+      where: { matchId: match.id, status: MatchGameStatus.completed },
+      select: { winnerTeamId: true },
+    });
+    let winsA = 0;
+    let winsB = 0;
+    for (const g of allGames) {
+      if (g.winnerTeamId === match.teamAId) winsA += 1;
+      if (g.winnerTeamId === match.teamBId) winsB += 1;
+    }
+    const requiredWins = Math.floor(match.bestOf / 2) + 1;
+    const seriesComplete = winsA >= requiredWins || winsB >= requiredWins;
+    await writeAudit({
+      action: "match.game.complete.noop",
+      request: { gameId, winnerTeamId } as Prisma.InputJsonValue,
+      response: {
+        reason: "already_completed",
+        recordedWinner: game.winnerTeamId,
+      } as Prisma.InputJsonValue,
+      status: AuditStatus.success,
+    });
+    return ok({
+      gameId,
+      matchId: match.id,
+      seriesComplete,
+      matchStatus: match.status,
+    });
+  }
+
   const teamAScore = winnerTeamId === match.teamAId ? 1 : 0;
   const teamBScore = winnerTeamId === match.teamBId ? 1 : 0;
 
@@ -824,6 +884,7 @@ export async function completeMatchGame(
 
 export async function advanceBracketAfterMatch(
   matchId: string,
+  opts?: { adminOverride?: boolean },
 ): Promise<EngineResult<{ advanced: boolean; nextMatchId?: string }>> {
   const match = await prisma.tournamentMatch.findUnique({
     where: { id: matchId },
@@ -863,6 +924,31 @@ export async function advanceBracketAfterMatch(
   });
   if (!next) return fail("Next match in the bracket was not found.");
 
+  const occupant = next[slotField as "teamAId" | "teamBId"];
+
+  // Idempotency: slot already has this winner — nothing to do
+  if (occupant === match.winnerTeamId) {
+    return ok({ advanced: false });
+  }
+
+  // Slot protection: occupied by a different team, reject unless admin override
+  if (occupant !== null && !opts?.adminOverride) {
+    await writeAudit({
+      action: "match.advance.blocked",
+      request: {
+        matchId,
+        nextMatchId: next.id,
+        slot: match.nextMatchSlot,
+        occupant,
+      } as Prisma.InputJsonValue,
+      status: AuditStatus.failure,
+      error: "slot_occupied",
+    });
+    return fail(
+      `Bracket slot ${match.nextMatchSlot} in the next match is already occupied by a different team. Use admin override to replace.`,
+    );
+  }
+
   const updateResult = await prisma.tournamentMatch.updateMany({
     where: { id: next.id, version: next.version },
     data: { [slotField]: match.winnerTeamId, version: { increment: 1 } },
@@ -890,8 +976,13 @@ export async function advanceBracketAfterMatch(
 
   await writeAudit({
     action: "match.advance",
-    request: { matchId, nextMatchId: next.id, slot: match.nextMatchSlot },
-    response: { winnerTeamId: match.winnerTeamId },
+    request: {
+      matchId,
+      nextMatchId: next.id,
+      slot: match.nextMatchSlot,
+      adminOverride: opts?.adminOverride ?? false,
+    } as Prisma.InputJsonValue,
+    response: { winnerTeamId: match.winnerTeamId } as Prisma.InputJsonValue,
     status: AuditStatus.success,
   });
 
@@ -922,6 +1013,16 @@ export type AdminOverrideInput = {
 export async function adminOverrideMatchResult(
   input: AdminOverrideInput,
 ): Promise<EngineResult<{ matchStatus: MatchStatus }>> {
+  if (!(await isUserAdmin(input.adminUserId))) {
+    await writeAudit({
+      action: "match.admin_override",
+      request: { matchId: input.matchId, adminUserId: input.adminUserId } as Prisma.InputJsonValue,
+      status: AuditStatus.failure,
+      error: "not_admin",
+    });
+    return fail("Only Ascendra admins can override match results.");
+  }
+
   const match = await loadMatchOrFail(input.matchId);
   if (!match) return fail("Match was not found.");
 
@@ -990,7 +1091,7 @@ export async function adminOverrideMatchResult(
     teamBScore: input.teamBScore,
   });
 
-  await advanceBracketAfterMatch(input.matchId);
+  await advanceBracketAfterMatch(input.matchId, { adminOverride: true });
 
   return ok({ matchStatus: MatchStatus.confirmed });
 }
