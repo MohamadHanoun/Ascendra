@@ -172,7 +172,7 @@ async function createMatchNotifications({
 
 export async function notifyMatchScheduled(match: MatchNotificationMatch) {
   const teams = await loadTeams([match.teamAId, match.teamBId]);
-  const userIds = leaderIdsForTeams(teams, [match.teamAId, match.teamBId]);
+  const userIds = memberIdsForTeams(teams, [match.teamAId, match.teamBId]);
 
   if (userIds.length === 0) return;
 
@@ -225,7 +225,7 @@ export async function notifyManualResultSubmitted(
     title: "Result submitted",
     message: `${teamName(teams, submittingTeamId)} submitted a match result.`,
     match,
-    dedupeKey: `match.report.submitted:${match.id}:${submittingTeamId}`,
+    dedupeKey: `match.report.submitted:${reportId}`,
     metadata: {
       reportId,
       submittingTeamId,
@@ -236,7 +236,7 @@ export async function notifyManualResultSubmitted(
 export async function notifyMatchDisputed(match: MatchNotificationMatch) {
   const teams = await loadTeams([match.teamAId, match.teamBId]);
   const userIds = uniqueStrings([
-    ...leaderIdsForTeams(teams, [match.teamAId, match.teamBId]),
+    ...memberIdsForTeams(teams, [match.teamAId, match.teamBId]),
     ...(await getAdminNotificationUserIds()),
   ]);
 
@@ -249,6 +249,30 @@ export async function notifyMatchDisputed(match: MatchNotificationMatch) {
     message: "A match result was disputed and needs review.",
     match,
     dedupeKey: `match.disputed:${match.id}`,
+  });
+}
+
+export async function notifyMatchResultReceived(
+  match: MatchNotificationMatch,
+  source: string,
+  eventId: string,
+) {
+  const teams = await loadTeams([match.teamAId, match.teamBId]);
+  const userIds = memberIdsForTeams(teams, [match.teamAId, match.teamBId]);
+
+  if (userIds.length === 0) return;
+
+  await createMatchNotifications({
+    userIds,
+    type: "match.result_received",
+    title: "Result received",
+    message: `${source} result received for your match.`,
+    match,
+    dedupeKey: `match.result.received:${match.id}:${eventId}`,
+    metadata: {
+      source,
+      eventId,
+    },
   });
 }
 
@@ -279,6 +303,43 @@ export async function notifyMatchConfirmed(
       ...(resultScore ? { score: resultScore } : {}),
     },
   });
+}
+
+export async function notifyMatchProcessingFailed(input: {
+  match?: MatchNotificationMatch | null;
+  provider: string;
+  reason: string;
+  dedupeKey: string;
+}) {
+  const userIds = await getAdminNotificationUserIds();
+
+  if (userIds.length === 0) return;
+
+  try {
+    await createNotificationsOnceForUsers({
+      userIds,
+      type: "match.processing_failed",
+      title: "Match automation failed",
+      message: `${input.provider} result processing failed.`,
+      href: input.match ? matchHref(input.match) : "/admin?tab=matches",
+      dedupeKey: `match.processing.failed:${input.dedupeKey}`,
+      metadata: {
+        provider: input.provider,
+        reason: input.reason,
+        ...(input.match
+          ? {
+              matchId: input.match.id,
+              tournamentId: input.match.tournamentId,
+            }
+          : {}),
+      },
+    });
+  } catch (error) {
+    console.error(
+      "[matchNotifications] Failed to create processing failure notification:",
+      error,
+    );
+  }
 }
 
 export async function notifyBracketAdvanced(

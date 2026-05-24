@@ -155,7 +155,7 @@ async function respondToInvitation(
       teamId: invite.teamId,
       inviteId: invite.id,
       actorId: user.id,
-      dedupeKey: `team.invite.rejected:${invite.id}:${respondedAt.toISOString()}`,
+      dedupeKey: `team.invite.rejected:${invite.id}`,
     });
 
     revalidatePath("/profile");
@@ -207,7 +207,7 @@ async function respondToInvitation(
     teamId: invite.teamId,
     inviteId: invite.id,
     actorId: user.id,
-    dedupeKey: `team.invite.accepted:${invite.id}:${respondedAt.toISOString()}`,
+    dedupeKey: `team.invite.accepted:${invite.id}`,
   });
 
   revalidatePath("/profile");

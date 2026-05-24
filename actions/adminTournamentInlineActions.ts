@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { Prisma } from "@prisma/client";
 
 import { auth } from "@/auth";
+import { createNotificationsOnceForUsers } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
 
@@ -67,6 +68,48 @@ function getSiteUrl() {
     /\/$/,
     "",
   );
+}
+
+function uniqueUserIds(userIds: string[]) {
+  return Array.from(new Set(userIds.filter(Boolean)));
+}
+
+async function notifyTournamentStatusUsers(input: {
+  userIds: string[];
+  tournamentId: string;
+  status: "cancelled" | "ended";
+  title: string;
+}) {
+  const userIds = uniqueUserIds(input.userIds);
+
+  if (userIds.length === 0) {
+    return;
+  }
+
+  const label = input.status === "cancelled" ? "cancelled" : "ended";
+
+  try {
+    await createNotificationsOnceForUsers({
+      userIds,
+      type: `tournament.${input.status}`,
+      title:
+        input.status === "cancelled"
+          ? "Tournament cancelled"
+          : "Tournament ended",
+      message: `${input.title} was ${label}.`,
+      href: `/tournaments/${input.tournamentId}`,
+      dedupeKey: `tournament.status:${input.tournamentId}:${input.status}`,
+      metadata: {
+        tournamentId: input.tournamentId,
+        status: input.status,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "[TournamentNotifications] Failed to create notifications:",
+      error,
+    );
+  }
 }
 
 function normalizeImageUrl(imageUrl: string) {
@@ -568,6 +611,30 @@ async function setTournamentStatus(
 
   if (!tournament) return fail("Tournament was not found.");
 
+  const affectedRegistrations =
+    status === "cancelled" || status === "ended"
+      ? await prisma.tournamentRegistration.findMany({
+          where: {
+            tournamentId: tournament.id,
+            status: {
+              in: ["registered", "approved"],
+            },
+          },
+          select: {
+            team: {
+              select: {
+                leaderId: true,
+                members: {
+                  select: {
+                    userId: true,
+                  },
+                },
+              },
+            },
+          },
+        })
+      : [];
+
   const updatedTournament = await prisma.$transaction(async (tx) => {
     if (status === "ended") {
       await snapshotTournament(tx, tournament.id);
@@ -597,6 +664,18 @@ async function setTournamentStatus(
     entityId: tournament.id,
     payload: { tournamentId: tournament.id, status },
   });
+
+  if (status === "cancelled" || status === "ended") {
+    await notifyTournamentStatusUsers({
+      userIds: affectedRegistrations.flatMap((registration) => [
+        registration.team.leaderId,
+        ...registration.team.members.map((member) => member.userId),
+      ]),
+      tournamentId: tournament.id,
+      status,
+      title: updatedTournament.title,
+    });
+  }
 
   revalidateTournamentViews(tournament.id);
 

@@ -414,6 +414,22 @@ async function registerTeamForTournament(
     type: "registered",
   });
 
+  const teamUserIds = Array.from(
+    new Set([team.leaderId, ...team.members.map((member) => member.userId)]),
+  );
+
+  await notifyRegistrationUsers({
+    userIds: teamUserIds,
+    type: "registration.submitted",
+    title: "Registration submitted",
+    message: `${team.name} registered for ${tournament.title}.`,
+    href: `/tournaments/${tournament.id}`,
+    registrationId: registration.id,
+    tournamentId: tournament.id,
+    teamId: team.id,
+    dedupeKey: `registration.submitted:${registration.id}:team`,
+  });
+
   await notifyRegistrationUsers({
     userIds: await getAdminNotificationUserIds(),
     type: "registration.submitted",
@@ -423,7 +439,7 @@ async function registerTeamForTournament(
     registrationId: registration.id,
     tournamentId: tournament.id,
     teamId: team.id,
-    dedupeKey: `registration.submitted:${registration.id}:${registration.updatedAt.toISOString()}`,
+    dedupeKey: `registration.submitted:${registration.id}:admin`,
   });
 
   revalidateTournamentRegistrationViews(tournament.id);
@@ -452,7 +468,11 @@ async function cancelTournamentRegistration(
       id: registrationId,
     },
     include: {
-      team: true,
+      team: {
+        include: {
+          members: true,
+        },
+      },
       tournament: true,
     },
   });
@@ -508,6 +528,23 @@ async function cancelTournamentRegistration(
     tournamentId: registration.tournamentId,
     teamId: registration.teamId,
     type: "cancelled",
+  });
+
+  await notifyRegistrationUsers({
+    userIds: Array.from(
+      new Set([
+        registration.team.leaderId,
+        ...registration.team.members.map((member) => member.userId),
+      ]),
+    ),
+    type: "registration.cancelled",
+    title: "Registration cancelled",
+    message: `Registration cancelled for ${registration.tournament.title}.`,
+    href: `/tournaments/${registration.tournamentId}`,
+    registrationId: registration.id,
+    tournamentId: registration.tournamentId,
+    teamId: registration.teamId,
+    dedupeKey: `registration.cancelled:${registration.id}:team`,
   });
 
   revalidateTournamentRegistrationViews(registration.tournamentId);

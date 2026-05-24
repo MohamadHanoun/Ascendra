@@ -81,7 +81,7 @@ export async function GET(request: Request) {
   } catch (error) {
     if (mayBeMissingNotificationMigration(error)) {
       console.error(
-        "[api/notifications] Notification migration may not be applied.",
+        "[notifications] Notification table may be missing. Run prisma migrate deploy.",
         error,
       );
     } else {
@@ -91,7 +91,7 @@ export async function GET(request: Request) {
     return jsonResponse(
       {
         ok: false,
-        error: "Unable to load notifications.",
+        error: "Notifications are temporarily unavailable.",
         unreadCount: 0,
         notifications: [],
       },

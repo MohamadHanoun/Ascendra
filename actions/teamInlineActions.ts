@@ -429,6 +429,17 @@ export async function updateTeamInline(
     userIds: team.members.map((member) => member.userId),
   });
 
+  await createTeamNotifications({
+    userIds: team.members.map((member) => member.userId),
+    type: "team.updated",
+    title: "Team updated",
+    message: `${updatedTeam.name} was updated.`,
+    href: `/profile/teams/${updatedTeam.id}`,
+    teamId: updatedTeam.id,
+    actorId: user.id,
+    dedupeKey: `team.updated:${updatedTeam.id}`,
+  });
+
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${updatedTeam.id}`);
 
@@ -559,7 +570,7 @@ export async function invitePlayerToTeamInline(
     inviteId: invite.id,
     actorId: user.id,
     targetUserId: invitedUser.id,
-    dedupeKey: `team.invite.created:${invite.id}:${invite.createdAt.toISOString()}`,
+    dedupeKey: `team.invite.created:${invite.id}`,
   });
 
   revalidatePath("/profile");
@@ -714,6 +725,18 @@ export async function leaveTeamInline(
     userIds: team.members.map((member) => member.userId),
   });
 
+  await createTeamNotifications({
+    userIds: [team.leaderId],
+    type: "team.member.left",
+    title: "Team member left",
+    message: `${user.username} left ${team.name}.`,
+    href: `/profile/teams/${team.id}`,
+    teamId: team.id,
+    actorId: user.id,
+    targetUserId: user.id,
+    dedupeKey: `team.member.left:${membership.id}`,
+  });
+
   revalidatePath("/profile");
   revalidatePath(`/profile/teams/${team.id}`);
 
@@ -769,8 +792,6 @@ export async function transferTeamLeadershipInline(
     return fail(messages.alreadyTeamLeader);
   }
 
-  const transferredAt = new Date();
-
   await prisma.$transaction([
     prisma.team.update({
       where: {
@@ -816,7 +837,7 @@ export async function transferTeamLeadershipInline(
     teamId: team.id,
     actorId: user.id,
     targetUserId: targetMember.userId,
-    dedupeKey: `team.leader.transferred:${team.id}:${user.id}:${targetMember.userId}:${transferredAt.toISOString()}:old`,
+    dedupeKey: `team.leader.transferred:${team.id}:${user.id}:${targetMember.userId}:old`,
   });
 
   await createTeamNotifications({
@@ -828,7 +849,7 @@ export async function transferTeamLeadershipInline(
     teamId: team.id,
     actorId: user.id,
     targetUserId: targetMember.userId,
-    dedupeKey: `team.leader.transferred:${team.id}:${user.id}:${targetMember.userId}:${transferredAt.toISOString()}:new`,
+    dedupeKey: `team.leader.transferred:${team.id}:${user.id}:${targetMember.userId}:new`,
   });
 
   revalidatePath("/profile");
@@ -899,6 +920,19 @@ export async function cancelTeamInviteInline(
     teamId: invite.teamId,
     inviteId: invite.id,
     userIds: [user.id, invite.invitedUserId],
+  });
+
+  await createTeamNotifications({
+    userIds: [invite.invitedUserId],
+    type: "team.invite.cancelled",
+    title: "Team invitation cancelled",
+    message: `Your invitation to join ${invite.team.name} was cancelled.`,
+    href: "/profile",
+    teamId: invite.teamId,
+    inviteId: invite.id,
+    actorId: user.id,
+    targetUserId: invite.invitedUserId,
+    dedupeKey: `team.invite.cancelled:${invite.id}`,
   });
 
   revalidatePath("/profile");
@@ -990,7 +1024,10 @@ export async function deleteTeamInline(
     return fail(messages.cannotDeleteWithHistory);
   }
 
-  const memberUserIds = team.members.map((member) => member.userId);
+  const memberUserIds = uniqueUserIds([
+    team.leaderId,
+    ...team.members.map((member) => member.userId),
+  ]);
 
   await prisma.team.delete({
     where: {

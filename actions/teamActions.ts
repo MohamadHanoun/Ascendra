@@ -462,7 +462,7 @@ export async function updateTeam(formData: FormData) {
   const team = await requireTeamLeader(teamId, user.id, messages);
   await requireTeamNotInActiveRegistration(team.id, messages);
 
-  await prisma.team.update({
+  const updatedTeam = await prisma.team.update({
     where: { id: team.id },
     data: {
       name,
@@ -478,6 +478,17 @@ export async function updateTeam(formData: FormData) {
     type: "team.updated",
     teamId: team.id,
     userIds: team.members.map((member) => member.userId),
+  });
+
+  await createTeamNotifications({
+    userIds: team.members.map((member) => member.userId),
+    type: "team.updated",
+    title: "Team updated",
+    message: `${updatedTeam.name} was updated.`,
+    href: `/profile/teams/${team.id}`,
+    teamId: team.id,
+    actorId: user.id,
+    dedupeKey: `team.updated:${team.id}`,
   });
 
   revalidatePath("/profile");
@@ -593,7 +604,7 @@ export async function invitePlayerToTeam(formData: FormData) {
     inviteId: invite.id,
     actorId: user.id,
     targetUserId: invitedUser.id,
-    dedupeKey: `team.invite.created:${invite.id}:${invite.createdAt.toISOString()}`,
+    dedupeKey: `team.invite.created:${invite.id}`,
   });
 
   revalidatePath("/profile");
@@ -646,6 +657,19 @@ export async function cancelTeamInvite(formData: FormData) {
     teamId: invite.teamId,
     inviteId: invite.id,
     userIds: [user.id, invite.invitedUserId],
+  });
+
+  await createTeamNotifications({
+    userIds: [invite.invitedUserId],
+    type: "team.invite.cancelled",
+    title: "Team invitation cancelled",
+    message: `Your invitation to join ${invite.team.name} was cancelled.`,
+    href: "/profile",
+    teamId: invite.teamId,
+    inviteId: invite.id,
+    actorId: user.id,
+    targetUserId: invite.invitedUserId,
+    dedupeKey: `team.invite.cancelled:${invite.id}`,
   });
 
   revalidatePath("/profile");
@@ -748,7 +772,7 @@ export async function respondToTeamInvite(formData: FormData) {
       inviteId: invite.id,
       actorId: user.id,
       targetUserId: user.id,
-      dedupeKey: `team.invite.accepted:${invite.id}:${respondedAt.toISOString()}`,
+      dedupeKey: `team.invite.accepted:${invite.id}`,
     });
 
     revalidatePath("/profile");
@@ -786,7 +810,7 @@ export async function respondToTeamInvite(formData: FormData) {
     inviteId: invite.id,
     actorId: user.id,
     targetUserId: user.id,
-    dedupeKey: `team.invite.rejected:${invite.id}:${respondedAt.toISOString()}`,
+    dedupeKey: `team.invite.rejected:${invite.id}`,
   });
 
   revalidatePath("/profile");
@@ -910,7 +934,10 @@ export async function deleteTeam(formData: FormData) {
   await requireTeamNotInActiveRegistration(team.id, messages);
   await requireTeamWithoutTournamentHistory(team.id, messages);
 
-  const memberUserIds = team.members.map((member) => member.userId);
+  const memberUserIds = uniqueUserIds([
+    team.leaderId,
+    ...team.members.map((member) => member.userId),
+  ]);
 
   await prisma.$transaction(async (tx) => {
     await tx.teamInvite.deleteMany({

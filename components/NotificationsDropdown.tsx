@@ -177,7 +177,7 @@ export default function NotificationsDropdown({
 
     setIsOpen(nextOpen);
 
-    if (nextOpen && isLoggedIn && !hasFetched) {
+    if (nextOpen && isLoggedIn) {
       void fetchNotifications();
     }
   }

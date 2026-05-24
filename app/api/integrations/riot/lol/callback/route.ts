@@ -16,7 +16,11 @@ import {
   resolveWinnerFromPuuids,
   verifyCodeMetadata,
 } from "@/lib/gameIntegrations/riotLolAdapter";
-import { notifyMatchConfirmed } from "@/lib/matchNotifications";
+import {
+  notifyMatchConfirmed,
+  notifyMatchProcessingFailed,
+  notifyMatchResultReceived,
+} from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
 import { completeMatchGame } from "@/lib/tournamentMatchEngine";
 
@@ -63,17 +67,24 @@ async function ingest(rawBody: string, rawJson: unknown): Promise<IngestResult> 
 
   const metadataCheck = verifyCodeMetadata(callback.data.metadata);
   if (!metadataCheck.ok) {
+    const metadataError = metadataCheck.error || "invalid_metadata";
+
     await writeAudit({
       action: "riot.lol.callback.reject",
-      request: { reason: metadataCheck.error },
+      request: { reason: metadataError },
       response: rawJson as Prisma.InputJsonValue,
       status: AuditStatus.failure,
-      error: metadataCheck.error,
+      error: metadataError,
+    });
+    await notifyMatchProcessingFailed({
+      provider: "Riot",
+      reason: metadataError,
+      dedupeKey: `riot.lol.callback:${callback.data.shortCode}:${metadataError}`,
     });
     return {
       status: "error",
       code: 401,
-      body: { ok: false, error: metadataCheck.error },
+      body: { ok: false, error: metadataError },
     };
   }
 
@@ -167,6 +178,11 @@ async function ingest(rawBody: string, rawJson: unknown): Promise<IngestResult> 
       status: AuditStatus.failure,
       error: "match_not_found",
     });
+    await notifyMatchProcessingFailed({
+      provider: "Riot",
+      reason: "match_not_found",
+      dedupeKey: `riot.lol.callback:${matchId}:match_not_found`,
+    });
     return {
       status: "error",
       code: 404,
@@ -176,6 +192,12 @@ async function ingest(rawBody: string, rawJson: unknown): Promise<IngestResult> 
 
   if (!match.teamAId || !match.teamBId) {
     await markFailed("match_missing_teams");
+    await notifyMatchProcessingFailed({
+      match,
+      provider: "Riot",
+      reason: "match_missing_teams",
+      dedupeKey: `riot.lol.callback:${match.id}:match_missing_teams`,
+    });
     return {
       status: "error",
       code: 409,
@@ -208,6 +230,12 @@ async function ingest(rawBody: string, rawJson: unknown): Promise<IngestResult> 
       },
       status: AuditStatus.failure,
       error: "game_not_found",
+    });
+    await notifyMatchProcessingFailed({
+      match,
+      provider: "Riot",
+      reason: "game_not_found",
+      dedupeKey: `riot.lol.callback:${match.id}:game_not_found:${callback.data.shortCode}`,
     });
     return {
       status: "error",
@@ -253,6 +281,12 @@ async function ingest(rawBody: string, rawJson: unknown): Promise<IngestResult> 
       status: AuditStatus.failure,
       error: winner.error,
     });
+    await notifyMatchProcessingFailed({
+      match,
+      provider: "Riot",
+      reason: winner.error,
+      dedupeKey: `riot.lol.callback:${match.id}:winner_unresolved:${callback.data.shortCode}`,
+    });
     return {
       status: "error",
       code: 422,
@@ -283,6 +317,12 @@ async function ingest(rawBody: string, rawJson: unknown): Promise<IngestResult> 
       status: AuditStatus.failure,
       error: completeResult.error,
     });
+    await notifyMatchProcessingFailed({
+      match,
+      provider: "Riot",
+      reason: completeResult.error,
+      dedupeKey: `riot.lol.callback:${match.id}:complete_failed:${game.id}`,
+    });
     return {
       status: "error",
       code: 500,
@@ -294,6 +334,12 @@ async function ingest(rawBody: string, rawJson: unknown): Promise<IngestResult> 
     where: { id: webhookId },
     data: { status: WebhookStatus.processed, processedAt: new Date() },
   });
+
+  await notifyMatchResultReceived(
+    match,
+    "Riot",
+    String(callback.data.gameId ?? callback.data.shortCode),
+  );
 
   // If the series wrapped up, flip match status to confirmed and advance the bracket.
   if (completeResult.data.seriesComplete) {

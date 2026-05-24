@@ -660,7 +660,10 @@ export async function rejectRegistrationInline(
   const reason = compactReason(rejectionReason);
 
   await notifyRegistrationUsers({
-    userIds: [registration.team.leaderId],
+    userIds: [
+      registration.team.leaderId,
+      ...registration.team.members.map((member) => member.userId),
+    ],
     type: "registration.rejected",
     title: "Registration rejected",
     message: `Registration rejected for ${registration.tournament.title}. Reason: ${reason}`,
@@ -668,7 +671,7 @@ export async function rejectRegistrationInline(
     registrationId: registration.id,
     tournamentId: registration.tournamentId,
     teamId: registration.teamId,
-    dedupeKey: `registration.rejected:${registration.id}:${reviewedAt.toISOString()}`,
+    dedupeKey: `registration.rejected:${registration.id}`,
     rejectionReason: reason,
   });
 
@@ -780,7 +783,10 @@ export async function cancelRegistrationInline(
   });
 
   await notifyRegistrationUsers({
-    userIds: [registration.team.leaderId],
+    userIds: [
+      registration.team.leaderId,
+      ...registration.team.members.map((member) => member.userId),
+    ],
     type: "registration.cancelled",
     title: "Registration cancelled",
     message: `Registration cancelled for ${registration.tournament.title}.`,
@@ -788,7 +794,7 @@ export async function cancelRegistrationInline(
     registrationId: registration.id,
     tournamentId: registration.tournamentId,
     teamId: registration.teamId,
-    dedupeKey: `registration.cancelled:${registration.id}:${reviewedAt.toISOString()}`,
+    dedupeKey: `registration.cancelled:${registration.id}`,
   });
 
   revalidateRegistrationViews(registration.tournamentId);

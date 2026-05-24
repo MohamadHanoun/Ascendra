@@ -177,6 +177,22 @@ export async function registerTeamForTournament(formData: FormData) {
         },
       });
 
+  const teamUserIds = Array.from(
+    new Set([team.leaderId, ...team.members.map((member) => member.userId)]),
+  );
+
+  await notifyRegistrationUsers({
+    userIds: teamUserIds,
+    type: "registration.submitted",
+    title: "Registration submitted",
+    message: `${team.name} registered for ${tournament.title}.`,
+    href: `/tournaments/${tournament.id}`,
+    registrationId: registration.id,
+    tournamentId: tournament.id,
+    teamId: team.id,
+    dedupeKey: `registration.submitted:${registration.id}:team`,
+  });
+
   await notifyRegistrationUsers({
     userIds: await getAdminNotificationUserIds(),
     type: "registration.submitted",
@@ -186,10 +202,11 @@ export async function registerTeamForTournament(formData: FormData) {
     registrationId: registration.id,
     tournamentId: tournament.id,
     teamId: team.id,
-    dedupeKey: `registration.submitted:${registration.id}:${registration.updatedAt.toISOString()}`,
+    dedupeKey: `registration.submitted:${registration.id}:admin`,
   });
 
   revalidatePath("/tournaments");
+  revalidatePath(`/tournaments/${tournament.id}`);
   revalidatePath("/profile");
   revalidatePath("/admin");
 
@@ -209,7 +226,7 @@ export async function cancelTournamentRegistration(formData: FormData) {
 
   const registration = await prisma.tournamentRegistration.findUnique({
     where: { id: registrationId },
-    include: { team: true },
+    include: { team: { include: { members: true } }, tournament: true },
   });
 
   if (!registration) {
@@ -229,7 +246,25 @@ export async function cancelTournamentRegistration(formData: FormData) {
     data: { status: "cancelled" },
   });
 
+  await notifyRegistrationUsers({
+    userIds: Array.from(
+      new Set([
+        registration.team.leaderId,
+        ...registration.team.members.map((member) => member.userId),
+      ]),
+    ),
+    type: "registration.cancelled",
+    title: "Registration cancelled",
+    message: `Registration cancelled for ${registration.tournament.title}.`,
+    href: `/tournaments/${registration.tournamentId}`,
+    registrationId: registration.id,
+    tournamentId: registration.tournamentId,
+    teamId: registration.teamId,
+    dedupeKey: `registration.cancelled:${registration.id}:team`,
+  });
+
   revalidatePath("/tournaments");
+  revalidatePath(`/tournaments/${registration.tournamentId}`);
   revalidatePath("/profile");
   revalidatePath("/admin");
 

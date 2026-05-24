@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { createNotificationsOnceForUsers } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 
 export type AdminTeamActionResult = {
@@ -27,6 +28,46 @@ function fail(message: string, redirectTo?: string): AdminTeamActionResult {
 
 function getTeamId(formData: FormData) {
   return String(formData.get("teamId") || formData.get("id") || "").trim();
+}
+
+function uniqueUserIds(userIds: string[]) {
+  return Array.from(new Set(userIds.filter(Boolean)));
+}
+
+async function notifyTeamUsers(input: {
+  userIds: string[];
+  type: string;
+  title: string;
+  message: string;
+  href: string;
+  teamId: string;
+  dedupeKey: string;
+  rejectionReason?: string;
+}) {
+  const userIds = uniqueUserIds(input.userIds);
+
+  if (userIds.length === 0) {
+    return;
+  }
+
+  try {
+    await createNotificationsOnceForUsers({
+      userIds,
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      href: input.href,
+      dedupeKey: input.dedupeKey,
+      metadata: {
+        teamId: input.teamId,
+        ...(input.rejectionReason
+          ? { rejectionReason: input.rejectionReason }
+          : {}),
+      },
+    });
+  } catch (error) {
+    console.error("[TeamNotifications] Failed to create notifications:", error);
+  }
 }
 
 async function requireAdmin(): Promise<AdminTeamActionResult | null> {
@@ -69,6 +110,9 @@ export async function approveTeamInline(
     where: {
       id: teamId,
     },
+    include: {
+      members: true,
+    },
   });
 
   if (!team) {
@@ -84,6 +128,19 @@ export async function approveTeamInline(
       rejectionReason: null,
       rejectedAt: null,
     },
+  });
+
+  await notifyTeamUsers({
+    userIds: [
+      team.leaderId,
+      ...team.members.map((member) => member.userId),
+    ],
+    type: "team.approved",
+    title: "Team approved",
+    message: `${team.name} was approved.`,
+    href: `/profile/teams/${team.id}`,
+    teamId: team.id,
+    dedupeKey: `team.approved:${team.id}`,
   });
 
   revalidatePath("/admin");
@@ -117,6 +174,9 @@ export async function rejectTeamInline(
     where: {
       id: teamId,
     },
+    include: {
+      members: true,
+    },
   });
 
   if (!team) {
@@ -132,6 +192,20 @@ export async function rejectTeamInline(
       rejectionReason,
       rejectedAt: new Date(),
     },
+  });
+
+  await notifyTeamUsers({
+    userIds: [
+      team.leaderId,
+      ...team.members.map((member) => member.userId),
+    ],
+    type: "team.rejected",
+    title: "Team rejected",
+    message: `${team.name} was rejected. Reason: ${rejectionReason}`,
+    href: `/profile/teams/${team.id}`,
+    teamId: team.id,
+    dedupeKey: `team.rejected:${team.id}`,
+    rejectionReason,
   });
 
   revalidatePath("/admin");
@@ -159,6 +233,9 @@ export async function deleteTeamInline(
   const team = await prisma.team.findUnique({
     where: {
       id: teamId,
+    },
+    include: {
+      members: true,
     },
   });
 
@@ -190,6 +267,19 @@ export async function deleteTeamInline(
         id: team.id,
       },
     });
+  });
+
+  await notifyTeamUsers({
+    userIds: [
+      team.leaderId,
+      ...team.members.map((member) => member.userId),
+    ],
+    type: "team.deleted",
+    title: "Team deleted",
+    message: `${team.name} was deleted.`,
+    href: "/profile",
+    teamId: team.id,
+    dedupeKey: `team.deleted:${team.id}:admin`,
   });
 
   revalidatePath("/admin");

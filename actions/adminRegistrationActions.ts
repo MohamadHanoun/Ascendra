@@ -136,7 +136,11 @@ export async function cancelTournamentRegistrationAsAdmin(formData: FormData) {
     },
     include: {
       tournament: true,
-      team: true,
+      team: {
+        include: {
+          members: true,
+        },
+      },
     },
   });
 
@@ -158,7 +162,10 @@ export async function cancelTournamentRegistrationAsAdmin(formData: FormData) {
   });
 
   await notifyRegistrationUsers({
-    userIds: [registration.team.leaderId],
+    userIds: [
+      registration.team.leaderId,
+      ...registration.team.members.map((member) => member.userId),
+    ],
     type: "registration.cancelled",
     title: "Registration cancelled",
     message: `Registration cancelled for ${registration.tournament.title}.`,
@@ -171,6 +178,7 @@ export async function cancelTournamentRegistrationAsAdmin(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/tournaments");
+  revalidatePath(`/tournaments/${registration.tournamentId}`);
   revalidatePath("/profile");
 
   redirectWithMessage("Registration cancelled.");
