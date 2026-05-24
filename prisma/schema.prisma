@@ -103,6 +103,7 @@ model Tournament {
   game          Game?                    @relation(fields: [gameId], references: [id])
   registrations TournamentRegistration[]
   results       TournamentResult[]
+  matches       Match[]
 
   @@index([discordAnnouncementMessageId])
   @@index([gameId])
@@ -133,6 +134,8 @@ model Team {
   invites       TeamInvite[]
   registrations TournamentRegistration[]
   results       TournamentResult[]
+  matchesAsA    Match[]                  @relation("MatchTeamA")
+  matchesAsB    Match[]                  @relation("MatchTeamB")
 
   @@unique([name, leaderId])
   @@index([gameId])
@@ -226,6 +229,39 @@ model TournamentResult {
   @@unique([tournamentId, teamId])
   @@index([tournamentId])
   @@index([teamId])
+}
+
+model Match {
+  id           String @id @default(cuid())
+  tournamentId String
+  round        Int
+  matchNumber  Int
+
+  teamAId String?
+  teamBId String?
+
+  scheduledAt      DateTime?
+  status           String    @default("pending")
+  bestOf           Int       @default(1)
+  scoreA           Int       @default(0)
+  scoreB           Int       @default(0)
+  winnerTeamId     String?
+  reportedById     String?
+  confirmedByAdmin Boolean   @default(false)
+  notes            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teamA      Team?      @relation("MatchTeamA", fields: [teamAId], references: [id], onDelete: SetNull)
+  teamB      Team?      @relation("MatchTeamB", fields: [teamBId], references: [id], onDelete: SetNull)
+
+  @@unique([tournamentId, round, matchNumber])
+  @@index([tournamentId])
+  @@index([status])
+  @@index([teamAId])
+  @@index([teamBId])
 }
 
 model Announcement {
