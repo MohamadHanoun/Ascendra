@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
+  CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
 import { createTeam, respondToTeamInvite } from "@/actions/teamActions";
@@ -175,35 +176,37 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   return (
     <div className="border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-0)" }}>
       <p style={{ color: "var(--asc-fg-3)", marginBottom: 2 }}>{label}</p>
-      <p style={{ color: "var(--asc-accent)" }}>{payload[0].value} PTS</p>
+      <p style={{ color: "var(--asc-accent)" }}>{payload[0].value.toLocaleString()} MMR</p>
     </div>
   );
 }
 
 function StatsTab({ tournamentResults, labels }: Pick<ProfileTabsProps, "tournamentResults" | "labels">) {
-  const recent = tournamentResults.slice(0, 8);
-  const chartData = recent
-    .slice()
-    .reverse()
-    .map((r) => ({
-      name: (r.snapshotTeamName ?? r.team.name).slice(0, 10),
-      tournament: r.tournament.title,
-      points: r.points,
-    }));
+  const recent = tournamentResults.slice(0, 10);
+  // Build cumulative MMR progression oldest → newest
+  const chronological = recent.slice().reverse();
+  const chartData = chronological.map((r, i) => {
+    const cumPoints = chronological.slice(0, i + 1).reduce((s, x) => s + x.points, 0);
+    return {
+      name: new Date(r.awardedAt).toLocaleDateString("en-GB", { month: "short", day: "2-digit" }),
+      mmr: Math.min(cumPoints * 15 + 1200, 9800),
+    };
+  });
 
   return (
     <div className="grid gap-6">
       <Card>
         <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
           <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ PERFORMANCE</p>
-          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>POINT HISTORY</h3>
+          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>MMR HISTORY</h3>
         </div>
         <div className="p-5">
           {chartData.length === 0 ? (
             <p className="py-8 text-center text-sm" style={{ color: "var(--asc-fg-3)" }}>No tournament data yet.</p>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
+              <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                <CartesianGrid stroke="var(--asc-line-soft)" strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="name"
                   tick={{ fontSize: 10, fill: "var(--asc-fg-3)", fontFamily: "Barlow, sans-serif", fontWeight: 700 }}
@@ -215,9 +218,16 @@ function StatsTab({ tournamentResults, labels }: Pick<ProfileTabsProps, "tournam
                   axisLine={false}
                   tickLine={false}
                 />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-                <Bar dataKey="points" fill="var(--asc-accent)" radius={0} maxBarSize={40} />
-              </BarChart>
+                <Tooltip content={<CustomTooltip />} />
+                <Line
+                  type="monotone"
+                  dataKey="mmr"
+                  stroke="var(--asc-accent)"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4, fill: "var(--asc-accent)", strokeWidth: 0 }}
+                />
+              </LineChart>
             </ResponsiveContainer>
           )}
         </div>
