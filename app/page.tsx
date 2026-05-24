@@ -671,6 +671,7 @@ export default async function HomePage() {
         title: true,
         game: { select: { name: true, slug: true } },
         startsAt: true,
+        prize: true,
         imageUrl: true,
         maxTeams: true,
         teamSize: true,
@@ -811,6 +812,14 @@ export default async function HomePage() {
   ];
   const displayAnnouncements = recentAnnouncements.length > 0 ? recentAnnouncements : placeholderAnnouncements;
 
+  const featuredTournament = tournaments[0] ?? null;
+  const featuredApprovedSlots = featuredTournament
+    ? featuredTournament.registrations.filter((r) => r.status === "approved").length
+    : 0;
+  const featuredDaysUntil = featuredTournament?.startsAt
+    ? Math.max(0, Math.ceil((featuredTournament.startsAt.getTime() - Date.now()) / 86400000))
+    : null;
+
   return (
     <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
       <div className="relative z-10">
@@ -822,24 +831,113 @@ export default async function HomePage() {
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: 'url("/images/backgrounds/home-hero.webp")' }}
           />
-          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, oklch(0.06 0.03 287 / 0.90) 0%, oklch(0.06 0.03 287 / 0.50) 44%, oklch(0.06 0.03 287 / 0.72) 100%)" }} />
-          <div className="absolute inset-x-0 bottom-0 h-56" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: [
+                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.20) 0%, oklch(0.07 0.025 285 / 0.55) 55%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.30) 40%, transparent 65%)",
+              ].join(", "),
+            }}
+          />
 
-          <div className="relative z-10 flex min-h-[720px] items-center px-6 pb-32 pt-20 lg:px-10 2xl:px-14">
-            <div className="max-w-5xl">
-              <p className="mb-5 text-sm font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
-                {messages.hero.label}
-              </p>
-              <h1 className="max-w-5xl text-5xl md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
-                {messages.hero.title}
-              </h1>
-              <p className="mt-6 max-w-2xl text-base leading-7" style={{ color: "var(--asc-fg-2)" }}>
-                {messages.hero.description}
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <PrimaryLink href="/tournaments">{messages.hero.primary}</PrimaryLink>
-                <SecondaryLink href="/profile">{messages.hero.secondary}</SecondaryLink>
+          <div className="relative z-10 mx-auto flex min-h-[720px] max-w-[1680px] items-end px-6 pb-20 pt-24 lg:px-10 2xl:px-14">
+            <div className="grid w-full gap-10 lg:grid-cols-[3fr_2fr] lg:items-end">
+
+              {/* Left column */}
+              <div>
+                <p className="mb-5 text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
+                  ▲ ASCENDRA · SEASON 07 · A PREMIUM ESPORTS PLATFORM
+                </p>
+                <h1 className="text-6xl font-black uppercase leading-none md:text-8xl" style={{ color: "var(--asc-fg-0)" }}>
+                  RISE<br />
+                  <span
+                    style={{
+                      background: "linear-gradient(92deg, var(--asc-accent) 0%, oklch(0.85 0.10 245) 100%)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      backgroundClip: "text",
+                    }}
+                  >
+                    BEYOND LIMITS.
+                  </span>
+                </h1>
+                <p className="mt-6 max-w-xl text-base leading-7" style={{ color: "var(--asc-fg-2)" }}>
+                  {messages.hero.description}
+                </p>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <PrimaryLink href="/tournaments">{messages.hero.primary}</PrimaryLink>
+                  <SecondaryLink href="/profile">{messages.hero.secondary}</SecondaryLink>
+                </div>
               </div>
+
+              {/* Right column — featured event card */}
+              <div
+                className="relative border p-6 shadow-2xl"
+                style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.09 0.035 287 / 0.90)" }}
+              >
+                <div style={{ position: "absolute", top: -1, left: -1, width: 14, height: 14, borderTop: "1.5px solid rgba(255,255,255,0.22)", borderLeft: "1.5px solid rgba(255,255,255,0.22)" }} />
+
+                <div className="flex items-center gap-2">
+                  <span className="asc-live-dot" />
+                  <span className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-accent)" }}>
+                    FEATURED · SEASON 7
+                  </span>
+                </div>
+
+                <h2 className="mt-4 text-2xl font-black uppercase leading-tight md:text-3xl" style={{ color: "var(--asc-fg-0)" }}>
+                  {featuredTournament?.title ?? "ASCENDRA MAJOR · SEASON 7"}
+                </h2>
+                <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-2)" }}>
+                  {featuredTournament?.game?.name ? `${featuredTournament.game.name} · Open qualifier` : "The crown returns to the arena"}
+                </p>
+
+                <p className="mt-5 text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
+                  ▲ GROUP STAGE BEGINS IN
+                </p>
+                <div className="mt-2 flex gap-4">
+                  {[
+                    { v: featuredDaysUntil !== null ? String(featuredDaysUntil) : "–", l: "DAYS" },
+                    { v: "–", l: "HRS" },
+                    { v: "–", l: "MIN" },
+                  ].map(({ v, l }) => (
+                    <div key={l} className="text-center">
+                      <p className="text-3xl font-black tabular-nums" style={{ color: "var(--asc-fg-0)" }}>{v}</p>
+                      <p className="text-[9px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>{l}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ margin: "20px 0 16px", height: 1, background: "var(--asc-line-soft)" }} />
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>PRIZE</p>
+                    <p className="mt-1 text-sm font-black" style={{ color: "var(--asc-blue)" }}>
+                      {featuredTournament?.prize ?? "–"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>SLOTS</p>
+                    <p className="mt-1 text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
+                      {featuredTournament ? `${featuredApprovedSlots}/${featuredTournament.maxTeams}` : "–"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>REGION</p>
+                    <p className="mt-1 text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>Global</p>
+                  </div>
+                </div>
+
+                <Link
+                  href={featuredTournament ? `/tournaments/${featuredTournament.id}` : "/tournaments"}
+                  className="mt-5 flex w-full justify-center py-3 text-sm font-black text-white transition hover:opacity-90"
+                  style={{ background: "var(--asc-accent-2)" }}
+                >
+                  REGISTER TEAM ›
+                </Link>
+              </div>
+
             </div>
           </div>
         </section>

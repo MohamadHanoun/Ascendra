@@ -383,17 +383,24 @@ export default async function TournamentsPage({
         <Navbar />
 
         {/* Hero */}
-        <section className="relative min-h-[430px] overflow-hidden">
+        <section className="relative min-h-[400px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: 'url("/images/backgrounds/tournaments-hero.webp")' }}
           />
-          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, oklch(0.06 0.03 287 / 0.92) 0%, oklch(0.06 0.03 287 / 0.60) 44%, oklch(0.06 0.03 287 / 0.78) 100%)" }} />
-          <div className="absolute inset-x-0 bottom-0 h-40" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: [
+                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.35) 0%, oklch(0.07 0.025 285 / 0.60) 45%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.40) 35%, transparent 70%)",
+              ].join(", "),
+            }}
+          />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
             <p className="mb-4 text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
-              {messages.hero.label}
+              ▲ OPEN REGISTRATION · SEASON 7
             </p>
             <h1 className="max-w-4xl text-5xl md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
               {messages.hero.title}
