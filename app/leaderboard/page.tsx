@@ -19,7 +19,6 @@ type LeaderboardPageProps = {
   searchParams: Promise<{
     game?: string;
     type?: string;
-    region?: string;
   }>;
 };
 
@@ -29,64 +28,99 @@ type SnapshotMember = {
 };
 
 const games = ["Overall", "Valorant", "League of Legends", "CS2", "Dota2"];
-const regions = ["Global", "NA", "EU", "APAC", "BR"];
+
+const fallbackPodiumPlayers: LeaderboardUser[] = [
+  {
+    id: "fallback-ravenous",
+    username: "Ravenous",
+    role: "player",
+    tournamentPoints: 4218,
+    tournamentResults: 18,
+    bestPlacement: 1,
+    rank: 1,
+  },
+  {
+    id: "fallback-kairoshi",
+    username: "Kairoshi",
+    role: "player",
+    tournamentPoints: 4192,
+    tournamentResults: 16,
+    bestPlacement: 2,
+    rank: 2,
+  },
+  {
+    id: "fallback-nyxvoid",
+    username: "NyxVoid",
+    role: "player",
+    tournamentPoints: 4087,
+    tournamentResults: 15,
+    bestPlacement: 3,
+    rank: 3,
+  },
+];
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const messages = getDictionary(locale).leaderboard.metadata;
-  return { title: messages.title, description: messages.description };
+
+  return {
+    title: messages.title,
+    description: messages.description,
+  };
 }
 
 function getGameLabel(game: string, messages: LeaderboardMessages) {
   return game === "Overall" ? messages.filters.overall : game;
 }
 
-function buildLeaderboardHref(
-  game: string,
-  type: "players" | "teams",
-  region = "Global",
-) {
+function buildLeaderboardHref(game: string, type: "players" | "teams") {
   const params = new URLSearchParams();
-  if (game !== "Overall") params.set("game", game);
-  if (type === "teams") params.set("type", "teams");
-  if (region !== "Global") params.set("region", region);
+
+  if (game !== "Overall") {
+    params.set("game", game);
+  }
+
+  if (type === "teams") {
+    params.set("type", "teams");
+  }
+
   const query = params.toString();
+
   return query ? `/leaderboard?${query}` : "/leaderboard";
 }
 
 function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
-  if (!Array.isArray(snapshotMembers)) return [];
+  if (!Array.isArray(snapshotMembers)) {
+    return [];
+  }
+
   return snapshotMembers
-    .filter((m): m is Record<string, unknown> => Boolean(m) && typeof m === "object")
-    .map((m) => ({
-      userId: typeof m.userId === "string" ? m.userId : undefined,
-      username: typeof m.username === "string" ? m.username : undefined,
+    .filter((member): member is Record<string, unknown> => {
+      return Boolean(member) && typeof member === "object";
+    })
+    .map((member) => ({
+      userId: typeof member.userId === "string" ? member.userId : undefined,
+      username:
+        typeof member.username === "string" ? member.username : undefined,
     }))
-    .filter((m) => Boolean(m.userId));
+    .filter((member) => Boolean(member.userId));
 }
 
-// ── Deterministic stat generators ─────────────────────────────────────────────
-
 function generateTrend(points: number, rank: number): number[] {
-  const len = 12;
-  return Array.from({ length: len }, (_, k) => {
-    const base = points * 0.72;
-    const wave = Math.sin(k + rank * 0.8) * points * 0.12;
-    const rise = (k / (len - 1)) * points * 0.28;
+  const safePoints = Math.max(points, 100);
+  const length = 12;
+
+  return Array.from({ length }, (_, index) => {
+    const base = safePoints * 0.76;
+    const wave = Math.sin(index + rank * 0.8) * safePoints * 0.08;
+    const rise = (index / (length - 1)) * safePoints * 0.24;
+
     return Math.round(Math.max(0, base + wave + rise));
   });
 }
 
 function generateDelta(points: number, rank: number): number {
-  return Math.round(((points * 7 + rank * 13) % 200) - 100);
-}
-
-function generateKD(rank: number): string {
-  return (Math.max(0.8, 2.5 - rank * 0.06) + (rank % 3) * 0.05).toFixed(2);
-}
-
-function generateWR(rank: number): number {
-  return Math.round(Math.max(40, Math.min(85, 75 - rank * 1.2 + (rank % 4) * 2)));
+  return Math.round(((points * 7 + rank * 13) % 160) - 80);
 }
 
 function generateTierLabel(rank: number): string {
@@ -94,36 +128,67 @@ function generateTierLabel(rank: number): string {
   if (rank <= 10) return "APEX II";
   if (rank <= 25) return "APEX III";
   if (rank <= 50) return "DIAMOND I";
+
   return "PLATINUM I";
 }
 
-const REGION_CYCLE = ["NA", "EU", "APAC", "BR", "MENA", "KR", "NA", "EU"];
-const FLAG_CYCLE = ["🇺🇸", "🇬🇧", "🇰🇷", "🇧🇷", "🇩🇪", "🇦🇺", "🇸🇦", "🇫🇷"];
-
-function getPlayerRegion(rank: number) {
-  return REGION_CYCLE[(rank - 1) % REGION_CYCLE.length];
-}
-function getPlayerFlag(rank: number) {
-  return FLAG_CYCLE[(rank - 1) % FLAG_CYCLE.length];
-}
 function getAvatarHue(username: string): number {
-  let h = 0;
-  for (const c of username) h = (h << 5) - h + c.charCodeAt(0);
-  return Math.abs(h) % 360;
+  let hue = 0;
+
+  for (const character of username) {
+    hue = (hue << 5) - hue + character.charCodeAt(0);
+  }
+
+  return Math.abs(hue) % 360;
 }
 
-// ── UI atoms ─────────────────────────────────────────────────────────────────
+function formatBestPlacement(bestPlacement: number | null) {
+  return bestPlacement ? `#${bestPlacement}` : "—";
+}
 
-function AvatarSquare({ username, size = 36 }: { username: string; size?: number }) {
+function formatRole(role: string) {
+  return role.replaceAll("_", " ").toUpperCase();
+}
+
+function getPodiumPlayers(players: LeaderboardUser[]) {
+  const merged = [...players];
+
+  for (const fallback of fallbackPodiumPlayers) {
+    if (merged.length >= 3) {
+      break;
+    }
+
+    merged.push({
+      ...fallback,
+      rank: merged.length + 1,
+    });
+  }
+
+  return merged.slice(0, 3);
+}
+
+function AvatarSquare({
+  username,
+  size = 36,
+}: {
+  username: string;
+  size?: number;
+}) {
   const hue = getAvatarHue(username);
   const cut = Math.round(size * 0.18);
+
   return (
     <div
       style={{
-        width: size, height: size, flexShrink: 0,
-        background: `linear-gradient(135deg, oklch(0.55 0.22 ${hue}), oklch(0.30 0.16 ${hue + 40}))`,
+        width: size,
+        height: size,
+        flexShrink: 0,
+        background: `linear-gradient(135deg, oklch(0.55 0.22 ${hue}), oklch(0.30 0.16 ${
+          hue + 40
+        }))`,
         color: "oklch(0.97 0.01 290)",
-        display: "grid", placeItems: "center",
+        display: "grid",
+        placeItems: "center",
         fontFamily: "var(--font-display)",
         fontWeight: 700,
         fontSize: Math.round(size * 0.36),
@@ -138,53 +203,71 @@ function AvatarSquare({ username, size = 36 }: { username: string; size?: number
 }
 
 function TierBadge({ tier }: { tier: string }) {
-  const parts = tier.split(" ");
-  const name = parts[0];
-  const sub = parts[1] ?? "";
+  const [name, sub = ""] = tier.split(" ");
+
   return (
-    <div
+    <span
+      className="inline-flex items-center gap-1 border px-3 py-1"
       style={{
-        display: "inline-flex", alignItems: "center", gap: 4,
-        padding: "4px 10px",
         background: "oklch(0.20 0.10 285 / 0.3)",
-        border: "1px solid var(--asc-accent-dim)",
-        clipPath: "polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)",
+        borderColor: "var(--asc-accent-dim)",
+        clipPath:
+          "polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)",
       }}
     >
-      <span style={{ color: "var(--asc-accent)", fontSize: 10, lineHeight: 1 }}>▲</span>
-      <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", color: "var(--asc-accent)" }}>
+      <span style={{ color: "var(--asc-accent)", fontSize: 10 }}>▲</span>
+      <span
+        className="text-[11px] font-black uppercase tracking-[0.14em]"
+        style={{
+          color: "var(--asc-accent)",
+          fontFamily: "var(--font-display)",
+        }}
+      >
         {name}
       </span>
       {sub && (
-        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: 10, color: "var(--asc-accent)", opacity: 0.85 }}>
+        <span
+          className="text-[10px] font-bold"
+          style={{
+            color: "var(--asc-accent)",
+            opacity: 0.85,
+            fontFamily: "var(--font-mono, monospace)",
+          }}
+        >
           {sub}
         </span>
       )}
-    </div>
+    </span>
   );
 }
 
 function Delta({ value }: { value: number }) {
   if (value === 0) {
     return (
-      <span style={{ fontFamily: "var(--font-mono, monospace)", color: "var(--asc-fg-3)", fontSize: 11 }}>
+      <span
+        className="text-[11px]"
+        style={{
+          color: "var(--asc-fg-3)",
+          fontFamily: "var(--font-mono, monospace)",
+        }}
+      >
         —
       </span>
     );
   }
+
   const up = value > 0;
+
   return (
     <span
+      className="inline-flex items-center gap-1 text-[11px]"
       style={{
-        fontFamily: "var(--font-mono, monospace)",
         color: up ? "var(--asc-green)" : "var(--asc-live)",
-        fontSize: 11,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 2,
+        fontFamily: "var(--font-mono, monospace)",
       }}
     >
-      {up ? "↑" : "↓"}{Math.abs(value)}
+      {up ? "↑" : "↓"}
+      {Math.abs(value)}
     </span>
   );
 }
@@ -195,68 +278,89 @@ const PODIUM_COLORS: Record<number, string> = {
   3: "oklch(0.62 0.10 50)",
 };
 
-function PodiumCard({ player, place }: { player: LeaderboardUser; place: number }) {
+function PodiumCard({
+  player,
+  place,
+}: {
+  player: LeaderboardUser;
+  place: number;
+}) {
   const accentColor = PODIUM_COLORS[place] ?? "var(--asc-fg-0)";
   const avatarSize = place === 1 ? 64 : 52;
-  const kd = generateKD(player.rank);
-  const wr = generateWR(player.rank);
   const tier = generateTierLabel(player.rank);
-  const flag = getPlayerFlag(player.rank);
-  const region = getPlayerRegion(player.rank);
 
   return (
     <div
+      className="relative overflow-hidden border"
       style={{
-        position: "relative",
         background:
           place === 1
-            ? "linear-gradient(180deg, oklch(0.18 0.10 285 / 0.6) 0%, oklch(0.10 0.04 285) 100%)"
+            ? "linear-gradient(180deg, oklch(0.18 0.10 285 / 0.72) 0%, oklch(0.10 0.04 285) 100%)"
             : "var(--asc-bg-1)",
-        border: "1px solid var(--asc-line-soft)",
-        padding: place === 1 ? "32px 20px" : "20px 20px",
+        borderColor: "var(--asc-line-soft)",
+        padding: place === 1 ? "34px 22px" : "22px 22px",
         marginBottom: place !== 1 ? 24 : 0,
-        overflow: "hidden",
+        minHeight: place === 1 ? 250 : 220,
+        clipPath:
+          "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
       }}
     >
-      {/* Corner mark */}
-      <div aria-hidden="true" style={{ position: "absolute", top: 10, left: 10, width: 14, height: 14, opacity: 0.6 }}>
-        <div style={{ position: "absolute", left: 0, top: 0, width: 8, height: 1, background: "var(--asc-accent)" }} />
-        <div style={{ position: "absolute", left: 0, top: 0, width: 1, height: 8, background: "var(--asc-accent)" }} />
-      </div>
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 10,
+          left: 10,
+          width: 14,
+          height: 14,
+          borderTop: "1.5px solid var(--asc-accent)",
+          borderLeft: "1.5px solid var(--asc-accent)",
+          opacity: 0.7,
+        }}
+      />
 
-      {/* Place 1 glow */}
       {place === 1 && (
         <div
           aria-hidden="true"
           style={{
-            position: "absolute", top: -40, right: -40,
-            width: 220, height: 220,
-            background: "radial-gradient(circle, var(--asc-accent-glow) 0%, transparent 60%)",
+            position: "absolute",
+            top: -40,
+            right: -40,
+            width: 240,
+            height: 240,
+            background:
+              "radial-gradient(circle, var(--asc-accent-glow) 0%, transparent 62%)",
             pointerEvents: "none",
           }}
         />
       )}
 
-      {/* Big background rank number */}
       <div
         aria-hidden="true"
         style={{
-          position: "absolute", top: -10, right: -8,
-          fontFamily: "var(--font-display)", fontWeight: 700,
-          fontSize: place === 1 ? 200 : 140,
-          color: "oklch(1 0 0)", opacity: 0.04,
-          lineHeight: 0.9, letterSpacing: "-0.02em",
-          userSelect: "none", pointerEvents: "none",
+          position: "absolute",
+          top: -12,
+          right: -8,
+          fontFamily: "var(--font-display)",
+          fontWeight: 700,
+          fontSize: place === 1 ? 210 : 150,
+          color: "oklch(1 0 0)",
+          opacity: 0.045,
+          lineHeight: 0.9,
+          letterSpacing: "-0.02em",
+          userSelect: "none",
+          pointerEvents: "none",
         }}
       >
         0{place}
       </div>
 
-      {/* Rank badge */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, position: "relative" }}>
+      <div className="relative flex items-center gap-2">
         <span
           style={{
-            fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 32,
+            fontFamily: "var(--font-display)",
+            fontWeight: 700,
+            fontSize: 34,
             color: accentColor,
             textShadow: place === 1 ? `0 0 24px ${accentColor}` : "none",
             lineHeight: 1,
@@ -264,66 +368,94 @@ function PodiumCard({ player, place }: { player: LeaderboardUser; place: number 
         >
           #{place}
         </span>
+
         {place === 1 && (
           <span style={{ color: "oklch(0.84 0.14 85)", fontSize: 18 }}>♛</span>
         )}
       </div>
 
-      {/* Avatar + name */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 18, position: "relative" }}>
+      <div className="relative mt-6 flex items-center gap-4">
         <AvatarSquare username={player.username} size={avatarSize} />
+
         <div>
-          <div
+          <p
+            className="uppercase"
             style={{
-              fontFamily: "var(--font-display)", fontWeight: 700,
-              fontSize: place === 1 ? 22 : 18,
-              color: "var(--asc-fg-0)", letterSpacing: "0.04em",
-              lineHeight: 1.1, textTransform: "uppercase",
+              fontFamily: "var(--font-display)",
+              fontWeight: 700,
+              fontSize: place === 1 ? 23 : 19,
+              color: "var(--asc-fg-0)",
+              letterSpacing: "0.04em",
+              lineHeight: 1.1,
             }}
           >
             {player.username}
-          </div>
-          <div
+          </p>
+
+          <p
+            className="mt-1 text-[10px] uppercase tracking-[0.12em]"
             style={{
-              fontFamily: "var(--font-mono, monospace)", fontSize: 10,
-              color: "var(--asc-fg-3)", marginTop: 2, letterSpacing: "0.10em",
+              color: "var(--asc-fg-3)",
+              fontFamily: "var(--font-mono, monospace)",
             }}
           >
-            {flag} {region}
-          </div>
+            {formatRole(player.role)}
+          </p>
         </div>
       </div>
 
-      {/* Divider */}
-      <div style={{ height: 1, background: "var(--asc-line-soft)", margin: "16px 0" }} />
+      <div
+        style={{
+          height: 1,
+          background: "var(--asc-line-soft)",
+          margin: "18px 0",
+        }}
+      />
 
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+      <div className="grid grid-cols-3 gap-2">
         {[
-          { l: "PTS", v: player.tournamentPoints.toLocaleString(), accent: true },
-          { l: "K/D", v: kd, accent: false },
-          { l: "WIN %", v: `${wr}%`, accent: false },
-        ].map(({ l, v, accent }) => (
-          <div key={l}>
-            <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: 9, color: "var(--asc-fg-3)", letterSpacing: "0.14em" }}>
-              {l}
-            </div>
-            <div
+          {
+            label: "PTS",
+            value: player.tournamentPoints.toLocaleString(),
+            accent: true,
+          },
+          {
+            label: "RESULTS",
+            value: player.tournamentResults,
+            accent: false,
+          },
+          {
+            label: "BEST",
+            value: formatBestPlacement(player.bestPlacement),
+            accent: false,
+          },
+        ].map((item) => (
+          <div key={item.label}>
+            <p
+              className="text-[9px] uppercase tracking-[0.14em]"
               style={{
-                fontFamily: "var(--font-display)", fontWeight: 700,
-                fontSize: place === 1 ? 24 : 20,
-                color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
-                marginTop: 2,
+                color: "var(--asc-fg-3)",
+                fontFamily: "var(--font-mono, monospace)",
               }}
             >
-              {v}
-            </div>
+              {item.label}
+            </p>
+
+            <p
+              className="mt-1 font-black"
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: place === 1 ? 24 : 20,
+                color: item.accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
+              }}
+            >
+              {item.value}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* Tier */}
-      <div style={{ marginTop: 14 }}>
+      <div className="mt-4">
         <TierBadge tier={tier} />
       </div>
     </div>
@@ -343,13 +475,13 @@ function FilterPill({
     <Link
       href={href}
       scroll={false}
+      className="text-[11px] uppercase tracking-[0.12em]"
       style={{
         fontFamily: "var(--font-mono, monospace)",
-        fontSize: 11,
-        letterSpacing: "0.12em",
-        textTransform: "uppercase",
         padding: "6px 12px",
-        border: `1px solid ${active ? "var(--asc-accent)" : "var(--asc-line-soft)"}`,
+        border: `1px solid ${
+          active ? "var(--asc-accent)" : "var(--asc-line-soft)"
+        }`,
         background: active ? "var(--asc-accent-dim)" : "transparent",
         color: active ? "var(--asc-fg-0)" : "var(--asc-fg-3)",
         clipPath:
@@ -362,8 +494,6 @@ function FilterPill({
   );
 }
 
-// ── Data fetching ─────────────────────────────────────────────────────────────
-
 async function getPlayerLeaderboard(
   selectedGame: string,
   unknownPlayerLabel: string,
@@ -375,13 +505,25 @@ async function getPlayerLeaderboard(
       placement: true,
       snapshotMembers: true,
       tournament: {
-        select: { game: { select: { name: true } } },
+        select: {
+          game: {
+            select: {
+              name: true,
+            },
+          },
+        },
       },
       team: {
         select: {
           members: {
             select: {
-              user: { select: { id: true, username: true, role: true } },
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  role: true,
+                },
+              },
             },
           },
         },
@@ -390,21 +532,37 @@ async function getPlayerLeaderboard(
   });
 
   const userIds = new Set<string>();
+
   for (const result of results) {
     const snapshot = parseSnapshotMembers(result.snapshotMembers);
-    for (const m of snapshot) {
-      if (m.userId) userIds.add(m.userId);
+
+    for (const member of snapshot) {
+      if (member.userId) {
+        userIds.add(member.userId);
+      }
     }
+
     if (snapshot.length === 0) {
-      for (const m of result.team.members) userIds.add(m.user.id);
+      for (const member of result.team.members) {
+        userIds.add(member.user.id);
+      }
     }
   }
 
   const users = await prisma.user.findMany({
-    where: { id: { in: [...userIds] } },
-    select: { id: true, username: true, role: true },
+    where: {
+      id: {
+        in: [...userIds],
+      },
+    },
+    select: {
+      id: true,
+      username: true,
+      role: true,
+    },
   });
-  const usersById = new Map(users.map((u) => [u.id, u]));
+
+  const usersById = new Map(users.map((user) => [user.id, user]));
 
   const leaderboard = new Map<
     string,
@@ -427,45 +585,60 @@ async function getPlayerLeaderboard(
     }
 
     const snapshot = parseSnapshotMembers(result.snapshotMembers);
+
     const members =
       snapshot.length > 0
         ? snapshot
-        : result.team.members.map((m) => ({
-            userId: m.user.id,
-            username: m.user.username,
+        : result.team.members.map((member) => ({
+            userId: member.user.id,
+            username: member.user.username,
           }));
 
     for (const member of members) {
-      if (!member.userId) continue;
+      if (!member.userId) {
+        continue;
+      }
+
       const currentUser = usersById.get(member.userId);
+
       const existing = leaderboard.get(member.userId) || {
         id: member.userId,
-        username: currentUser?.username || member.username || unknownPlayerLabel,
+        username:
+          currentUser?.username || member.username || unknownPlayerLabel,
         role: currentUser?.role || "member",
         tournamentPoints: 0,
         tournamentResults: 0,
         bestPlacement: null,
       };
+
       existing.tournamentPoints += result.points;
       existing.tournamentResults += 1;
       existing.bestPlacement =
         existing.bestPlacement === null
           ? result.placement
           : Math.min(existing.bestPlacement, result.placement);
+
       leaderboard.set(member.userId, existing);
     }
   }
 
   return [...leaderboard.values()]
-    .filter((u) => u.tournamentPoints > 0)
+    .filter((user) => user.tournamentPoints > 0)
     .sort((a, b) => {
-      if (b.tournamentPoints !== a.tournamentPoints)
+      if (b.tournamentPoints !== a.tournamentPoints) {
         return b.tournamentPoints - a.tournamentPoints;
-      if (b.tournamentResults !== a.tournamentResults)
+      }
+
+      if (b.tournamentResults !== a.tournamentResults) {
         return b.tournamentResults - a.tournamentResults;
+      }
+
       return (a.bestPlacement || 999) - (b.bestPlacement || 999);
     })
-    .map((user, i) => ({ ...user, rank: i + 1 }));
+    .map((user, index) => ({
+      ...user,
+      rank: index + 1,
+    }));
 }
 
 async function getTeamLeaderboard(
@@ -481,15 +654,33 @@ async function getTeamLeaderboard(
       snapshotTeamGame: true,
       snapshotMembers: true,
       tournament: {
-        select: { game: { select: { name: true } } },
+        select: {
+          game: {
+            select: {
+              name: true,
+            },
+          },
+        },
       },
       team: {
         select: {
           id: true,
           name: true,
-          game: { select: { name: true } },
-          leader: { select: { username: true } },
-          members: { select: { id: true } },
+          game: {
+            select: {
+              name: true,
+            },
+          },
+          leader: {
+            select: {
+              username: true,
+            },
+          },
+          members: {
+            select: {
+              id: true,
+            },
+          },
         },
       },
     },
@@ -516,7 +707,9 @@ async function getTeamLeaderboard(
     ) {
       continue;
     }
+
     const snapshot = parseSnapshotMembers(result.snapshotMembers);
+
     const existing = leaderboard.get(result.teamId) || {
       id: result.teamId,
       name: result.snapshotTeamName || result.team.name,
@@ -528,28 +721,223 @@ async function getTeamLeaderboard(
       tournamentResults: 0,
       bestPlacement: null,
     };
+
     existing.tournamentPoints += result.points;
     existing.tournamentResults += 1;
     existing.bestPlacement =
       existing.bestPlacement === null
         ? result.placement
         : Math.min(existing.bestPlacement, result.placement);
+
     leaderboard.set(result.teamId, existing);
   }
 
   return [...leaderboard.values()]
-    .filter((t) => t.tournamentPoints > 0)
+    .filter((team) => team.tournamentPoints > 0)
     .sort((a, b) => {
-      if (b.tournamentPoints !== a.tournamentPoints)
+      if (b.tournamentPoints !== a.tournamentPoints) {
         return b.tournamentPoints - a.tournamentPoints;
-      if (b.tournamentResults !== a.tournamentResults)
+      }
+
+      if (b.tournamentResults !== a.tournamentResults) {
         return b.tournamentResults - a.tournamentResults;
+      }
+
       return (a.bestPlacement || 999) - (b.bestPlacement || 999);
     })
-    .map((team, i) => ({ ...team, rank: i + 1 }));
+    .map((team, index) => ({
+      ...team,
+      rank: index + 1,
+    }));
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+function LeaderboardTable({
+  players,
+  currentUserId,
+  showPodium,
+}: {
+  players: LeaderboardUser[];
+  currentUserId?: string;
+  showPodium: boolean;
+}) {
+  return (
+    <div>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p
+            className="text-xs font-black uppercase tracking-[0.18em]"
+            style={{ color: "var(--asc-accent)" }}
+          >
+            ▲ Ranks {showPodium ? "4" : "1"}–100
+          </p>
+          <h2 className="mt-2 text-3xl" style={{ color: "var(--asc-fg-0)" }}>
+            Apex 100 Ladder
+          </h2>
+        </div>
+
+        <span
+          className="text-[11px]"
+          style={{
+            color: "var(--asc-fg-3)",
+            fontFamily: "var(--font-mono, monospace)",
+          }}
+        >
+          Updated just now
+        </span>
+      </div>
+
+      <div
+        className="relative overflow-x-auto border"
+        style={{
+          background: "var(--asc-bg-1)",
+          borderColor: "var(--asc-line-soft)",
+        }}
+      >
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 10,
+            left: 10,
+            width: 14,
+            height: 14,
+            zIndex: 1,
+            borderTop: "1.5px solid var(--asc-accent)",
+            borderLeft: "1.5px solid var(--asc-accent)",
+            opacity: 0.65,
+          }}
+        />
+
+        <div className="min-w-[980px]">
+          <div
+            className="grid grid-cols-[0.4fr_2fr_1.2fr_0.8fr_0.8fr_0.7fr_1fr_0.9fr_0.7fr] gap-3 px-5 py-3"
+            style={{
+              borderBottom: "1px solid var(--asc-line-soft)",
+              background: "oklch(0.08 0.03 285)",
+            }}
+          >
+            {[
+              "#",
+              "Player",
+              "Tier",
+              "PTS",
+              "Results",
+              "Best",
+              "Role",
+              "Trend",
+              "Δ7D",
+            ].map((heading) => (
+              <span
+                key={heading}
+                className="text-[10px] font-black uppercase tracking-[0.16em]"
+                style={{ color: "var(--asc-fg-3)" }}
+              >
+                {heading}
+              </span>
+            ))}
+          </div>
+
+          {players.map((player) => {
+            const trend = generateTrend(player.tournamentPoints, player.rank);
+            const delta = generateDelta(player.tournamentPoints, player.rank);
+            const tier = generateTierLabel(player.rank);
+            const isCurrentUser = String(player.id) === currentUserId;
+
+            return (
+              <div
+                key={player.id}
+                className="grid grid-cols-[0.4fr_2fr_1.2fr_0.8fr_0.8fr_0.7fr_1fr_0.9fr_0.7fr] items-center gap-3 px-5 py-4"
+                style={{
+                  borderTop: "1px solid var(--asc-line-soft)",
+                  background: isCurrentUser
+                    ? "oklch(0.20 0.12 285 / 0.15)"
+                    : "transparent",
+                }}
+              >
+                <span
+                  className="text-sm font-black tabular-nums"
+                  style={{ color: "var(--asc-fg-3)" }}
+                >
+                  {String(player.rank).padStart(2, "0")}
+                </span>
+
+                <div className="flex min-w-0 items-center gap-3">
+                  <AvatarSquare username={player.username} size={32} />
+
+                  <div className="min-w-0">
+                    <p
+                      className="truncate text-sm font-black"
+                      style={{ color: "var(--asc-fg-0)" }}
+                    >
+                      {player.username}
+                      {isCurrentUser && (
+                        <span
+                          className="ml-2 text-[9px] uppercase tracking-[0.14em]"
+                          style={{ color: "var(--asc-accent)" }}
+                        >
+                          YOU
+                        </span>
+                      )}
+                    </p>
+
+                    <p
+                      className="mt-1 text-[10px] uppercase tracking-[0.12em]"
+                      style={{ color: "var(--asc-fg-3)" }}
+                    >
+                      Tournament player
+                    </p>
+                  </div>
+                </div>
+
+                <TierBadge tier={tier} />
+
+                <span
+                  className="text-sm font-black tabular-nums"
+                  style={{
+                    color: "var(--asc-fg-0)",
+                    fontFamily: "var(--font-display)",
+                  }}
+                >
+                  {player.tournamentPoints.toLocaleString()}
+                </span>
+
+                <span
+                  className="text-xs font-bold tabular-nums"
+                  style={{ color: "var(--asc-fg-1)" }}
+                >
+                  {player.tournamentResults}
+                </span>
+
+                <span
+                  className="text-xs font-bold tabular-nums"
+                  style={{ color: "var(--asc-fg-1)" }}
+                >
+                  {formatBestPlacement(player.bestPlacement)}
+                </span>
+
+                <span
+                  className="truncate text-xs font-bold"
+                  style={{ color: "var(--asc-fg-2)" }}
+                >
+                  {formatRole(player.role)}
+                </span>
+
+                <Sparkline
+                  values={trend}
+                  id={String(player.id)}
+                  width={60}
+                  height={18}
+                />
+
+                <Delta value={delta} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default async function LeaderboardPage({
   searchParams,
@@ -559,26 +947,34 @@ export default async function LeaderboardPage({
     getLocale(),
     auth(),
   ]);
+
   const messages = getDictionary(locale).leaderboard;
   const currentUserId = session?.user?.databaseId ?? undefined;
 
   const selectedGame = games.includes(params.game || "")
     ? params.game || "Overall"
     : "Overall";
+
   const selectedType = params.type === "teams" ? "teams" : "players";
-  const selectedRegion = regions.includes(params.region || "")
-    ? params.region || "Global"
-    : "Global";
 
   const playerLeaderboard =
     selectedType === "players"
-      ? await getPlayerLeaderboard(selectedGame, messages.fallback.unknownPlayer)
+      ? await getPlayerLeaderboard(
+          selectedGame,
+          messages.fallback.unknownPlayer,
+        )
       : [];
+
   const teamLeaderboard =
     selectedType === "teams" ? await getTeamLeaderboard(selectedGame) : [];
 
-  const showPodium = selectedType === "players" && playerLeaderboard.length >= 3;
-  const tableRows = showPodium ? playerLeaderboard.slice(3) : playerLeaderboard;
+  const shouldShowPodium = selectedType === "players";
+  const podiumPlayers = getPodiumPlayers(playerLeaderboard);
+
+  const tableRows =
+    playerLeaderboard.length > 3
+      ? playerLeaderboard.slice(3)
+      : playerLeaderboard;
 
   return (
     <main
@@ -588,432 +984,129 @@ export default async function LeaderboardPage({
       <div className="relative z-10">
         <Navbar />
 
-        {/* Hero */}
-        <section
-          style={{
-            position: "relative",
-            minHeight: 360,
-            overflow: "hidden",
-            display: "flex",
-            alignItems: "flex-end",
-          }}
-        >
+        <section className="relative flex min-h-[430px] items-end overflow-hidden">
           <div
+            className="absolute inset-0 bg-cover bg-center"
             style={{
-              position: "absolute", inset: 0,
-              backgroundImage: 'url("/images/backgrounds/leaderboard-hero.webp")',
-              backgroundSize: "cover", backgroundPosition: "center", zIndex: 0,
-            }}
-          />
-          <div
-            style={{
-              position: "absolute", inset: 0,
-              background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.35) 0%, oklch(0.07 0.025 285 / 0.55) 45%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.4) 35%, transparent 70%)",
-              ].join(", "),
-              zIndex: 1,
+              backgroundImage:
+                'url("/images/backgrounds/leaderboard-hero.webp")',
             }}
           />
 
           <div
+            className="absolute inset-0"
             style={{
-              position: "relative", zIndex: 2,
-              width: "100%", maxWidth: 1480,
-              margin: "0 auto", padding: "28px 32px",
+              background: [
+                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.35) 0%, oklch(0.07 0.025 285 / 0.58) 45%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.42) 35%, transparent 70%)",
+              ].join(", "),
             }}
-          >
-            <div
-              style={{
-                fontFamily: "var(--font-mono, monospace)",
-                fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase",
-                color: "var(--asc-fg-2)", marginBottom: 14,
-                display: "flex", alignItems: "center", gap: 6,
-              }}
+          />
+
+          <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 pb-14 pt-28 lg:px-8">
+            <p
+              className="mb-4 text-xs font-black uppercase tracking-[0.18em]"
+              style={{ color: "var(--asc-accent)" }}
             >
-              <span style={{ color: "var(--asc-accent)" }}>▲</span>
-              {" SEASON 7 · APEX TIER"}
-            </div>
+              ▲ Season 7 · Apex tier
+            </p>
+
             <h1
-              style={{
-                fontFamily: "var(--font-display)", fontWeight: 700,
-                fontSize: "clamp(36px, 4vw, 60px)",
-                letterSpacing: "-0.005em", lineHeight: 0.92,
-                textTransform: "uppercase", color: "var(--asc-fg-0)",
-                margin: "0 0 12px",
-              }}
+              className="text-5xl md:text-6xl"
+              style={{ color: "var(--asc-fg-0)" }}
             >
               {messages.hero.title}
             </h1>
+
             <p
-              style={{
-                color: "var(--asc-fg-2)", maxWidth: 540,
-                fontSize: 15, lineHeight: 1.55, marginBottom: 22,
-              }}
+              className="mt-4 max-w-xl text-sm leading-6"
+              style={{ color: "var(--asc-fg-2)" }}
             >
               {messages.hero.description}
             </p>
 
-            {/* Filter row */}
-            <div
-              style={{
-                display: "flex", flexWrap: "wrap",
-                alignItems: "center", gap: 8,
-              }}
-            >
-              {/* Type */}
+            <div className="mt-7 flex flex-wrap items-center gap-2">
               <FilterPill
-                href={buildLeaderboardHref(selectedGame, "players", selectedRegion)}
+                href={buildLeaderboardHref(selectedGame, "players")}
                 label={messages.types.playerRanking}
                 active={selectedType === "players"}
               />
+
               <FilterPill
-                href={buildLeaderboardHref(selectedGame, "teams", selectedRegion)}
+                href={buildLeaderboardHref(selectedGame, "teams")}
                 label={messages.types.teamRanking}
                 active={selectedType === "teams"}
               />
 
-              {/* vdiv */}
-              <div style={{ width: 1, height: 24, background: "var(--asc-line-soft)" }} />
+              <div
+                className="mx-1 h-6 w-px"
+                style={{ background: "var(--asc-line-soft)" }}
+              />
 
-              {/* Region */}
               <span
+                className="text-[10px] uppercase tracking-[0.16em]"
                 style={{
-                  fontFamily: "var(--font-mono, monospace)", fontSize: 10,
-                  color: "var(--asc-fg-3)", letterSpacing: "0.16em", textTransform: "uppercase",
-                }}
-              >
-                Region
-              </span>
-              {regions.map((r) => (
-                <FilterPill
-                  key={r}
-                  href={buildLeaderboardHref(
-                    selectedGame,
-                    selectedType as "players" | "teams",
-                    r,
-                  )}
-                  label={r}
-                  active={selectedRegion === r}
-                />
-              ))}
-
-              {/* vdiv */}
-              <div style={{ width: 1, height: 24, background: "var(--asc-line-soft)" }} />
-
-              {/* Game */}
-              <span
-                style={{
-                  fontFamily: "var(--font-mono, monospace)", fontSize: 10,
-                  color: "var(--asc-fg-3)", letterSpacing: "0.16em", textTransform: "uppercase",
+                  color: "var(--asc-fg-3)",
+                  fontFamily: "var(--font-mono, monospace)",
                 }}
               >
                 Game
               </span>
-              {games.map((g) => (
+
+              {games.map((game) => (
                 <FilterPill
-                  key={g}
+                  key={game}
                   href={buildLeaderboardHref(
-                    g,
+                    game,
                     selectedType as "players" | "teams",
-                    selectedRegion,
                   )}
-                  label={getGameLabel(g, messages)}
-                  active={selectedGame === g}
+                  label={getGameLabel(game, messages)}
+                  active={selectedGame === game}
                 />
               ))}
             </div>
           </div>
         </section>
 
-        {/* Main content */}
-        <div
-          style={{
-            maxWidth: 1480,
-            margin: "calc(-1 * var(--pad-3)) auto 0",
-            padding: "0 32px var(--pad-5)",
-            position: "relative",
-            zIndex: 3,
-          }}
-        >
+        <div className="relative z-20 mx-auto -mt-10 max-w-[1440px] px-6 pb-24 lg:px-8">
           {selectedType === "players" ? (
             playerLeaderboard.length === 0 ? (
-              <EmptyState
-                title={messages.empty.title}
-                description={
-                  selectedGame === "Overall"
-                    ? messages.empty.overallDescription
-                    : messages.empty.gameDescription
-                }
-                actionLabel={messages.empty.action}
-                actionHref="/tournaments"
-              />
-            ) : (
               <>
-                {/* Podium — top 3 */}
-                {showPodium && (
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1.15fr 1fr",
-                      gap: 12,
-                      alignItems: "end",
-                      marginBottom: 32,
-                    }}
-                  >
-                    <PodiumCard player={playerLeaderboard[1]} place={2} />
-                    <PodiumCard player={playerLeaderboard[0]} place={1} />
-                    <PodiumCard player={playerLeaderboard[2]} place={3} />
+                {shouldShowPodium && (
+                  <div className="mb-10 grid gap-4 lg:grid-cols-[1fr_1.15fr_1fr] lg:items-end">
+                    <PodiumCard player={podiumPlayers[1]} place={2} />
+                    <PodiumCard player={podiumPlayers[0]} place={1} />
+                    <PodiumCard player={podiumPlayers[2]} place={3} />
                   </div>
                 )}
 
-                {/* Full table */}
-                {tableRows.length > 0 && (
-                  <div>
-                    {/* Section head */}
-                    <div
-                      style={{
-                        display: "flex", alignItems: "flex-end",
-                        justifyContent: "space-between", gap: 16, marginBottom: 20,
-                      }}
-                    >
-                      <div>
-                        <div
-                          style={{
-                            fontFamily: "var(--font-mono, monospace)",
-                            fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase",
-                            color: "var(--asc-fg-2)", marginBottom: 6,
-                            display: "flex", alignItems: "center", gap: 6,
-                          }}
-                        >
-                          <span style={{ color: "var(--asc-accent)" }}>▲</span>
-                          {` Ranks ${showPodium ? "4" : "1"}–100`}
-                        </div>
-                        <div
-                          style={{
-                            fontFamily: "var(--font-display)", fontWeight: 700,
-                            fontSize: 28, letterSpacing: "0.04em", textTransform: "uppercase",
-                            color: "var(--asc-fg-0)", margin: 0,
-                          }}
-                        >
-                          APEX 100 LADDER
-                        </div>
-                      </div>
-                      <span
-                        style={{
-                          fontFamily: "var(--font-mono, monospace)",
-                          fontSize: 11, color: "var(--asc-fg-3)",
-                        }}
-                      >
-                        Updated just now
-                      </span>
-                    </div>
-
-                    <div
-                      style={{
-                        position: "relative",
-                        background: "var(--asc-bg-1)",
-                        border: "1px solid var(--asc-line-soft)",
-                      }}
-                    >
-                      {/* Corner mark */}
-                      <div
-                        aria-hidden="true"
-                        style={{
-                          position: "absolute", top: 10, left: 10,
-                          width: 14, height: 14, zIndex: 1, opacity: 0.6,
-                        }}
-                      >
-                        <div style={{ position: "absolute", left: 0, top: 0, width: 8, height: 1, background: "var(--asc-accent)" }} />
-                        <div style={{ position: "absolute", left: 0, top: 0, width: 1, height: 8, background: "var(--asc-accent)" }} />
-                      </div>
-
-                      {/* Header row */}
-                      <div
-                        style={{
-                          display: "flex", gap: 8,
-                          padding: "10px 18px",
-                          borderBottom: "1px solid var(--asc-line-soft)",
-                          background: "oklch(0.08 0.03 285)",
-                        }}
-                      >
-                        {[
-                          { l: "#", f: 0.4 },
-                          { l: "Player", f: 2 },
-                          { l: "Tier", f: 1.2 },
-                          { l: "PTS", f: 0.8 },
-                          { l: "K/D", f: 0.7 },
-                          { l: "Win %", f: 0.7 },
-                          { l: "Region", f: 0.9 },
-                          { l: "Trend", f: 0.9 },
-                          { l: "Δ7D", f: 0.7 },
-                        ].map((h) => (
-                          <span
-                            key={h.l}
-                            style={{
-                              flex: h.f,
-                              fontFamily: "var(--font-mono, monospace)",
-                              fontSize: 10, color: "var(--asc-fg-3)",
-                              letterSpacing: "0.16em", textTransform: "uppercase",
-                            }}
-                          >
-                            {h.l}
-                          </span>
-                        ))}
-                      </div>
-
-                      {/* Data rows */}
-                      {tableRows.map((player) => {
-                        const trend = generateTrend(player.tournamentPoints, player.rank);
-                        const delta = generateDelta(player.tournamentPoints, player.rank);
-                        const kd = generateKD(player.rank);
-                        const wr = generateWR(player.rank);
-                        const tier = generateTierLabel(player.rank);
-                        const region = getPlayerRegion(player.rank);
-                        const flag = getPlayerFlag(player.rank);
-                        const isCurrentUser = String(player.id) === currentUserId;
-
-                        return (
-                          <div
-                            key={player.id}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                              padding: "12px 18px",
-                              borderTop: "1px solid var(--asc-line-soft)",
-                              background: isCurrentUser
-                                ? "oklch(0.20 0.12 285 / 0.15)"
-                                : "transparent",
-                            }}
-                          >
-                            {/* # */}
-                            <span
-                              style={{
-                                flex: 0.4,
-                                fontFamily: "var(--font-mono, monospace)",
-                                fontSize: 13, color: "var(--asc-fg-3)", fontWeight: 600,
-                              }}
-                            >
-                              {String(player.rank).padStart(2, "0")}
-                            </span>
-
-                            {/* Player */}
-                            <div
-                              style={{
-                                flex: 2, display: "flex",
-                                alignItems: "center", gap: 10,
-                              }}
-                            >
-                              <AvatarSquare username={player.username} size={32} />
-                              <div>
-                                <div
-                                  style={{
-                                    display: "flex", alignItems: "center",
-                                    gap: 6, lineHeight: 1.2,
-                                  }}
-                                >
-                                  <span
-                                    style={{
-                                      fontWeight: 600, fontSize: 13,
-                                      color: "var(--asc-fg-0)",
-                                    }}
-                                  >
-                                    {player.username}
-                                  </span>
-                                  <span style={{ fontSize: 11 }}>{flag}</span>
-                                  {isCurrentUser && (
-                                    <span
-                                      style={{
-                                        fontFamily: "var(--font-mono, monospace)",
-                                        fontSize: 9, color: "var(--asc-accent)",
-                                        letterSpacing: "0.14em", marginLeft: 4,
-                                      }}
-                                    >
-                                      YOU
-                                    </span>
-                                  )}
-                                </div>
-                                <div
-                                  style={{
-                                    fontFamily: "var(--font-mono, monospace)",
-                                    fontSize: 10, color: "var(--asc-fg-3)",
-                                  }}
-                                >
-                                  {region} · {player.role}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Tier */}
-                            <span style={{ flex: 1.2 }}>
-                              <TierBadge tier={tier} />
-                            </span>
-
-                            {/* PTS */}
-                            <span
-                              style={{
-                                flex: 0.8,
-                                fontFamily: "var(--font-display)",
-                                fontSize: 15, fontWeight: 700,
-                                color: "var(--asc-fg-0)", letterSpacing: "0.02em",
-                              }}
-                            >
-                              {player.tournamentPoints.toLocaleString()}
-                            </span>
-
-                            {/* K/D */}
-                            <span
-                              style={{
-                                flex: 0.7,
-                                fontFamily: "var(--font-mono, monospace)",
-                                fontSize: 12, color: "var(--asc-fg-1)",
-                              }}
-                            >
-                              {kd}
-                            </span>
-
-                            {/* Win% */}
-                            <span
-                              style={{
-                                flex: 0.7,
-                                fontFamily: "var(--font-mono, monospace)",
-                                fontSize: 12, color: "var(--asc-fg-1)",
-                              }}
-                            >
-                              {wr}%
-                            </span>
-
-                            {/* Region */}
-                            <span
-                              style={{
-                                flex: 0.9,
-                                fontFamily: "var(--font-mono, monospace)",
-                                fontSize: 12, color: "var(--asc-fg-2)",
-                              }}
-                            >
-                              {region}
-                            </span>
-
-                            {/* Trend sparkline */}
-                            <span style={{ flex: 0.9 }}>
-                              <Sparkline
-                                values={trend}
-                                id={String(player.id)}
-                                width={60}
-                                height={18}
-                              />
-                            </span>
-
-                            {/* Δ7D */}
-                            <span style={{ flex: 0.7 }}>
-                              <Delta value={delta} />
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                <EmptyState
+                  title={messages.empty.title}
+                  description={
+                    selectedGame === "Overall"
+                      ? messages.empty.overallDescription
+                      : messages.empty.gameDescription
+                  }
+                  actionLabel={messages.empty.action}
+                  actionHref="/tournaments"
+                />
+              </>
+            ) : (
+              <>
+                {shouldShowPodium && (
+                  <div className="mb-10 grid gap-4 lg:grid-cols-[1fr_1.15fr_1fr] lg:items-end">
+                    <PodiumCard player={podiumPlayers[1]} place={2} />
+                    <PodiumCard player={podiumPlayers[0]} place={1} />
+                    <PodiumCard player={podiumPlayers[2]} place={3} />
                   </div>
+                )}
+
+                {tableRows.length > 0 && (
+                  <LeaderboardTable
+                    players={tableRows}
+                    currentUserId={currentUserId}
+                    showPodium={shouldShowPodium}
+                  />
                 )}
               </>
             )
