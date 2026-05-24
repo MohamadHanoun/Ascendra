@@ -189,7 +189,10 @@ export default function AdminRuleDragList({ initialRules }: { initialRules: Rule
                 key={rule.id}
                 draggable
                 onDragStart={() => handleDragStart(rule.id)}
-                onDragOver={(event) => { event.preventDefault(); handleDragOver(rule.id); }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  handleDragOver(rule.id);
+                }}
                 onDrop={() => handleDrop(rule.id)}
                 onDragEnd={handleDragEnd}
                 className={`grid gap-4 px-5 py-4 transition lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:items-start lg:gap-5 ${isDragging ? "opacity-50" : ""} ${isDragTarget ? "bg-violet-500/10" : "hover:bg-white/[0.035]"}`}
@@ -198,7 +201,11 @@ export default function AdminRuleDragList({ initialRules }: { initialRules: Rule
                 <div className="flex items-center justify-between gap-3 lg:justify-start">
                   <span
                     className="grid h-10 w-10 place-items-center text-sm font-black"
-                    style={{ border: "1px solid oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+                    style={{
+                      border: "1px solid oklch(0.50 0.20 285 / 0.4)",
+                      background: "var(--asc-accent-dim)",
+                      color: "var(--asc-accent)",
+                    }}
                   >
                     {String(position).padStart(2, "0")}
                   </span>
@@ -207,7 +214,11 @@ export default function AdminRuleDragList({ initialRules }: { initialRules: Rule
                     type="button"
                     aria-label="Drag rule"
                     className="grid h-10 w-10 cursor-grab place-items-center text-lg font-black transition active:cursor-grabbing lg:hidden"
-                    style={{ border: "1px solid var(--asc-line-soft)", background: "oklch(0.09 0.02 287)", color: "var(--asc-fg-3)" }}
+                    style={{
+                      border: "1px solid var(--asc-line-soft)",
+                      background: "oklch(0.09 0.02 287)",
+                      color: "var(--asc-fg-3)",
+                    }}
                   >
                     ≡
                   </button>
@@ -218,6 +229,9 @@ export default function AdminRuleDragList({ initialRules }: { initialRules: Rule
                   buttonLabel="Save"
                   pendingLabel="Saving..."
                   className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_90px] xl:items-start"
+                  confirmTitle="Save rule changes?"
+                  confirmDescription={`Save changes to rule #${position}?`}
+                  confirmLabel="Save rule"
                 >
                   <input type="hidden" name="ruleId" value={rule.id} />
                   <input type="hidden" name="order" value={position} />
@@ -241,7 +255,11 @@ export default function AdminRuleDragList({ initialRules }: { initialRules: Rule
                     type="button"
                     aria-label="Drag rule"
                     className="hidden h-10 w-10 cursor-grab place-items-center text-lg font-black transition active:cursor-grabbing lg:grid"
-                    style={{ border: "1px solid var(--asc-line-soft)", background: "oklch(0.09 0.02 287)", color: "var(--asc-fg-3)" }}
+                    style={{
+                      border: "1px solid var(--asc-line-soft)",
+                      background: "oklch(0.09 0.02 287)",
+                      color: "var(--asc-fg-3)",
+                    }}
                   >
                     ≡
                   </button>
@@ -255,6 +273,9 @@ export default function AdminRuleDragList({ initialRules }: { initialRules: Rule
                       pendingLabel="Hiding..."
                       variant="secondary"
                       className="grid gap-2"
+                      confirmTitle="Hide rule?"
+                      confirmDescription={`Hide rule #${position} from the public rules list?`}
+                      confirmLabel="Hide rule"
                     >
                       <input type="hidden" name="ruleId" value={rule.id} />
                     </InlineAdminRuleForm>
@@ -265,6 +286,9 @@ export default function AdminRuleDragList({ initialRules }: { initialRules: Rule
                       pendingLabel="Showing..."
                       variant="success"
                       className="grid gap-2"
+                      confirmTitle="Show rule?"
+                      confirmDescription={`Show rule #${position} in the public rules list?`}
+                      confirmLabel="Show rule"
                     >
                       <input type="hidden" name="ruleId" value={rule.id} />
                     </InlineAdminRuleForm>
