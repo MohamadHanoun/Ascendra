@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 
 import Footer from "@/components/Footer";
@@ -13,23 +13,168 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
-  const messages = getDictionary(locale).community.metadata;
+  const messages = getDictionary(locale).community;
 
   return {
-    title: messages.title,
-    description: messages.description,
+    title: messages.metadata.title,
+    description: messages.metadata.description,
   };
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function CornerMark() {
   return (
-    <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+    <div
+      aria-hidden="true"
+      className="asc-corner-mark"
+      style={{
+        position: "absolute",
+        top: 10,
+        left: 10,
+        width: 12,
+        height: 12,
+        borderTop: "1.5px solid var(--asc-accent)",
+        borderLeft: "1.5px solid var(--asc-accent)",
+        opacity: 0.9,
+        pointerEvents: "none",
+        zIndex: 30,
+      }}
+    />
+  );
+}
+
+function Panel({
+  children,
+  className = "",
+  style,
+}: {
+  children: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <section
+      className={`relative overflow-hidden border shadow-2xl shadow-black/20 ${className}`}
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "var(--asc-bg-1)",
+        clipPath:
+          "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+        ...style,
+      }}
+    >
+      <CornerMark />
+      {children}
+    </section>
+  );
+}
+
+function PanelHeader({ label, title }: { label: string; title: string }) {
+  return (
+    <div
+      className="px-6 py-5"
+      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+    >
+      <p
+        className="text-xs font-black uppercase tracking-[0.18em]"
+        style={{ color: "var(--asc-accent)" }}
+      >
+        ▲ {label}
+      </p>
+
+      <h2
+        className="mt-2 text-2xl md:text-3xl"
+        style={{ color: "var(--asc-fg-0)" }}
+      >
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className="relative border p-5"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "var(--asc-bg-1)",
+        clipPath:
+          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
+      }}
+    >
+      <CornerMark />
+
+      <p
+        className="text-[10px] font-black uppercase tracking-[0.18em]"
+        style={{ color: "var(--asc-fg-3)" }}
+      >
         {label}
       </p>
 
-      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
+      <p
+        className="mt-3 text-4xl font-black tabular-nums"
+        style={{
+          color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
+          fontFamily: "var(--font-display)",
+        }}
+      >
+        {value}
+      </p>
     </div>
+  );
+}
+
+function PrimaryLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex justify-center px-6 py-3 text-sm font-black uppercase tracking-[0.08em] text-white shadow-lg transition hover:opacity-90"
+      style={{
+        background: "var(--asc-accent-2)",
+        boxShadow: "0 0 20px var(--asc-accent-glow)",
+        clipPath:
+          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+      }}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function SecondaryLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex justify-center border px-6 py-3 text-sm font-black uppercase tracking-[0.08em] transition hover:opacity-80"
+      style={{
+        borderColor: "var(--asc-line)",
+        color: "var(--asc-fg-2)",
+        clipPath:
+          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+      }}
+    >
+      {children}
+    </Link>
   );
 }
 
@@ -51,20 +196,33 @@ function CommunityRow({
   return (
     <Link
       href={href}
-      className="grid gap-3 px-5 py-5 transition last:border-b-0 md:grid-cols-[150px_minmax(0,1fr)_90px] md:items-center"
+      className="group grid gap-4 px-6 py-5 transition hover:bg-[oklch(0.20_0.10_285_/_0.08)] md:grid-cols-[150px_minmax(0,1fr)_110px] md:items-center"
       style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
     >
-      <p className="text-sm font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-accent)" }}>
+      <p
+        className="text-xs font-black uppercase tracking-[0.16em]"
+        style={{ color: "var(--asc-accent)" }}
+      >
         {label}
       </p>
 
       <div>
-        <h2 className="text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>{title}</h2>
+        <h3 className="text-xl" style={{ color: "var(--asc-fg-0)" }}>
+          {title}
+        </h3>
 
-        <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>{description}</p>
+        <p
+          className="mt-2 max-w-3xl text-sm leading-6"
+          style={{ color: "var(--asc-fg-3)" }}
+        >
+          {description}
+        </p>
       </div>
 
-      <span className="text-sm font-black md:text-right rtl:md:text-left" style={{ color: "var(--asc-fg-3)" }}>
+      <span
+        className="text-sm font-black transition group-hover:translate-x-1 md:text-right rtl:md:text-left"
+        style={{ color: "var(--asc-fg-3)" }}
+      >
         {openLabel} {locale === "ar" ? "←" : "→"}
       </span>
     </Link>
@@ -82,51 +240,49 @@ function Step({
 }) {
   return (
     <article
-      className="grid gap-3 px-5 py-4 last:border-b-0 md:grid-cols-[80px_180px_minmax(0,1fr)] md:items-center"
+      className="grid gap-4 px-6 py-5 md:grid-cols-[90px_180px_minmax(0,1fr)] md:items-center"
       style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
     >
-      <p className="text-sm font-black" style={{ color: "var(--asc-accent)" }}>{number}</p>
+      <p
+        className="text-5xl font-black leading-none"
+        style={{
+          color: "var(--asc-accent)",
+          fontFamily: "var(--font-display)",
+        }}
+      >
+        {number}
+      </p>
 
-      <h3 className="font-black" style={{ color: "var(--asc-fg-0)" }}>{title}</h3>
+      <h3 className="text-lg" style={{ color: "var(--asc-fg-0)" }}>
+        {title}
+      </h3>
 
-      <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>{description}</p>
+      <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
+        {description}
+      </p>
     </article>
   );
 }
 
-function PrimaryLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: ReactNode;
-}) {
+function DiscordGlyph() {
   return (
-    <Link
-      href={href}
-      className="inline-flex justify-center px-6 py-3 text-sm font-black text-white shadow-lg transition"
-      style={{ background: "var(--asc-accent-2)" }}
+    <div
+      className="grid h-12 w-12 shrink-0 place-items-center"
+      style={{
+        background: "oklch(0.62 0.18 270)",
+        clipPath:
+          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+      }}
     >
-      {children}
-    </Link>
-  );
-}
-
-function SecondaryLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className="inline-flex justify-center px-6 py-3 text-sm font-black transition"
-      style={{ border: "1px solid var(--asc-line)", color: "var(--asc-fg-2)" }}
-    >
-      {children}
-    </Link>
+      <svg
+        width="24"
+        height="18"
+        viewBox="0 0 24 18"
+        fill="oklch(0.98 0.01 290)"
+      >
+        <path d="M20.3 1.8a18 18 0 0 0-4.5-1.4l-.2.4c1.6.3 3 .9 4.3 1.7-1.6-.9-3.4-1.4-5.3-1.4S10.9.6 9.3 1.5c1.3-.8 2.7-1.4 4.3-1.7l-.2-.4A18 18 0 0 0 8.9 1.8C5.7 6.7 4.9 11.4 5.3 16c1.8 1.3 3.6 2 5.4 2.5l.4-.6a11 11 0 0 1-2.2-1.1c.2-.1.4-.2.5-.3 4.1 1.9 8.5 1.9 12.5 0 .2.1.4.2.5.3-.7.4-1.4.8-2.2 1.1l.4.6c1.8-.5 3.6-1.2 5.4-2.5.5-5.4-.8-10-2.7-14.2zM9.7 13.5c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2zm6.6 0c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2z" />
+      </svg>
+    </div>
   );
 }
 
@@ -165,11 +321,14 @@ export default async function CommunityPage() {
   ]);
 
   return (
-    <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
+    <main
+      className="asc-ambient min-h-screen overflow-hidden"
+      style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
+    >
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[480px] overflow-hidden">
+        <section className="relative min-h-[520px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -177,19 +336,43 @@ export default async function CommunityPage() {
             }}
           />
 
-          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.62) 44%,oklch(0.06 0.03 287 / 0.82) 100%)" }} />
-          <div className="absolute inset-x-0 bottom-0 h-48" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: [
+                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.28) 0%, oklch(0.07 0.025 285 / 0.62) 52%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.42) 38%, transparent 72%)",
+              ].join(", "),
+            }}
+          />
 
-          <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-28 pt-20 lg:px-10">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
-              {messages.hero.label}
+          <div
+            className="absolute inset-x-0 bottom-0 h-48"
+            style={{
+              background:
+                "linear-gradient(to bottom, transparent, var(--asc-bg-0))",
+            }}
+          />
+
+          <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-32 pt-24 lg:px-10">
+            <p
+              className="mb-4 text-xs font-black uppercase tracking-[0.22em]"
+              style={{ color: "var(--asc-accent)" }}
+            >
+              ▲ {messages.hero.label}
             </p>
 
-            <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.04] tracking-tight md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
+            <h1
+              className="max-w-5xl text-5xl md:text-7xl"
+              style={{ color: "var(--asc-fg-0)" }}
+            >
               {messages.hero.title}
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-7" style={{ color: "var(--asc-fg-1)" }}>
+            <p
+              className="mt-5 max-w-2xl text-base leading-7"
+              style={{ color: "var(--asc-fg-2)" }}
+            >
               {messages.hero.description}
             </p>
 
@@ -197,6 +380,7 @@ export default async function CommunityPage() {
               <PrimaryLink href="/tournaments">
                 {messages.hero.primary}
               </PrimaryLink>
+
               <SecondaryLink href="/rules">
                 {messages.hero.secondary}
               </SecondaryLink>
@@ -204,31 +388,24 @@ export default async function CommunityPage() {
           </div>
         </section>
 
-        <section className="relative -mt-16 mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
-          <section
-            className="grid gap-5 p-5 shadow-2xl shadow-black/20 md:grid-cols-2 xl:grid-cols-5"
-            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-          >
-            <Stat label={messages.stats.rules} value={activeRules} />
-            <Stat label={messages.stats.roles} value={activeRoles} />
-            <Stat label={messages.stats.staff} value={activeStaff} />
-            <Stat label={messages.stats.tournaments} value={tournaments} />
-            <Stat label={messages.stats.results} value={tournamentResults} />
+        <section className="relative -mt-16 mx-auto grid max-w-[1440px] gap-10 px-6 pb-20 lg:px-10">
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <StatCard label={messages.stats.rules} value={activeRules} />
+            <StatCard label={messages.stats.roles} value={activeRoles} />
+            <StatCard label={messages.stats.staff} value={activeStaff} />
+            <StatCard label={messages.stats.tournaments} value={tournaments} />
+            <StatCard
+              label={messages.stats.results}
+              value={tournamentResults}
+              accent
+            />
           </section>
 
-          <section
-            className="overflow-hidden shadow-2xl shadow-black/20"
-            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-          >
-            <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-              <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-                {messages.directory.label}
-              </p>
-
-              <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-                {messages.directory.title}
-              </h2>
-            </div>
+          <Panel>
+            <PanelHeader
+              label={messages.directory.label}
+              title={messages.directory.title}
+            />
 
             <div>
               {messages.directory.links.map((link) => (
@@ -243,22 +420,14 @@ export default async function CommunityPage() {
                 />
               ))}
             </div>
-          </section>
+          </Panel>
 
-          <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <section
-              className="overflow-hidden shadow-2xl shadow-black/20"
-              style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-            >
-              <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-                <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-                  {messages.flow.label}
-                </p>
-
-                <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-                  {messages.flow.title}
-                </h2>
-              </div>
+          <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+            <Panel>
+              <PanelHeader
+                label={messages.flow.label}
+                title={messages.flow.title}
+              />
 
               <div>
                 {messages.flow.steps.map((step) => (
@@ -270,33 +439,54 @@ export default async function CommunityPage() {
                   />
                 ))}
               </div>
-            </section>
+            </Panel>
 
-            <aside
-              className="p-6 shadow-2xl shadow-black/20"
-              style={{ border: "1px solid var(--asc-line)", background: "var(--asc-accent-dim)" }}
+            <Panel
+              className="p-6"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.30 0.18 270 / 0.82) 0%, oklch(0.12 0.05 280 / 0.96) 58%, oklch(0.08 0.03 285) 100%)",
+              }}
             >
-              <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-                {messages.quickAccess.label}
-              </p>
+              <div className="relative z-10">
+                <div className="flex items-start gap-4">
+                  <DiscordGlyph />
 
-              <h2 className="mt-2 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-                {messages.quickAccess.title}
-              </h2>
+                  <div>
+                    <p
+                      className="text-[10px] font-black uppercase tracking-[0.18em]"
+                      style={{ color: "var(--asc-fg-3)" }}
+                    >
+                      {messages.quickAccess.label}
+                    </p>
 
-              <p className="mt-3 text-sm leading-7" style={{ color: "var(--asc-fg-3)" }}>
-                {messages.quickAccess.description}
-              </p>
+                    <h2
+                      className="mt-1 text-2xl"
+                      style={{ color: "var(--asc-fg-0)" }}
+                    >
+                      {messages.quickAccess.title}
+                    </h2>
+                  </div>
+                </div>
 
-              <div className="mt-6 grid gap-3">
-                <PrimaryLink href="/profile">
-                  {messages.quickAccess.profile}
-                </PrimaryLink>
-                <SecondaryLink href="/leaderboard">
-                  {messages.quickAccess.leaderboard}
-                </SecondaryLink>
+                <p
+                  className="mt-5 text-sm leading-7"
+                  style={{ color: "var(--asc-fg-2)" }}
+                >
+                  {messages.quickAccess.description}
+                </p>
+
+                <div className="mt-7 grid gap-3">
+                  <PrimaryLink href="/profile">
+                    {messages.quickAccess.profile}
+                  </PrimaryLink>
+
+                  <SecondaryLink href="/leaderboard">
+                    {messages.quickAccess.leaderboard}
+                  </SecondaryLink>
+                </div>
               </div>
-            </aside>
+            </Panel>
           </section>
         </section>
 
