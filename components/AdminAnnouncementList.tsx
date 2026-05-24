@@ -79,12 +79,18 @@ function SmallAction({
   label,
   pendingLabel,
   variant = "secondary",
+  confirmTitle,
+  confirmDescription,
+  confirmLabel,
 }: {
   action: AnnouncementAction;
   announcementId: string;
   label: string;
   pendingLabel: string;
   variant?: "primary" | "success" | "danger" | "secondary";
+  confirmTitle?: string;
+  confirmDescription?: string;
+  confirmLabel?: string;
 }) {
   return (
     <InlineAdminAnnouncementForm
@@ -93,6 +99,9 @@ function SmallAction({
       pendingLabel={pendingLabel}
       variant={variant}
       className="grid gap-2"
+      confirmTitle={confirmTitle}
+      confirmDescription={confirmDescription}
+      confirmLabel={confirmLabel}
     >
       <input type="hidden" name="announcementId" value={announcementId} />
     </InlineAdminAnnouncementForm>
@@ -116,10 +125,18 @@ export default async function AdminAnnouncementList() {
     <section className="grid gap-6">
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
+          <p
+            className="text-sm font-black uppercase tracking-[0.18em]"
+            style={{ color: "var(--asc-accent)" }}
+          >
             Manage announcements
           </p>
-          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>Announcements list</h2>
+          <h2
+            className="mt-2 text-3xl font-black"
+            style={{ color: "var(--asc-fg-0)" }}
+          >
+            Announcements list
+          </h2>
         </div>
 
         <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
@@ -131,14 +148,31 @@ export default async function AdminAnnouncementList() {
       </div>
 
       {announcements.length === 0 ? (
-        <div className="border p-6 shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-3)" }}>
+        <div
+          className="border p-6 shadow-2xl shadow-black/20"
+          style={{
+            borderColor: "var(--asc-line-soft)",
+            background: "var(--asc-bg-1)",
+            color: "var(--asc-fg-3)",
+          }}
+        >
           No announcements found.
         </div>
       ) : (
-        <section className="overflow-hidden border shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
+        <section
+          className="overflow-hidden border shadow-2xl shadow-black/20"
+          style={{
+            borderColor: "var(--asc-line-soft)",
+            background: "var(--asc-bg-1)",
+          }}
+        >
           <div
             className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[minmax(0,1fr)_150px_150px_160px] xl:gap-5"
-            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "oklch(0.08 0.02 287)", color: "var(--asc-fg-3)" }}
+            style={{
+              borderBottom: "1px solid var(--asc-line-soft)",
+              background: "oklch(0.08 0.02 287)",
+              color: "var(--asc-fg-3)",
+            }}
           >
             <span>Announcement</span>
             <span>Category</span>
@@ -151,20 +185,45 @@ export default async function AdminAnnouncementList() {
               <article
                 key={announcement.id}
                 className="grid gap-4 px-5 py-5 transition hover:bg-white/[0.035]"
-                style={idx < announcements.length - 1 ? { borderBottom: "1px solid var(--asc-line-soft)" } : {}}
+                style={
+                  idx < announcements.length - 1
+                    ? { borderBottom: "1px solid var(--asc-line-soft)" }
+                    : {}
+                }
               >
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_150px_150px_160px] xl:items-center xl:gap-5">
                   <div className="min-w-0">
-                    <h3 className="truncate text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>{announcement.title}</h3>
-                    <p className="mt-1 line-clamp-2 text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>{announcement.description}</p>
+                    <h3
+                      className="truncate text-xl font-black"
+                      style={{ color: "var(--asc-fg-0)" }}
+                    >
+                      {announcement.title}
+                    </h3>
+                    <p
+                      className="mt-1 line-clamp-2 text-sm leading-6"
+                      style={{ color: "var(--asc-fg-3)" }}
+                    >
+                      {announcement.description}
+                    </p>
                   </div>
 
                   <Pill tone="violet">{announcement.category}</Pill>
-                  <StatusBadges published={announcement.published} important={announcement.important} />
-                  <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>{formatDate(announcement.createdAt)}</p>
+                  <StatusBadges
+                    published={announcement.published}
+                    important={announcement.important}
+                  />
+                  <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
+                    {formatDate(announcement.createdAt)}
+                  </p>
                 </div>
 
-                <details className="border" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}>
+                <details
+                  className="border"
+                  style={{
+                    borderColor: "var(--asc-line-soft)",
+                    background: "oklch(0.08 0.02 287)",
+                  }}
+                >
                   <summary
                     className="cursor-pointer px-4 py-3 text-sm font-black transition"
                     style={{ color: "var(--asc-fg-3)" }}
@@ -181,22 +240,51 @@ export default async function AdminAnnouncementList() {
                       buttonLabel="Save changes"
                       pendingLabel="Saving..."
                       className="grid gap-4"
+                      confirmTitle="Save announcement changes?"
+                      confirmDescription={`Save changes to ${announcement.title}? This will update the announcement content.`}
+                      confirmLabel="Save changes"
                     >
-                      <input type="hidden" name="announcementId" value={announcement.id} />
-                      <input type="hidden" name="published" value={announcement.published ? "true" : "false"} />
-                      <input type="hidden" name="important" value={announcement.important ? "true" : "false"} />
+                      <input
+                        type="hidden"
+                        name="announcementId"
+                        value={announcement.id}
+                      />
+                      <input
+                        type="hidden"
+                        name="published"
+                        value={announcement.published ? "true" : "false"}
+                      />
+                      <input
+                        type="hidden"
+                        name="important"
+                        value={announcement.important ? "true" : "false"}
+                      />
 
                       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
                         <label className="grid gap-2">
                           <FieldLabel>Title</FieldLabel>
-                          <input name="title" required defaultValue={announcement.title} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+                          <input
+                            name="title"
+                            required
+                            defaultValue={announcement.title}
+                            className="border px-4 py-3 text-white outline-none transition"
+                            style={inputStyle}
+                          />
                         </label>
 
                         <label className="grid gap-2">
                           <FieldLabel>Category</FieldLabel>
-                          <select name="category" required defaultValue={announcement.category} className="border px-4 py-3 text-white outline-none transition" style={inputStyle}>
+                          <select
+                            name="category"
+                            required
+                            defaultValue={announcement.category}
+                            className="border px-4 py-3 text-white outline-none transition"
+                            style={inputStyle}
+                          >
                             {categories.map((category) => (
-                              <option key={category} value={category}>{category}</option>
+                              <option key={category} value={category}>
+                                {category}
+                              </option>
                             ))}
                           </select>
                         </label>
@@ -216,15 +304,51 @@ export default async function AdminAnnouncementList() {
 
                     <aside className="grid content-start gap-3">
                       {announcement.published ? (
-                        <SmallAction action={unpublishAnnouncementInline} announcementId={announcement.id} label="Unpublish" pendingLabel="Unpublishing..." variant="danger" />
+                        <SmallAction
+                          action={unpublishAnnouncementInline}
+                          announcementId={announcement.id}
+                          label="Unpublish"
+                          pendingLabel="Unpublishing..."
+                          variant="danger"
+                          confirmTitle="Unpublish announcement?"
+                          confirmDescription={`Hide ${announcement.title} from the public announcements list?`}
+                          confirmLabel="Unpublish"
+                        />
                       ) : (
-                        <SmallAction action={publishAnnouncementInline} announcementId={announcement.id} label="Publish" pendingLabel="Publishing..." variant="success" />
+                        <SmallAction
+                          action={publishAnnouncementInline}
+                          announcementId={announcement.id}
+                          label="Publish"
+                          pendingLabel="Publishing..."
+                          variant="success"
+                          confirmTitle="Publish announcement?"
+                          confirmDescription={`Publish ${announcement.title} so players can see it?`}
+                          confirmLabel="Publish"
+                        />
                       )}
 
                       {announcement.important ? (
-                        <SmallAction action={unmarkAnnouncementImportantInline} announcementId={announcement.id} label="Remove important" pendingLabel="Updating..." />
+                        <SmallAction
+                          action={unmarkAnnouncementImportantInline}
+                          announcementId={announcement.id}
+                          label="Remove important"
+                          pendingLabel="Updating..."
+                          variant="secondary"
+                          confirmTitle="Remove important flag?"
+                          confirmDescription={`Remove the important flag from ${announcement.title}?`}
+                          confirmLabel="Remove important"
+                        />
                       ) : (
-                        <SmallAction action={markAnnouncementImportantInline} announcementId={announcement.id} label="Mark important" pendingLabel="Updating..." variant="success" />
+                        <SmallAction
+                          action={markAnnouncementImportantInline}
+                          announcementId={announcement.id}
+                          label="Mark important"
+                          pendingLabel="Updating..."
+                          variant="success"
+                          confirmTitle="Mark announcement as important?"
+                          confirmDescription={`Mark ${announcement.title} as important?`}
+                          confirmLabel="Mark important"
+                        />
                       )}
 
                       <InlineAdminAnnouncementForm
@@ -237,7 +361,11 @@ export default async function AdminAnnouncementList() {
                         confirmDescription={`Delete ${announcement.title}? This cannot be undone.`}
                         confirmLabel="Delete permanently"
                       >
-                        <input type="hidden" name="announcementId" value={announcement.id} />
+                        <input
+                          type="hidden"
+                          name="announcementId"
+                          value={announcement.id}
+                        />
                       </InlineAdminAnnouncementForm>
                     </aside>
                   </div>
