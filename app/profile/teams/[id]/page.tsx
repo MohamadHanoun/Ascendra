@@ -82,6 +82,9 @@ type TeamPageMessages = {
   settings: {
     saveChanges: string;
     saving: string;
+    saveChangesTitle: string;
+    saveChangesDescription: string;
+    saveChangesConfirm: string;
     teamName: string;
     game: string;
     selectGame: string;
@@ -92,6 +95,9 @@ type TeamPageMessages = {
     playerPlaceholder: string;
     sendInvite: string;
     sending: string;
+    sendInviteTitle: string;
+    sendInviteDescription: string;
+    sendInviteConfirm: string;
     leaveTeam: string;
     leaving: string;
     leaveTeamTitle: string;
@@ -178,6 +184,10 @@ const teamPageMessages: Record<Locale, TeamPageMessages> = {
     settings: {
       saveChanges: "Save changes",
       saving: "Saving...",
+      saveChangesTitle: "Save team changes?",
+      saveChangesDescription:
+        "Save the updated team name and game? This may affect team eligibility for future tournaments.",
+      saveChangesConfirm: "Save changes",
       teamName: "Team name",
       game: "Game",
       selectGame: "Select game",
@@ -189,6 +199,10 @@ const teamPageMessages: Record<Locale, TeamPageMessages> = {
       playerPlaceholder: "Example: AscendraPlayer or 615...",
       sendInvite: "Send invite",
       sending: "Sending...",
+      sendInviteTitle: "Send team invitation?",
+      sendInviteDescription:
+        "Send this player an invitation to join the team. They must accept it before becoming a member.",
+      sendInviteConfirm: "Send invite",
       leaveTeam: "Leave team",
       leaving: "Leaving...",
       leaveTeamTitle: "Leave team?",
@@ -275,6 +289,10 @@ const teamPageMessages: Record<Locale, TeamPageMessages> = {
     settings: {
       saveChanges: "حفظ التغييرات",
       saving: "جارٍ الحفظ...",
+      saveChangesTitle: "حفظ تغييرات الفريق؟",
+      saveChangesDescription:
+        "هل تريد حفظ اسم الفريق واللعبة المحددة؟ قد يؤثر هذا على أهلية الفريق للبطولات القادمة.",
+      saveChangesConfirm: "حفظ التغييرات",
       teamName: "اسم الفريق",
       game: "اللعبة",
       selectGame: "اختر اللعبة",
@@ -286,6 +304,10 @@ const teamPageMessages: Record<Locale, TeamPageMessages> = {
       playerPlaceholder: "مثال: AscendraPlayer أو 615...",
       sendInvite: "إرسال الدعوة",
       sending: "جارٍ الإرسال...",
+      sendInviteTitle: "إرسال دعوة للفريق؟",
+      sendInviteDescription:
+        "سيتم إرسال دعوة لهذا اللاعب للانضمام إلى الفريق. يجب أن يقبل الدعوة قبل أن يصبح عضوًا.",
+      sendInviteConfirm: "إرسال الدعوة",
       leaveTeam: "مغادرة الفريق",
       leaving: "جارٍ المغادرة...",
       leaveTeamTitle: "مغادرة الفريق؟",
@@ -1021,6 +1043,11 @@ export default async function TeamDetailsPage({
                       buttonLabel={messages.settings.saveChanges}
                       pendingLabel={messages.settings.saving}
                       confirmEyebrow={messages.modal.confirmation}
+                      confirmTitle={messages.settings.saveChangesTitle}
+                      confirmDescription={
+                        messages.settings.saveChangesDescription
+                      }
+                      confirmLabel={messages.settings.saveChangesConfirm}
                       confirmFallbackTitle={messages.modal.confirmAction}
                       cancelLabel={messages.modal.cancel}
                     >
@@ -1094,6 +1121,11 @@ export default async function TeamDetailsPage({
                         buttonLabel={messages.settings.sendInvite}
                         pendingLabel={messages.settings.sending}
                         confirmEyebrow={messages.modal.confirmation}
+                        confirmTitle={messages.settings.sendInviteTitle}
+                        confirmDescription={
+                          messages.settings.sendInviteDescription
+                        }
+                        confirmLabel={messages.settings.sendInviteConfirm}
                         confirmFallbackTitle={messages.modal.confirmAction}
                         cancelLabel={messages.modal.cancel}
                       >
