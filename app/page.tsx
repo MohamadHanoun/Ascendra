@@ -2,39 +2,19 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 
-import { auth } from "@/auth";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import Sparkline from "@/components/ui/Sparkline";
 import { getDictionary, type HomeMessages, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
-import Sparkline from "@/components/ui/Sparkline";
 
 export const dynamic = "force-dynamic";
-
-function generateTrend(points: number, rank: number, len = 9): number[] {
-  return Array.from({ length: len }, (_, k) => {
-    const base = points * 0.72;
-    const wave = Math.sin(k * 1.3 + rank * 0.8) * points * 0.10;
-    const rise = (k / (len - 1)) * points * 0.28;
-    return Math.round(Math.max(0, base + wave + rise));
-  });
-}
 
 type SnapshotMember = {
   userId?: string;
   username?: string;
-};
-
-type PlayerHubStats = {
-  isLoggedIn: boolean;
-  teamsCount: number;
-  pendingInvitesCount: number;
-  activeRegistrationsCount: number;
-  tournamentResultsCount: number;
-  tournamentPoints: number;
-  bestPlacement: number | null;
 };
 
 type LiveMatchData = {
@@ -74,6 +54,18 @@ type AnnouncementData = {
   createdAt: Date;
 };
 
+type LadderPreviewPlayer = {
+  id: string;
+  rank: number;
+  name: string;
+  initials: string;
+  meta: string;
+  score: number;
+  scoreLabel: string;
+  accent: string;
+  trend: number[];
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const messages = getDictionary(locale).home.metadata;
@@ -82,6 +74,16 @@ export async function generateMetadata(): Promise<Metadata> {
     title: messages.title,
     description: messages.description,
   };
+}
+
+function generateTrend(points: number, rank: number, len = 8): number[] {
+  return Array.from({ length: len }, (_, index) => {
+    const base = points * 0.92;
+    const wave = Math.sin(index * 1.15 + rank * 0.72) * points * 0.015;
+    const rise = (index / Math.max(len - 1, 1)) * points * 0.06;
+
+    return Math.round(Math.max(0, base + wave + rise));
+  });
 }
 
 function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
@@ -160,31 +162,83 @@ function formatApplications(
   }`;
 }
 
+function formatCompact(value: number) {
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(1)}M`;
+  }
+
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(1)}K`;
+  }
+
+  return String(value);
+}
+
+function getCountdownParts(startsAt: Date | null) {
+  if (!startsAt) {
+    return {
+      days: "21",
+      hours: "00",
+      minutes: "00",
+    };
+  }
+
+  const diff = Math.max(0, startsAt.getTime() - Date.now());
+  const totalMinutes = Math.floor(diff / 60000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+
+  return {
+    days: String(days).padStart(2, "0"),
+    hours: String(hours).padStart(2, "0"),
+    minutes: String(minutes).padStart(2, "0"),
+  };
+}
+
 function StatusBadge({ status, label }: { status: string; label?: string }) {
   const normalized = status.toLowerCase().replace("registration ", "");
 
   const style =
     normalized === "open" || normalized === "approved"
-      ? { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" }
+      ? {
+          color: "var(--asc-green)",
+          borderColor: "oklch(0.55 0.14 150 / 0.5)",
+          background: "oklch(0.25 0.12 150 / 0.18)",
+        }
       : normalized === "upcoming" || normalized === "registered"
-        ? { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" }
+        ? {
+            color: "var(--asc-blue)",
+            borderColor: "oklch(0.55 0.12 220 / 0.5)",
+            background: "oklch(0.25 0.10 220 / 0.18)",
+          }
         : normalized === "closed" || normalized === "rejected"
-          ? { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" }
+          ? {
+              color: "var(--asc-live)",
+              borderColor: "oklch(0.50 0.20 25 / 0.5)",
+              background: "oklch(0.25 0.18 25 / 0.18)",
+            }
           : normalized === "ended"
-            ? { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" }
-            : { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" };
+            ? {
+                color: "var(--asc-blue)",
+                borderColor: "oklch(0.55 0.12 220 / 0.5)",
+                background: "oklch(0.25 0.10 220 / 0.18)",
+              }
+            : {
+                color: "var(--asc-fg-3)",
+                borderColor: "var(--asc-line-soft)",
+                background: "transparent",
+              };
 
   return (
     <span
-      className="inline-flex w-fit border px-3 py-1 text-xs font-black"
+      className="inline-flex w-fit border px-3 py-1 text-xs font-black uppercase tracking-[0.08em]"
       style={style}
     >
       {label || status}
     </span>
   );
 }
-
-const CUT8 = "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)";
 
 function PrimaryLink({
   href,
@@ -196,10 +250,16 @@ function PrimaryLink({
   return (
     <Link
       href={href}
-      className="inline-flex justify-center px-6 py-3 text-sm font-black text-white transition"
-      style={{ background: "var(--asc-accent-2)", boxShadow: "0 0 20px var(--asc-accent-glow)", clipPath: CUT8 }}
+      className="inline-flex items-center justify-center px-6 py-3 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:opacity-90"
+      style={{
+        background: "var(--asc-accent-2)",
+        boxShadow: "0 0 20px var(--asc-accent-glow)",
+        clipPath:
+          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+      }}
     >
       {children}
+      <span className="ml-2">›</span>
     </Link>
   );
 }
@@ -214,8 +274,13 @@ function SecondaryLink({
   return (
     <Link
       href={href}
-      className="inline-flex justify-center px-6 py-3 text-sm font-black transition"
-      style={{ border: "1px solid var(--asc-line)", color: "var(--asc-fg-2)", clipPath: CUT8 }}
+      className="inline-flex items-center justify-center border px-6 py-3 text-sm font-black uppercase tracking-[0.08em] transition hover:opacity-80"
+      style={{
+        borderColor: "var(--asc-line)",
+        color: "var(--asc-fg-2)",
+        clipPath:
+          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+      }}
     >
       {children}
     </Link>
@@ -225,36 +290,33 @@ function SecondaryLink({
 function SectionHeader({
   label,
   title,
-  description,
+  count,
+  children,
 }: {
   label: string;
   title: string;
-  description?: string;
+  count?: number;
+  children?: ReactNode;
 }) {
   return (
-    <div className="mb-8">
-      <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
-        {label}
-      </p>
-      <h2 className="mt-2 text-3xl md:text-4xl" style={{ color: "var(--asc-fg-0)" }}>
-        {title}
-      </h2>
-      {description && (
-        <p className="mt-3 max-w-3xl text-sm leading-7" style={{ color: "var(--asc-fg-3)" }}>
-          {description}
+    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p
+          className="text-xs font-black uppercase tracking-[0.18em]"
+          style={{ color: "var(--asc-accent)" }}
+        >
+          ▲ {label}
+          {typeof count === "number" ? ` · ${count}` : ""}
         </p>
-      )}
-    </div>
-  );
-}
+        <h2
+          className="mt-2 text-3xl md:text-4xl"
+          style={{ color: "var(--asc-fg-0)" }}
+        >
+          {title}
+        </h2>
+      </div>
 
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="p-4" style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)" }}>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
+      {children}
     </div>
   );
 }
@@ -273,11 +335,13 @@ function ProgressBar({
 
   return (
     <div className="grid gap-2">
-      <div className="flex items-center justify-between text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
+      <div
+        className="flex items-center justify-between text-xs font-bold"
+        style={{ color: "var(--asc-fg-3)" }}
+      >
         <span>
           {approvedSlots}/{maxSlots} {approvedLabel}
         </span>
-
         <span>{Math.round(progress)}%</span>
       </div>
 
@@ -288,93 +352,329 @@ function ProgressBar({
   );
 }
 
+function FeaturedEventCard({
+  featuredTournament,
+  approvedSlots,
+  countdown,
+}: {
+  featuredTournament: {
+    id: string;
+    title: string;
+    game: { name: string; slug: string } | null;
+    startsAt: Date | null;
+    prize: string | null;
+    maxTeams: number;
+    registrations: { id: string; status: string }[];
+  } | null;
+  approvedSlots: number;
+  countdown: { days: string; hours: string; minutes: string };
+}) {
+  return (
+    <div
+      className="relative border p-6 shadow-2xl backdrop-blur"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "oklch(0.09 0.035 287 / 0.86)",
+        clipPath:
+          "polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)",
+      }}
+    >
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: -1,
+          left: -1,
+          width: 18,
+          height: 18,
+          borderTop: "2px solid var(--asc-accent)",
+          borderLeft: "2px solid var(--asc-accent)",
+          opacity: 0.72,
+        }}
+      />
+
+      <div className="flex items-center gap-2">
+        <span className="asc-live-dot" />
+        <span
+          className="text-xs font-black uppercase tracking-[0.14em]"
+          style={{ color: "var(--asc-accent)" }}
+        >
+          Featured · Season 7
+        </span>
+      </div>
+
+      <h2
+        className="mt-4 text-2xl font-black uppercase leading-tight md:text-3xl"
+        style={{ color: "var(--asc-fg-0)" }}
+      >
+        {featuredTournament?.title ?? "ASCENDRA MAJOR · SEASON 7"}
+      </h2>
+
+      <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-2)" }}>
+        {featuredTournament?.game?.name
+          ? `${featuredTournament.game.name} · Open qualifier`
+          : "The crown returns to the arena"}
+      </p>
+
+      <p
+        className="mt-5 text-xs font-black uppercase tracking-[0.16em]"
+        style={{ color: "var(--asc-accent)" }}
+      >
+        ▲ Group stage begins in
+      </p>
+
+      <div className="mt-2 flex gap-5">
+        {[
+          { value: countdown.days, label: "DAYS" },
+          { value: countdown.hours, label: "HRS" },
+          { value: countdown.minutes, label: "MIN" },
+        ].map((item) => (
+          <div key={item.label} className="text-center">
+            <p
+              className="text-3xl font-black tabular-nums"
+              style={{ color: "var(--asc-fg-0)" }}
+            >
+              {item.value}
+            </p>
+            <p
+              className="text-[9px] font-black uppercase tracking-[0.14em]"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              {item.label}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          margin: "22px 0 16px",
+          height: 1,
+          background: "var(--asc-line-soft)",
+        }}
+      />
+
+      <div className="grid grid-cols-3 gap-3">
+        <div>
+          <p
+            className="text-[9px] font-black uppercase tracking-[0.14em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            Prize
+          </p>
+          <p
+            className="mt-1 text-sm font-black"
+            style={{ color: "var(--asc-prize)" }}
+          >
+            {featuredTournament?.prize ?? "—"}
+          </p>
+        </div>
+
+        <div>
+          <p
+            className="text-[9px] font-black uppercase tracking-[0.14em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            Slots
+          </p>
+          <p
+            className="mt-1 text-sm font-black"
+            style={{ color: "var(--asc-fg-0)" }}
+          >
+            {featuredTournament
+              ? `${approvedSlots}/${featuredTournament.maxTeams}`
+              : "—"}
+          </p>
+        </div>
+
+        <div>
+          <p
+            className="text-[9px] font-black uppercase tracking-[0.14em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            Region
+          </p>
+          <p
+            className="mt-1 text-sm font-black"
+            style={{ color: "var(--asc-fg-0)" }}
+          >
+            Global
+          </p>
+        </div>
+      </div>
+
+      {featuredTournament && (
+        <div className="mt-5">
+          <ProgressBar
+            approvedSlots={approvedSlots}
+            maxSlots={featuredTournament.maxTeams}
+            approvedLabel="locked"
+          />
+        </div>
+      )}
+
+      <Link
+        href={
+          featuredTournament
+            ? `/tournaments/${featuredTournament.id}`
+            : "/tournaments"
+        }
+        className="mt-5 flex w-full items-center justify-center py-3 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:opacity-90"
+        style={{
+          background: "var(--asc-accent-2)",
+          clipPath:
+            "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+        }}
+      >
+        Register team ›
+      </Link>
+    </div>
+  );
+}
+
 function LiveMatchCard({ match }: { match: LiveMatchData }) {
   const isLive = match.status === "live";
-  const teamATag = match.teamA ? match.teamA.name.slice(0, 2).toUpperCase() : "??";
-  const teamBTag = match.teamB ? match.teamB.name.slice(0, 2).toUpperCase() : "??";
+  const teamATag = match.teamA
+    ? match.teamA.name.slice(0, 2).toUpperCase()
+    : "??";
+  const teamBTag = match.teamB
+    ? match.teamB.name.slice(0, 2).toUpperCase()
+    : "??";
 
   return (
     <article
-      className="overflow-hidden border"
-      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", position: "relative" }}
+      className="relative overflow-hidden border"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "var(--asc-bg-1)",
+        clipPath:
+          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
+      }}
     >
-      <div className="grid gap-4 p-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {isLive ? (
-              <>
-                <span className="asc-live-dot" />
-                <span className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-live)" }}>
-                  LIVE
-                </span>
-              </>
-            ) : (
-              <span className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-                COMPLETED
-              </span>
-            )}
-            <span className="text-xs font-bold truncate max-w-[140px]" style={{ color: "var(--asc-fg-3)" }}>
-              · {match.tournament.title}
-            </span>
-          </div>
-        </div>
+      <div
+        className="flex items-center gap-3 px-4 py-3"
+        style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+      >
+        {isLive ? (
+          <span
+            className="inline-flex items-center gap-2 border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
+            style={{
+              color: "var(--asc-live)",
+              borderColor: "oklch(0.50 0.20 25 / 0.5)",
+              background: "oklch(0.25 0.18 25 / 0.18)",
+            }}
+          >
+            <span className="asc-live-dot" />
+            LIVE
+          </span>
+        ) : (
+          <span
+            className="inline-flex border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
+            style={{
+              color: "var(--asc-fg-3)",
+              borderColor: "var(--asc-line-soft)",
+            }}
+          >
+            Completed
+          </span>
+        )}
 
-        <div className="grid gap-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className="flex h-7 w-7 shrink-0 items-center justify-center text-[10px] font-black text-white"
-                style={{ background: "var(--asc-accent-2)" }}
-              >
-                {teamATag}
-              </div>
-              <span className="text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
-                {match.teamA?.name ?? "TBD"}
-              </span>
+        <span
+          className="truncate text-[10px] font-black uppercase tracking-[0.12em]"
+          style={{ color: "var(--asc-fg-3)" }}
+        >
+          {match.tournament.title}
+        </span>
+      </div>
+
+      <div className="grid gap-4 px-5 py-5">
+        {[
+          {
+            tag: teamATag,
+            name: match.teamA?.name ?? "TBD",
+            score: match.scoreA,
+          },
+          {
+            tag: teamBTag,
+            name: match.teamB?.name ?? "TBD",
+            score: match.scoreB,
+          },
+        ].map((team, index) => (
+          <div key={`${team.tag}-${index}`} className="flex items-center gap-3">
+            <div
+              className="grid h-9 w-9 shrink-0 place-items-center text-[11px] font-black text-white"
+              style={{
+                background:
+                  index === 0 ? "var(--asc-accent-2)" : "oklch(0.45 0.14 220)",
+                clipPath:
+                  "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
+              }}
+            >
+              {team.tag}
             </div>
-            <span className="text-xl font-black tabular-nums" style={{ color: "var(--asc-fg-0)" }}>
-              {match.scoreA}
-            </span>
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className="flex h-7 w-7 shrink-0 items-center justify-center text-[10px] font-black text-white"
-                style={{ background: "oklch(0.55 0.14 150 / 0.8)" }}
+            <div className="min-w-0 flex-1">
+              <p
+                className="truncate text-sm font-black"
+                style={{ color: "var(--asc-fg-0)" }}
               >
-                {teamBTag}
-              </div>
-              <span className="text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
-                {match.teamB?.name ?? "TBD"}
-              </span>
+                {team.name}
+              </p>
+              <p
+                className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
+                style={{ color: "var(--asc-fg-3)" }}
+              >
+                Team
+              </p>
             </div>
-            <span className="text-xl font-black tabular-nums" style={{ color: "var(--asc-fg-0)" }}>
-              {match.scoreB}
-            </span>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-3 pt-1" style={{ borderTop: "1px solid var(--asc-line-soft)" }}>
-          <span className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
-            ROUND {match.round}
-          </span>
-          <span style={{ color: "var(--asc-line)" }}>·</span>
-          <span className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
-            BO{match.bestOf}
-          </span>
-          <span style={{ color: "var(--asc-line)" }}>·</span>
-          <span className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
-            MATCH {match.matchNumber}
-          </span>
-        </div>
+            <p
+              className="text-3xl font-black tabular-nums"
+              style={{
+                color: "var(--asc-fg-0)",
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              {team.score}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div
+        className="flex items-center gap-3 px-4 py-3"
+        style={{
+          borderTop: "1px solid var(--asc-line-soft)",
+          background: "oklch(0.09 0.03 285)",
+        }}
+      >
+        <span
+          className="text-[10px] font-black uppercase tracking-[0.12em]"
+          style={{ color: "var(--asc-fg-2)" }}
+        >
+          Round {match.round}
+        </span>
+        <span style={{ color: "var(--asc-line)" }}>·</span>
+        <span
+          className="text-[10px] font-black uppercase tracking-[0.12em]"
+          style={{ color: "var(--asc-fg-2)" }}
+        >
+          BO{match.bestOf}
+        </span>
+        <span
+          className="ml-auto text-[10px] font-black uppercase tracking-[0.12em]"
+          style={{ color: "var(--asc-accent)" }}
+        >
+          Match {match.matchNumber}
+        </span>
       </div>
     </article>
   );
 }
 
-function TournamentMiniCard({
+function TournamentFeatureCard({
   tournament,
+  compact = false,
   locale,
   messages,
 }: {
@@ -383,6 +683,7 @@ function TournamentMiniCard({
     title: string;
     game: { name: string; slug: string } | null;
     startsAt: Date | null;
+    prize: string | null;
     imageUrl: string | null;
     maxTeams: number;
     teamSize: number;
@@ -393,6 +694,7 @@ function TournamentMiniCard({
       status: string;
     }[];
   };
+  compact?: boolean;
   locale: Locale;
   messages: HomeMessages;
 }) {
@@ -401,254 +703,636 @@ function TournamentMiniCard({
   ).length;
 
   const applications = tournament.registrations.length;
-  const imageSrc = getTournamentImageUrl(tournament.game?.slug ?? null, tournament.imageUrl);
+  const imageSrc = getTournamentImageUrl(
+    tournament.game?.slug ?? null,
+    tournament.imageUrl,
+  );
 
   return (
-    <article
-      className="overflow-hidden border transition"
-      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+    <Link
+      href={`/tournaments/${tournament.id}`}
+      className="group relative block min-h-[240px] overflow-hidden border transition hover:opacity-95"
+      style={{
+        minHeight: compact ? 190 : 285,
+        borderColor: "var(--asc-line-soft)",
+        background: "var(--asc-bg-1)",
+        clipPath:
+          "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+      }}
     >
       <div
-        className="h-44 bg-cover bg-center"
+        aria-hidden="true"
+        className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-105"
         style={{
-          backgroundImage: `linear-gradient(to bottom, oklch(0.06 0.03 287 / 0.10), oklch(0.06 0.03 287 / 0.88)), url("${imageSrc}")`,
+          backgroundImage: `url("${imageSrc}")`,
+          opacity: 0.82,
         }}
       />
 
-      <div className="grid gap-4 p-5">
-        <div className="flex flex-wrap gap-2">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, oklch(0.06 0.03 287 / 0.22) 0%, oklch(0.06 0.03 287 / 0.96) 100%)",
+        }}
+      />
+
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: -1,
+          left: -1,
+          width: 18,
+          height: 18,
+          borderTop: "2px solid var(--asc-accent)",
+          borderLeft: "2px solid var(--asc-accent)",
+          opacity: 0.72,
+        }}
+      />
+
+      <div className="relative z-10 flex h-full min-h-[inherit] flex-col p-5">
+        <div className="flex flex-wrap items-center gap-2">
           <StatusBadge
             status={tournament.status}
-            label={getTournamentStatusLabel(tournament.status, messages.statuses)}
+            label={getTournamentStatusLabel(
+              tournament.status,
+              messages.statuses,
+            )}
           />
-          <StatusBadge
-            status={tournament.registrationStatus}
-            label={getRegistrationStatusLabel(tournament.registrationStatus, messages.statuses)}
-          />
+          <span
+            className="text-[10px] font-black uppercase tracking-[0.14em]"
+            style={{ color: "var(--asc-fg-2)" }}
+          >
+            {tournament.game?.name ?? "—"}
+          </span>
+        </div>
+
+        <div className="mt-auto">
+          <h3
+            className="text-2xl md:text-3xl"
+            style={{ color: "var(--asc-fg-0)" }}
+          >
+            {tournament.title}
+          </h3>
+
+          <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-2)" }}>
+            {tournament.startsAt?.toLocaleDateString() ?? "—"} ·{" "}
+            {tournament.teamSize}v{tournament.teamSize} ·{" "}
+            {formatApplications(applications, messages.tournaments, locale)}
+          </p>
+
+          <div className="mt-5 grid grid-cols-3 gap-4">
+            <div>
+              <p
+                className="text-[9px] font-black uppercase tracking-[0.14em]"
+                style={{ color: "var(--asc-fg-3)" }}
+              >
+                Prize
+              </p>
+              <p
+                className="mt-1 text-sm font-black"
+                style={{ color: "var(--asc-prize)" }}
+              >
+                {tournament.prize ?? "—"}
+              </p>
+            </div>
+
+            <div>
+              <p
+                className="text-[9px] font-black uppercase tracking-[0.14em]"
+                style={{ color: "var(--asc-fg-3)" }}
+              >
+                Teams
+              </p>
+              <p
+                className="mt-1 text-sm font-black"
+                style={{ color: "var(--asc-fg-0)" }}
+              >
+                {approvedSlots}
+                <span style={{ color: "var(--asc-fg-3)" }}>
+                  /{tournament.maxTeams}
+                </span>
+              </p>
+            </div>
+
+            <div>
+              <p
+                className="text-[9px] font-black uppercase tracking-[0.14em]"
+                style={{ color: "var(--asc-fg-3)" }}
+              >
+                Format
+              </p>
+              <p
+                className="mt-1 text-sm font-black"
+                style={{ color: "var(--asc-fg-0)" }}
+              >
+                {tournament.teamSize}v{tournament.teamSize}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function GameTile({ game }: { game: GameData }) {
+  const imageSrc = getTournamentImageUrl(game.slug, null);
+
+  return (
+    <Link
+      href="/games"
+      className="group relative block aspect-[3/4] overflow-hidden border transition hover:opacity-95"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "var(--asc-bg-1)",
+        clipPath:
+          "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+      }}
+    >
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-105"
+        style={{ backgroundImage: `url("${imageSrc}")` }}
+      />
+
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, transparent 25%, oklch(0.07 0.025 285 / 0.96) 100%)",
+        }}
+      />
+
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: -1,
+          left: -1,
+          width: 18,
+          height: 18,
+          borderTop: "2px solid var(--asc-accent)",
+          borderLeft: "2px solid var(--asc-accent)",
+          opacity: 0.72,
+        }}
+      />
+
+      <div className="absolute right-4 top-4">
+        <span
+          className="border px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
+          style={{
+            color: "var(--asc-green)",
+            borderColor: "oklch(0.55 0.14 150 / 0.45)",
+            background: "oklch(0.20 0.10 150 / 0.25)",
+          }}
+        >
+          {game._count.tournaments} LIVE
+        </span>
+      </div>
+
+      <div className="absolute inset-x-0 bottom-0 p-5">
+        <h3 className="text-lg" style={{ color: "var(--asc-fg-0)" }}>
+          {game.name}
+        </h3>
+        <p
+          className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em]"
+          style={{ color: "var(--asc-fg-3)" }}
+        >
+          {game.defaultTeamSize}v{game.defaultTeamSize} · {game._count.teams}{" "}
+          teams
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+function DiscordGlyph() {
+  return (
+    <div
+      className="grid h-12 w-12 shrink-0 place-items-center"
+      style={{
+        background: "oklch(0.62 0.18 270)",
+        clipPath:
+          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+      }}
+    >
+      <svg
+        width="24"
+        height="18"
+        viewBox="0 0 24 18"
+        fill="oklch(0.98 0.01 290)"
+      >
+        <path d="M20.3 1.8a18 18 0 0 0-4.5-1.4l-.2.4c1.6.3 3 .9 4.3 1.7-1.6-.9-3.4-1.4-5.3-1.4S10.9.6 9.3 1.5c1.3-.8 2.7-1.4 4.3-1.7l-.2-.4A18 18 0 0 0 8.9 1.8C5.7 6.7 4.9 11.4 5.3 16c1.8 1.3 3.6 2 5.4 2.5l.4-.6a11 11 0 0 1-2.2-1.1c.2-.1.4-.2.5-.3 4.1 1.9 8.5 1.9 12.5 0 .2.1.4.2.5.3-.7.4-1.4.8-2.2 1.1l.4.6c1.8-.5 3.6-1.2 5.4-2.5.5-5.4-.8-10-2.7-14.2zM9.7 13.5c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2zm6.6 0c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2z" />
+      </svg>
+    </div>
+  );
+}
+
+function DiscordPreviewCard() {
+  return (
+    <Link
+      href="/community"
+      className="relative block overflow-hidden border p-5 transition hover:opacity-95"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background:
+          "linear-gradient(135deg, oklch(0.30 0.18 270 / 0.88) 0%, oklch(0.12 0.05 280 / 0.96) 58%, oklch(0.08 0.03 285) 100%)",
+        clipPath:
+          "polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)",
+      }}
+    >
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: -1,
+          left: -1,
+          width: 18,
+          height: 18,
+          borderTop: "2px solid var(--asc-accent)",
+          borderLeft: "2px solid var(--asc-accent)",
+          opacity: 0.72,
+        }}
+      />
+
+      <div className="flex items-start gap-4">
+        <DiscordGlyph />
+
+        <div>
+          <p
+            className="text-[10px] font-black uppercase tracking-[0.18em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            Community
+          </p>
+          <h3 className="text-xl" style={{ color: "var(--asc-fg-0)" }}>
+            The Ascendra Discord
+          </h3>
+        </div>
+      </div>
+
+      <p
+        className="mt-4 text-sm leading-6"
+        style={{ color: "var(--asc-fg-1)" }}
+      >
+        184K members. Live tournament rooms, ticket-bot disputes,
+        looking-for-game pings — your team's home base.
+      </p>
+
+      <div className="mt-5 flex gap-8">
+        <div>
+          <p
+            className="text-[10px] font-black uppercase tracking-[0.14em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            Members
+          </p>
+          <p
+            className="mt-1 text-xl font-black tabular-nums"
+            style={{ color: "var(--asc-fg-0)" }}
+          >
+            184.2K
+          </p>
         </div>
 
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-            {tournament.game?.name ?? "—"}
+          <p
+            className="text-[10px] font-black uppercase tracking-[0.14em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            Online now
           </p>
-          <h3 className="mt-2 text-2xl" style={{ color: "var(--asc-fg-0)" }}>
-            {tournament.title}
-          </h3>
-          <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-            {tournament.startsAt?.toLocaleDateString() ?? "—"} · {tournament.teamSize}v{tournament.teamSize}
+          <p
+            className="mt-1 text-xl font-black tabular-nums"
+            style={{ color: "var(--asc-green)" }}
+          >
+            28.4K
           </p>
         </div>
+      </div>
 
-        <ProgressBar
-          approvedSlots={approvedSlots}
-          maxSlots={tournament.maxTeams}
-          approvedLabel={messages.tournaments.approved}
-        />
+      <span
+        className="mt-7 inline-flex items-center justify-center px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-white"
+        style={{
+          background: "oklch(0.62 0.18 270)",
+          clipPath:
+            "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+        }}
+      >
+        Join the server
+      </span>
+    </Link>
+  );
+}
 
-        <p className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
-          {formatApplications(applications, messages.tournaments, locale)}
+function HomeMetricTile({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string | number;
+  sub: string;
+}) {
+  return (
+    <div
+      className="relative border p-5"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "var(--asc-bg-1)",
+        clipPath:
+          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
+      }}
+    >
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: -1,
+          left: -1,
+          width: 14,
+          height: 14,
+          borderTop: "1.5px solid var(--asc-line)",
+          borderLeft: "1.5px solid var(--asc-line)",
+        }}
+      />
+
+      <p
+        className="text-[10px] font-black uppercase tracking-[0.18em]"
+        style={{ color: "var(--asc-fg-3)" }}
+      >
+        {label}
+      </p>
+
+      <p
+        className="mt-3 text-3xl font-black tabular-nums"
+        style={{ color: "var(--asc-fg-0)", fontFamily: "var(--font-display)" }}
+      >
+        {value}
+      </p>
+
+      <p
+        className="mt-2 text-[10px] font-bold"
+        style={{ color: "var(--asc-green)" }}
+      >
+        {sub}
+      </p>
+    </div>
+  );
+}
+
+function LeaderboardPreview({ players }: { players: TopPlayer[] }) {
+  const fallbackPlayers: LadderPreviewPlayer[] = [
+    {
+      id: "fallback-ravenous",
+      rank: 1,
+      name: "Ravenous",
+      initials: "RA",
+      meta: "NVX · NA-East · Duelist",
+      score: 4218,
+      scoreLabel: "MMR",
+      accent: "oklch(0.62 0.22 285)",
+      trend: generateTrend(4218, 1),
+    },
+    {
+      id: "fallback-kairoshi",
+      rank: 2,
+      name: "Kairoshi",
+      initials: "KA",
+      meta: "OBLK · JP · Initiator",
+      score: 4192,
+      scoreLabel: "MMR",
+      accent: "oklch(0.58 0.18 220)",
+      trend: generateTrend(4192, 2),
+    },
+    {
+      id: "fallback-nyxvoid",
+      rank: 3,
+      name: "NyxVoid",
+      initials: "NY",
+      meta: "CRSH · EU-W · Controller",
+      score: 4087,
+      scoreLabel: "MMR",
+      accent: "oklch(0.60 0.22 320)",
+      trend: generateTrend(4087, 3),
+    },
+    {
+      id: "fallback-vortexx",
+      rank: 4,
+      name: "Vortexx",
+      initials: "VO",
+      meta: "VRGE · EU-W · Sentinel",
+      score: 4051,
+      scoreLabel: "MMR",
+      accent: "oklch(0.58 0.20 250)",
+      trend: generateTrend(4051, 4),
+    },
+    {
+      id: "fallback-cinderfall",
+      rank: 5,
+      name: "Cinderfall",
+      initials: "CI",
+      meta: "AXIS · NA-West · Duelist",
+      score: 3998,
+      scoreLabel: "MMR",
+      accent: "oklch(0.62 0.22 25)",
+      trend: generateTrend(3998, 5),
+    },
+  ];
+
+  const displayPlayers: LadderPreviewPlayer[] =
+    players.length > 0
+      ? players.slice(0, 5).map((player, index) => ({
+          id: player.userId,
+          rank: index + 1,
+          name: player.username,
+          initials: player.username.slice(0, 2).toUpperCase(),
+          meta:
+            player.placement !== null
+              ? `Best #${player.placement} · Tournament points`
+              : "Tournament points",
+          score: player.points,
+          scoreLabel: "PTS",
+          accent:
+            index === 0
+              ? "oklch(0.62 0.22 285)"
+              : index === 1
+                ? "oklch(0.58 0.18 220)"
+                : index === 2
+                  ? "oklch(0.60 0.22 320)"
+                  : index === 3
+                    ? "oklch(0.58 0.20 250)"
+                    : "oklch(0.62 0.22 25)",
+          trend: generateTrend(Math.max(player.points, 100), index + 1),
+        }))
+      : fallbackPlayers;
+
+  return (
+    <div>
+      <SectionHeader label="APEX 100" title="Top of the ladder">
+        <Link
+          href="/leaderboard"
+          className="border px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] transition hover:opacity-75"
+          style={{
+            borderColor: "var(--asc-line-soft)",
+            color: "var(--asc-fg-2)",
+          }}
+        >
+          Full ladder ›
+        </Link>
+      </SectionHeader>
+
+      <div
+        className="relative overflow-hidden border"
+        style={{
+          borderColor: "var(--asc-line-soft)",
+          background: "var(--asc-bg-1)",
+        }}
+      >
+        {displayPlayers.map((player, index) => (
+          <Link
+            key={player.id}
+            href="/leaderboard"
+            className="flex items-center gap-4 px-5 py-4 transition hover:opacity-90"
+            style={{
+              borderTop: index ? "1px solid var(--asc-line-soft)" : "0",
+              background:
+                index === 0 ? "oklch(0.20 0.12 285 / 0.08)" : "transparent",
+            }}
+          >
+            <span
+              className="w-8 shrink-0 text-sm font-black tabular-nums"
+              style={{
+                color: index < 3 ? "var(--asc-accent)" : "var(--asc-fg-3)",
+              }}
+            >
+              {String(player.rank).padStart(2, "0")}
+            </span>
+
+            <span
+              className="grid h-9 w-9 shrink-0 place-items-center text-[11px] font-black text-white"
+              style={{
+                background: player.accent,
+                clipPath:
+                  "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
+              }}
+            >
+              {player.initials}
+            </span>
+
+            <span className="min-w-0 flex-1">
+              <span
+                className="block truncate text-sm font-black"
+                style={{ color: "var(--asc-fg-0)" }}
+              >
+                {player.name}
+              </span>
+              <span
+                className="mt-1 block truncate text-[10px] font-bold uppercase tracking-[0.12em]"
+                style={{ color: "var(--asc-fg-3)" }}
+              >
+                {player.meta}
+              </span>
+            </span>
+
+            <span className="hidden shrink-0 md:block">
+              <Sparkline
+                values={player.trend}
+                id={player.id}
+                width={72}
+                height={24}
+              />
+            </span>
+
+            <span className="w-20 shrink-0 text-right">
+              <span
+                className="block text-lg font-black tabular-nums"
+                style={{ color: "var(--asc-fg-0)" }}
+              >
+                {player.score.toLocaleString()}
+              </span>
+              <span
+                className="text-[9px] font-black uppercase tracking-[0.14em]"
+                style={{ color: "var(--asc-fg-3)" }}
+              >
+                {player.scoreLabel}
+              </span>
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AnnouncementCard({
+  item,
+  index,
+}: {
+  item: AnnouncementData;
+  index: number;
+}) {
+  const msAgo = Date.now() - item.createdAt.getTime();
+  const hoursAgo = Math.max(1, Math.round(msAgo / 3600000));
+  const timeLabel =
+    hoursAgo < 24 ? `${hoursAgo}H AGO` : `${Math.round(hoursAgo / 24)}D AGO`;
+
+  return (
+    <Link
+      href="/announcements"
+      className="relative flex gap-4 overflow-hidden border p-5 transition hover:opacity-90"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "var(--asc-bg-1)",
+        clipPath:
+          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
+      }}
+    >
+      <p
+        className="shrink-0 text-5xl font-black leading-none tabular-nums"
+        style={{
+          color: "var(--asc-accent)",
+          fontFamily: "var(--font-display)",
+        }}
+      >
+        {String(index + 1).padStart(2, "0")}
+      </p>
+
+      <div className="min-w-0 flex-1">
+        <p
+          className="text-[10px] font-black uppercase tracking-[0.18em]"
+          style={{ color: "var(--asc-fg-3)" }}
+        >
+          {item.category} · {timeLabel}
         </p>
 
-        <Link
-          href={`/tournaments/${tournament.id}`}
-          className="px-5 py-3 text-center text-sm font-black text-white transition"
-          style={{ background: "var(--asc-accent-2)" }}
+        <h3
+          className="mt-2 text-lg leading-tight"
+          style={{ color: "var(--asc-fg-0)" }}
         >
-          {messages.tournaments.viewDetails}
-        </Link>
-      </div>
-    </article>
-  );
-}
+          {item.title}
+        </h3>
 
-function JourneyRow({
-  index,
-  title,
-  description,
-}: {
-  index: number;
-  title: string;
-  description: string;
-}) {
-  return (
-    <article
-      className="grid gap-3 px-5 py-4 last:border-b-0 md:grid-cols-[80px_180px_minmax(0,1fr)] md:items-center"
-      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-    >
-      <p className="text-sm font-black" style={{ color: "var(--asc-accent)" }}>
-        {String(index).padStart(2, "0")}
-      </p>
-      <h3 className="font-black" style={{ color: "var(--asc-fg-0)" }}>{title}</h3>
-      <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>{description}</p>
-    </article>
-  );
-}
-
-function PlayerHubSection({
-  stats,
-  messages,
-}: {
-  stats: PlayerHubStats;
-  messages: HomeMessages["playerHub"];
-}) {
-  return (
-    <section className="relative py-16 lg:py-20">
-      <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
-        <section
-          className="overflow-hidden border p-6 shadow-2xl"
-          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+        <p
+          className="mt-3 text-[10px] font-black uppercase tracking-[0.12em]"
+          style={{ color: "var(--asc-fg-3)" }}
         >
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_460px] lg:items-end">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
-                {messages.label}
-              </p>
-              <h2 className="mt-2 text-3xl md:text-4xl" style={{ color: "var(--asc-fg-0)" }}>
-                {stats.isLoggedIn ? messages.loggedInTitle : messages.guestTitle}
-              </h2>
-              <p className="mt-4 max-w-3xl text-sm leading-7" style={{ color: "var(--asc-fg-3)" }}>
-                {stats.isLoggedIn ? messages.loggedInDescription : messages.guestDescription}
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <PrimaryLink href={stats.isLoggedIn ? "/profile" : "/login"}>
-                  {stats.isLoggedIn ? messages.openProfile : messages.loginWithDiscord}
-                </PrimaryLink>
-                <SecondaryLink href="/tournaments">
-                  {messages.viewTournaments}
-                </SecondaryLink>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Stat label={messages.stats.teams} value={stats.teamsCount} />
-              <Stat label={messages.stats.invites} value={stats.pendingInvitesCount} />
-              <Stat label={messages.stats.entries} value={stats.activeRegistrationsCount} />
-              <Stat label={messages.stats.points} value={stats.tournamentPoints} />
-              <Stat label={messages.stats.results} value={stats.tournamentResultsCount} />
-              <Stat label={messages.stats.best} value={stats.bestPlacement ? `#${stats.bestPlacement}` : "-"} />
-            </div>
-          </div>
-        </section>
+          2 min read
+        </p>
       </div>
-    </section>
+
+      <span
+        className="mt-1 shrink-0 text-lg"
+        style={{ color: "var(--asc-fg-3)" }}
+      >
+        ›
+      </span>
+    </Link>
   );
-}
-
-async function getPlayerHubStats(): Promise<PlayerHubStats> {
-  const session = await auth();
-
-  if (!session?.user?.databaseId) {
-    return {
-      isLoggedIn: false,
-      teamsCount: 0,
-      pendingInvitesCount: 0,
-      activeRegistrationsCount: 0,
-      tournamentResultsCount: 0,
-      tournamentPoints: 0,
-      bestPlacement: null,
-    };
-  }
-
-  const userId = session.user.databaseId;
-
-  const [
-    teamsCount,
-    pendingInvitesCount,
-    activeRegistrationsCount,
-    tournamentResults,
-  ] = await Promise.all([
-    prisma.team.count({
-      where: {
-        members: {
-          some: {
-            userId,
-          },
-        },
-      },
-    }),
-
-    prisma.teamInvite.count({
-      where: {
-        invitedUserId: userId,
-        status: "pending",
-      },
-    }),
-
-    prisma.tournamentRegistration.count({
-      where: {
-        status: {
-          in: ["registered", "approved"],
-        },
-        tournament: {
-          status: {
-            notIn: ["ended", "cancelled"],
-          },
-        },
-        team: {
-          members: {
-            some: {
-              userId,
-            },
-          },
-        },
-      },
-    }),
-
-    prisma.tournamentResult.findMany({
-      select: {
-        points: true,
-        placement: true,
-        snapshotMembers: true,
-        team: {
-          select: {
-            members: {
-              select: {
-                userId: true,
-              },
-            },
-          },
-        },
-      },
-    }),
-  ]);
-
-  let tournamentResultsCount = 0;
-  let tournamentPoints = 0;
-  let bestPlacement: number | null = null;
-
-  for (const result of tournamentResults) {
-    const snapshotMembers = parseSnapshotMembers(result.snapshotMembers);
-
-    const resultUserIds =
-      snapshotMembers.length > 0
-        ? snapshotMembers
-            .map((member) => member.userId)
-            .filter((memberUserId): memberUserId is string =>
-              Boolean(memberUserId),
-            )
-        : result.team.members.map((member) => member.userId);
-
-    if (!resultUserIds.includes(userId)) {
-      continue;
-    }
-
-    tournamentResultsCount += 1;
-    tournamentPoints += result.points;
-    bestPlacement =
-      bestPlacement === null
-        ? result.placement
-        : Math.min(bestPlacement, result.placement);
-  }
-
-  return {
-    isLoggedIn: true,
-    teamsCount,
-    pendingInvitesCount,
-    activeRegistrationsCount,
-    tournamentResultsCount,
-    tournamentPoints,
-    bestPlacement,
-  };
 }
 
 export default async function HomePage() {
@@ -657,7 +1341,6 @@ export default async function HomePage() {
 
   const [
     rawTournaments,
-    playerHubStats,
     liveMatches,
     games,
     allResults,
@@ -686,8 +1369,6 @@ export default async function HomePage() {
         },
       },
     }),
-
-    getPlayerHubStats(),
 
     prisma.match.findMany({
       where: { status: { in: ["live", "completed"] } },
@@ -741,44 +1422,71 @@ export default async function HomePage() {
       where: { published: true },
       orderBy: { createdAt: "desc" },
       take: 4,
-      select: { id: true, title: true, category: true, description: true, createdAt: true },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        description: true,
+        createdAt: true,
+      },
     }),
 
     prisma.user.count(),
 
-    prisma.tournament.count({ where: { status: { in: ["open", "upcoming"] } } }),
+    prisma.tournament.count({
+      where: { status: { in: ["open", "upcoming"] } },
+    }),
   ]);
 
   const tournaments = [...rawTournaments]
     .sort((a, b) => {
       const priorityA = getTournamentSortPriority(a.status);
       const priorityB = getTournamentSortPriority(b.status);
-      if (priorityA !== priorityB) return priorityA - priorityB;
+
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
       return b.createdAt.getTime() - a.createdAt.getTime();
     })
-    .slice(0, 3);
+    .slice(0, 4);
 
   const sortedMatches = [...liveMatches]
     .sort((a, b) => {
       if (a.status === "live" && b.status !== "live") return -1;
       if (a.status !== "live" && b.status === "live") return 1;
+
       return 0;
     })
     .slice(0, 3);
 
-  // Aggregate top players from tournament results
-  const playerMap = new Map<string, { username: string; points: number; placements: number[] }>();
+  const playerMap = new Map<
+    string,
+    { username: string; points: number; placements: number[] }
+  >();
+
   for (const result of allResults) {
     const snapshotMembers = parseSnapshotMembers(result.snapshotMembers);
     const members =
       snapshotMembers.length > 0
         ? snapshotMembers
-            .filter((m) => Boolean(m.userId))
-            .map((m) => ({ id: m.userId!, username: m.username ?? "Unknown" }))
-        : result.team.members.map((m) => ({ id: m.user.id, username: m.user.username }));
+            .filter((member) => Boolean(member.userId))
+            .map((member) => ({
+              id: member.userId!,
+              username: member.username ?? "Unknown",
+            }))
+        : result.team.members.map((member) => ({
+            id: member.user.id,
+            username: member.user.username,
+          }));
 
     for (const member of members) {
-      const existing = playerMap.get(member.id) ?? { username: member.username, points: 0, placements: [] };
+      const existing = playerMap.get(member.id) ?? {
+        username: member.username,
+        points: 0,
+        placements: [],
+      };
+
       playerMap.set(member.id, {
         username: existing.username,
         points: existing.points + result.points,
@@ -792,373 +1500,190 @@ export default async function HomePage() {
       userId,
       username: data.username,
       points: data.points,
-      placement: data.placements.length > 0 ? Math.min(...data.placements) : null,
+      placement:
+        data.placements.length > 0 ? Math.min(...data.placements) : null,
     }))
     .sort((a, b) => b.points - a.points)
     .slice(0, 5);
 
   const placeholderGames: GameData[] = [
-    { id: "val", name: "VALORANT", slug: "valorant", shortName: "VAL", defaultTeamSize: 5, _count: { tournaments: 0, teams: 0 } },
-    { id: "cs2", name: "CS2", slug: "cs2", shortName: "CS2", defaultTeamSize: 5, _count: { tournaments: 0, teams: 0 } },
-    { id: "lol", name: "LEAGUE OF LEGENDS", slug: "league-of-legends", shortName: "LOL", defaultTeamSize: 5, _count: { tournaments: 0, teams: 0 } },
-    { id: "dota", name: "DOTA 2", slug: "dota2", shortName: "D2", defaultTeamSize: 5, _count: { tournaments: 0, teams: 0 } },
-    { id: "bf", name: "BATTLEFIELD", slug: "battlefield", shortName: "BF", defaultTeamSize: 5, _count: { tournaments: 0, teams: 0 } },
+    {
+      id: "val",
+      name: "VALORANT",
+      slug: "valorant",
+      shortName: "VAL",
+      defaultTeamSize: 5,
+      _count: { tournaments: 0, teams: 0 },
+    },
+    {
+      id: "cs2",
+      name: "CS2",
+      slug: "cs2",
+      shortName: "CS2",
+      defaultTeamSize: 5,
+      _count: { tournaments: 0, teams: 0 },
+    },
+    {
+      id: "lol",
+      name: "LEAGUE OF LEGENDS",
+      slug: "league-of-legends",
+      shortName: "LOL",
+      defaultTeamSize: 5,
+      _count: { tournaments: 0, teams: 0 },
+    },
+    {
+      id: "dota",
+      name: "DOTA 2",
+      slug: "dota2",
+      shortName: "D2",
+      defaultTeamSize: 5,
+      _count: { tournaments: 0, teams: 0 },
+    },
+    {
+      id: "bf",
+      name: "BATTLEFIELD",
+      slug: "battlefield",
+      shortName: "BF",
+      defaultTeamSize: 5,
+      _count: { tournaments: 0, teams: 0 },
+    },
   ];
+
   const displayGames = games.length > 0 ? games : placeholderGames;
 
   const placeholderAnnouncements: AnnouncementData[] = [
-    { id: "a1", title: "Season 7 Group Stage Schedule Confirmed", category: "TOURNAMENT", description: "All 32 slots are filled. The group stage draw has been completed and schedules are now live.", createdAt: new Date(Date.now() - 12 * 3600000) },
-    { id: "a2", title: "Anti-Cheat System v2.0 Deployed", category: "PLATFORM", description: "Enhanced behavioral detection now active across all supported titles. Zero-tolerance enforcement.", createdAt: new Date(Date.now() - 36 * 3600000) },
-    { id: "a3", title: "MENA Region Dedicated Servers Are Live", category: "COMMUNITY", description: "Dedicated low-latency servers for Middle East and North Africa players are now online.", createdAt: new Date(Date.now() - 2 * 86400000) },
-    { id: "a4", title: "Organizer Tools Beta Now Open", category: "PLATFORM", description: "Apply for early access to bracket management, team approval, and tournament scheduling tools.", createdAt: new Date(Date.now() - 3 * 86400000) },
+    {
+      id: "a1",
+      title: "Season 7 Group Stage Schedule Confirmed",
+      category: "TOURNAMENT",
+      description:
+        "All 32 slots are filled. The group stage draw has been completed and schedules are now live.",
+      createdAt: new Date(Date.now() - 12 * 3600000),
+    },
+    {
+      id: "a2",
+      title: "Anti-Cheat System v2.0 Deployed",
+      category: "PLATFORM",
+      description:
+        "Enhanced behavioral detection now active across all supported titles.",
+      createdAt: new Date(Date.now() - 36 * 3600000),
+    },
+    {
+      id: "a3",
+      title: "MENA Region Dedicated Servers Are Live",
+      category: "COMMUNITY",
+      description:
+        "Dedicated low-latency servers for Middle East and North Africa players are now online.",
+      createdAt: new Date(Date.now() - 2 * 86400000),
+    },
+    {
+      id: "a4",
+      title: "Organizer Tools Beta Now Open",
+      category: "PLATFORM",
+      description:
+        "Apply for early access to bracket management and tournament scheduling tools.",
+      createdAt: new Date(Date.now() - 3 * 86400000),
+    },
   ];
-  const displayAnnouncements = recentAnnouncements.length > 0 ? recentAnnouncements : placeholderAnnouncements;
+
+  const displayAnnouncements =
+    recentAnnouncements.length > 0
+      ? recentAnnouncements
+      : placeholderAnnouncements;
 
   const featuredTournament = tournaments[0] ?? null;
+
   const featuredApprovedSlots = featuredTournament
-    ? featuredTournament.registrations.filter((r) => r.status === "approved").length
+    ? featuredTournament.registrations.filter(
+        (registration) => registration.status === "approved",
+      ).length
     : 0;
-  const featuredDaysUntil = featuredTournament?.startsAt
-    ? Math.max(0, Math.ceil((featuredTournament.startsAt.getTime() - Date.now()) / 86400000))
-    : null;
-  const featuredHoursUntil = featuredTournament?.startsAt
-    ? Math.max(0, Math.floor(((featuredTournament.startsAt.getTime() - Date.now()) % 86400000) / 3600000))
-    : null;
-  const featuredMinsUntil = featuredTournament?.startsAt
-    ? Math.max(0, Math.floor(((featuredTournament.startsAt.getTime() - Date.now()) % 3600000) / 60000))
-    : null;
+
+  const featuredCountdown = getCountdownParts(
+    featuredTournament?.startsAt ?? null,
+  );
 
   return (
-    <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
+    <main
+      className="asc-ambient min-h-screen overflow-hidden"
+      style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
+    >
       <div className="relative z-10">
         <Navbar />
 
         {/* Hero */}
-        <section
-          style={{
-            position: "relative",
-            minHeight: 720,
-            overflow: "hidden",
-            display: "flex",
-            alignItems: "flex-end",
-          }}
-        >
-          {/* Background */}
+        <section className="relative min-h-[720px] overflow-hidden">
           <div
+            className="absolute inset-0 bg-cover bg-center"
             style={{
-              position: "absolute",
-              inset: 0,
               backgroundImage: 'url("/images/backgrounds/home-hero.webp")',
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              zIndex: 0,
             }}
           />
-          {/* Dual overlay */}
+
           <div
+            className="absolute inset-0"
             style={{
-              position: "absolute",
-              inset: 0,
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.35) 0%, oklch(0.07 0.025 285 / 0.55) 45%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.4) 35%, transparent 70%)",
+                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.20) 0%, oklch(0.07 0.025 285 / 0.55) 55%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.30) 40%, transparent 65%)",
               ].join(", "),
-              zIndex: 1,
             }}
           />
 
-          {/* Content */}
-          <div
-            className="relative w-full"
-            style={{ zIndex: 2, maxWidth: 1480, margin: "0 auto", padding: "56px 32px" }}
-          >
-            <div className="grid gap-14 lg:grid-cols-[3fr_2fr] lg:items-end">
-
-              {/* Left column */}
+          <div className="relative z-10 mx-auto flex min-h-[720px] max-w-[1680px] items-end px-6 pb-20 pt-24 lg:px-10 2xl:px-14">
+            <div className="grid w-full gap-10 lg:grid-cols-[3fr_2fr] lg:items-end">
               <div>
-                <div
-                  style={{
-                    fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
-                    fontSize: 11,
-                    letterSpacing: "0.18em",
-                    textTransform: "uppercase",
-                    color: "var(--asc-fg-2)",
-                    marginBottom: 22,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
+                <p
+                  className="mb-5 text-xs font-black uppercase tracking-[0.22em]"
+                  style={{ color: "var(--asc-accent)" }}
                 >
-                  <span style={{ color: "var(--asc-accent)" }}>▲</span>
-                  {" ASCENDRA · SEASON 07 · A PREMIUM ESPORTS PLATFORM"}
-                </div>
+                  ▲ ASCENDRA · SEASON 07 · A PREMIUM ESPORTS PLATFORM
+                </p>
 
                 <h1
-                  style={{
-                    fontFamily: "var(--font-display)",
-                    fontWeight: 700,
-                    fontSize: "clamp(48px, 6.4vw, 108px)",
-                    lineHeight: 0.92,
-                    letterSpacing: "-0.005em",
-                    textTransform: "uppercase",
-                    color: "var(--asc-fg-0)",
-                    margin: 0,
-                  }}
+                  className="text-6xl font-black uppercase leading-none md:text-8xl"
+                  style={{ color: "var(--asc-fg-0)" }}
                 >
-                  Rise<br />
+                  RISE
+                  <br />
                   <span
                     style={{
-                      background: "linear-gradient(92deg, var(--asc-accent) 0%, oklch(0.85 0.10 245) 100%)",
+                      background:
+                        "linear-gradient(92deg, var(--asc-accent) 0%, oklch(0.85 0.10 245) 100%)",
                       WebkitBackgroundClip: "text",
                       WebkitTextFillColor: "transparent",
                       backgroundClip: "text",
                     }}
                   >
-                    Beyond limits.
+                    BEYOND LIMITS.
                   </span>
                 </h1>
 
                 <p
-                  style={{
-                    color: "var(--asc-fg-1)",
-                    fontSize: 17,
-                    maxWidth: 480,
-                    marginTop: 26,
-                    lineHeight: 1.55,
-                  }}
+                  className="mt-6 max-w-xl text-base leading-7"
+                  style={{ color: "var(--asc-fg-2)" }}
                 >
                   {messages.hero.description}
                 </p>
 
-                <div style={{ display: "flex", gap: 12, marginTop: 36, flexWrap: "wrap" }}>
-                  <Link
-                    href="/tournaments"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "16px 26px",
-                      fontFamily: "var(--font-display)",
-                      fontWeight: 600,
-                      fontSize: 14,
-                      letterSpacing: "0.14em",
-                      textTransform: "uppercase",
-                      background: "var(--asc-fg-0)",
-                      color: "oklch(0.08 0.02 285)",
-                      border: "1px solid var(--asc-fg-0)",
-                      clipPath: "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
-                      textDecoration: "none",
-                    }}
-                  >
-                    Browse tournaments ›
-                  </Link>
-                  <Link
-                    href="/community"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "16px 26px",
-                      fontFamily: "var(--font-display)",
-                      fontWeight: 600,
-                      fontSize: 14,
-                      letterSpacing: "0.14em",
-                      textTransform: "uppercase",
-                      background: "transparent",
-                      color: "var(--asc-fg-0)",
-                      border: "1px solid var(--asc-line)",
-                      clipPath: "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
-                      textDecoration: "none",
-                    }}
-                  >
-                    Join Discord
-                  </Link>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <PrimaryLink href="/tournaments">
+                    Browse tournaments
+                  </PrimaryLink>
+                  <SecondaryLink href="/community">Join Discord</SecondaryLink>
                 </div>
               </div>
 
-              {/* Right column — Featured event card */}
-              <div
-                style={{
-                  position: "relative",
-                  background: "oklch(0.08 0.03 285 / 0.7)",
-                  backdropFilter: "blur(16px)",
-                  WebkitBackdropFilter: "blur(16px)",
-                  border: "1px solid var(--asc-line)",
-                  clipPath: "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
-                  padding: 20,
-                }}
-              >
-                {/* Corner mark */}
-                <div aria-hidden="true" style={{ position: "absolute", top: 10, left: 10, width: 14, height: 14, pointerEvents: "none", opacity: 0.6 }}>
-                  <div style={{ position: "absolute", left: 0, top: 0, width: 8, height: 1, background: "var(--asc-accent)" }} />
-                  <div style={{ position: "absolute", left: 0, top: 0, width: 1, height: 8, background: "var(--asc-accent)" }} />
-                </div>
-
-                {/* Status chip */}
-                <div style={{ marginBottom: 14 }}>
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "4px 8px 4px 6px",
-                      fontFamily: "var(--font-mono, monospace)",
-                      fontSize: 10,
-                      letterSpacing: "0.18em",
-                      textTransform: "uppercase",
-                      color: "var(--asc-accent)",
-                      background: "oklch(0.22 0.10 285 / 0.20)",
-                      border: "1px solid var(--asc-accent-dim)",
-                    }}
-                  >
-                    <span style={{ width: 5, height: 5, borderRadius: 999, background: "var(--asc-accent)", display: "inline-block", flexShrink: 0 }} />
-                    Featured · Season 7
-                  </span>
-                </div>
-
-                <h2
-                  style={{
-                    fontFamily: "var(--font-display)",
-                    fontWeight: 700,
-                    fontSize: 26,
-                    lineHeight: 1.05,
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                    color: "var(--asc-fg-0)",
-                    margin: "0 0 4px",
-                  }}
-                >
-                  {featuredTournament?.title ?? "ASCENDRA MAJOR · SEASON 7"}
-                </h2>
-                <p style={{ color: "var(--asc-fg-2)", fontSize: 13, marginBottom: 20 }}>
-                  {featuredTournament?.game?.name
-                    ? `${featuredTournament.game.name} · Open qualifier`
-                    : "The crown returns to the arena"}
-                </p>
-
-                <div
-                  style={{
-                    fontFamily: "var(--font-mono, monospace)",
-                    fontSize: 11,
-                    letterSpacing: "0.18em",
-                    textTransform: "uppercase",
-                    color: "var(--asc-fg-2)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    marginBottom: 10,
-                  }}
-                >
-                  <span style={{ color: "var(--asc-accent)" }}>▲</span> Group stage begins in
-                </div>
-
-                <div style={{ display: "flex", gap: 20, marginBottom: 22 }}>
-                  {[
-                    { v: featuredDaysUntil !== null ? String(featuredDaysUntil) : "–", l: "DAYS" },
-                    { v: featuredHoursUntil !== null ? String(featuredHoursUntil) : "–", l: "HRS" },
-                    { v: featuredMinsUntil !== null ? String(featuredMinsUntil) : "–", l: "MIN" },
-                  ].map(({ v, l }) => (
-                    <div key={l}>
-                      <div
-                        style={{
-                          fontFamily: "var(--font-display)",
-                          fontWeight: 700,
-                          fontSize: 36,
-                          lineHeight: 1,
-                          color: "var(--asc-fg-0)",
-                          fontVariantNumeric: "tabular-nums",
-                        }}
-                      >
-                        {v}
-                      </div>
-                      <div
-                        style={{
-                          fontFamily: "var(--font-mono, monospace)",
-                          fontSize: 9,
-                          fontWeight: 600,
-                          letterSpacing: "0.14em",
-                          textTransform: "uppercase",
-                          color: "var(--asc-fg-3)",
-                          marginTop: 4,
-                        }}
-                      >
-                        {l}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{ height: 1, background: "var(--asc-line-soft)", marginBottom: 16 }} />
-
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 18 }}>
-                  {[
-                    { k: "Prize", v: featuredTournament?.prize ?? "–", accent: true },
-                    {
-                      k: "Slots",
-                      v: featuredTournament
-                        ? `${featuredApprovedSlots}/${featuredTournament.maxTeams}`
-                        : "–",
-                      accent: false,
-                    },
-                    { k: "Region", v: "Global", accent: false },
-                  ].map(({ k, v, accent }) => (
-                    <div key={k} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <span
-                        style={{
-                          fontFamily: "var(--font-mono, monospace)",
-                          fontSize: 10,
-                          letterSpacing: "0.16em",
-                          textTransform: "uppercase",
-                          color: "var(--asc-fg-3)",
-                        }}
-                      >
-                        {k}
-                      </span>
-                      <span
-                        style={{
-                          fontFamily: "var(--font-display)",
-                          fontWeight: 600,
-                          fontSize: 20,
-                          letterSpacing: "0.02em",
-                          color: accent ? "var(--asc-prize)" : "var(--asc-fg-0)",
-                        }}
-                      >
-                        {v}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <Link
-                  href={featuredTournament ? `/tournaments/${featuredTournament.id}` : "/tournaments"}
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: 8,
-                    width: "100%",
-                    padding: "12px 18px",
-                    fontFamily: "var(--font-display)",
-                    fontWeight: 600,
-                    fontSize: 13,
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase",
-                    background: "var(--asc-accent)",
-                    color: "oklch(0.10 0.02 285)",
-                    boxShadow: "0 0 24px var(--asc-accent-glow)",
-                    clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
-                    textDecoration: "none",
-                  }}
-                >
-                  Register team ›
-                </Link>
-              </div>
-
+              <FeaturedEventCard
+                featuredTournament={featuredTournament}
+                approvedSlots={featuredApprovedSlots}
+                countdown={featuredCountdown}
+              />
             </div>
           </div>
         </section>
 
-        {/* Ticker Bar */}
+        {/* Ticker */}
         <div
           className="asc-ticker-track"
           style={{
@@ -1170,32 +1695,46 @@ export default async function HomePage() {
         >
           <div className="asc-ticker-inner">
             {[0, 1].map((copy) => (
-              <span key={copy} className="inline-flex items-center gap-0" aria-hidden={copy === 1 ? true : undefined}>
+              <span
+                key={copy}
+                className="inline-flex items-center gap-0"
+                aria-hidden={copy === 1 ? true : undefined}
+              >
                 {[
-                  { text: "NVX", highlight: true },
-                  { text: "13 · OBLK 11", highlight: false },
-                  { text: " · MAP 3 ASCENT", highlight: false },
+                  { text: "LIVE", highlight: true },
+                  {
+                    text: "  NVX 13 · OBLK 11 · MAP 3 ASCENT",
+                    highlight: false,
+                  },
                   { text: "  ◈ UP NEXT", highlight: true },
                   { text: "  CRSH VS VRGE · 00:42", highlight: false },
                   { text: "  ◈ QUALIFIERS", highlight: true },
-                  { text: "  RIFT OPEN — 96/128 TEAMS REGISTERED", highlight: false },
-                  { text: "  ◈ SEASON 7", highlight: true },
-                  { text: "  ASCENDRA MAJOR · GROUP STAGE BEGINS IN 21 DAYS", highlight: false },
-                  { text: "  ◈ RANKINGS UPDATED", highlight: true },
-                  { text: "  NOVA VORTEX CLIMBS TO #1 IN MENA", highlight: false },
-                  { text: "  ◈ LIVE NOW", highlight: true },
-                  { text: "  3 MATCHES IN PROGRESS · 184.2K WATCHING", highlight: false },
+                  {
+                    text: "  RIFT OPEN — 96/128 TEAMS REGISTERED",
+                    highlight: false,
+                  },
+                  { text: "  ◈ SIGNING", highlight: true },
+                  { text: "  HOLLOWAY JOINS PHOENIX DRIFT", highlight: false },
+                  { text: "  ◈ PATCH 7.1", highlight: true },
+                  { text: "  APEX TIER SOFT-RESET LIVE", highlight: false },
+                  { text: "  ◈ PRIZE", highlight: true },
+                  {
+                    text: "  ASCENDRA MAJOR $1.25M GUARANTEED",
+                    highlight: false,
+                  },
                   { text: "  ✦ ", highlight: false },
-                ].map((segment, i) => (
+                ].map((segment, index) => (
                   <span
-                    key={i}
+                    key={index}
                     style={{
                       fontSize: "0.62rem",
                       fontWeight: 700,
                       letterSpacing: "0.14em",
                       textTransform: "uppercase",
                       padding: "0 4px",
-                      color: segment.highlight ? "var(--asc-accent)" : "var(--asc-fg-3)",
+                      color: segment.highlight
+                        ? "var(--asc-accent)"
+                        : "var(--asc-fg-3)",
                     }}
                   >
                     {segment.text}
@@ -1206,34 +1745,111 @@ export default async function HomePage() {
           </div>
         </div>
 
+        {/* How Ascendra Works */}
+        <section className="relative py-16 lg:py-20">
+          <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
+            <div
+              className="mb-8 h-px w-full"
+              style={{ background: "var(--asc-line-soft)" }}
+            >
+              <span
+                className="relative -top-2 bg-[var(--asc-bg-0)] pr-4 text-xs font-black uppercase tracking-[0.18em]"
+                style={{ color: "var(--asc-accent)" }}
+              >
+                ▲ How Ascendra works
+              </span>
+            </div>
+
+            <div className="grid gap-8 md:grid-cols-3">
+              {[
+                {
+                  number: "01",
+                  title: "Register your team",
+                  description:
+                    "Form your roster, choose the tournament you want in, and submit your team for review.",
+                },
+                {
+                  number: "02",
+                  title: "Climb the brackets",
+                  description:
+                    "Compete through verified matches, structured rounds, and transparent tournament progress.",
+                },
+                {
+                  number: "03",
+                  title: "Earn your rank",
+                  description:
+                    "Results feed the leaderboard and build your long-term Ascendra competitive record.",
+                },
+              ].map((step) => (
+                <article key={step.number}>
+                  <p
+                    className="text-6xl font-black leading-none"
+                    style={{
+                      color: "var(--asc-accent)",
+                      fontFamily: "var(--font-display)",
+                    }}
+                  >
+                    {step.number}
+                  </p>
+                  <h3
+                    className="mt-4 text-lg"
+                    style={{ color: "var(--asc-fg-0)" }}
+                  >
+                    {step.title}
+                  </h3>
+                  <p
+                    className="mt-3 max-w-sm text-sm leading-6"
+                    style={{ color: "var(--asc-fg-2)" }}
+                  >
+                    {step.description}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* Live Matches */}
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
-            <div className="mb-8 flex items-end justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
-                  ▲ BROADCASTS
-                </p>
-                <h2 className="mt-2 text-3xl md:text-4xl" style={{ color: "var(--asc-fg-0)" }}>
-                  LIVE NOW
-                </h2>
-              </div>
+            <SectionHeader
+              label="Broadcasts"
+              title="Live now"
+              count={sortedMatches.length}
+            >
               <Link
                 href="/tournaments"
-                className="text-xs font-black uppercase tracking-[0.14em] transition hover:opacity-70"
-                style={{ color: "var(--asc-accent)" }}
+                className="border px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] transition hover:opacity-75"
+                style={{
+                  borderColor: "var(--asc-line-soft)",
+                  color: "var(--asc-fg-2)",
+                }}
               >
-                ALL MATCHES ›
+                All matches ›
               </Link>
-            </div>
+            </SectionHeader>
 
             {sortedMatches.length === 0 ? (
-              <div className="border p-8 text-center" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
-                <p className="text-sm font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+              <div
+                className="relative border p-8 text-center"
+                style={{
+                  borderColor: "var(--asc-line-soft)",
+                  background: "var(--asc-bg-1)",
+                  clipPath:
+                    "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+                }}
+              >
+                <p
+                  className="text-sm font-black uppercase tracking-[0.12em]"
+                  style={{ color: "var(--asc-fg-0)" }}
+                >
                   No live matches right now
                 </p>
-                <p className="mt-2 text-xs" style={{ color: "var(--asc-fg-3)" }}>
-                  Check back during tournament events
+                <p
+                  className="mt-2 text-xs"
+                  style={{ color: "var(--asc-fg-3)" }}
+                >
+                  Check back during tournament events.
                 </p>
               </div>
             ) : (
@@ -1250,324 +1866,146 @@ export default async function HomePage() {
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader
-              label={messages.tournaments.label}
-              title={messages.tournaments.title}
-              description={messages.tournaments.description}
-            />
+              label="Open registration"
+              title="Compete this season"
+            >
+              <Link
+                href="/tournaments"
+                className="border px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] transition hover:opacity-75"
+                style={{
+                  borderColor: "var(--asc-line-soft)",
+                  color: "var(--asc-fg-2)",
+                }}
+              >
+                All tournaments ›
+              </Link>
+            </SectionHeader>
 
             {tournaments.length === 0 ? (
-              <div className="border p-6" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-2)" }}>
+              <div
+                className="border p-6"
+                style={{
+                  borderColor: "var(--asc-line-soft)",
+                  background: "var(--asc-bg-1)",
+                  color: "var(--asc-fg-2)",
+                }}
+              >
                 {messages.tournaments.empty}
               </div>
             ) : (
-              <div className="grid gap-6 lg:grid-cols-3">
-                {tournaments.map((tournament) => (
-                  <TournamentMiniCard
-                    key={tournament.id}
-                    tournament={tournament}
-                    locale={locale}
-                    messages={messages}
-                  />
-                ))}
-              </div>
-            )}
+              <>
+                <div className="grid gap-5 lg:grid-cols-2">
+                  {tournaments.slice(0, 2).map((tournament) => (
+                    <TournamentFeatureCard
+                      key={tournament.id}
+                      tournament={tournament}
+                      locale={locale}
+                      messages={messages}
+                    />
+                  ))}
+                </div>
 
-            <div className="mt-8 flex justify-center">
-              <SecondaryLink href="/tournaments">{messages.tournaments.viewAll}</SecondaryLink>
-            </div>
+                {tournaments.length > 2 && (
+                  <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                    {tournaments.slice(2, 4).map((tournament) => (
+                      <TournamentFeatureCard
+                        key={tournament.id}
+                        tournament={tournament}
+                        compact
+                        locale={locale}
+                        messages={messages}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </section>
 
-        {/* How It Works */}
+        {/* Games */}
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader
-              label={messages.flow.label}
-              title={messages.flow.title}
-              description={messages.flow.description}
-            />
-
-            <section
-              className="overflow-hidden border shadow-2xl"
-              style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+              label={`Competitive titles · ${String(displayGames.length).padStart(2, "0")}`}
+              title="Pick your arena"
             >
-              {messages.flow.steps.map((step, index) => (
-                <JourneyRow
-                  key={step.title}
-                  index={index + 1}
-                  title={step.title}
-                  description={step.description}
-                />
-              ))}
-            </section>
-          </div>
-        </section>
-
-        {/* Pick Your Arena */}
-        <section className="relative py-16 lg:py-20">
-          <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
-            <div className="mb-8 flex items-end justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
-                  ▲ COMPETITIVE TITLES · {String(displayGames.length).padStart(2, "0")}
-                </p>
-                <h2 className="mt-2 text-3xl md:text-4xl" style={{ color: "var(--asc-fg-0)" }}>
-                  PICK YOUR ARENA
-                </h2>
-              </div>
               <Link
                 href="/games"
-                className="text-xs font-black uppercase tracking-[0.14em] transition hover:opacity-70"
-                style={{ color: "var(--asc-accent)" }}
+                className="border px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] transition hover:opacity-75"
+                style={{
+                  borderColor: "var(--asc-line-soft)",
+                  color: "var(--asc-fg-2)",
+                }}
               >
-                GAMES REGISTRY ›
+                Games registry ›
               </Link>
-            </div>
+            </SectionHeader>
 
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-              {displayGames.slice(0, 5).map((game) => {
-                const imgSrc = getTournamentImageUrl(game.slug, null);
-                return (
-                  <article
-                    key={game.id}
-                    className="overflow-hidden border transition hover:opacity-90"
-                    style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", position: "relative" }}
-                  >
-                    <div
-                      className="h-40 bg-cover bg-center"
-                      style={{
-                        backgroundColor: "var(--asc-bg-2)",
-                        backgroundImage: `linear-gradient(to bottom, oklch(0.06 0.03 287 / 0.10), oklch(0.06 0.03 287 / 0.70)), url("${imgSrc}")`,
-                      }}
-                    />
-                    <div className="p-4">
-                      <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-accent)" }}>
-                        {game._count.tournaments} TOURNAMENT{game._count.tournaments !== 1 ? "S" : ""}
-                      </p>
-                      <h3 className="mt-1 text-base" style={{ color: "var(--asc-fg-0)" }}>
-                        {game.name}
-                      </h3>
-                      <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--asc-fg-3)" }}>
-                        {game.defaultTeamSize}v{game.defaultTeamSize} · {game._count.teams} TEAMS
-                      </p>
-                    </div>
-                  </article>
-                );
-              })}
+              {displayGames.slice(0, 5).map((game) => (
+                <GameTile key={game.id} game={game} />
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Top of the Ladder + Discord */}
+        {/* Leaderboard + Community */}
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
-            <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
+            <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-start">
+              <LeaderboardPreview players={topPlayers} />
 
-              {/* Leaderboard */}
-              <div>
-                <div className="mb-6 flex items-end justify-between">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
-                      ▲ APEX 100
-                    </p>
-                    <h2 className="mt-2 text-3xl md:text-4xl" style={{ color: "var(--asc-fg-0)" }}>
-                      TOP OF THE LADDER
-                    </h2>
-                  </div>
-                  <Link
-                    href="/leaderboard"
-                    className="text-xs font-black uppercase tracking-[0.14em] transition hover:opacity-70"
-                    style={{ color: "var(--asc-accent)" }}
-                  >
-                    FULL LADDER ›
-                  </Link>
-                </div>
-
-                <div className="border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", position: "relative" }}>
-                  <div aria-hidden="true" style={{ position: "absolute", top: 10, left: 10, width: 14, height: 14, zIndex: 1, opacity: 0.6 }}>
-                    <div style={{ position: "absolute", left: 0, top: 0, width: 8, height: 1, background: "var(--asc-accent)" }} />
-                    <div style={{ position: "absolute", left: 0, top: 0, width: 1, height: 8, background: "var(--asc-accent)" }} />
-                  </div>
-                  {topPlayers.length === 0 ? (
-                    <div className="p-8 text-center">
-                      <p className="text-sm font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
-                        Rankings coming soon
-                      </p>
-                      <p className="mt-2 text-xs" style={{ color: "var(--asc-fg-3)" }}>
-                        Complete tournaments to appear on the leaderboard
-                      </p>
-                    </div>
-                  ) : (
-                    topPlayers.map((player, index) => {
-                      const trend = generateTrend(player.points, index + 1);
-                      return (
-                        <div
-                          key={player.userId}
-                          className="flex items-center gap-4 px-5 py-4"
-                          style={{
-                            borderBottom: index < topPlayers.length - 1 ? "1px solid var(--asc-line-soft)" : undefined,
-                            borderLeft: index === 0 ? "2px solid var(--asc-accent)" : "2px solid transparent",
-                          }}
-                        >
-                          <span
-                            className="w-8 shrink-0 text-sm font-black tabular-nums"
-                            style={{ color: index === 0 ? "var(--asc-accent)" : "var(--asc-fg-3)" }}
-                          >
-                            {String(index + 1).padStart(2, "0")}
-                          </span>
-                          <div
-                            className="flex h-8 w-8 shrink-0 items-center justify-center text-[11px] font-black text-white"
-                            style={{ background: index === 0 ? "var(--asc-accent-2)" : "var(--asc-bg-3)" }}
-                          >
-                            {player.username.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
-                              {player.username}
-                            </p>
-                            {player.placement !== null && (
-                              <p className="text-[10px] font-bold uppercase" style={{ color: "var(--asc-fg-3)" }}>
-                                BEST #{player.placement}
-                              </p>
-                            )}
-                          </div>
-                          <Sparkline values={trend} id={player.userId} width={56} height={18} />
-                          <span className="shrink-0 text-sm font-black tabular-nums" style={{ color: "var(--asc-prize)" }}>
-                            {player.points.toLocaleString()} PTS
-                          </span>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              {/* Discord + Stats */}
               <div className="grid gap-4">
-                <div
-                  className="overflow-hidden border p-6"
-                  style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", position: "relative" }}
-                >
-                  <div aria-hidden="true" style={{ position: "absolute", top: 10, left: 10, width: 14, height: 14, zIndex: 1, opacity: 0.6 }}>
-                    <div style={{ position: "absolute", left: 0, top: 0, width: 8, height: 1, background: "var(--asc-accent)" }} />
-                    <div style={{ position: "absolute", left: 0, top: 0, width: 1, height: 8, background: "var(--asc-accent)" }} />
-                  </div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
-                    🎮 COMMUNITY
-                  </p>
-                  <h3 className="mt-2 text-xl" style={{ color: "var(--asc-fg-0)" }}>
-                    THE ASCENDRA DISCORD
-                  </h3>
-                  <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
-                    184K members. Live tournament rooms, team recruitment, and real-time match updates.
-                  </p>
-                  <div className="mt-4 flex gap-8">
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
-                        MEMBERS
-                      </p>
-                      <p className="mt-0.5 text-lg font-black" style={{ color: "var(--asc-fg-0)" }}>184.2K</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
-                        ONLINE NOW
-                      </p>
-                      <p className="mt-0.5 text-lg font-black" style={{ color: "var(--asc-green)" }}>28.4K</p>
-                    </div>
-                  </div>
-                  <Link
-                    href="/community"
-                    className="mt-5 flex w-full items-center justify-center py-3 text-sm font-black text-white transition hover:opacity-90"
-                    style={{ background: "var(--asc-accent-2)", clipPath: CUT8 }}
-                  >
-                    JOIN THE SERVER ›
-                  </Link>
-                </div>
+                <DiscordPreviewCard />
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4" style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
-                    <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>PLAYERS</p>
-                    <p className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-                      {totalUsers > 0 ? (totalUsers >= 1000 ? `${(totalUsers / 1000).toFixed(1)}K` : String(totalUsers)) : "—"}
-                    </p>
-                    <p className="mt-0.5 text-[10px]" style={{ color: "var(--asc-green)" }}>↑ GROWING</p>
-                  </div>
-                  <div className="p-4" style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
-                    <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>ACTIVE TOURNAMENTS</p>
-                    <p className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>{activeTournamentCount}</p>
-                    <p className="mt-0.5 text-[10px]" style={{ color: "var(--asc-fg-3)" }}>OPEN & UPCOMING</p>
-                  </div>
-                  <div className="p-4" style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
-                    <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>GAMES SUPPORTED</p>
-                    <p className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-                      {games.length > 0 ? games.length : "5+"}
-                    </p>
-                    <p className="mt-0.5 text-[10px]" style={{ color: "var(--asc-fg-3)" }}>ACROSS TITLES</p>
-                  </div>
-                  <div className="p-4" style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
-                    <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>PRIZE POOLED</p>
-                    <p className="mt-1 text-xl font-black" style={{ color: "var(--asc-prize)" }}>$2.1M</p>
-                    <p className="mt-0.5 text-[10px]" style={{ color: "var(--asc-fg-3)" }}>SEASON 7 TO DATE</p>
-                  </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <HomeMetricTile
+                    label="Players"
+                    value={totalUsers > 0 ? formatCompact(totalUsers) : "48.2K"}
+                    sub="↑ 12% this month"
+                  />
+                  <HomeMetricTile
+                    label="Matches today"
+                    value="3.2K"
+                    sub="↑ 480 since 6 AM"
+                  />
+                  <HomeMetricTile
+                    label="Active tournaments"
+                    value={
+                      activeTournamentCount > 0 ? activeTournamentCount : 14
+                    }
+                    sub={`${displayGames.length} across games`}
+                  />
+                  <HomeMetricTile
+                    label="Prize pooled"
+                    value="$2.1M"
+                    sub="Season 7 to date"
+                  />
                 </div>
               </div>
-
             </div>
           </div>
         </section>
 
-        {/* Latest Announcements */}
+        {/* Announcements */}
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
-            <div className="mb-8">
-              <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
-                ▲ FROM THE DESK
-              </p>
-              <h2 className="mt-2 text-3xl md:text-4xl" style={{ color: "var(--asc-fg-0)" }}>
-                LATEST ANNOUNCEMENTS
-              </h2>
-            </div>
+            <SectionHeader label="From the desk" title="Latest announcements" />
 
             <div className="grid gap-4 sm:grid-cols-2">
-              {displayAnnouncements.map((item, index) => {
-                const msAgo = Date.now() - item.createdAt.getTime();
-                const hoursAgo = Math.round(msAgo / 3600000);
-                const timeLabel = hoursAgo < 24 ? `${hoursAgo}H AGO` : `${Math.round(hoursAgo / 24)}D AGO`;
-                const excerpt = item.description.length > 120 ? `${item.description.slice(0, 120)}…` : item.description;
-
-                return (
-                  <article
-                    key={item.id}
-                    className="overflow-hidden border p-5"
-                    style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", position: "relative" }}
-                  >
-                    <p
-                      className="text-[48px] font-black leading-none tabular-nums"
-                      style={{ color: "var(--asc-bg-3)", fontFamily: "var(--font-display)" }}
-                    >
-                      {String(index + 1).padStart(2, "0")}
-                    </p>
-                    <p className="mt-2 text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
-                      {item.category} · {timeLabel}
-                    </p>
-                    <h3 className="mt-2 text-lg" style={{ color: "var(--asc-fg-0)" }}>
-                      {item.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
-                      {excerpt}
-                    </p>
-                  </article>
-                );
-              })}
+              {displayAnnouncements.map((item, index) => (
+                <AnnouncementCard key={item.id} item={item} index={index} />
+              ))}
             </div>
 
             <div className="mt-8 flex justify-center">
-              <SecondaryLink href="/announcements">ALL ANNOUNCEMENTS ›</SecondaryLink>
+              <SecondaryLink href="/announcements">
+                All announcements ›
+              </SecondaryLink>
             </div>
           </div>
         </section>
-
-        <PlayerHubSection stats={playerHubStats} messages={messages.playerHub} />
 
         <Footer />
       </div>
