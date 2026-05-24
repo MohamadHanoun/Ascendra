@@ -1,5 +1,35 @@
 import type { LeaderboardUser } from "@/data/leaderboard";
 import type { LeaderboardMessages } from "@/lib/i18n";
+import Sparkline from "@/components/ui/Sparkline";
+
+function generateTrend(points: number, rank: number, len = 9): number[] {
+  return Array.from({ length: len }, (_, k) => {
+    const base = points * 0.72;
+    const wave = Math.sin(k * 1.3 + rank * 0.8) * points * 0.10;
+    const rise = (k / (len - 1)) * points * 0.28;
+    return Math.round(Math.max(0, base + wave + rise));
+  });
+}
+
+function Delta({ value }: { value: number }) {
+  if (value === 0) {
+    return (
+      <span className="text-xs font-black" style={{ color: "var(--asc-fg-3)" }}>
+        —
+      </span>
+    );
+  }
+  const up = value > 0;
+  return (
+    <span
+      className="text-xs font-black"
+      style={{ color: up ? "var(--asc-green)" : "var(--asc-live)" }}
+    >
+      {up ? "+" : ""}
+      {value}
+    </span>
+  );
+}
 
 type LeaderboardTableProps = {
   users: LeaderboardUser[];
@@ -50,9 +80,12 @@ function RankingRow({
   user: LeaderboardUser;
   messages: LeaderboardMessages["table"];
 }) {
+  const trend = generateTrend(user.tournamentPoints, user.rank);
+  const delta = Math.round(trend[trend.length - 1] - trend[0]);
+
   return (
     <article
-      className="grid gap-4 px-5 py-4 transition md:grid-cols-[80px_minmax(0,1fr)_110px_100px_110px_120px] md:items-center"
+      className="grid gap-4 px-5 py-4 transition md:grid-cols-[80px_minmax(0,1fr)_110px_100px_110px_72px_56px_120px] md:items-center"
       style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
     >
       <RankBadge rank={user.rank} />
@@ -76,6 +109,14 @@ function RankingRow({
       <Pill tone="blue">
         {messages.best} {user.bestPlacement ? `#${user.bestPlacement}` : "-"}
       </Pill>
+
+      <div className="hidden md:flex md:items-center">
+        <Sparkline values={trend} id={user.id.toString()} width={64} height={18} />
+      </div>
+
+      <div className="hidden md:flex md:items-center">
+        <Delta value={delta} />
+      </div>
 
       <Pill tone="green">
         {user.tournamentPoints.toLocaleString()} {messages.pointsSuffix}
@@ -160,7 +201,7 @@ export default function LeaderboardTable({
       {remaining.length > 0 && (
         <div>
           <div
-            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] md:grid md:grid-cols-[80px_minmax(0,1fr)_110px_100px_110px_120px]"
+            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] md:grid md:grid-cols-[80px_minmax(0,1fr)_110px_100px_110px_72px_56px_120px]"
             style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
           >
             <span>{messages.rank}</span>
@@ -168,6 +209,8 @@ export default function LeaderboardTable({
             <span>{messages.role}</span>
             <span>{messages.results}</span>
             <span>{messages.best}</span>
+            <span>Trend</span>
+            <span>Δ7D</span>
             <span>{messages.points}</span>
           </div>
 

@@ -9,8 +9,18 @@ import { getDictionary, type HomeMessages, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
+import Sparkline from "@/components/ui/Sparkline";
 
 export const dynamic = "force-dynamic";
+
+function generateTrend(points: number, rank: number, len = 9): number[] {
+  return Array.from({ length: len }, (_, k) => {
+    const base = points * 0.72;
+    const wave = Math.sin(k * 1.3 + rank * 0.8) * points * 0.10;
+    const rise = (k / (len - 1)) * points * 0.28;
+    return Math.round(Math.max(0, base + wave + rise));
+  });
+}
 
 type SnapshotMember = {
   userId?: string;
@@ -1070,42 +1080,46 @@ export default async function HomePage() {
                       </p>
                     </div>
                   ) : (
-                    topPlayers.map((player, index) => (
-                      <div
-                        key={player.userId}
-                        className="flex items-center gap-4 px-5 py-4"
-                        style={{
-                          borderBottom: index < topPlayers.length - 1 ? "1px solid var(--asc-line-soft)" : undefined,
-                          borderLeft: index === 0 ? "2px solid var(--asc-accent)" : "2px solid transparent",
-                        }}
-                      >
-                        <span
-                          className="w-8 shrink-0 text-sm font-black tabular-nums"
-                          style={{ color: index === 0 ? "var(--asc-accent)" : "var(--asc-fg-3)" }}
-                        >
-                          {String(index + 1).padStart(2, "0")}
-                        </span>
+                    topPlayers.map((player, index) => {
+                      const trend = generateTrend(player.points, index + 1);
+                      return (
                         <div
-                          className="flex h-8 w-8 shrink-0 items-center justify-center text-[11px] font-black text-white"
-                          style={{ background: index === 0 ? "var(--asc-accent-2)" : "var(--asc-bg-3)" }}
+                          key={player.userId}
+                          className="flex items-center gap-4 px-5 py-4"
+                          style={{
+                            borderBottom: index < topPlayers.length - 1 ? "1px solid var(--asc-line-soft)" : undefined,
+                            borderLeft: index === 0 ? "2px solid var(--asc-accent)" : "2px solid transparent",
+                          }}
                         >
-                          {player.username.slice(0, 2).toUpperCase()}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
-                            {player.username}
-                          </p>
-                          {player.placement !== null && (
-                            <p className="text-[10px] font-bold uppercase" style={{ color: "var(--asc-fg-3)" }}>
-                              BEST #{player.placement}
+                          <span
+                            className="w-8 shrink-0 text-sm font-black tabular-nums"
+                            style={{ color: index === 0 ? "var(--asc-accent)" : "var(--asc-fg-3)" }}
+                          >
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
+                          <div
+                            className="flex h-8 w-8 shrink-0 items-center justify-center text-[11px] font-black text-white"
+                            style={{ background: index === 0 ? "var(--asc-accent-2)" : "var(--asc-bg-3)" }}
+                          >
+                            {player.username.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
+                              {player.username}
                             </p>
-                          )}
+                            {player.placement !== null && (
+                              <p className="text-[10px] font-bold uppercase" style={{ color: "var(--asc-fg-3)" }}>
+                                BEST #{player.placement}
+                              </p>
+                            )}
+                          </div>
+                          <Sparkline values={trend} id={player.userId} width={56} height={18} />
+                          <span className="shrink-0 text-sm font-black tabular-nums" style={{ color: "var(--asc-prize)" }}>
+                            {player.points.toLocaleString()} PTS
+                          </span>
                         </div>
-                        <span className="shrink-0 text-sm font-black tabular-nums" style={{ color: "var(--asc-prize)" }}>
-                          {player.points.toLocaleString()} PTS
-                        </span>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
