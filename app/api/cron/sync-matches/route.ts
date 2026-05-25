@@ -1,10 +1,11 @@
 /**
  * Cron endpoint: /api/cron/sync-matches
  *
- * Runs the three bounded catch-up jobs:
+ * Runs the bounded catch-up jobs:
  *   1. syncPendingMatches      – pulls fresh results from provider APIs
  *   2. syncPendingGameRooms    – re-notifies players about room details
  *   3. retryFailedWebhookEvents – replays failed webhook events
+ *   4. syncTournamentLifecycle - updates tournament lifecycle statuses
  *
  * Authentication
  * --------------
@@ -31,6 +32,7 @@ import {
   syncPendingGameRooms,
   syncPendingMatches,
 } from "@/lib/jobs/matchSyncJobs";
+import { syncTournamentLifecycle } from "@/lib/jobs/tournamentLifecycleJobs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -103,6 +105,16 @@ async function handleSync(request: Request) {
       const msg = err instanceof Error ? err.message : "unexpected_error";
       errors.push(`retryFailedWebhookEvents: ${msg}`);
       results.retryFailedWebhookEvents = { ok: false, error: msg };
+    }
+  }
+
+  if (!jobFilter || jobFilter === "syncTournamentLifecycle") {
+    try {
+      results.syncTournamentLifecycle = await syncTournamentLifecycle();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "unexpected_error";
+      errors.push(`syncTournamentLifecycle: ${msg}`);
+      results.syncTournamentLifecycle = { ok: false, error: msg };
     }
   }
 
