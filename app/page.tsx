@@ -933,17 +933,6 @@ function DiscordPreviewCard({ inviteUrl }: { inviteUrl: string | null }) {
           rules, roles, and rankings stay available here on Ascendra.
         </p>
 
-        <div
-          className="mt-5 border px-4 py-3 text-xs leading-5"
-          style={{
-            borderColor: "var(--asc-line-soft)",
-            background: "oklch(0.10 0.035 285 / 0.54)",
-            color: "var(--asc-fg-2)",
-          }}
-        >
-          Live Discord stats unavailable
-        </div>
-
         {inviteUrl ? (
           <a
             href={inviteUrl}
