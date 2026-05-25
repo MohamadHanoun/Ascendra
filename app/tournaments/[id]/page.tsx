@@ -520,7 +520,7 @@ export default async function TournamentDetailsPage({
       })
     : null;
 
-  const [tournament, matches] = await Promise.all([
+  const [tournament, rawTournamentMatches] = await Promise.all([
     prisma.tournament.findUnique({
       where: {
         id,
@@ -608,19 +608,60 @@ export default async function TournamentDetailsPage({
         },
       },
     }),
-    prisma.match.findMany({
+    prisma.tournamentMatch.findMany({
       where: { tournamentId: id },
-      include: {
-        teamA: { select: { id: true, name: true } },
-        teamB: { select: { id: true, name: true } },
+      select: {
+        id: true,
+        roundNumber: true,
+        matchNumber: true,
+        status: true,
+        bestOf: true,
+        isBye: true,
+        teamAId: true,
+        teamBId: true,
+        winnerTeamId: true,
+        scheduledAt: true,
       },
-      orderBy: [{ round: "asc" }, { matchNumber: "asc" }],
+      orderBy: [{ roundNumber: "asc" }, { matchNumber: "asc" }],
     }),
   ]);
 
   if (!tournament) {
     notFound();
   }
+
+  // Batch-load team names for all tournament matches (TournamentMatch has no teamA/teamB relation)
+  const matchTeamIds = [
+    ...new Set(
+      rawTournamentMatches
+        .flatMap((m) => [m.teamAId, m.teamBId, m.winnerTeamId])
+        .filter((x): x is string => Boolean(x)),
+    ),
+  ];
+  const matchTeamRows =
+    matchTeamIds.length > 0
+      ? await prisma.team.findMany({
+          where: { id: { in: matchTeamIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+  const matchTeamName = new Map(matchTeamRows.map((t) => [t.id, t.name]));
+
+  const tournamentMatches = rawTournamentMatches.map((m) => ({
+    id: m.id,
+    roundNumber: m.roundNumber,
+    matchNumber: m.matchNumber,
+    status: m.status,
+    bestOf: m.bestOf,
+    isBye: m.isBye,
+    teamAId: m.teamAId,
+    teamBId: m.teamBId,
+    winnerTeamId: m.winnerTeamId,
+    scheduledAt: m.scheduledAt,
+    teamAName: m.teamAId ? (matchTeamName.get(m.teamAId) ?? null) : null,
+    teamBName: m.teamBId ? (matchTeamName.get(m.teamBId) ?? null) : null,
+    winnerName: m.winnerTeamId ? (matchTeamName.get(m.winnerTeamId) ?? null) : null,
+  }));
 
   const tournamentImage = getTournamentImageUrl(
     tournament.game?.slug ?? null,
@@ -1042,7 +1083,7 @@ export default async function TournamentDetailsPage({
             >
               <PanelHeader eyebrow={copy.schedule} title={copy.schedule} />
 
-              {matches.length === 0 ? (
+              {tournamentMatches.length === 0 ? (
                 <div className="p-6">
                   <h3 className="text-xl" style={{ color: "var(--asc-fg-0)" }}>
                     {copy.noScheduleTitle}
@@ -1056,34 +1097,63 @@ export default async function TournamentDetailsPage({
                 </div>
               ) : (
                 <div>
-                  {matches.slice(0, 6).map((match) => (
-                    <div
-                      key={match.id}
-                      className="grid gap-4 px-5 py-4 md:grid-cols-[120px_minmax(0,1fr)_100px_100px] md:items-center"
-                      style={{ borderTop: "1px solid var(--asc-line-soft)" }}
+                  {tournamentMatches.slice(0, 8).map((match) => {
+                    const teamAName = match.teamAName ?? "TBD";
+                    const teamBName = match.isBye ? "BYE" : (match.teamBName ?? "TBD");
+                    const teamAWon =
+                      Boolean(match.winnerTeamId) && match.winnerTeamId === match.teamAId;
+                    const teamBWon =
+                      Boolean(match.winnerTeamId) && match.winnerTeamId === match.teamBId;
+
+                    return (
+                      <Link
+                        key={match.id}
+                        href={`/tournaments/${id}/matches/${match.id}`}
+                        className="grid gap-4 px-5 py-4 transition-colors hover:bg-white/[0.025] md:grid-cols-[100px_minmax(0,1fr)_80px_90px] md:items-center"
+                        style={{ borderTop: "1px solid var(--asc-line-soft)" }}
+                      >
+                        <p
+                          className="text-xs font-black uppercase tracking-[0.14em]"
+                          style={{ color: "var(--asc-accent)" }}
+                        >
+                          Round {match.roundNumber}
+                        </p>
+                        <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
+                          <span
+                            style={{ color: teamAWon ? "var(--asc-green)" : undefined }}
+                          >
+                            {teamAName}
+                          </span>
+                          {" "}
+                          <span style={{ color: "var(--asc-fg-3)" }}>vs</span>
+                          {" "}
+                          <span
+                            style={{ color: teamBWon ? "var(--asc-green)" : undefined }}
+                          >
+                            {teamBName}
+                          </span>
+                        </p>
+                        <StatusBadge status={match.status} label={match.status} />
+                        <span
+                          className="text-xs font-black uppercase tracking-[0.08em]"
+                          style={{ color: "var(--asc-accent)" }}
+                        >
+                          View →
+                        </span>
+                      </Link>
+                    );
+                  })}
+                  {tournamentMatches.length > 8 && (
+                    <p
+                      className="px-5 py-3 text-xs"
+                      style={{
+                        borderTop: "1px solid var(--asc-line-soft)",
+                        color: "var(--asc-fg-3)",
+                      }}
                     >
-                      <p
-                        className="text-xs font-black uppercase tracking-[0.14em]"
-                        style={{ color: "var(--asc-accent)" }}
-                      >
-                        Round {match.round}
-                      </p>
-                      <p
-                        className="font-black"
-                        style={{ color: "var(--asc-fg-0)" }}
-                      >
-                        {match.teamA?.name ?? "TBD"} vs{" "}
-                        {match.teamB?.name ?? "TBD"}
-                      </p>
-                      <p
-                        className="text-sm font-black tabular-nums"
-                        style={{ color: "var(--asc-fg-1)" }}
-                      >
-                        {match.scoreA} - {match.scoreB}
-                      </p>
-                      <StatusBadge status={match.status} label={match.status} />
-                    </div>
-                  ))}
+                      +{tournamentMatches.length - 8} more · see full bracket below
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -1185,7 +1255,11 @@ export default async function TournamentDetailsPage({
                 </h2>
               </div>
 
-              <TournamentMatchesSection matches={matches} locale={locale} />
+              <TournamentMatchesSection
+                tournamentId={id}
+                matches={tournamentMatches}
+                locale={locale}
+              />
             </div>
           </section>
 

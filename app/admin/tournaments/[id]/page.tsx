@@ -18,7 +18,7 @@ import {
 import { auth } from "@/auth";
 import AdminTabNavigation from "@/components/AdminTabNavigation";
 import AdminTournamentImageFields from "@/components/AdminTournamentImageFields";
-import AdminMatchPanel from "@/components/AdminMatchPanel";
+import AdminTournamentMatchPanel from "@/components/AdminTournamentMatchPanel";
 import AdminTournamentResultsPanel from "@/components/AdminTournamentResultsPanel";
 import Footer from "@/components/Footer";
 import InlineAdminTournamentForm from "@/components/InlineAdminTournamentForm";
@@ -247,7 +247,7 @@ export default async function ManageTournamentPage({
   if (!session?.user) redirect("/login");
   if (!session.user.isAdmin) redirect("/admin");
 
-  const [tournament, games, rawMatches] = await Promise.all([
+  const [tournament, games, rawTournamentMatches] = await Promise.all([
     prisma.tournament.findUnique({
       where: { id },
       include: {
@@ -272,44 +272,69 @@ export default async function ManageTournamentPage({
       },
       orderBy: { name: "asc" },
     }),
-    prisma.match.findMany({
+    prisma.tournamentMatch.findMany({
       where: { tournamentId: id },
       select: {
         id: true,
-        round: true,
+        roundNumber: true,
         matchNumber: true,
-        teamAId: true,
-        teamBId: true,
-        teamA: { select: { id: true, name: true } },
-        teamB: { select: { id: true, name: true } },
-        scheduledAt: true,
         status: true,
         bestOf: true,
-        scoreA: true,
-        scoreB: true,
+        isBye: true,
+        teamAId: true,
+        teamBId: true,
         winnerTeamId: true,
-        confirmedByAdmin: true,
-        notes: true,
+        scheduledAt: true,
+        completedAt: true,
+        reports: {
+          where: { status: "submitted" },
+          select: { id: true },
+        },
       },
-      orderBy: [{ round: "asc" }, { matchNumber: "asc" }],
+      orderBy: [{ roundNumber: "asc" }, { matchNumber: "asc" }],
     }),
   ]);
 
   if (!tournament) notFound();
 
-  const matches = rawMatches.map((m: (typeof rawMatches)[number]) => ({
-    ...m,
+  // Batch-load team names for all tournament matches
+  const allTeamIds = [
+    ...new Set(
+      rawTournamentMatches
+        .flatMap((m) => [m.teamAId, m.teamBId, m.winnerTeamId])
+        .filter((x): x is string => Boolean(x)),
+    ),
+  ];
+  const teamRows =
+    allTeamIds.length > 0
+      ? await prisma.team.findMany({
+          where: { id: { in: allTeamIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+  const teamNameMap = new Map(teamRows.map((t) => [t.id, t.name]));
+
+  const tournamentMatches = rawTournamentMatches.map((m) => ({
+    id: m.id,
+    roundNumber: m.roundNumber,
+    matchNumber: m.matchNumber,
+    status: m.status,
+    bestOf: m.bestOf,
+    isBye: m.isBye,
+    teamAId: m.teamAId,
+    teamBId: m.teamBId,
+    winnerTeamId: m.winnerTeamId,
     scheduledAt: m.scheduledAt?.toISOString() ?? null,
+    completedAt: m.completedAt?.toISOString() ?? null,
+    teamAName: m.teamAId ? (teamNameMap.get(m.teamAId) ?? null) : null,
+    teamBName: m.teamBId ? (teamNameMap.get(m.teamBId) ?? null) : null,
+    winnerName: m.winnerTeamId ? (teamNameMap.get(m.winnerTeamId) ?? null) : null,
+    pendingReportCount: m.reports.length,
   }));
 
   const approvedRegistrations = tournament.registrations.filter(
     (r: RegistrationWithTeam) => r.status === "approved",
   );
-
-  const registeredTeams = approvedRegistrations.map((r) => ({
-    id: r.team.id,
-    name: r.team.name,
-  }));
 
   const pendingRegistrations = tournament.registrations.filter(
     (r: RegistrationWithTeam) => r.status === "registered",
@@ -768,12 +793,13 @@ export default async function ManageTournamentPage({
           <CollapsibleSection
             label="Matches"
             title="Match schedule"
-            meta={`${matches.length} match${matches.length === 1 ? "" : "es"}`}
+            meta={`${tournamentMatches.length} match${tournamentMatches.length === 1 ? "" : "es"}`}
           >
-            <AdminMatchPanel
+            <AdminTournamentMatchPanel
               tournamentId={tournament.id}
-              matches={matches}
-              registeredTeams={registeredTeams}
+              tournamentTitle={tournament.title}
+              tournamentMatches={tournamentMatches}
+              approvedTeamCount={approvedRegistrations.length}
             />
           </CollapsibleSection>
         </div>

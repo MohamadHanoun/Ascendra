@@ -1,4 +1,5 @@
-import AdminMatchPanel from "@/components/AdminMatchPanel";
+import Link from "next/link";
+
 import { prisma } from "@/lib/prisma";
 
 function Stat({ label, value }: { label: string; value: string | number }) {
@@ -69,25 +70,35 @@ function Pill({
 function getStatusTone(
   status: string,
 ): "green" | "blue" | "red" | "gray" | "violet" {
-  const normalizedStatus = status.toLowerCase();
-
-  if (["open", "live", "active", "approved"].includes(normalizedStatus)) {
-    return "green";
-  }
-
-  if (["draft", "upcoming", "pending"].includes(normalizedStatus)) {
-    return "blue";
-  }
-
-  if (["ended", "completed"].includes(normalizedStatus)) {
-    return "violet";
-  }
-
-  if (["cancelled", "closed"].includes(normalizedStatus)) {
-    return "red";
-  }
-
+  const s = status.toLowerCase();
+  if (["open", "live", "active", "approved"].includes(s)) return "green";
+  if (["draft", "upcoming", "pending"].includes(s)) return "blue";
+  if (["ended", "completed"].includes(s)) return "violet";
+  if (["cancelled", "closed"].includes(s)) return "red";
   return "gray";
+}
+
+function getMatchStatusTone(
+  status: string,
+): "green" | "blue" | "red" | "gray" | "violet" {
+  switch (status) {
+    case "completed":
+    case "confirmed":
+      return "violet";
+    case "in_progress":
+    case "ready":
+    case "room_created":
+      return "green";
+    case "result_pending":
+    case "disputed":
+      return "red";
+    case "bye":
+    case "cancelled":
+    case "forfeit":
+      return "gray";
+    default:
+      return "blue";
+  }
 }
 
 export default async function AdminMatchesPanel() {
@@ -98,84 +109,52 @@ export default async function AdminMatchesPanel() {
       status: true,
       registrationStatus: true,
       startsAt: true,
-      game: {
-        select: {
-          name: true,
-        },
-      },
-      registrations: {
-        where: {
-          status: {
-            in: ["registered", "approved"],
-          },
-        },
-        select: {
-          team: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
-      },
-      matches: {
+      game: { select: { name: true } },
+      tournamentMatches: {
         select: {
           id: true,
-          round: true,
+          roundNumber: true,
           matchNumber: true,
           teamAId: true,
           teamBId: true,
-          teamA: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          teamB: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          scheduledAt: true,
+          winnerTeamId: true,
           status: true,
           bestOf: true,
-          scoreA: true,
-          scoreB: true,
-          winnerTeamId: true,
-          confirmedByAdmin: true,
-          notes: true,
+          isBye: true,
         },
-        orderBy: [
-          {
-            round: "asc",
-          },
-          {
-            matchNumber: "asc",
-          },
-        ],
+        orderBy: [{ roundNumber: "asc" }, { matchNumber: "asc" }],
       },
     },
-    orderBy: [
-      {
-        startsAt: "desc",
-      },
-      {
-        createdAt: "desc",
-      },
-    ],
+    orderBy: [{ startsAt: "desc" }, { createdAt: "desc" }],
   });
 
+  // Batch-load all team names needed across all tournaments
+  const allTeamIds = [
+    ...new Set(
+      tournaments.flatMap((t) =>
+        t.tournamentMatches.flatMap((m) =>
+          [m.teamAId, m.teamBId, m.winnerTeamId].filter((x): x is string =>
+            Boolean(x),
+          ),
+        ),
+      ),
+    ),
+  ];
+  const teamRows =
+    allTeamIds.length > 0
+      ? await prisma.team.findMany({
+          where: { id: { in: allTeamIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+  const teamName = new Map(teamRows.map((t) => [t.id, t.name]));
+
   const totalMatches = tournaments.reduce(
-    (total, tournament) => total + tournament.matches.length,
+    (total, t) => total + t.tournamentMatches.length,
     0,
   );
-
   const tournamentsWithMatches = tournaments.filter(
-    (tournament) => tournament.matches.length > 0,
+    (t) => t.tournamentMatches.length > 0,
   ).length;
 
   return (
@@ -200,7 +179,7 @@ export default async function AdminMatchesPanel() {
             className="mt-3 max-w-3xl text-sm leading-6"
             style={{ color: "var(--asc-fg-3)" }}
           >
-            Create, edit, confirm, and delete matches for each tournament.
+            Overview of all match brackets. Open a tournament to manage details.
           </p>
         </div>
 
@@ -225,22 +204,7 @@ export default async function AdminMatchesPanel() {
       ) : (
         <div className="grid gap-5">
           {tournaments.map((tournament, index) => {
-            const registeredTeams = Array.from(
-              new Map(
-                tournament.registrations.map((registration) => [
-                  registration.team.id,
-                  {
-                    id: registration.team.id,
-                    name: registration.team.name,
-                  },
-                ]),
-              ).values(),
-            );
-
-            const matches = tournament.matches.map((match) => ({
-              ...match,
-              scheduledAt: match.scheduledAt?.toISOString() ?? null,
-            }));
+            const matches = tournament.tournamentMatches;
 
             return (
               <details
@@ -293,7 +257,6 @@ export default async function AdminMatchesPanel() {
                       {tournament.registrationStatus}
                     </Pill>
 
-                    <Pill tone="gray">{registeredTeams.length} teams</Pill>
                     <Pill tone="violet">{matches.length} matches</Pill>
 
                     <span
@@ -310,11 +273,170 @@ export default async function AdminMatchesPanel() {
                 </summary>
 
                 <div className="p-5">
-                  <AdminMatchPanel
-                    tournamentId={tournament.id}
-                    matches={matches}
-                    registeredTeams={registeredTeams}
-                  />
+                  {matches.length === 0 ? (
+                    <div className="flex items-center justify-between gap-4">
+                      <p
+                        className="text-sm"
+                        style={{ color: "var(--asc-fg-3)" }}
+                      >
+                        No bracket generated yet.
+                      </p>
+                      <Link
+                        href={`/admin/tournaments/${tournament.id}`}
+                        className="inline-flex items-center border px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-90"
+                        style={{
+                          borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                          color: "var(--asc-accent)",
+                          background: "var(--asc-accent-dim)",
+                        }}
+                      >
+                        Manage tournament →
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid gap-2">
+                      {/* Column headers */}
+                      <div
+                        className="grid items-center gap-3 px-3 py-2 md:grid-cols-[60px_minmax(0,1fr)_110px_44px_100px]"
+                        style={{
+                          background: "oklch(0.10 0.03 287 / 0.5)",
+                          border: "1px solid var(--asc-line-soft)",
+                        }}
+                      >
+                        {["Slot", "Teams", "Status", "BO", ""].map((h) => (
+                          <span
+                            key={h}
+                            className="text-[10px] font-black uppercase tracking-[0.14em]"
+                            style={{ color: "var(--asc-fg-3)" }}
+                          >
+                            {h}
+                          </span>
+                        ))}
+                      </div>
+
+                      {matches.map((match) => {
+                        const teamAName = match.teamAId
+                          ? (teamName.get(match.teamAId) ?? "TBD")
+                          : "TBD";
+                        const teamBName = match.isBye
+                          ? "BYE"
+                          : match.teamBId
+                            ? (teamName.get(match.teamBId) ?? "TBD")
+                            : "TBD";
+                        const winnerName = match.winnerTeamId
+                          ? teamName.get(match.winnerTeamId)
+                          : null;
+
+                        return (
+                          <div
+                            key={match.id}
+                            className="grid items-center gap-3 border px-3 py-2.5 transition hover:bg-white/[0.02] md:grid-cols-[60px_minmax(0,1fr)_110px_44px_100px]"
+                            style={{ borderColor: "var(--asc-line-soft)" }}
+                          >
+                            <div className="flex flex-wrap gap-1">
+                              <span
+                                className="border px-1.5 py-0.5 text-[10px] font-black uppercase tracking-[0.1em]"
+                                style={{
+                                  borderColor: "var(--asc-line-soft)",
+                                  background: "var(--asc-bg-2)",
+                                  color: "var(--asc-fg-3)",
+                                }}
+                              >
+                                R{match.roundNumber}
+                              </span>
+                              <span
+                                className="border px-1.5 py-0.5 text-[10px] font-black uppercase tracking-[0.1em]"
+                                style={{
+                                  borderColor: "var(--asc-line-soft)",
+                                  background: "var(--asc-bg-2)",
+                                  color: "var(--asc-fg-3)",
+                                }}
+                              >
+                                M{match.matchNumber}
+                              </span>
+                            </div>
+
+                            <div>
+                              <p
+                                className="text-sm font-black leading-tight"
+                                style={{ color: "var(--asc-fg-0)" }}
+                              >
+                                <span
+                                  style={{
+                                    color:
+                                      winnerName &&
+                                      winnerName === teamName.get(match.teamAId ?? "")
+                                        ? "var(--asc-green)"
+                                        : undefined,
+                                  }}
+                                >
+                                  {teamAName}
+                                </span>{" "}
+                                <span style={{ color: "var(--asc-fg-3)" }}>
+                                  vs
+                                </span>{" "}
+                                <span
+                                  style={{
+                                    color:
+                                      winnerName &&
+                                      winnerName === teamName.get(match.teamBId ?? "")
+                                        ? "var(--asc-green)"
+                                        : undefined,
+                                  }}
+                                >
+                                  {teamBName}
+                                </span>
+                              </p>
+                              {winnerName && (
+                                <p
+                                  className="mt-0.5 text-xs font-bold"
+                                  style={{ color: "var(--asc-green)" }}
+                                >
+                                  ✓ {winnerName}
+                                </p>
+                              )}
+                            </div>
+
+                            <Pill tone={getMatchStatusTone(match.status)}>
+                              {match.status.replace(/_/g, " ")}
+                            </Pill>
+
+                            <span
+                              className="text-xs font-black tabular-nums"
+                              style={{ color: "var(--asc-fg-3)" }}
+                            >
+                              BO{match.bestOf}
+                            </span>
+
+                            <Link
+                              href={`/tournaments/${tournament.id}/matches/${match.id}`}
+                              className="inline-flex items-center justify-center border px-3 py-1.5 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-90"
+                              style={{
+                                borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                                color: "var(--asc-accent)",
+                                background: "var(--asc-accent-dim)",
+                              }}
+                            >
+                              Open →
+                            </Link>
+                          </div>
+                        );
+                      })}
+
+                      <div className="mt-2 flex justify-end">
+                        <Link
+                          href={`/admin/tournaments/${tournament.id}`}
+                          className="inline-flex items-center border px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-75"
+                          style={{
+                            borderColor: "var(--asc-line-soft)",
+                            color: "var(--asc-fg-3)",
+                          }}
+                        >
+                          Full tournament admin →
+                        </Link>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </details>
             );

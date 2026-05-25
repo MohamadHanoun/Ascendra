@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import {
   adminOverrideMatchResult,
   confirmMatchResult,
+  createMatchesForTournament,
 } from "@/lib/tournamentMatchEngine";
 import {
   createRiotTournament,
@@ -412,6 +413,26 @@ export async function generateLolCodesInline(
   if (match.tournamentId) revalidate(match.tournamentId);
   return ok(
     `Generated ${generated.length} League of Legends tournament code${generated.length === 1 ? "" : "s"}.`,
+  );
+}
+
+// ─── Generate tournament bracket ──────────────────────────────────────────────
+
+export async function generateBracketInline(
+  formData: FormData,
+): Promise<AdminMatchInlineResult> {
+  const admin = await requireAdmin();
+  if (!admin) return fail("Admin access required.");
+
+  const tournamentId = str(formData, "tournamentId");
+  if (!tournamentId) return fail("Tournament ID is missing.");
+
+  const result = await createMatchesForTournament(tournamentId);
+  if (!result.ok) return fail(result.error);
+
+  revalidate(tournamentId);
+  return ok(
+    `Bracket generated: ${result.data.created} match${result.data.created === 1 ? "" : "es"} across ${result.data.rounds} round${result.data.rounds === 1 ? "" : "s"}.`,
   );
 }
 
