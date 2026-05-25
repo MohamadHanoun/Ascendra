@@ -11,8 +11,6 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 import type { Locale, NavigationMessages } from "@/lib/i18n";
 
-const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "";
-
 type NavbarClientProps = {
   locale: Locale;
   labels: NavigationMessages;
@@ -296,31 +294,27 @@ export default function NavbarClient({
             <GlobalSearch labels={labels.search} />
 
             {/* Discord */}
-            {discordInvite && (
-              <a
-                href={discordInvite}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "8px 12px",
-                  background: "oklch(0.62 0.18 270)",
-                  color: "oklch(0.98 0.01 290)",
-                  fontFamily: "var(--font-display, sans-serif)",
-                  fontWeight: 600, fontSize: 12,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  clipPath: CUT8,
-                  textDecoration: "none",
-                  flexShrink: 0,
-                  transition: "background 120ms ease",
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.55 0.20 270)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.62 0.18 270)"; }}
-              >
-                DISCORD
-              </a>
-            )}
+            <Link
+              href="/discord"
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "8px 12px",
+                background: "oklch(0.62 0.18 270)",
+                color: "oklch(0.98 0.01 290)",
+                fontFamily: "var(--font-display, sans-serif)",
+                fontWeight: 600, fontSize: 12,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                clipPath: CUT8,
+                textDecoration: "none",
+                flexShrink: 0,
+                transition: "background 120ms ease",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.55 0.20 270)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.62 0.18 270)"; }}
+            >
+              DISCORD
+            </Link>
 
             {/* Bell */}
             <NotificationsDropdown isLoggedIn={isLoggedIn} />
@@ -579,17 +573,14 @@ export default function NavbarClient({
                   </Link>
                 )}
 
-                {discordInvite && (
-                  <a
-                    href={discordInvite}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-3 text-center text-sm font-black text-white transition"
-                    style={{ background: "var(--asc-accent-2)" }}
-                  >
-                    {labels.actions.joinDiscord}
-                  </a>
-                )}
+                <Link
+                  href="/discord"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="px-4 py-3 text-center text-sm font-black text-white transition"
+                  style={{ background: "var(--asc-accent-2)" }}
+                >
+                  {labels.actions.joinDiscord}
+                </Link>
 
                 <LanguageSwitcher locale={locale} labels={labels.language} compact />
               </div>

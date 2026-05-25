@@ -65,6 +65,21 @@ function getMemberDiscordIds(
     .filter((discordId): discordId is string => Boolean(discordId));
 }
 
+function getLeaderDiscordId(team: {
+  leaderId: string;
+  members: Array<{
+    userId: string;
+    user: {
+      discordId: string;
+    };
+  }>;
+}) {
+  return (
+    team.members.find((member) => member.userId === team.leaderId)?.user
+      .discordId || null
+  );
+}
+
 function buildSnapshotMembers(
   members: Array<{
     id: string;
@@ -443,6 +458,7 @@ export async function approveRegistrationInline(
         const memberDiscordIds = getMemberDiscordIds(
           freshRegistration.team.members,
         );
+        const leaderDiscordId = getLeaderDiscordId(freshRegistration.team);
 
         await tx.tournamentRegistration.update({
           where: {
@@ -491,6 +507,7 @@ export async function approveRegistrationInline(
               guildId: process.env.DISCORD_GUILD_ID,
 
               memberDiscordIds,
+              leaderDiscordId,
 
               websiteUrl: `${getSiteUrl()}/tournaments/${freshRegistration.tournament.id}`,
             },
@@ -596,6 +613,7 @@ export async function rejectRegistrationInline(
 
   const shouldRemoveAccess = needsDiscordAccessRemove(registration);
   const memberDiscordIds = getMemberDiscordIds(registration.team.members);
+  const leaderDiscordId = getLeaderDiscordId(registration.team);
   const reviewedAt = new Date();
 
   await prisma.$transaction(async (tx) => {
@@ -642,6 +660,7 @@ export async function rejectRegistrationInline(
             guildId: process.env.DISCORD_GUILD_ID,
 
             memberDiscordIds,
+            leaderDiscordId,
           },
         },
       });
@@ -723,6 +742,7 @@ export async function cancelRegistrationInline(
 
   const shouldRemoveAccess = needsDiscordAccessRemove(registration);
   const memberDiscordIds = getMemberDiscordIds(registration.team.members);
+  const leaderDiscordId = getLeaderDiscordId(registration.team);
   const reviewedAt = new Date();
 
   await prisma.$transaction(async (tx) => {
@@ -768,6 +788,7 @@ export async function cancelRegistrationInline(
             guildId: process.env.DISCORD_GUILD_ID,
 
             memberDiscordIds,
+            leaderDiscordId,
           },
         },
       });

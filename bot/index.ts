@@ -49,6 +49,10 @@ const POLL_INTERVAL_MS = 5000;
 const API_TIMEOUT_MS = Number(process.env.BOT_API_TIMEOUT_MS || 8000);
 const EVENT_TIMEOUT_MS = Number(process.env.BOT_EVENT_TIMEOUT_MS || 25000);
 const PAUSED_LOG_INTERVAL_MS = 60000;
+const ENABLE_PRESENCE_STATS =
+  process.env.DISCORD_ENABLE_PRESENCE_STATS === "true";
+const TEAM_CAPTAIN_ROLE_ID =
+  process.env.DISCORD_TEAM_CAPTAIN_ROLE_ID || "1506789979190460446";
 
 const COLORS = {
   success: 0x10b981,
@@ -73,8 +77,14 @@ if (!DISCORD_BOT_TOKEN) {
   throw new Error("Missing DISCORD_BOT_TOKEN");
 }
 
+const clientIntents = [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers];
+
+if (ENABLE_PRESENCE_STATS) {
+  clientIntents.push(GatewayIntentBits.GuildPresences);
+}
+
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+  intents: clientIntents,
 });
 
 type DiscordMessage = Message<boolean>;
@@ -746,12 +756,217 @@ async function sendTournamentLog(params: {
   });
 }
 
+const publicDiscordRoleDefinitions = [
+  {
+    key: "owner",
+    label: "Owner",
+    roleId: "1506789791365333162",
+    group: "staff",
+  },
+  {
+    key: "admin",
+    label: "Admin",
+    roleId: "1506789830514835517",
+    group: "staff",
+  },
+  {
+    key: "moderator",
+    label: "Moderator",
+    roleId: "1506789859606532116",
+    group: "staff",
+  },
+  {
+    key: "tournamentStaff",
+    label: "Tournament Staff",
+    roleId: "1506789882255900772",
+    group: "staff",
+  },
+  {
+    key: "player",
+    label: "Player",
+    roleId: "1506789948379107429",
+    group: "community",
+  },
+  {
+    key: "teamCaptain",
+    label: "Team Captain",
+    roleId: TEAM_CAPTAIN_ROLE_ID,
+    group: "community",
+  },
+] as const;
+
+const slashOptionTypeLabels: Record<number, string> = {
+  1: "subcommand",
+  2: "subcommand_group",
+  3: "string",
+  4: "integer",
+  5: "boolean",
+  6: "user",
+  7: "channel",
+  8: "role",
+  9: "mentionable",
+  10: "number",
+  11: "attachment",
+};
+
+function getSlashOptionTypeLabel(value: unknown) {
+  if (typeof value === "number") {
+    return slashOptionTypeLabels[value] || "option";
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  return "option";
+}
+
+function getPublicSlashCommands() {
+  return getEnhancedSlashCommands()
+    .map((command) => {
+      const record = command as Record<string, any>;
+      const name = String(record.name || "").trim();
+      const description = String(record.description || "").trim();
+
+      if (!name || !description) {
+        return null;
+      }
+
+      const options = Array.isArray(record.options)
+        ? record.options
+            .map((option: Record<string, any>) => {
+              const optionName = String(option?.name || "").trim();
+
+              if (!optionName) {
+                return null;
+              }
+
+              return {
+                name: optionName,
+                description: String(option.description || "").trim(),
+                required: option.required === true,
+                type: getSlashOptionTypeLabel(option.type),
+              };
+            })
+            .filter(Boolean)
+        : [];
+
+      return {
+        name,
+        description,
+        options,
+      };
+    })
+    .filter(Boolean);
+}
+
+async function collectDiscordRoleCounts() {
+  const guild = await getGuild();
+  const roles = await withTimeout(
+    guild.roles.fetch(),
+    API_TIMEOUT_MS,
+    "Roles fetch timeout.",
+  );
+  const members = await withTimeout(
+    guild.members.fetch(),
+    API_TIMEOUT_MS,
+    "Members fetch timeout.",
+  );
+
+  return publicDiscordRoleDefinitions.map((roleDefinition) => {
+    const role = roles.get(roleDefinition.roleId);
+    const count = role
+      ? members.filter((member) =>
+          member.roles.cache.has(roleDefinition.roleId),
+        ).size
+      : 0;
+
+    return {
+      key: roleDefinition.key,
+      label: roleDefinition.label,
+      roleId: roleDefinition.roleId,
+      group: roleDefinition.group,
+      count,
+    };
+  });
+}
+
+async function collectDiscordPresenceCount(guild: Awaited<ReturnType<typeof getGuild>>) {
+  const guildWithCounts = guild as typeof guild & {
+    approximatePresenceCount?: number | null;
+  };
+
+  if (
+    typeof guildWithCounts.approximatePresenceCount === "number" &&
+    Number.isFinite(guildWithCounts.approximatePresenceCount)
+  ) {
+    return Math.max(0, Math.floor(guildWithCounts.approximatePresenceCount));
+  }
+
+  if (!ENABLE_PRESENCE_STATS) {
+    return null;
+  }
+
+  try {
+    await withTimeout(
+      guild.members.fetch({ withPresences: true }),
+      API_TIMEOUT_MS,
+      "Presence fetch timeout.",
+    );
+
+    const visibleStatuses = new Set(["online", "idle", "dnd"]);
+
+    return guild.presences.cache.filter((presence) =>
+      visibleStatuses.has(presence.status),
+    ).size;
+  } catch (error) {
+    console.warn("[Heartbeat] Presence stats unavailable:", getErrorMessage(error));
+    return null;
+  }
+}
+
+async function collectDiscordStats() {
+  const guild = await withTimeout(
+    client.guilds.fetch({ guild: GUILD_ID, withCounts: true } as any),
+    API_TIMEOUT_MS,
+    "Guild stats fetch timeout.",
+  );
+  const guildWithCounts = guild as typeof guild & {
+    approximateMemberCount?: number | null;
+  };
+  const memberCount =
+    typeof guildWithCounts.approximateMemberCount === "number"
+      ? guildWithCounts.approximateMemberCount
+      : guild.memberCount;
+  const onlineCount = await collectDiscordPresenceCount(guild);
+  const roleCounts = await collectDiscordRoleCounts().catch((error) => {
+    console.warn("[Heartbeat] Role counts unavailable:", getErrorMessage(error));
+    return [];
+  });
+
+  return {
+    memberCount:
+      typeof memberCount === "number" && Number.isFinite(memberCount)
+        ? Math.max(0, Math.floor(memberCount))
+        : null,
+    onlineCount,
+    roleCounts,
+    slashCommands: getPublicSlashCommands(),
+    lastSyncedAt: new Date().toISOString(),
+  };
+}
+
 async function sendHeartbeat() {
   if (isShuttingDown) {
     return;
   }
 
   try {
+    const discord = await collectDiscordStats().catch((error) => {
+      console.warn("[Heartbeat] Discord stats sync skipped:", getErrorMessage(error));
+      return null;
+    });
+
     const response = await fetchWithTimeout(
       `${SITE_URL}/api/bot/heartbeat`,
       {
@@ -764,6 +979,7 @@ async function sendHeartbeat() {
           botTag: client.user?.tag || "Unknown",
           guildId: GUILD_ID,
           uptimeMs: Math.floor(process.uptime() * 1000),
+          discord,
         }),
       },
       API_TIMEOUT_MS,
@@ -1204,6 +1420,140 @@ async function removeRoleFromMembers(params: {
   };
 }
 
+async function fetchTeamCaptainState(registrationId: string) {
+  const url = `${SITE_URL}/api/bot/discord-roles/team-captain?registrationId=${encodeURIComponent(
+    registrationId,
+  )}`;
+  const response = await fetchWithTimeout(
+    url,
+    {
+      headers: {
+        Authorization: `Bearer ${BOT_API_TOKEN}`,
+      },
+    },
+    API_TIMEOUT_MS,
+  );
+
+  if (!response.ok) {
+    throw new Error(`Team Captain check ${response.status}`);
+  }
+
+  const data = (await response.json()) as Record<string, any>;
+
+  return {
+    leaderDiscordId: String(data.leaderDiscordId || "").trim(),
+    shouldKeepTeamCaptainRole: data.shouldKeepTeamCaptainRole === true,
+  };
+}
+
+async function resolveLeaderDiscordId(payload: Record<string, any>) {
+  const direct = pickFirstNonEmpty(payload.leaderDiscordId);
+
+  if (direct) {
+    return direct;
+  }
+
+  const registrationId = pickFirstNonEmpty(payload.registrationId);
+
+  if (!registrationId) {
+    return "";
+  }
+
+  const state = await fetchTeamCaptainState(registrationId);
+
+  return state.leaderDiscordId;
+}
+
+async function assignTeamCaptainRole(payload: Record<string, any>) {
+  try {
+    const leaderDiscordId = await resolveLeaderDiscordId(payload);
+
+    if (!leaderDiscordId) {
+      return {
+        assigned: [],
+        failed: [],
+        skipped: true,
+        reason: "No leader Discord account",
+      };
+    }
+
+    const result = await assignRoleToMembers({
+      roleId: TEAM_CAPTAIN_ROLE_ID,
+      memberDiscordIds: [leaderDiscordId],
+    });
+
+    return {
+      ...result,
+      skipped: false,
+      reason: result.failed.length > 0 ? "Assignment failed" : "Assigned",
+    };
+  } catch (error) {
+    console.error("[Team Captain] Assignment failed:", error);
+
+    return {
+      assigned: [],
+      failed: [],
+      skipped: true,
+      reason: "Assignment failed",
+    };
+  }
+}
+
+async function removeTeamCaptainRoleIfSafe(payload: Record<string, any>) {
+  try {
+    const registrationId = pickFirstNonEmpty(payload.registrationId);
+
+    if (!registrationId) {
+      return {
+        removed: [],
+        failed: [],
+        skipped: true,
+        reason: "Missing registration",
+      };
+    }
+
+    const state = await fetchTeamCaptainState(registrationId);
+
+    if (!state.leaderDiscordId) {
+      return {
+        removed: [],
+        failed: [],
+        skipped: true,
+        reason: "No leader Discord account",
+      };
+    }
+
+    if (state.shouldKeepTeamCaptainRole) {
+      return {
+        removed: [],
+        failed: [],
+        skipped: true,
+        reason: "Leader still qualifies",
+      };
+    }
+
+    const result = await removeRoleFromMembers({
+      roleId: TEAM_CAPTAIN_ROLE_ID,
+      memberDiscordIds: [state.leaderDiscordId],
+    });
+
+    return {
+      ...result,
+      skipped: false,
+      reason: result.failed.length > 0 ? "Removal failed" : "Removed",
+    };
+  } catch (error) {
+    console.error("[Team Captain] Removal check failed:", error);
+
+    return {
+      removed: [],
+      failed: [],
+      skipped: true,
+      reason: "Removal check failed",
+    };
+  }
+}
+
 async function findTeamVoiceChannel(params: {
   channelId?: string | null;
   channelName?: string | null;
@@ -1346,6 +1696,7 @@ async function processTeamAccessCreate(event: BotEvent) {
     roleId: roleResult.role.id,
     memberDiscordIds: payload.memberDiscordIds || [],
   });
+  const teamCaptainAssignment = await assignTeamCaptainRole(payload);
 
   await sendTournamentLog({
     title: "Team Discord access created",
@@ -1364,9 +1715,17 @@ async function processTeamAccessCreate(event: BotEvent) {
         name: "Failed Assignments",
         value: String(roleAssignments.failed.length),
       },
+      {
+        name: "Team Captain",
+        value: cleanLogValue(teamCaptainAssignment.reason),
+      },
       { name: "Event ID", value: event.id, inline: false },
     ],
-    color: roleAssignments.failed.length > 0 ? COLORS.warning : COLORS.success,
+    color:
+      roleAssignments.failed.length > 0 ||
+      teamCaptainAssignment.failed.length > 0
+        ? COLORS.warning
+        : COLORS.success,
   });
 
   return {
@@ -1376,6 +1735,9 @@ async function processTeamAccessCreate(event: BotEvent) {
     channelCreated: channelResult.created,
     assigned: roleAssignments.assigned,
     failed: roleAssignments.failed,
+    teamCaptainAssigned: teamCaptainAssignment.assigned.length > 0,
+    teamCaptainFailed: teamCaptainAssignment.failed.length > 0,
+    teamCaptainSkipped: teamCaptainAssignment.skipped,
   };
 }
 
@@ -1391,6 +1753,7 @@ async function processTeamAccessRemove(event: BotEvent) {
     roleId: payload.roleId,
     memberDiscordIds: payload.memberDiscordIds || [],
   });
+  const teamCaptainRemoval = await removeTeamCaptainRoleIfSafe(payload);
 
   const channelDeletion = await deleteTeamVoiceChannel({
     channelId: payload.channelId,
@@ -1422,11 +1785,18 @@ async function processTeamAccessRemove(event: BotEvent) {
       },
       { name: "Members Removed", value: String(roleRemoval.removed.length) },
       { name: "Failed Removals", value: String(roleRemoval.failed.length) },
+      {
+        name: "Team Captain",
+        value: cleanLogValue(teamCaptainRemoval.reason),
+      },
       { name: "Room Deleted", value: channelDeletion.deleted ? "Yes" : "No" },
       { name: "Role Deleted", value: roleDeletion.deleted ? "Yes" : "No" },
       { name: "Event ID", value: event.id, inline: false },
     ],
-    color: roleRemoval.failed.length > 0 ? COLORS.warning : COLORS.success,
+    color:
+      roleRemoval.failed.length > 0 || teamCaptainRemoval.failed.length > 0
+        ? COLORS.warning
+        : COLORS.success,
   });
 
   return {
@@ -1434,6 +1804,9 @@ async function processTeamAccessRemove(event: BotEvent) {
     channelId: payload.channelId,
     removed: roleRemoval.removed,
     failed: roleRemoval.failed,
+    teamCaptainRemoved: teamCaptainRemoval.removed.length > 0,
+    teamCaptainFailed: teamCaptainRemoval.failed.length > 0,
+    teamCaptainSkipped: teamCaptainRemoval.skipped,
     channelDeleted: channelDeletion.deleted,
     deletedChannelId: channelDeletion.channelId,
     roleDeleted: roleDeletion.deleted,

@@ -141,6 +141,10 @@ export async function GET(request: Request) {
         name: registration.team.name,
         game: registration.team.game?.name ?? null,
         leaderId: registration.team.leaderId,
+        leaderDiscordId:
+          registration.team.members.find(
+            (member) => member.userId === registration.team.leaderId,
+          )?.user.discordId ?? null,
         members: registration.team.members.map((member) => ({
           id: member.id,
           userId: member.userId,

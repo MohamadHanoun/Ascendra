@@ -4,8 +4,6 @@ import Link from "next/link";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 
-const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "";
-
 function FooterColumn({
   title,
   links,
@@ -48,6 +46,8 @@ export default async function Footer() {
   ];
 
   const communityLinks = [
+    { href: "/community", label: messages.links.community },
+    { href: "/discord", label: "Discord" },
     { href: "/about", label: messages.links.about },
     { href: "/rules", label: messages.links.rules },
     { href: "/roles", label: messages.links.roles },
@@ -103,17 +103,13 @@ export default async function Footer() {
           <p className="mb-5 text-sm leading-7" style={{ color: "var(--asc-fg-3)" }}>
             {messages.discordDescription}
           </p>
-          {discordInvite && (
-            <a
-              href={discordInvite}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex px-5 py-3 text-sm font-black text-white transition"
-              style={{ background: "var(--asc-accent-2)" }}
-            >
-              {messages.joinDiscord}
-            </a>
-          )}
+          <Link
+            href="/discord"
+            className="inline-flex px-5 py-3 text-sm font-black text-white transition"
+            style={{ background: "var(--asc-accent-2)" }}
+          >
+            Open Discord Hub
+          </Link>
         </div>
       </div>
 

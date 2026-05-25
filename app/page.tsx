@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { getDictionary, type HomeMessages, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
+import { getDiscordStats, type DiscordStats } from "@/lib/discordStats";
 import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
@@ -166,9 +167,9 @@ function formatCompact(value: number) {
 function getCountdownParts(startsAt: Date | null) {
   if (!startsAt) {
     return {
-      days: "21",
-      hours: "00",
-      minutes: "00",
+      days: "--",
+      hours: "--",
+      minutes: "--",
     };
   }
 
@@ -376,7 +377,7 @@ function FeaturedEventCard({
           className="text-xs font-black uppercase tracking-[0.14em]"
           style={{ color: "var(--asc-accent)" }}
         >
-          Featured · Season 7
+          Featured event
         </span>
       </div>
 
@@ -384,20 +385,20 @@ function FeaturedEventCard({
         className="mt-4 text-2xl font-black uppercase leading-tight md:text-3xl"
         style={{ color: "var(--asc-fg-0)" }}
       >
-        {featuredTournament?.title ?? "ASCENDRA MAJOR · SEASON 7"}
+        {featuredTournament?.title ?? "No featured tournament"}
       </h2>
 
       <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-2)" }}>
         {featuredTournament?.game?.name
           ? `${featuredTournament.game.name} · Open qualifier`
-          : "The crown returns to the arena"}
+          : "Published featured events will appear here."}
       </p>
 
       <p
         className="mt-5 text-xs font-black uppercase tracking-[0.16em]"
         style={{ color: "var(--asc-accent)" }}
       >
-        ▲ Group stage begins in
+        ▲ Starts in
       </p>
 
       <div className="mt-2 flex gap-5">
@@ -469,13 +470,13 @@ function FeaturedEventCard({
             className="text-[9px] font-black uppercase tracking-[0.14em]"
             style={{ color: "var(--asc-fg-3)" }}
           >
-            Region
+            Status
           </p>
           <p
             className="mt-1 text-sm font-black"
             style={{ color: "var(--asc-fg-0)" }}
           >
-            Global
+            {featuredTournament ? "Published" : "Pending"}
           </p>
         </div>
       </div>
@@ -887,7 +888,21 @@ function DiscordGlyph() {
   );
 }
 
-function DiscordPreviewCard({ inviteUrl }: { inviteUrl: string | null }) {
+function DiscordPreviewCard({ stats }: { stats: DiscordStats }) {
+  const metrics = [
+    stats.memberCount !== null
+      ? { label: "Members", value: formatCompact(stats.memberCount) }
+      : null,
+    stats.onlineCount !== null
+      ? { label: "Online", value: formatCompact(stats.onlineCount) }
+      : null,
+    stats.lastHeartbeatAt
+      ? { label: "Bot", value: stats.botStatusLabel }
+      : null,
+  ].filter(
+    (metric): metric is { label: string; value: string } => Boolean(metric),
+  );
+
   return (
     <div
       className="relative overflow-hidden border p-0"
@@ -929,39 +944,70 @@ function DiscordPreviewCard({ inviteUrl }: { inviteUrl: string | null }) {
           className="mt-4 text-sm leading-6"
           style={{ color: "var(--asc-fg-1)" }}
         >
-          Join Discord for live community coordination while tournaments,
-          rules, roles, and rankings stay available here on Ascendra.
+          Open the Discord hub for live bot status, server counts, role counts,
+          slash commands, and the server invite.
         </p>
 
-        {inviteUrl ? (
-          <a
-            href={inviteUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-7 inline-flex items-center justify-center px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-white transition hover:opacity-90"
+        {metrics.length > 0 && (
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            {metrics.map((metric) => (
+              <div
+                key={metric.label}
+                className="border px-3 py-3"
+                style={{
+                  borderColor: "var(--asc-line-soft)",
+                  background: "oklch(0.11 0.04 285 / 0.52)",
+                  clipPath:
+                    "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
+                }}
+              >
+                <p
+                  className="text-[9px] font-black uppercase tracking-[0.12em]"
+                  style={{ color: "var(--asc-fg-3)" }}
+                >
+                  {metric.label}
+                </p>
+                <p
+                  className="mt-1 text-lg font-black tabular-nums"
+                  style={{ color: "var(--asc-fg-0)", fontFamily: "var(--font-display)" }}
+                >
+                  {metric.value}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-7 flex flex-wrap gap-3">
+          <Link
+            href="/discord"
+            className="inline-flex items-center justify-center px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-white transition hover:opacity-90"
             style={{
               background: "oklch(0.62 0.18 270)",
               clipPath:
                 "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
             }}
           >
-            Join the server
-          </a>
-        ) : (
-          <span
-            aria-disabled="true"
-            className="mt-7 inline-flex items-center justify-center border px-5 py-3 text-xs font-black uppercase tracking-[0.14em]"
-            style={{
-              borderColor: "var(--asc-line-soft)",
-              color: "var(--asc-fg-3)",
-              background: "oklch(0.14 0.04 285 / 0.65)",
-              clipPath:
-                "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-            }}
-          >
-            Join server unavailable
-          </span>
-        )}
+            Open Discord Hub
+          </Link>
+
+          {stats.inviteUrl && (
+            <a
+              href={stats.inviteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center border px-5 py-3 text-xs font-black uppercase tracking-[0.14em] transition hover:opacity-90"
+              style={{
+                borderColor: "var(--asc-line-soft)",
+                color: "var(--asc-fg-2)",
+                clipPath:
+                  "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+              }}
+            >
+              Join server
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1222,6 +1268,7 @@ export default async function HomePage() {
     totalTeams,
     activeTournamentCount,
     publicTournamentCount,
+    discordStats,
   ] = await Promise.all([
     prisma.tournament.findMany({
       orderBy: { createdAt: "desc" },
@@ -1317,6 +1364,8 @@ export default async function HomePage() {
     prisma.tournament.count({
       where: { visibility: "public" },
     }),
+
+    getDiscordStats(),
   ]);
 
   const tournaments = [...rawTournaments]
@@ -1402,9 +1451,6 @@ export default async function HomePage() {
   const featuredCountdown = getCountdownParts(
     featuredTournament?.startsAt ?? null,
   );
-  const discordInviteUrl =
-    process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim() || null;
-
   return (
     <main
       className="asc-ambient min-h-screen overflow-hidden"
@@ -1472,7 +1518,7 @@ export default async function HomePage() {
                   <PrimaryLink href="/tournaments">
                     Browse tournaments
                   </PrimaryLink>
-                  <SecondaryLink href="/community">Join Discord</SecondaryLink>
+                  <SecondaryLink href="/discord">Join Discord</SecondaryLink>
                 </div>
               </div>
 
@@ -1772,7 +1818,7 @@ export default async function HomePage() {
               <LeaderboardPreview players={topPlayers} />
 
               <div className="grid gap-4">
-                <DiscordPreviewCard inviteUrl={discordInviteUrl} />
+                <DiscordPreviewCard stats={discordStats} />
 
                 <div className="grid grid-cols-2 gap-4">
                   <HomeMetricTile

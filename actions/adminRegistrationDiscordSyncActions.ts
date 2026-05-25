@@ -81,6 +81,21 @@ function getMemberDiscordIds(
     .filter((discordId): discordId is string => Boolean(discordId));
 }
 
+function getLeaderDiscordId(team: {
+  leaderId: string;
+  members: Array<{
+    userId: string;
+    user: {
+      discordId: string;
+    };
+  }>;
+}) {
+  return (
+    team.members.find((member) => member.userId === team.leaderId)?.user
+      .discordId || null
+  );
+}
+
 function needsDiscordAccessRemove(registration: {
   status: string;
   discordRoleStatus: string;
@@ -149,6 +164,7 @@ export async function forceSyncRegistrationDiscordAccess(
   );
 
   const memberDiscordIds = getMemberDiscordIds(registration.team.members);
+  const leaderDiscordId = getLeaderDiscordId(registration.team);
 
   await prisma.$transaction(async (tx) => {
     await tx.tournamentRegistration.update({
@@ -188,6 +204,7 @@ export async function forceSyncRegistrationDiscordAccess(
           guildId: process.env.DISCORD_GUILD_ID,
 
           memberDiscordIds,
+          leaderDiscordId,
 
           websiteUrl: `${getSiteUrl()}/tournaments/${registration.tournament.id}`,
         },
@@ -267,6 +284,7 @@ export async function forceRemoveRegistrationDiscordAccess(
   }
 
   const memberDiscordIds = getMemberDiscordIds(registration.team.members);
+  const leaderDiscordId = getLeaderDiscordId(registration.team);
 
   await prisma.$transaction(async (tx) => {
     await tx.tournamentRegistration.update({
@@ -305,6 +323,7 @@ export async function forceRemoveRegistrationDiscordAccess(
           guildId: process.env.DISCORD_GUILD_ID,
 
           memberDiscordIds,
+          leaderDiscordId,
         },
       },
     });

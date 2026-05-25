@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Community | Ascendra",
   description:
-    "Join the Ascendra community hub for tournaments, rules, roles, and Discord coordination.",
+    "Explore the Ascendra community hub for tournaments, rules, roles, and platform resources.",
 };
 
 type CommunityStats = {
@@ -114,29 +114,6 @@ function ButtonLink({
   );
 }
 
-function DisabledDiscordButton() {
-  return (
-    <span
-      aria-disabled="true"
-      className="inline-flex items-center justify-center gap-2"
-      style={{
-        ...clippedStyle,
-        padding: "16px 26px",
-        fontFamily: "var(--font-display)",
-        fontSize: 14,
-        fontWeight: 700,
-        letterSpacing: "0.14em",
-        textTransform: "uppercase",
-        border: "1px solid var(--asc-line-soft)",
-        background: "oklch(0.14 0.04 285 / 0.65)",
-        color: "var(--asc-fg-3)",
-      }}
-    >
-      Join server unavailable
-    </span>
-  );
-}
-
 function Panel({
   children,
   className = "",
@@ -216,7 +193,7 @@ function StatTile({
   );
 }
 
-function DiscordCard({ inviteUrl }: { inviteUrl: string | null }) {
+function DiscordCard() {
   return (
     <Panel
       className="p-0"
@@ -252,26 +229,16 @@ function DiscordCard({ inviteUrl }: { inviteUrl: string | null }) {
           className="mt-5 max-w-[440px] text-sm leading-6"
           style={{ color: "var(--asc-fg-1)" }}
         >
-          Join the Discord for live community coordination while keeping
-          tournaments, rules, roles, and rankings available here on Ascendra.
+          Open the dedicated Discord hub for live server status, bot commands,
+          role counts, and the server invite when configured.
         </p>
 
         <div className="mt-6">
-          {inviteUrl ? (
-            <ButtonLink href={inviteUrl} variant="discord" external>
-              <DiscordGlyph size={22} />
-              Join the server
-            </ButtonLink>
-          ) : (
-            <DisabledDiscordButton />
-          )}
+          <ButtonLink href="/discord" variant="discord">
+            <DiscordGlyph size={22} />
+            Open Discord Hub
+          </ButtonLink>
         </div>
-
-        {!inviteUrl && (
-          <p className="mt-4 text-xs leading-5" style={{ color: "var(--asc-fg-3)" }}>
-            Discord invite is not configured yet.
-          </p>
-        )}
       </div>
     </Panel>
   );
@@ -431,11 +398,7 @@ async function getCommunityStats(): Promise<CommunityStats> {
 }
 
 export default async function CommunityPage() {
-  const [stats, rawInviteUrl] = await Promise.all([
-    getCommunityStats(),
-    Promise.resolve(process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim() || null),
-  ]);
-  const inviteUrl = rawInviteUrl || null;
+  const stats = await getCommunityStats();
 
   return (
     <main
@@ -474,7 +437,7 @@ export default async function CommunityPage() {
                 className="text-[11px] uppercase tracking-[0.18em]"
                 style={{ ...monoStyle, color: "var(--asc-fg-2)" }}
               >
-                Community · Discord Native
+                Community · Ascendra Native
               </span>
             </div>
 
@@ -492,7 +455,7 @@ export default async function CommunityPage() {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                Discord.
+                Community.
               </span>
             </h1>
 
@@ -500,20 +463,15 @@ export default async function CommunityPage() {
               className="mt-[22px] max-w-[560px] text-[17px] leading-[1.55]"
               style={{ color: "var(--asc-fg-1)" }}
             >
-              The community layer around Ascendra tournaments. Join Discord for
-              live coordination, or browse tournaments, rules, roles, and
-              rankings directly on the site.
+              The site-backed home for Ascendra players, teams, tournaments,
+              rules, roles, and staff resources.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              {inviteUrl ? (
-                <ButtonLink href={inviteUrl} variant="discord" external>
-                  <DiscordGlyph size={22} />
-                  Join the server
-                </ButtonLink>
-              ) : (
-                <DisabledDiscordButton />
-              )}
+              <ButtonLink href="/discord" variant="discord">
+                <DiscordGlyph size={22} />
+                Open Discord Hub
+              </ButtonLink>
               <ButtonLink href="/tournaments">View tournaments</ButtonLink>
             </div>
           </div>
@@ -579,7 +537,7 @@ export default async function CommunityPage() {
               </div>
             </div>
 
-            <DiscordCard inviteUrl={inviteUrl} />
+            <DiscordCard />
           </section>
 
           <section>
