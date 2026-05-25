@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import Footer from "@/components/Footer";
 import MatchAdminControls from "@/components/MatchAdminControls";
+import MatchRealtimeRefresh from "@/components/MatchRealtimeRefresh";
 import { parseCs2Metadata } from "@/lib/gameIntegrations/steamCs2Adapter";
 import { DisputeForm, MatchReportForm } from "@/components/MatchReportForm";
 import DotaMatchIdForm from "@/components/DotaMatchIdForm";
@@ -215,6 +216,7 @@ export default async function MatchDetailPage({
 
   const { label: statusLabel, tone: statusTone } = matchStatusInfo(match.status);
   const isTerminal = ["completed", "confirmed", "forfeit", "bye", "cancelled"].includes(match.status);
+  const shouldRefreshRealtime = !["completed", "cancelled", "forfeit", "bye"].includes(match.status);
   const canSubmitReport =
     !isTerminal &&
     match.status !== "disputed" &&
@@ -243,6 +245,13 @@ export default async function MatchDetailPage({
     >
       <div className="relative z-10">
         <Navbar />
+        {shouldRefreshRealtime && (
+          <MatchRealtimeRefresh
+            tournamentId={tournamentId}
+            matchId={match.id}
+            listenToAdminEvents={isAdmin}
+          />
+        )}
 
         {/* Page header / breadcrumb */}
         <header className="mx-auto max-w-[1680px] px-6 pb-6 pt-10 lg:px-10 2xl:px-14">
