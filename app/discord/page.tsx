@@ -10,15 +10,177 @@ import {
   type DiscordRoleCount,
   type DiscordSlashCommand,
 } from "@/lib/discordStats";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Discord | Ascendra",
-  description:
-    "Ascendra Discord hub with real bot status, role counts, and slash commands.",
+type DiscordPageMessages = {
+  metadata: { title: string; description: string };
+  hero: {
+    badge: string;
+    titleLine1: string;
+    titleLine2: string;
+    description: string;
+    joinServer: string;
+    viewCommunity: string;
+    viewTournaments: string;
+  };
+  stats: {
+    members: { label: string; sub: string };
+    online: { label: string; sub: string };
+    botStatus: { label: string; heartbeatSub: string; noHeartbeatSub: string };
+    lastSynced: { label: string; sub: string };
+  };
+  botPanel: {
+    eyebrow: string;
+    title: string;
+    statusLabel: string;
+    botLabel: string;
+    uptimeLabel: string;
+  };
+  roles: {
+    eyebrow: string;
+    discordRoleLabel: string;
+    staffTitle: string;
+    communityTitle: string;
+  };
+  commands: {
+    sectionLabel: string;
+    slashCommandsLabel: string;
+    commandsSuffix: string;
+    emptyMessage: string;
+    groups: {
+      general: string;
+      tournaments: string;
+      leaderboard: string;
+      teamsProfiles: string;
+      community: string;
+      botStatus: string;
+      other: string;
+    };
+  };
 };
+
+const discordMessages: Record<Locale, DiscordPageMessages> = {
+  en: {
+    metadata: {
+      title: "Discord | Ascendra",
+      description:
+        "Ascendra Discord hub with real bot status, role counts, and slash commands.",
+    },
+    hero: {
+      badge: "Community · Discord Native",
+      titleLine1: "The Ascendra",
+      titleLine2: "Discord.",
+      description:
+        "Live server status, moderation role counts, community roles, and the real Ascendra bot command list synced from the running bot.",
+      joinServer: "Join the server",
+      viewCommunity: "View community",
+      viewTournaments: "View tournaments",
+    },
+    stats: {
+      members: { label: "Members", sub: "From Discord guild" },
+      online: { label: "Online", sub: "Presence data from Discord" },
+      botStatus: {
+        label: "Bot status",
+        heartbeatSub: "Heartbeat monitored",
+        noHeartbeatSub: "No heartbeat yet",
+      },
+      lastSynced: { label: "Last synced", sub: "Bot heartbeat" },
+    },
+    botPanel: {
+      eyebrow: "Bot heartbeat",
+      title: "Ascendra bot status",
+      statusLabel: "Status",
+      botLabel: "Bot",
+      uptimeLabel: "Uptime",
+    },
+    roles: {
+      eyebrow: "Roles",
+      discordRoleLabel: "Discord role",
+      staffTitle: "Staff and moderation",
+      communityTitle: "Community access",
+    },
+    commands: {
+      sectionLabel: "Real slash commands",
+      slashCommandsLabel: "Slash commands",
+      commandsSuffix: "commands",
+      emptyMessage: "Bot commands will appear after the next bot sync.",
+      groups: {
+        general: "General",
+        tournaments: "Tournaments",
+        leaderboard: "Leaderboard",
+        teamsProfiles: "Teams & Profiles",
+        community: "Community",
+        botStatus: "Bot Status",
+        other: "Other",
+      },
+    },
+  },
+  ar: {
+    metadata: {
+      title: "Discord | Ascendra",
+      description:
+        "مركز Discord الخاص بـ Ascendra مع حالة البوت الحقيقية، عدد الأدوار، وأوامر الشرطة المائلة.",
+    },
+    hero: {
+      badge: "المجتمع · مدمج مع Discord",
+      titleLine1: "Discord",
+      titleLine2: "Ascendra.",
+      description:
+        "حالة الخادم المباشرة، عدد أدوار الإشراف، أدوار المجتمع، وقائمة أوامر بوت Ascendra الحقيقية المزامَنة من البوت الفعلي.",
+      joinServer: "انضم إلى الخادم",
+      viewCommunity: "عرض المجتمع",
+      viewTournaments: "عرض البطولات",
+    },
+    stats: {
+      members: { label: "الأعضاء", sub: "من خادم Discord" },
+      online: { label: "المتصلون", sub: "بيانات الحضور من Discord" },
+      botStatus: {
+        label: "حالة البوت",
+        heartbeatSub: "النبضة مراقبة",
+        noHeartbeatSub: "لا توجد نبضة بعد",
+      },
+      lastSynced: { label: "آخر مزامنة", sub: "نبضة البوت" },
+    },
+    botPanel: {
+      eyebrow: "نبضة البوت",
+      title: "حالة بوت Ascendra",
+      statusLabel: "الحالة",
+      botLabel: "البوت",
+      uptimeLabel: "وقت التشغيل",
+    },
+    roles: {
+      eyebrow: "الأدوار",
+      discordRoleLabel: "دور Discord",
+      staffTitle: "الفريق والإشراف",
+      communityTitle: "وصول المجتمع",
+    },
+    commands: {
+      sectionLabel: "أوامر شرطة مائلة حقيقية",
+      slashCommandsLabel: "أوامر الشرطة المائلة",
+      commandsSuffix: "أمر",
+      emptyMessage: "ستظهر أوامر البوت بعد المزامنة القادمة.",
+      groups: {
+        general: "عام",
+        tournaments: "البطولات",
+        leaderboard: "لوحة المتصدرين",
+        teamsProfiles: "الفرق والملفات الشخصية",
+        community: "المجتمع",
+        botStatus: "حالة البوت",
+        other: "أخرى",
+      },
+    },
+  },
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = discordMessages[locale].metadata;
+  return { title: messages.title, description: messages.description };
+}
 
 const monoStyle: CSSProperties = {
   fontFamily: "var(--font-mono, monospace)",
@@ -245,9 +407,13 @@ function StatTile({
 function RoleCountSection({
   title,
   roleCounts,
+  rolesLabel,
+  discordRoleLabel,
 }: {
   title: string;
   roleCounts: DiscordRoleCount[];
+  rolesLabel: string;
+  discordRoleLabel: string;
 }) {
   if (roleCounts.length === 0) {
     return null;
@@ -260,7 +426,7 @@ function RoleCountSection({
           className="text-[10px] uppercase tracking-[0.18em]"
           style={{ ...monoStyle, color: "var(--asc-accent)" }}
         >
-          Roles
+          {rolesLabel}
         </p>
         <h2 className="mt-2 text-2xl" style={{ color: "var(--asc-fg-0)" }}>
           {title}
@@ -281,7 +447,7 @@ function RoleCountSection({
               className="mt-1 text-[10px] uppercase tracking-[0.12em]"
               style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
             >
-              Discord role
+              {discordRoleLabel}
             </p>
           </div>
           <p
@@ -299,17 +465,20 @@ function RoleCountSection({
   );
 }
 
-function groupSlashCommands(commands: DiscordSlashCommand[]) {
+function groupSlashCommands(
+  commands: DiscordSlashCommand[],
+  groupLabels: Record<string, string>,
+) {
   const commandMap = new Map(commands.map((command) => [command.name, command]));
   const grouped: { label: string; commands: DiscordSlashCommand[] }[] =
     commandGroups
-    .map((group) => ({
-      label: group.label,
-      commands: group.names
-        .map((name) => commandMap.get(name))
-        .filter((command): command is DiscordSlashCommand => Boolean(command)),
-    }))
-    .filter((group) => group.commands.length > 0);
+      .map((group) => ({
+        label: groupLabels[group.label] ?? group.label,
+        commands: group.names
+          .map((name) => commandMap.get(name))
+          .filter((command): command is DiscordSlashCommand => Boolean(command)),
+      }))
+      .filter((group) => group.commands.length > 0);
   const groupedNames = new Set(
     grouped.flatMap((group) => group.commands.map((command) => command.name)),
   );
@@ -317,7 +486,7 @@ function groupSlashCommands(commands: DiscordSlashCommand[]) {
 
   if (remaining.length > 0) {
     grouped.push({
-      label: "Other",
+      label: groupLabels["Other"] ?? "Other",
       commands: remaining,
     });
   }
@@ -352,7 +521,18 @@ function CommandOptions({ command }: { command: DiscordSlashCommand }) {
   );
 }
 
-function SlashCommandList({ commands }: { commands: DiscordSlashCommand[] }) {
+function SlashCommandList({
+  commands,
+  messages,
+}: {
+  commands: DiscordSlashCommand[];
+  messages: {
+    emptyMessage: string;
+    slashCommandsLabel: string;
+    commandsSuffix: string;
+    groupLabels: Record<string, string>;
+  };
+}) {
   if (commands.length === 0) {
     return (
       <Panel className="p-8 text-center">
@@ -360,7 +540,7 @@ function SlashCommandList({ commands }: { commands: DiscordSlashCommand[] }) {
           className="relative z-10 text-sm font-black uppercase tracking-[0.12em]"
           style={{ color: "var(--asc-fg-0)" }}
         >
-          Bot commands will appear after the next bot sync.
+          {messages.emptyMessage}
         </p>
       </Panel>
     );
@@ -368,7 +548,7 @@ function SlashCommandList({ commands }: { commands: DiscordSlashCommand[] }) {
 
   return (
     <div className="grid gap-4">
-      {groupSlashCommands(commands).map((group) => (
+      {groupSlashCommands(commands, messages.groupLabels).map((group) => (
         <Panel key={group.label} className="p-0">
           <details className="relative z-10 group" open>
             <summary
@@ -380,7 +560,7 @@ function SlashCommandList({ commands }: { commands: DiscordSlashCommand[] }) {
                   className="text-[10px] uppercase tracking-[0.18em]"
                   style={{ ...monoStyle, color: "var(--asc-accent)" }}
                 >
-                  Slash commands
+                  {messages.slashCommandsLabel}
                 </p>
                 <h3 className="mt-2 text-xl" style={{ color: "var(--asc-fg-0)" }}>
                   {group.label}
@@ -390,7 +570,7 @@ function SlashCommandList({ commands }: { commands: DiscordSlashCommand[] }) {
                 className="text-[10px] uppercase tracking-[0.14em]"
                 style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
               >
-                {group.commands.length} commands
+                {group.commands.length} {messages.commandsSuffix}
               </span>
             </summary>
 
@@ -427,35 +607,39 @@ function SlashCommandList({ commands }: { commands: DiscordSlashCommand[] }) {
 }
 
 export default async function DiscordPage() {
-  const stats = await getDiscordStats();
+  const [stats, locale] = await Promise.all([getDiscordStats(), getLocale()]);
+  const messages = discordMessages[locale];
+
   const statTiles = [
     stats.memberCount !== null
       ? {
-          label: "Members",
+          label: messages.stats.members.label,
           value: formatNumber(stats.memberCount),
-          sub: "From Discord guild",
+          sub: messages.stats.members.sub,
           accent: true,
         }
       : null,
     stats.onlineCount !== null
       ? {
-          label: "Online",
+          label: messages.stats.online.label,
           value: formatNumber(stats.onlineCount),
-          sub: "Presence data from Discord",
+          sub: messages.stats.online.sub,
           accent: false,
         }
       : null,
     {
-      label: "Bot status",
+      label: messages.stats.botStatus.label,
       value: stats.botStatusLabel,
-      sub: stats.lastHeartbeatAt ? "Heartbeat monitored" : "No heartbeat yet",
+      sub: stats.lastHeartbeatAt
+        ? messages.stats.botStatus.heartbeatSub
+        : messages.stats.botStatus.noHeartbeatSub,
       accent: stats.botStatus === "online",
     },
     stats.lastSyncedAt
       ? {
-          label: "Last synced",
+          label: messages.stats.lastSynced.label,
           value: formatDateTime(stats.lastSyncedAt) || "",
-          sub: "Bot heartbeat",
+          sub: messages.stats.lastSynced.sub,
           accent: false,
         }
       : null,
@@ -511,7 +695,7 @@ export default async function DiscordPage() {
                 className="text-[11px] uppercase tracking-[0.18em]"
                 style={{ ...monoStyle, color: "var(--asc-fg-2)" }}
               >
-                Community · Discord Native
+                {messages.hero.badge}
               </span>
             </div>
 
@@ -519,7 +703,7 @@ export default async function DiscordPage() {
               className="max-w-5xl text-[clamp(48px,6.4vw,108px)] leading-[0.92]"
               style={{ color: "var(--asc-fg-0)" }}
             >
-              The Ascendra
+              {messages.hero.titleLine1}
               <br />
               <span
                 style={{
@@ -529,7 +713,7 @@ export default async function DiscordPage() {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                Discord.
+                {messages.hero.titleLine2}
               </span>
             </h1>
 
@@ -537,19 +721,18 @@ export default async function DiscordPage() {
               className="mt-[22px] max-w-[580px] text-[17px] leading-[1.55]"
               style={{ color: "var(--asc-fg-1)" }}
             >
-              Live server status, moderation role counts, community roles, and
-              the real Ascendra bot command list synced from the running bot.
+              {messages.hero.description}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               {stats.inviteUrl && (
                 <ButtonLink href={stats.inviteUrl} variant="discord" external>
                   <DiscordGlyph size={22} />
-                  Join the server
+                  {messages.hero.joinServer}
                 </ButtonLink>
               )}
-              <ButtonLink href="/community">View community</ButtonLink>
-              <ButtonLink href="/tournaments">View tournaments</ButtonLink>
+              <ButtonLink href="/community">{messages.hero.viewCommunity}</ButtonLink>
+              <ButtonLink href="/tournaments">{messages.hero.viewTournaments}</ButtonLink>
             </div>
           </div>
         </section>
@@ -582,10 +765,10 @@ export default async function DiscordPage() {
                   className="text-[10px] uppercase tracking-[0.18em]"
                   style={{ ...monoStyle, color: "var(--asc-accent)" }}
                 >
-                  Bot heartbeat
+                  {messages.botPanel.eyebrow}
                 </p>
                 <h2 className="mt-2 text-2xl md:text-3xl" style={{ color: "var(--asc-fg-0)" }}>
-                  Ascendra bot status
+                  {messages.botPanel.title}
                 </h2>
                 <div className="mt-6 grid gap-4 md:grid-cols-2">
                   <div>
@@ -593,7 +776,7 @@ export default async function DiscordPage() {
                       className="text-[10px] uppercase tracking-[0.14em]"
                       style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
                     >
-                      Status
+                      {messages.botPanel.statusLabel}
                     </p>
                     <p
                       className="mt-2 text-3xl font-black"
@@ -611,7 +794,7 @@ export default async function DiscordPage() {
                         className="text-[10px] uppercase tracking-[0.14em]"
                         style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
                       >
-                        Bot
+                        {messages.botPanel.botLabel}
                       </p>
                       <p className="mt-2 text-lg font-bold" style={{ color: "var(--asc-fg-0)" }}>
                         {stats.botTag}
@@ -624,7 +807,7 @@ export default async function DiscordPage() {
                         className="text-[10px] uppercase tracking-[0.14em]"
                         style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
                       >
-                        Uptime
+                        {messages.botPanel.uptimeLabel}
                       </p>
                       <p className="mt-2 text-lg font-bold" style={{ color: "var(--asc-fg-0)" }}>
                         {Math.floor(stats.uptimeMs / 60000)} min
@@ -637,19 +820,39 @@ export default async function DiscordPage() {
 
             <div className="grid gap-4">
               <RoleCountSection
-                title="Staff and moderation"
+                title={messages.roles.staffTitle}
                 roleCounts={staffRoleCounts}
+                rolesLabel={messages.roles.eyebrow}
+                discordRoleLabel={messages.roles.discordRoleLabel}
               />
               <RoleCountSection
-                title="Community access"
+                title={messages.roles.communityTitle}
                 roleCounts={communityRoleCounts}
+                rolesLabel={messages.roles.eyebrow}
+                discordRoleLabel={messages.roles.discordRoleLabel}
               />
             </div>
           </section>
 
           <section>
-            <SectionRule label="Real slash commands" />
-            <SlashCommandList commands={stats.slashCommands} />
+            <SectionRule label={messages.commands.sectionLabel} />
+            <SlashCommandList
+              commands={stats.slashCommands}
+              messages={{
+                emptyMessage: messages.commands.emptyMessage,
+                slashCommandsLabel: messages.commands.slashCommandsLabel,
+                commandsSuffix: messages.commands.commandsSuffix,
+                groupLabels: {
+                  General: messages.commands.groups.general,
+                  Tournaments: messages.commands.groups.tournaments,
+                  Leaderboard: messages.commands.groups.leaderboard,
+                  "Teams & Profiles": messages.commands.groups.teamsProfiles,
+                  Community: messages.commands.groups.community,
+                  "Bot Status": messages.commands.groups.botStatus,
+                  Other: messages.commands.groups.other,
+                },
+              }}
+            />
           </section>
         </section>
 

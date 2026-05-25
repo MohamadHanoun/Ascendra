@@ -6,6 +6,8 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { prisma } from "@/lib/prisma";
 import { getGameImageUrl } from "@/lib/tournamentImages";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,6 +45,126 @@ type IntegrationView = {
   tone: "configured" | "manual" | "empty";
 };
 
+type GamesMessages = {
+  metadata: { title: string; description: string };
+  hero: {
+    eyebrowLeft: string;
+    eyebrowRight: string;
+    title: string;
+    description: string;
+  };
+  section: { eyebrow: string; title: string };
+  stats: {
+    games: string;
+    active: string;
+    tournaments: string;
+    total: string;
+    upcoming: string;
+    teams: string;
+  };
+  card: {
+    notAvailable: string;
+    active: string;
+    inactive: string;
+    registrationOpenLabel: string;
+    viewTournaments: string;
+    leaderboard: string;
+    integration: { configured: string; manual: string; notConfigured: string };
+  };
+  empty: { eyebrow: string; title: string; description: string };
+};
+
+const gamesMessages: Record<Locale, GamesMessages> = {
+  en: {
+    metadata: {
+      title: "Games Registry | Ascendra",
+      description: "Browse the competitive titles configured for Ascendra.",
+    },
+    hero: {
+      eyebrowLeft: "Competitive Titles ·",
+      eyebrowRight: "Supported",
+      title: "Games Registry",
+      description:
+        "Browse the competitive titles configured for Ascendra tournaments, team rosters, and leaderboard filters.",
+    },
+    section: { eyebrow: "Registry", title: "Supported titles" },
+    stats: {
+      games: "Games",
+      active: "Active",
+      tournaments: "Tournaments",
+      total: "Total",
+      upcoming: "Upcoming",
+      teams: "Teams",
+    },
+    card: {
+      notAvailable: "Not available",
+      active: "Active",
+      inactive: "Inactive",
+      registrationOpenLabel: "Registration open ·",
+      viewTournaments: "View tournaments",
+      leaderboard: "Leaderboard",
+      integration: {
+        configured: "Configured",
+        manual: "Manual",
+        notConfigured: "Not configured",
+      },
+    },
+    empty: {
+      eyebrow: "Registry empty",
+      title: "No games are available yet.",
+      description:
+        "Supported titles will appear here after they are added in the games registry.",
+    },
+  },
+  ar: {
+    metadata: {
+      title: "سجل الألعاب | Ascendra",
+      description: "استعرض الألعاب التنافسية المُعدَّة لبطولات Ascendra.",
+    },
+    hero: {
+      eyebrowLeft: "ألعاب تنافسية ·",
+      eyebrowRight: "مدعوم",
+      title: "سجل الألعاب",
+      description:
+        "استعرض الألعاب التنافسية المُعدَّة لبطولات Ascendra، تشكيلات الفرق، وفلاتر لوحة المتصدرين.",
+    },
+    section: { eyebrow: "السجل", title: "الألعاب المدعومة" },
+    stats: {
+      games: "الألعاب",
+      active: "نشط",
+      tournaments: "البطولات",
+      total: "الإجمالي",
+      upcoming: "قادم",
+      teams: "الفرق",
+    },
+    card: {
+      notAvailable: "غير متاح",
+      active: "نشط",
+      inactive: "غير نشط",
+      registrationOpenLabel: "التسجيل مفتوح ·",
+      viewTournaments: "عرض البطولات",
+      leaderboard: "لوحة المتصدرين",
+      integration: {
+        configured: "مُكوَّن",
+        manual: "يدوي",
+        notConfigured: "غير مُكوَّن",
+      },
+    },
+    empty: {
+      eyebrow: "السجل فارغ",
+      title: "لا توجد ألعاب متاحة بعد.",
+      description:
+        "ستظهر الألعاب المدعومة هنا بعد إضافتها في سجل الألعاب.",
+    },
+  },
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = gamesMessages[locale].metadata;
+  return { title: messages.title, description: messages.description };
+}
+
 const shellStyle: CSSProperties = {
   background: "var(--asc-bg-0)",
   color: "var(--asc-fg-1)",
@@ -55,11 +177,6 @@ const clippedCardStyle: CSSProperties = {
 
 const monoStyle: CSSProperties = {
   fontFamily: "var(--font-mono, monospace)",
-};
-
-export const metadata: Metadata = {
-  title: "Games Registry | Ascendra",
-  description: "Browse the competitive titles configured for Ascendra.",
 };
 
 function cssUrl(url: string) {
@@ -140,7 +257,15 @@ function CornerMark() {
   return <div aria-hidden="true" className="asc-corner-mark" />;
 }
 
-function StatusPill({ active }: { active: boolean }) {
+function StatusPill({
+  active,
+  activeLabel,
+  inactiveLabel,
+}: {
+  active: boolean;
+  activeLabel: string;
+  inactiveLabel: string;
+}) {
   return (
     <span
       className="inline-flex items-center gap-2 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em]"
@@ -159,7 +284,7 @@ function StatusPill({ active }: { active: boolean }) {
         className="h-1.5 w-1.5 rounded-full"
         style={{ background: active ? "var(--asc-green)" : "var(--asc-fg-3)" }}
       />
-      {active ? "Active" : "Inactive"}
+      {active ? activeLabel : inactiveLabel}
     </span>
   );
 }
@@ -216,9 +341,23 @@ function ActionLink({
   );
 }
 
-function GameRow({ game, index }: { game: GameRegistryItem; index: number }) {
+function GameRow({
+  game,
+  index,
+  messages,
+}: {
+  game: GameRegistryItem;
+  index: number;
+  messages: GamesMessages;
+}) {
   const integration = getIntegrationView(game.integrations);
   const integrationColor = getIntegrationColor(integration.tone);
+  const integrationDisplayLabel =
+    integration.tone === "configured"
+      ? messages.card.integration.configured
+      : integration.tone === "manual"
+        ? messages.card.integration.manual
+        : messages.card.integration.notConfigured;
   const openTournaments = countOpenTournaments(game);
   const upcomingTournaments = countUpcomingTournaments(game);
   const openRegistrations = countOpenRegistrations(game);
@@ -265,7 +404,9 @@ function GameRow({ game, index }: { game: GameRegistryItem; index: number }) {
               }}
             >
               {String(index).padStart(2, "0")} ·{" "}
-              {game.isActive ? "ACTIVE" : "INACTIVE"}
+              {game.isActive
+                ? messages.card.active.toUpperCase()
+                : messages.card.inactive.toUpperCase()}
             </span>
           </div>
         </div>
@@ -278,7 +419,7 @@ function GameRow({ game, index }: { game: GameRegistryItem; index: number }) {
                   className="text-[10px] uppercase tracking-[0.18em]"
                   style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
                 >
-                  {(game.platform ?? "Not available").toUpperCase()} ·{" "}
+                  {(game.platform ?? messages.card.notAvailable).toUpperCase()} ·{" "}
                   {formatRoster(game).toUpperCase()}
                 </span>
 
@@ -294,10 +435,14 @@ function GameRow({ game, index }: { game: GameRegistryItem; index: number }) {
                     className="h-1.5 w-1.5 rounded-full"
                     style={{ background: integrationColor }}
                   />
-                  {integration.label.toUpperCase()}
+                  {integrationDisplayLabel.toUpperCase()}
                 </span>
 
-                <StatusPill active={game.isActive} />
+                <StatusPill
+                  active={game.isActive}
+                  activeLabel={messages.card.active}
+                  inactiveLabel={messages.card.inactive}
+                />
               </div>
 
               <h2
@@ -311,7 +456,7 @@ function GameRow({ game, index }: { game: GameRegistryItem; index: number }) {
                 className="mt-3 max-w-3xl text-sm leading-6"
                 style={{ color: "var(--asc-fg-2)" }}
               >
-                {game.description?.trim() || "Not available"}
+                {game.description?.trim() || messages.card.notAvailable}
               </p>
 
               <p
@@ -325,16 +470,16 @@ function GameRow({ game, index }: { game: GameRegistryItem; index: number }) {
 
             <div className="grid grid-cols-2 gap-5 sm:grid-cols-4 xl:flex xl:items-start xl:gap-8">
               <StatBlock
-                label="Total"
+                label={messages.stats.total}
                 value={game._count.tournaments}
               />
               <StatBlock
-                label="Active"
+                label={messages.stats.active}
                 value={openTournaments}
                 accent={openTournaments > 0}
               />
-              <StatBlock label="Upcoming" value={upcomingTournaments} />
-              <StatBlock label="Teams" value={game._count.teams} />
+              <StatBlock label={messages.stats.upcoming} value={upcomingTournaments} />
+              <StatBlock label={messages.stats.teams} value={game._count.teams} />
             </div>
           </div>
 
@@ -343,10 +488,11 @@ function GameRow({ game, index }: { game: GameRegistryItem; index: number }) {
             style={{ borderTop: "1px solid var(--asc-line-soft)" }}
           >
             <ActionLink href="/tournaments">
-              View tournaments <span aria-hidden="true">›</span>
+              {messages.card.viewTournaments}{" "}
+              <span aria-hidden="true">›</span>
             </ActionLink>
             <ActionLink href={leaderboardHref} variant="ghost">
-              Leaderboard
+              {messages.card.leaderboard}
             </ActionLink>
 
             <span className="flex-1" />
@@ -355,7 +501,7 @@ function GameRow({ game, index }: { game: GameRegistryItem; index: number }) {
               className="text-[10px] uppercase tracking-[0.14em]"
               style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
             >
-              Registration open · {openRegistrations}
+              {messages.card.registrationOpenLabel} {openRegistrations}
             </span>
           </div>
         </div>
@@ -364,7 +510,11 @@ function GameRow({ game, index }: { game: GameRegistryItem; index: number }) {
   );
 }
 
-function EmptyGamesState() {
+function EmptyGamesState({
+  messages,
+}: {
+  messages: GamesMessages["empty"];
+}) {
   return (
     <section
       className="relative overflow-hidden border px-6 py-14 text-center"
@@ -379,14 +529,16 @@ function EmptyGamesState() {
         className="text-xs font-black uppercase tracking-[0.18em]"
         style={{ ...monoStyle, color: "var(--asc-accent)" }}
       >
-        Registry empty
+        {messages.eyebrow}
       </p>
       <h2 className="mt-3 text-3xl" style={{ color: "var(--asc-fg-0)" }}>
-        No games are available yet.
+        {messages.title}
       </h2>
-      <p className="mx-auto mt-3 max-w-xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
-        Supported titles will appear here after they are added in the games
-        registry.
+      <p
+        className="mx-auto mt-3 max-w-xl text-sm leading-6"
+        style={{ color: "var(--asc-fg-3)" }}
+      >
+        {messages.description}
       </p>
     </section>
   );
@@ -430,7 +582,8 @@ async function getGames(): Promise<GameRegistryItem[]> {
 }
 
 export default async function GamesPage() {
-  const games = await getGames();
+  const [games, locale] = await Promise.all([getGames(), getLocale()]);
+  const messages = gamesMessages[locale];
   const activeGamesCount = games.filter((game) => game.isActive).length;
   const totalTournaments = games.reduce(
     (total, game) => total + game._count.tournaments,
@@ -464,20 +617,19 @@ export default async function GamesPage() {
               className="asc-section-label mb-[18px]"
             >
               <span style={{ color: "var(--asc-accent)" }}>▲</span>{" "}
-              Competitive Titles · {activeGamesCount} Supported
+              {messages.hero.eyebrowLeft} {activeGamesCount} {messages.hero.eyebrowRight}
             </p>
             <h1
               className="max-w-5xl text-[clamp(48px,6.4vw,108px)] leading-[0.92]"
               style={{ color: "var(--asc-fg-0)" }}
             >
-              Games Registry
+              {messages.hero.title}
             </h1>
             <p
               className="mt-[18px] max-w-[580px] text-base leading-[1.55]"
               style={{ color: "var(--asc-fg-1)" }}
             >
-              Browse the competitive titles configured for Ascendra tournaments,
-              team rosters, and leaderboard filters.
+              {messages.hero.description}
             </p>
           </div>
         </section>
@@ -488,26 +640,31 @@ export default async function GamesPage() {
               <p
                 className="asc-section-label"
               >
-                ▲ Registry
+                ▲ {messages.section.eyebrow}
               </p>
               <h2 className="mt-2 text-2xl" style={{ color: "var(--asc-fg-0)" }}>
-                Supported titles
+                {messages.section.title}
               </h2>
             </div>
 
             <div className="flex flex-wrap gap-6">
-              <StatBlock label="Games" value={games.length} />
-              <StatBlock label="Active" value={activeGamesCount} accent />
-              <StatBlock label="Tournaments" value={totalTournaments} />
+              <StatBlock label={messages.stats.games} value={games.length} />
+              <StatBlock label={messages.stats.active} value={activeGamesCount} accent />
+              <StatBlock label={messages.stats.tournaments} value={totalTournaments} />
             </div>
           </div>
 
           {games.length === 0 ? (
-            <EmptyGamesState />
+            <EmptyGamesState messages={messages.empty} />
           ) : (
             <div className="flex flex-col gap-6">
               {games.map((game, index) => (
-                <GameRow key={game.id} game={game} index={index + 1} />
+                <GameRow
+                  key={game.id}
+                  game={game}
+                  index={index + 1}
+                  messages={messages}
+                />
               ))}
             </div>
           )}

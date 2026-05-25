@@ -5,15 +5,11 @@ import Link from "next/link";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { prisma } from "@/lib/prisma";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "Community | Ascendra",
-  description:
-    "Explore the Ascendra community hub for tournaments, rules, roles, and platform resources.",
-};
 
 type CommunityStats = {
   activeTournaments: number;
@@ -25,6 +21,262 @@ type CommunityStats = {
   activeRoles: number;
   activeStaff: number;
 };
+
+type CommunityPageMessages = {
+  metadata: { title: string; description: string };
+  hero: {
+    badge: string;
+    titleLine1: string;
+    titleLine2: string;
+    description: string;
+    openDiscordHub: string;
+    viewTournaments: string;
+  };
+  stats: {
+    activeTournaments: { label: string; sub: string };
+    players: { label: string; sub: string };
+    teams: { label: string; sub: string };
+    results: { label: string; sub: string };
+  };
+  discordCard: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    buttonLabel: string;
+  };
+  features: {
+    sectionLabel: string;
+    cards: {
+      tournament: { title: string; description: string; label: string };
+      rules: { title: string; description: string; label: string };
+      leaderboard: { title: string; description: string; label: string };
+      staff: { title: string; description: string; label: string };
+    };
+  };
+  directory: {
+    sectionLabel: string;
+    eyebrow: string;
+    title: string;
+    countLabel: string;
+    rows: {
+      events: { label: string; title: string; description: string };
+      governance: { label: string; title: string; description: string };
+      access: { label: string; title: string; description: string };
+      support: { label: string; title: string; description: string };
+    };
+  };
+};
+
+const communityMessages: Record<Locale, CommunityPageMessages> = {
+  en: {
+    metadata: {
+      title: "Community | Ascendra",
+      description:
+        "Explore the Ascendra community hub for tournaments, rules, roles, and platform resources.",
+    },
+    hero: {
+      badge: "Community · Ascendra Native",
+      titleLine1: "The Ascendra",
+      titleLine2: "Community.",
+      description:
+        "The site-backed home for Ascendra players, teams, tournaments, rules, roles, and staff resources.",
+      openDiscordHub: "Open Discord Hub",
+      viewTournaments: "View tournaments",
+    },
+    stats: {
+      activeTournaments: {
+        label: "Active tournaments",
+        sub: "Public events now open or upcoming",
+      },
+      players: {
+        label: "Players",
+        sub: "Registered Ascendra accounts",
+      },
+      teams: {
+        label: "Teams",
+        sub: "Teams created on Ascendra",
+      },
+      results: {
+        label: "Results",
+        sub: "Recorded tournament results",
+      },
+    },
+    discordCard: {
+      eyebrow: "Community",
+      title: "The Ascendra Discord",
+      description:
+        "Open the dedicated Discord hub for live server status, bot commands, role counts, and the server invite when configured.",
+      buttonLabel: "Open Discord Hub",
+    },
+    features: {
+      sectionLabel: "Platform-backed community",
+      cards: {
+        tournament: {
+          title: "Tournament hub",
+          description:
+            "Browse public Ascendra tournaments without relying on Discord-only context.",
+          label: "Open tournaments",
+        },
+        rules: {
+          title: "Community rules",
+          description:
+            "Read the active rulebook and role structure that guide community participation.",
+          label: "View rules",
+        },
+        leaderboard: {
+          title: "Leaderboard context",
+          description:
+            "Follow community tournament points with Riot-safe ranking language and real results.",
+          label: "Open leaderboard",
+        },
+        staff: {
+          title: "Staff directory",
+          description:
+            "Find published staff contacts and community roles maintained inside Ascendra.",
+          label: "View staff",
+        },
+      },
+    },
+    directory: {
+      sectionLabel: "Community directory",
+      eyebrow: "Real platform data",
+      title: "Ascendra community resources",
+      countLabel: "Count",
+      rows: {
+        events: {
+          label: "Events",
+          title: "Public tournaments",
+          description:
+            "Published tournaments currently available through the Ascendra platform.",
+        },
+        governance: {
+          label: "Governance",
+          title: "Active rules",
+          description:
+            "Rules currently marked active for community and tournament conduct.",
+        },
+        access: {
+          label: "Access",
+          title: "Active roles",
+          description:
+            "Community roles currently published in the Ascendra role directory.",
+        },
+        support: {
+          label: "Support",
+          title: "Active staff",
+          description:
+            "Staff profiles currently visible in the public staff directory.",
+        },
+      },
+    },
+  },
+  ar: {
+    metadata: {
+      title: "المجتمع | Ascendra",
+      description:
+        "استكشف مركز مجتمع Ascendra للبطولات والقواعد والأدوار وموارد المنصة.",
+    },
+    hero: {
+      badge: "المجتمع · مدمج مع Ascendra",
+      titleLine1: "مجتمع",
+      titleLine2: "Ascendra.",
+      description:
+        "المنزل الرسمي للاعبي Ascendra، الفرق، البطولات، القواعد، الأدوار، وموارد الفريق.",
+      openDiscordHub: "فتح مركز Discord",
+      viewTournaments: "عرض البطولات",
+    },
+    stats: {
+      activeTournaments: {
+        label: "البطولات النشطة",
+        sub: "فعاليات عامة مفتوحة أو قادمة",
+      },
+      players: {
+        label: "اللاعبون",
+        sub: "حسابات Ascendra المسجلة",
+      },
+      teams: {
+        label: "الفرق",
+        sub: "فرق تم إنشاؤها على Ascendra",
+      },
+      results: {
+        label: "النتائج",
+        sub: "نتائج بطولات مسجلة",
+      },
+    },
+    discordCard: {
+      eyebrow: "المجتمع",
+      title: "Discord Ascendra",
+      description:
+        "افتح مركز Discord المخصص لحالة الخادم المباشرة، أوامر البوت، عدد الأدوار، ورابط الدعوة عند توفره.",
+      buttonLabel: "فتح مركز Discord",
+    },
+    features: {
+      sectionLabel: "مجتمع مدعوم بالمنصة",
+      cards: {
+        tournament: {
+          title: "مركز البطولات",
+          description:
+            "استعرض بطولات Ascendra العامة دون الاعتماد على سياق Discord فقط.",
+          label: "فتح البطولات",
+        },
+        rules: {
+          title: "قواعد المجتمع",
+          description:
+            "اطّلع على دليل القواعد النشط وهيكل الأدوار الذي يوجّه مشاركة المجتمع.",
+          label: "عرض القواعد",
+        },
+        leaderboard: {
+          title: "سياق لوحة المتصدرين",
+          description:
+            "تابع نقاط بطولات المجتمع بلغة ترتيب آمنة مع Riot ونتائج حقيقية.",
+          label: "فتح لوحة المتصدرين",
+        },
+        staff: {
+          title: "دليل الفريق",
+          description:
+            "اعثر على جهات اتصال الفريق المنشورة وأدوار المجتمع المُدارة داخل Ascendra.",
+          label: "عرض الفريق",
+        },
+      },
+    },
+    directory: {
+      sectionLabel: "دليل المجتمع",
+      eyebrow: "بيانات حقيقية من المنصة",
+      title: "موارد مجتمع Ascendra",
+      countLabel: "العدد",
+      rows: {
+        events: {
+          label: "الفعاليات",
+          title: "البطولات العامة",
+          description: "بطولات منشورة متاحة حاليًا عبر منصة Ascendra.",
+        },
+        governance: {
+          label: "الحوكمة",
+          title: "القواعد النشطة",
+          description:
+            "القواعد المحددة حاليًا كنشطة لسلوك المجتمع والبطولات.",
+        },
+        access: {
+          label: "الوصول",
+          title: "الأدوار النشطة",
+          description:
+            "أدوار المجتمع المنشورة حاليًا في دليل أدوار Ascendra.",
+        },
+        support: {
+          label: "الدعم",
+          title: "الفريق النشط",
+          description: "ملفات الفريق المرئية حاليًا في دليل الفريق العام.",
+        },
+      },
+    },
+  },
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const messages = communityMessages[locale].metadata;
+  return { title: messages.title, description: messages.description };
+}
 
 const monoStyle: CSSProperties = {
   fontFamily: "var(--font-mono, monospace)",
@@ -192,13 +444,16 @@ function StatTile({
   );
 }
 
-function DiscordCard() {
+function DiscordCard({
+  messages,
+}: {
+  messages: CommunityPageMessages["discordCard"];
+}) {
   return (
     <Panel
       className="p-0"
       style={{
-        background:
-          "var(--asc-discord-card-bg)",
+        background: "var(--asc-discord-card-bg)",
       }}
     >
       <div
@@ -216,10 +471,10 @@ function DiscordCard() {
               className="text-[10px] uppercase tracking-[0.18em]"
               style={{ ...monoStyle, color: "oklch(0.85 0.10 270)" }}
             >
-              Community
+              {messages.eyebrow}
             </p>
             <h2 className="mt-1 text-2xl" style={{ color: "var(--asc-fg-0)" }}>
-              The Ascendra Discord
+              {messages.title}
             </h2>
           </div>
         </div>
@@ -228,14 +483,13 @@ function DiscordCard() {
           className="mt-5 max-w-[440px] text-sm leading-6"
           style={{ color: "var(--asc-fg-1)" }}
         >
-          Open the dedicated Discord hub for live server status, bot commands,
-          role counts, and the server invite when configured.
+          {messages.description}
         </p>
 
         <div className="mt-6">
           <ButtonLink href="/discord" variant="discord">
             <DiscordGlyph size={22} />
-            Open Discord Hub
+            {messages.buttonLabel}
           </ButtonLink>
         </div>
       </div>
@@ -291,12 +545,14 @@ function DirectoryRow({
   label,
   value,
   description,
+  countLabel,
 }: {
   href: string;
   title: string;
   label: string;
   value: string | number;
   description: string;
+  countLabel: string;
 }) {
   return (
     <Link
@@ -323,7 +579,7 @@ function DirectoryRow({
           className="text-[10px] uppercase tracking-[0.14em]"
           style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
         >
-          Count
+          {countLabel}
         </p>
         <p
           className="mt-1 text-2xl font-black tabular-nums"
@@ -396,7 +652,8 @@ async function getCommunityStats(): Promise<CommunityStats> {
 }
 
 export default async function CommunityPage() {
-  const stats = await getCommunityStats();
+  const [stats, locale] = await Promise.all([getCommunityStats(), getLocale()]);
+  const messages = communityMessages[locale];
 
   return (
     <main
@@ -435,7 +692,7 @@ export default async function CommunityPage() {
                 className="text-[11px] uppercase tracking-[0.18em]"
                 style={{ ...monoStyle, color: "var(--asc-fg-2)" }}
               >
-                Community · Ascendra Native
+                {messages.hero.badge}
               </span>
             </div>
 
@@ -443,7 +700,7 @@ export default async function CommunityPage() {
               className="max-w-5xl text-[clamp(48px,6.4vw,108px)] leading-[0.92]"
               style={{ color: "var(--asc-fg-0)" }}
             >
-              The Ascendra
+              {messages.hero.titleLine1}
               <br />
               <span
                 style={{
@@ -453,7 +710,7 @@ export default async function CommunityPage() {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                Community.
+                {messages.hero.titleLine2}
               </span>
             </h1>
 
@@ -461,16 +718,17 @@ export default async function CommunityPage() {
               className="mt-[22px] max-w-[560px] text-[17px] leading-[1.55]"
               style={{ color: "var(--asc-fg-1)" }}
             >
-              The site-backed home for Ascendra players, teams, tournaments,
-              rules, roles, and staff resources.
+              {messages.hero.description}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <ButtonLink href="/discord" variant="discord">
                 <DiscordGlyph size={22} />
-                Open Discord Hub
+                {messages.hero.openDiscordHub}
               </ButtonLink>
-              <ButtonLink href="/tournaments">View tournaments</ButtonLink>
+              <ButtonLink href="/tournaments">
+                {messages.hero.viewTournaments}
+              </ButtonLink>
             </div>
           </div>
         </section>
@@ -478,108 +736,112 @@ export default async function CommunityPage() {
         <section className="mx-auto grid max-w-[1480px] gap-12 px-6 pb-20 pt-10 lg:px-10 2xl:px-14">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatTile
-              label="Active tournaments"
+              label={messages.stats.activeTournaments.label}
               value={stats.activeTournaments}
-              sub="Public events now open or upcoming"
+              sub={messages.stats.activeTournaments.sub}
               accent
             />
             <StatTile
-              label="Players"
+              label={messages.stats.players.label}
               value={stats.totalUsers}
-              sub="Registered Ascendra accounts"
+              sub={messages.stats.players.sub}
             />
             <StatTile
-              label="Teams"
+              label={messages.stats.teams.label}
               value={stats.totalTeams}
-              sub="Teams created on Ascendra"
+              sub={messages.stats.teams.sub}
             />
             <StatTile
-              label="Results"
+              label={messages.stats.results.label}
               value={stats.tournamentResults}
-              sub="Recorded tournament results"
+              sub={messages.stats.results.sub}
             />
           </div>
 
           <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px]">
             <div>
-              <SectionRule label="Platform-backed community" />
+              <SectionRule label={messages.features.sectionLabel} />
               <div className="grid gap-4 md:grid-cols-2">
                 <FeatureCard
                   index={1}
-                  title="Tournament hub"
-                  description="Browse public Ascendra tournaments without relying on Discord-only context."
+                  title={messages.features.cards.tournament.title}
+                  description={messages.features.cards.tournament.description}
                   href="/tournaments"
-                  label="Open tournaments"
+                  label={messages.features.cards.tournament.label}
                 />
                 <FeatureCard
                   index={2}
-                  title="Community rules"
-                  description="Read the active rulebook and role structure that guide community participation."
+                  title={messages.features.cards.rules.title}
+                  description={messages.features.cards.rules.description}
                   href="/rules"
-                  label="View rules"
+                  label={messages.features.cards.rules.label}
                 />
                 <FeatureCard
                   index={3}
-                  title="Leaderboard context"
-                  description="Follow community tournament points with Riot-safe ranking language and real results."
+                  title={messages.features.cards.leaderboard.title}
+                  description={messages.features.cards.leaderboard.description}
                   href="/leaderboard"
-                  label="Open leaderboard"
+                  label={messages.features.cards.leaderboard.label}
                 />
                 <FeatureCard
                   index={4}
-                  title="Staff directory"
-                  description="Find published staff contacts and community roles maintained inside Ascendra."
+                  title={messages.features.cards.staff.title}
+                  description={messages.features.cards.staff.description}
                   href="/staff"
-                  label="View staff"
+                  label={messages.features.cards.staff.label}
                 />
               </div>
             </div>
 
-            <DiscordCard />
+            <DiscordCard messages={messages.discordCard} />
           </section>
 
           <section>
-            <SectionRule label="Community directory" />
+            <SectionRule label={messages.directory.sectionLabel} />
             <Panel className="p-0">
               <div className="px-6 py-5">
                 <p
                   className="text-[10px] uppercase tracking-[0.18em]"
                   style={{ ...monoStyle, color: "var(--asc-accent)" }}
                 >
-                  Real platform data
+                  {messages.directory.eyebrow}
                 </p>
                 <h2 className="mt-2 text-2xl md:text-3xl" style={{ color: "var(--asc-fg-0)" }}>
-                  Ascendra community resources
+                  {messages.directory.title}
                 </h2>
               </div>
 
               <DirectoryRow
                 href="/tournaments"
-                label="Events"
-                title="Public tournaments"
+                label={messages.directory.rows.events.label}
+                title={messages.directory.rows.events.title}
                 value={stats.publicTournaments}
-                description="Published tournaments currently available through the Ascendra platform."
+                description={messages.directory.rows.events.description}
+                countLabel={messages.directory.countLabel}
               />
               <DirectoryRow
                 href="/rules"
-                label="Governance"
-                title="Active rules"
+                label={messages.directory.rows.governance.label}
+                title={messages.directory.rows.governance.title}
                 value={stats.activeRules}
-                description="Rules currently marked active for community and tournament conduct."
+                description={messages.directory.rows.governance.description}
+                countLabel={messages.directory.countLabel}
               />
               <DirectoryRow
                 href="/roles"
-                label="Access"
-                title="Active roles"
+                label={messages.directory.rows.access.label}
+                title={messages.directory.rows.access.title}
                 value={stats.activeRoles}
-                description="Community roles currently published in the Ascendra role directory."
+                description={messages.directory.rows.access.description}
+                countLabel={messages.directory.countLabel}
               />
               <DirectoryRow
                 href="/staff"
-                label="Support"
-                title="Active staff"
+                label={messages.directory.rows.support.label}
+                title={messages.directory.rows.support.title}
                 value={stats.activeStaff}
-                description="Staff profiles currently visible in the public staff directory."
+                description={messages.directory.rows.support.description}
+                countLabel={messages.directory.countLabel}
               />
             </Panel>
           </section>
