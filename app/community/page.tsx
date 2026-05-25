@@ -1,44 +1,139 @@
-import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
-import { getDictionary, type Locale } from "@/lib/i18n";
-import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale();
-  const messages = getDictionary(locale).community;
+export const metadata: Metadata = {
+  title: "Community | Ascendra",
+  description:
+    "Join the Ascendra community hub for tournaments, rules, roles, and Discord coordination.",
+};
 
-  return {
-    title: messages.metadata.title,
-    description: messages.metadata.description,
-  };
-}
+type CommunityStats = {
+  activeTournaments: number;
+  totalUsers: number;
+  totalTeams: number;
+  publicTournaments: number;
+  tournamentResults: number;
+  activeRules: number;
+  activeRoles: number;
+  activeStaff: number;
+};
+
+const monoStyle: CSSProperties = {
+  fontFamily: "var(--font-mono, monospace)",
+};
+
+const clippedStyle: CSSProperties = {
+  clipPath:
+    "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+};
 
 function CornerMark() {
+  return <div aria-hidden="true" className="asc-corner-mark" />;
+}
+
+function DiscordGlyph({ size = 48 }: { size?: number }) {
+  const iconSize = Math.round(size * 0.5);
+
   return (
     <div
-      aria-hidden="true"
-      className="asc-corner-mark"
+      className="grid shrink-0 place-items-center"
       style={{
-        position: "absolute",
-        top: 10,
-        left: 10,
-        width: 12,
-        height: 12,
-        borderTop: "1.5px solid var(--asc-accent)",
-        borderLeft: "1.5px solid var(--asc-accent)",
-        opacity: 0.9,
-        pointerEvents: "none",
-        zIndex: 30,
+        width: size,
+        height: size,
+        background: "oklch(0.62 0.18 270)",
+        clipPath:
+          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
       }}
-    />
+    >
+      <svg
+        aria-hidden="true"
+        width={iconSize}
+        height={Math.round(iconSize * 0.75)}
+        viewBox="0 0 24 18"
+        fill="oklch(0.98 0.01 290)"
+      >
+        <path d="M20.3 1.8a18 18 0 0 0-4.5-1.4l-.2.4c1.6.3 3 .9 4.3 1.7-1.6-.9-3.4-1.4-5.3-1.4S10.9.6 9.3 1.5c1.3-.8 2.7-1.4 4.3-1.7l-.2-.4A18 18 0 0 0 8.9 1.8C5.7 6.7 4.9 11.4 5.3 16c1.8 1.3 3.6 2 5.4 2.5l.4-.6a11 11 0 0 1-2.2-1.1c.2-.1.4-.2.5-.3 4.1 1.9 8.5 1.9 12.5 0 .2.1.4.2.5.3-.7.4-1.4.8-2.2 1.1l.4.6c1.8-.5 3.6-1.2 5.4-2.5.5-5.4-.8-10-2.7-14.2zM9.7 13.5c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2zm6.6 0c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2z" />
+      </svg>
+    </div>
+  );
+}
+
+function ButtonLink({
+  href,
+  children,
+  variant = "ghost",
+  external = false,
+}: {
+  href: string;
+  children: ReactNode;
+  variant?: "discord" | "ghost";
+  external?: boolean;
+}) {
+  const style: CSSProperties = {
+    ...clippedStyle,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    padding: "16px 26px",
+    fontFamily: "var(--font-display)",
+    fontSize: 14,
+    fontWeight: 700,
+    letterSpacing: "0.14em",
+    textTransform: "uppercase",
+    textDecoration: "none",
+    border:
+      variant === "discord"
+        ? "1px solid oklch(0.62 0.18 270)"
+        : "1px solid var(--asc-line)",
+    background:
+      variant === "discord" ? "oklch(0.62 0.18 270)" : "transparent",
+    color: "oklch(0.98 0.01 290)",
+  };
+
+  if (external) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" style={style}>
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} style={style}>
+      {children}
+    </Link>
+  );
+}
+
+function DisabledDiscordButton() {
+  return (
+    <span
+      aria-disabled="true"
+      className="inline-flex items-center justify-center gap-2"
+      style={{
+        ...clippedStyle,
+        padding: "16px 26px",
+        fontFamily: "var(--font-display)",
+        fontSize: 14,
+        fontWeight: 700,
+        letterSpacing: "0.14em",
+        textTransform: "uppercase",
+        border: "1px solid var(--asc-line-soft)",
+        background: "oklch(0.14 0.04 285 / 0.65)",
+        color: "var(--asc-fg-3)",
+      }}
+    >
+      Join server unavailable
+    </span>
   );
 }
 
@@ -55,10 +150,9 @@ function Panel({
     <section
       className={`relative overflow-hidden border shadow-2xl shadow-black/20 ${className}`}
       style={{
+        ...clippedStyle,
         borderColor: "var(--asc-line-soft)",
         background: "var(--asc-bg-1)",
-        clipPath:
-          "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
         ...style,
       }}
     >
@@ -68,257 +162,280 @@ function Panel({
   );
 }
 
-function PanelHeader({ label, title }: { label: string; title: string }) {
+function SectionRule({ label }: { label: string }) {
   return (
-    <div
-      className="px-6 py-5"
-      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-    >
-      <p
-        className="text-xs font-black uppercase tracking-[0.18em]"
-        style={{ color: "var(--asc-accent)" }}
+    <div className="mb-6 flex items-center gap-4">
+      <span
+        className="text-[10px] uppercase tracking-[0.18em]"
+        style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
       >
-        ▲ {label}
-      </p>
-
-      <h2
-        className="mt-2 text-2xl md:text-3xl"
-        style={{ color: "var(--asc-fg-0)" }}
-      >
-        {title}
-      </h2>
+        <span style={{ color: "var(--asc-accent)" }}>▲</span> {label}
+      </span>
+      <span className="h-px flex-1" style={{ background: "var(--asc-line-soft)" }} />
     </div>
   );
 }
 
-function StatCard({
+function StatTile({
   label,
   value,
-  accent,
+  sub,
+  accent = false,
 }: {
   label: string;
   value: string | number;
+  sub: string;
   accent?: boolean;
 }) {
   return (
-    <div
-      className="relative border p-5"
+    <Panel className="p-6">
+      <div className="relative z-10">
+        <p
+          className="text-[10px] uppercase tracking-[0.14em]"
+          style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
+        >
+          {label}
+        </p>
+        <p
+          className="mt-3 text-[32px] font-black leading-none tabular-nums"
+          style={{
+            fontFamily: "var(--font-display)",
+            color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
+          }}
+        >
+          {value}
+        </p>
+        <p
+          className="mt-3 text-[10px] uppercase tracking-[0.08em]"
+          style={{ ...monoStyle, color: "var(--asc-green)" }}
+        >
+          {sub}
+        </p>
+      </div>
+    </Panel>
+  );
+}
+
+function DiscordCard({ inviteUrl }: { inviteUrl: string | null }) {
+  return (
+    <Panel
+      className="p-0"
       style={{
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        clipPath:
-          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
+        background:
+          "linear-gradient(135deg, oklch(0.30 0.18 270 / 0.88) 0%, oklch(0.12 0.05 280 / 0.96) 60%, oklch(0.08 0.03 285) 100%)",
       }}
     >
-      <CornerMark />
-
-      <p
-        className="text-[10px] font-black uppercase tracking-[0.18em]"
-        style={{ color: "var(--asc-fg-3)" }}
-      >
-        {label}
-      </p>
-
-      <p
-        className="mt-3 text-4xl font-black tabular-nums"
+      <div
+        className="absolute inset-0"
         style={{
-          color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
-          fontFamily: "var(--font-display)",
+          background:
+            "radial-gradient(circle at 82% 18%, oklch(0.62 0.18 270 / 0.24), transparent 42%)",
         }}
-      >
-        {value}
-      </p>
-    </div>
+      />
+      <div className="relative z-10 p-6 md:p-8">
+        <div className="flex items-center gap-4">
+          <DiscordGlyph />
+          <div>
+            <p
+              className="text-[10px] uppercase tracking-[0.18em]"
+              style={{ ...monoStyle, color: "oklch(0.85 0.10 270)" }}
+            >
+              Community
+            </p>
+            <h2 className="mt-1 text-2xl" style={{ color: "var(--asc-fg-0)" }}>
+              The Ascendra Discord
+            </h2>
+          </div>
+        </div>
+
+        <p
+          className="mt-5 max-w-[440px] text-sm leading-6"
+          style={{ color: "var(--asc-fg-1)" }}
+        >
+          Join the Discord for live community coordination while keeping
+          tournaments, rules, roles, and rankings available here on Ascendra.
+        </p>
+
+        <div className="mt-6">
+          {inviteUrl ? (
+            <ButtonLink href={inviteUrl} variant="discord" external>
+              <DiscordGlyph size={22} />
+              Join the server
+            </ButtonLink>
+          ) : (
+            <DisabledDiscordButton />
+          )}
+        </div>
+
+        {!inviteUrl && (
+          <p className="mt-4 text-xs leading-5" style={{ color: "var(--asc-fg-3)" }}>
+            Discord invite is not configured yet.
+          </p>
+        )}
+      </div>
+    </Panel>
   );
 }
 
-function PrimaryLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className="inline-flex justify-center px-6 py-3 text-sm font-black uppercase tracking-[0.08em] text-white shadow-lg transition hover:opacity-90"
-      style={{
-        background: "var(--asc-accent-2)",
-        boxShadow: "0 0 20px var(--asc-accent-glow)",
-        clipPath:
-          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-      }}
-    >
-      {children}
-    </Link>
-  );
-}
-
-function SecondaryLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className="inline-flex justify-center border px-6 py-3 text-sm font-black uppercase tracking-[0.08em] transition hover:opacity-80"
-      style={{
-        borderColor: "var(--asc-line)",
-        color: "var(--asc-fg-2)",
-        clipPath:
-          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-      }}
-    >
-      {children}
-    </Link>
-  );
-}
-
-function CommunityRow({
-  href,
-  label,
+function FeatureCard({
+  index,
   title,
   description,
-  openLabel,
-  locale,
+  href,
+  label,
 }: {
-  href: string;
-  label: string;
+  index: number;
   title: string;
   description: string;
-  openLabel: string;
-  locale: Locale;
+  href: string;
+  label: string;
 }) {
   return (
-    <Link
-      href={href}
-      className="group grid gap-4 px-6 py-5 transition hover:bg-[oklch(0.20_0.10_285_/_0.08)] md:grid-cols-[150px_minmax(0,1fr)_110px] md:items-center"
-      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-    >
-      <p
-        className="text-xs font-black uppercase tracking-[0.16em]"
-        style={{ color: "var(--asc-accent)" }}
-      >
-        {label}
-      </p>
-
-      <div>
+    <Panel className="p-6 md:p-7">
+      <div className="relative z-10">
+        <p
+          className="mb-4 text-4xl font-black leading-none"
+          style={{
+            fontFamily: "var(--font-display)",
+            color: "var(--asc-accent)",
+          }}
+        >
+          {String(index).padStart(2, "0")}
+        </p>
         <h3 className="text-xl" style={{ color: "var(--asc-fg-0)" }}>
           {title}
         </h3>
-
-        <p
-          className="mt-2 max-w-3xl text-sm leading-6"
-          style={{ color: "var(--asc-fg-3)" }}
+        <p className="mt-3 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
+          {description}
+        </p>
+        <Link
+          href={href}
+          className="mt-5 inline-flex text-[11px] font-black uppercase tracking-[0.14em]"
+          style={{ ...monoStyle, color: "var(--asc-accent)", textDecoration: "none" }}
         >
+          {label} <span aria-hidden="true">&nbsp;›</span>
+        </Link>
+      </div>
+    </Panel>
+  );
+}
+
+function DirectoryRow({
+  href,
+  title,
+  label,
+  value,
+  description,
+}: {
+  href: string;
+  title: string;
+  label: string;
+  value: string | number;
+  description: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="grid gap-4 px-6 py-5 transition hover:bg-[oklch(0.20_0.10_285_/_0.08)] md:grid-cols-[minmax(0,1fr)_140px_32px] md:items-center"
+      style={{ borderTop: "1px solid var(--asc-line-soft)", textDecoration: "none" }}
+    >
+      <div>
+        <p
+          className="text-[10px] uppercase tracking-[0.16em]"
+          style={{ ...monoStyle, color: "var(--asc-accent)" }}
+        >
+          {label}
+        </p>
+        <h3 className="mt-2 text-lg" style={{ color: "var(--asc-fg-0)" }}>
+          {title}
+        </h3>
+        <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
           {description}
         </p>
       </div>
-
-      <span
-        className="text-sm font-black transition group-hover:translate-x-1 md:text-right rtl:md:text-left"
-        style={{ color: "var(--asc-fg-3)" }}
-      >
-        {openLabel} {locale === "ar" ? "←" : "→"}
+      <div className="md:text-right">
+        <p
+          className="text-[10px] uppercase tracking-[0.14em]"
+          style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
+        >
+          Count
+        </p>
+        <p
+          className="mt-1 text-2xl font-black tabular-nums"
+          style={{ fontFamily: "var(--font-display)", color: "var(--asc-fg-0)" }}
+        >
+          {value}
+        </p>
+      </div>
+      <span className="text-2xl" style={{ color: "var(--asc-fg-3)" }}>
+        ›
       </span>
     </Link>
   );
 }
 
-function Step({
-  number,
-  title,
-  description,
-}: {
-  number: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <article
-      className="grid gap-4 px-6 py-5 md:grid-cols-[90px_180px_minmax(0,1fr)] md:items-center"
-      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-    >
-      <p
-        className="text-5xl font-black leading-none"
-        style={{
-          color: "var(--asc-accent)",
-          fontFamily: "var(--font-display)",
-        }}
-      >
-        {number}
-      </p>
-
-      <h3 className="text-lg" style={{ color: "var(--asc-fg-0)" }}>
-        {title}
-      </h3>
-
-      <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
-        {description}
-      </p>
-    </article>
-  );
-}
-
-function DiscordGlyph() {
-  return (
-    <div
-      className="grid h-12 w-12 shrink-0 place-items-center"
-      style={{
-        background: "oklch(0.62 0.18 270)",
-        clipPath:
-          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-      }}
-    >
-      <svg
-        width="24"
-        height="18"
-        viewBox="0 0 24 18"
-        fill="oklch(0.98 0.01 290)"
-      >
-        <path d="M20.3 1.8a18 18 0 0 0-4.5-1.4l-.2.4c1.6.3 3 .9 4.3 1.7-1.6-.9-3.4-1.4-5.3-1.4S10.9.6 9.3 1.5c1.3-.8 2.7-1.4 4.3-1.7l-.2-.4A18 18 0 0 0 8.9 1.8C5.7 6.7 4.9 11.4 5.3 16c1.8 1.3 3.6 2 5.4 2.5l.4-.6a11 11 0 0 1-2.2-1.1c.2-.1.4-.2.5-.3 4.1 1.9 8.5 1.9 12.5 0 .2.1.4.2.5.3-.7.4-1.4.8-2.2 1.1l.4.6c1.8-.5 3.6-1.2 5.4-2.5.5-5.4-.8-10-2.7-14.2zM9.7 13.5c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2zm6.6 0c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2z" />
-      </svg>
-    </div>
-  );
-}
-
-export default async function CommunityPage() {
-  const locale = await getLocale();
-  const messages = getDictionary(locale).community;
-
+async function getCommunityStats(): Promise<CommunityStats> {
   const [
+    activeTournaments,
+    totalUsers,
+    totalTeams,
+    publicTournaments,
+    tournamentResults,
     activeRules,
     activeRoles,
     activeStaff,
-    tournaments,
-    tournamentResults,
   ] = await Promise.all([
+    prisma.tournament.count({
+      where: {
+        visibility: "public",
+        status: {
+          in: ["open", "upcoming"],
+        },
+      },
+    }),
+    prisma.user.count(),
+    prisma.team.count(),
+    prisma.tournament.count({
+      where: {
+        visibility: "public",
+      },
+    }),
+    prisma.tournamentResult.count(),
     prisma.rule.count({
       where: {
         isActive: true,
       },
     }),
-
     prisma.role.count({
       where: {
         isActive: true,
       },
     }),
-
     prisma.staffMember.count({
       where: {
         isActive: true,
       },
     }),
-
-    prisma.tournament.count(),
-
-    prisma.tournamentResult.count(),
   ]);
+
+  return {
+    activeTournaments,
+    totalUsers,
+    totalTeams,
+    publicTournaments,
+    tournamentResults,
+    activeRules,
+    activeRoles,
+    activeStaff,
+  };
+}
+
+export default async function CommunityPage() {
+  const [stats, rawInviteUrl] = await Promise.all([
+    getCommunityStats(),
+    Promise.resolve(process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim() || null),
+  ]);
+  const inviteUrl = rawInviteUrl || null;
 
   return (
     <main
@@ -328,164 +445,186 @@ export default async function CommunityPage() {
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[520px] overflow-hidden">
+        <section className="relative flex min-h-[460px] items-end overflow-hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center"
+            className="absolute inset-0 bg-cover bg-center opacity-[0.55]"
+            style={{ backgroundImage: 'url("/images/backgrounds/community-hero.webp")' }}
+          />
+          <div
+            className="absolute inset-0"
             style={{
-              backgroundImage: 'url("/images/backgrounds/community-hero.webp")',
+              background:
+                "radial-gradient(circle at 70% 50%, oklch(0.42 0.20 270 / 0.30), transparent 60%)",
             }}
           />
-
           <div
             className="absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.28) 0%, oklch(0.07 0.025 285 / 0.62) 52%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.42) 38%, transparent 72%)",
+                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.34) 0%, oklch(0.07 0.025 285 / 0.58) 45%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.42) 35%, transparent 70%)",
               ].join(", "),
             }}
           />
 
-          <div
-            className="absolute inset-x-0 bottom-0 h-48"
-            style={{
-              background:
-                "linear-gradient(to bottom, transparent, var(--asc-bg-0))",
-            }}
-          />
-
-          <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-32 pt-24 lg:px-10">
-            <p
-              className="mb-4 text-xs font-black uppercase tracking-[0.22em]"
-              style={{ color: "var(--asc-accent)" }}
-            >
-              ▲ {messages.hero.label}
-            </p>
+          <div className="relative z-10 mx-auto w-full max-w-[1480px] px-6 pb-9 pt-24 lg:px-10 2xl:px-14">
+            <div className="mb-[18px] flex items-center gap-3">
+              <DiscordGlyph />
+              <span
+                className="text-[11px] uppercase tracking-[0.18em]"
+                style={{ ...monoStyle, color: "var(--asc-fg-2)" }}
+              >
+                Community · Discord Native
+              </span>
+            </div>
 
             <h1
-              className="max-w-5xl text-5xl md:text-7xl"
+              className="max-w-5xl text-[clamp(48px,6.4vw,108px)] leading-[0.92]"
               style={{ color: "var(--asc-fg-0)" }}
             >
-              {messages.hero.title}
+              The Ascendra
+              <br />
+              <span
+                style={{
+                  background:
+                    "linear-gradient(92deg, oklch(0.72 0.20 270) 0%, var(--asc-accent) 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                Discord.
+              </span>
             </h1>
 
             <p
-              className="mt-5 max-w-2xl text-base leading-7"
-              style={{ color: "var(--asc-fg-2)" }}
+              className="mt-[22px] max-w-[560px] text-[17px] leading-[1.55]"
+              style={{ color: "var(--asc-fg-1)" }}
             >
-              {messages.hero.description}
+              The community layer around Ascendra tournaments. Join Discord for
+              live coordination, or browse tournaments, rules, roles, and
+              rankings directly on the site.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <PrimaryLink href="/tournaments">
-                {messages.hero.primary}
-              </PrimaryLink>
-
-              <SecondaryLink href="/rules">
-                {messages.hero.secondary}
-              </SecondaryLink>
+              {inviteUrl ? (
+                <ButtonLink href={inviteUrl} variant="discord" external>
+                  <DiscordGlyph size={22} />
+                  Join the server
+                </ButtonLink>
+              ) : (
+                <DisabledDiscordButton />
+              )}
+              <ButtonLink href="/tournaments">View tournaments</ButtonLink>
             </div>
           </div>
         </section>
 
-        <section className="relative -mt-16 mx-auto grid max-w-[1440px] gap-10 px-6 pb-20 lg:px-10">
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            <StatCard label={messages.stats.rules} value={activeRules} />
-            <StatCard label={messages.stats.roles} value={activeRoles} />
-            <StatCard label={messages.stats.staff} value={activeStaff} />
-            <StatCard label={messages.stats.tournaments} value={tournaments} />
-            <StatCard
-              label={messages.stats.results}
-              value={tournamentResults}
+        <section className="mx-auto grid max-w-[1480px] gap-12 px-6 pb-20 pt-10 lg:px-10 2xl:px-14">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <StatTile
+              label="Active tournaments"
+              value={stats.activeTournaments}
+              sub="Public events now open or upcoming"
               accent
             />
+            <StatTile
+              label="Players"
+              value={stats.totalUsers}
+              sub="Registered Ascendra accounts"
+            />
+            <StatTile
+              label="Teams"
+              value={stats.totalTeams}
+              sub="Teams created on Ascendra"
+            />
+            <StatTile
+              label="Results"
+              value={stats.tournamentResults}
+              sub="Recorded tournament results"
+            />
+          </div>
+
+          <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px]">
+            <div>
+              <SectionRule label="Platform-backed community" />
+              <div className="grid gap-4 md:grid-cols-2">
+                <FeatureCard
+                  index={1}
+                  title="Tournament hub"
+                  description="Browse public Ascendra tournaments without relying on Discord-only context."
+                  href="/tournaments"
+                  label="Open tournaments"
+                />
+                <FeatureCard
+                  index={2}
+                  title="Community rules"
+                  description="Read the active rulebook and role structure that guide community participation."
+                  href="/rules"
+                  label="View rules"
+                />
+                <FeatureCard
+                  index={3}
+                  title="Leaderboard context"
+                  description="Follow community tournament points with Riot-safe ranking language and real results."
+                  href="/leaderboard"
+                  label="Open leaderboard"
+                />
+                <FeatureCard
+                  index={4}
+                  title="Staff directory"
+                  description="Find published staff contacts and community roles maintained inside Ascendra."
+                  href="/staff"
+                  label="View staff"
+                />
+              </div>
+            </div>
+
+            <DiscordCard inviteUrl={inviteUrl} />
           </section>
 
-          <Panel>
-            <PanelHeader
-              label={messages.directory.label}
-              title={messages.directory.title}
-            />
-
-            <div>
-              {messages.directory.links.map((link) => (
-                <CommunityRow
-                  key={link.href}
-                  href={link.href}
-                  label={link.label}
-                  title={link.title}
-                  description={link.description}
-                  openLabel={messages.directory.open}
-                  locale={locale}
-                />
-              ))}
-            </div>
-          </Panel>
-
-          <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
-            <Panel>
-              <PanelHeader
-                label={messages.flow.label}
-                title={messages.flow.title}
-              />
-
-              <div>
-                {messages.flow.steps.map((step) => (
-                  <Step
-                    key={step.number}
-                    number={step.number}
-                    title={step.title}
-                    description={step.description}
-                  />
-                ))}
-              </div>
-            </Panel>
-
-            <Panel
-              className="p-6"
-              style={{
-                background:
-                  "linear-gradient(135deg, oklch(0.30 0.18 270 / 0.82) 0%, oklch(0.12 0.05 280 / 0.96) 58%, oklch(0.08 0.03 285) 100%)",
-              }}
-            >
-              <div className="relative z-10">
-                <div className="flex items-start gap-4">
-                  <DiscordGlyph />
-
-                  <div>
-                    <p
-                      className="text-[10px] font-black uppercase tracking-[0.18em]"
-                      style={{ color: "var(--asc-fg-3)" }}
-                    >
-                      {messages.quickAccess.label}
-                    </p>
-
-                    <h2
-                      className="mt-1 text-2xl"
-                      style={{ color: "var(--asc-fg-0)" }}
-                    >
-                      {messages.quickAccess.title}
-                    </h2>
-                  </div>
-                </div>
-
+          <section>
+            <SectionRule label="Community directory" />
+            <Panel className="p-0">
+              <div className="px-6 py-5">
                 <p
-                  className="mt-5 text-sm leading-7"
-                  style={{ color: "var(--asc-fg-2)" }}
+                  className="text-[10px] uppercase tracking-[0.18em]"
+                  style={{ ...monoStyle, color: "var(--asc-accent)" }}
                 >
-                  {messages.quickAccess.description}
+                  Real platform data
                 </p>
-
-                <div className="mt-7 grid gap-3">
-                  <PrimaryLink href="/profile">
-                    {messages.quickAccess.profile}
-                  </PrimaryLink>
-
-                  <SecondaryLink href="/leaderboard">
-                    {messages.quickAccess.leaderboard}
-                  </SecondaryLink>
-                </div>
+                <h2 className="mt-2 text-2xl md:text-3xl" style={{ color: "var(--asc-fg-0)" }}>
+                  Ascendra community resources
+                </h2>
               </div>
+
+              <DirectoryRow
+                href="/tournaments"
+                label="Events"
+                title="Public tournaments"
+                value={stats.publicTournaments}
+                description="Published tournaments currently available through the Ascendra platform."
+              />
+              <DirectoryRow
+                href="/rules"
+                label="Governance"
+                title="Active rules"
+                value={stats.activeRules}
+                description="Rules currently marked active for community and tournament conduct."
+              />
+              <DirectoryRow
+                href="/roles"
+                label="Access"
+                title="Active roles"
+                value={stats.activeRoles}
+                description="Community roles currently published in the Ascendra role directory."
+              />
+              <DirectoryRow
+                href="/staff"
+                label="Support"
+                title="Active staff"
+                value={stats.activeStaff}
+                description="Staff profiles currently visible in the public staff directory."
+              />
             </Panel>
           </section>
         </section>
