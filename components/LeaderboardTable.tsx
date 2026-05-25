@@ -8,6 +8,31 @@ type LeaderboardTableProps = {
   currentUserId?: string;
 };
 
+type PodiumEntry = {
+  user: LeaderboardUser;
+  visualPlace: 1 | 2 | 3;
+};
+
+function CrownIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0"
+    >
+      <path d="m3 7 4.5 4 4.5-7 4.5 7L21 7l-2 11H5L3 7Z" />
+      <path d="M5 21h14" />
+    </svg>
+  );
+}
+
 function Pill({
   children,
   tone = "gray",
@@ -48,11 +73,6 @@ function Pill({
   );
 }
 
-function RankBadge({ rank }: { rank: number }) {
-  const tone = rank === 1 ? "green" : rank <= 3 ? "blue" : "violet";
-  return <Pill tone={tone}>#{rank}</Pill>;
-}
-
 function TierBadge({ tier }: { tier: string }) {
   return (
     <span
@@ -83,16 +103,24 @@ function RankingRow({
 }) {
   return (
     <article
-      className="grid gap-4 px-5 py-4 transition md:grid-cols-[64px_minmax(0,1fr)_130px_110px_120px_120px] md:items-center"
+      className="asc-leaderboard-row grid gap-4 px-[18px] py-3 md:grid-cols-[64px_minmax(0,1fr)_130px_110px_120px_120px] md:items-center"
       style={{
         borderBottom: "1px solid var(--asc-line-soft)",
-        background: isCurrentUser ? "oklch(0.20 0.12 285 / 0.15)" : "transparent",
+        background: isCurrentUser ? "oklch(0.20 0.12 285 / 0.15)" : undefined,
         borderLeft: isCurrentUser
           ? "2px solid var(--asc-accent)"
           : "2px solid transparent",
       }}
     >
-      <RankBadge rank={user.rank} />
+      <span
+        className="text-xs font-black tabular-nums"
+        style={{
+          color: "var(--asc-fg-3)",
+          fontFamily: "var(--font-mono, monospace)",
+        }}
+      >
+        {String(user.rank).padStart(2, "0")}
+      </span>
 
       <div className="flex min-w-0 items-center gap-3">
         <LeaderboardAvatar name={user.username} src={user.avatar} size={38} />
@@ -145,47 +173,104 @@ function PodiumCard({
   user,
   messages,
   isCurrentUser,
+  visualPlace,
 }: {
   user: LeaderboardUser;
   messages: LeaderboardMessages["table"];
   isCurrentUser: boolean;
+  visualPlace: 1 | 2 | 3;
 }) {
-  const rank = user.rank;
-  const isFirst = rank === 1;
+  const isFirst = visualPlace === 1;
+  const rankTone = isFirst
+    ? "oklch(0.84 0.14 85)"
+    : visualPlace === 2
+      ? "oklch(0.78 0.04 290)"
+      : "oklch(0.72 0.05 285)";
+  const ghostSize = isFirst ? 200 : 140;
 
   return (
     <article
-      className="relative overflow-hidden border p-5 shadow-2xl"
+      className="relative border shadow-2xl"
       style={{
-        borderColor: isFirst ? "oklch(0.50 0.20 285 / 0.45)" : "var(--asc-line-soft)",
+        overflow: "hidden",
+        borderColor: isFirst
+          ? "oklch(0.50 0.20 285 / 0.45)"
+          : "var(--asc-line-soft)",
         background: isFirst
-          ? "linear-gradient(180deg, oklch(0.18 0.10 285 / 0.5) 0%, var(--asc-bg-1) 100%)"
+          ? "linear-gradient(180deg, oklch(0.18 0.10 285 / 0.62) 0%, var(--asc-bg-1) 100%)"
           : "var(--asc-bg-1)",
-        marginBottom: rank !== 1 ? 24 : 0,
+        boxShadow: isFirst
+          ? "0 24px 70px oklch(0.50 0.20 285 / 0.18)"
+          : "0 18px 48px oklch(0.05 0.02 285 / 0.34)",
+        clipPath:
+          "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+        marginBottom: visualPlace !== 1 ? 24 : 0,
+        minHeight: isFirst ? 286 : 244,
+        padding: isFirst ? "32px 20px" : "20px",
       }}
     >
       <div aria-hidden="true" className="asc-corner-mark" />
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: -10,
+          right: -8,
+          color: "oklch(1 0 0)",
+          fontFamily: "var(--font-display)",
+          fontSize: ghostSize,
+          fontWeight: 700,
+          lineHeight: 0.9,
+          letterSpacing: "-0.02em",
+          opacity: 0.04,
+          pointerEvents: "none",
+          userSelect: "none",
+        }}
+      >
+        0{visualPlace}
+      </div>
+      {isFirst && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: -40,
+            right: -40,
+            width: 220,
+            height: 220,
+            background:
+              "radial-gradient(circle, var(--asc-accent-glow) 0%, transparent 60%)",
+            pointerEvents: "none",
+          }}
+        />
+      )}
 
       <div className="relative flex items-center gap-2">
         <span
           className="font-black"
           style={{
-            fontSize: 32,
-            color: isFirst ? "var(--asc-accent)" : "var(--asc-fg-0)",
-            textShadow: isFirst ? "0 0 20px var(--asc-accent)" : "none",
+            color: rankTone,
             fontFamily: "var(--font-display)",
+            fontSize: 32,
+            fontWeight: 700,
             lineHeight: 1,
+            textShadow: isFirst ? `0 0 24px ${rankTone}` : "none",
           }}
         >
-          #{rank}
+          #{visualPlace}
         </span>
+        {isFirst && (
+          <span style={{ color: rankTone }}>
+            <CrownIcon />
+          </span>
+        )}
       </div>
 
       <div className="relative mt-5 flex items-center gap-3">
         <LeaderboardAvatar
           name={user.username}
           src={user.avatar}
-          size={rank === 1 ? 64 : 52}
+          size={isFirst ? 64 : 52}
         />
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
@@ -193,8 +278,10 @@ function PodiumCard({
               className="truncate font-black uppercase"
               style={{
                 color: "var(--asc-fg-0)",
-                fontSize: rank === 1 ? 22 : 18,
+                fontSize: isFirst ? 22 : 18,
                 fontFamily: "var(--font-display)",
+                fontWeight: 700,
+                letterSpacing: "0.04em",
                 lineHeight: 1.1,
               }}
             >
@@ -226,7 +313,7 @@ function PodiumCard({
       <div className="grid grid-cols-3 gap-3">
         <div>
           <p
-            className="text-[9px] font-black uppercase tracking-[0.14em]"
+            className="asc-leaderboard-stat-label text-[9px] font-black uppercase tracking-[0.14em]"
             style={{ color: "var(--asc-fg-3)" }}
           >
             {messages.points}
@@ -235,7 +322,7 @@ function PodiumCard({
             className="mt-1 font-black tabular-nums"
             style={{
               color: "var(--asc-accent)",
-              fontSize: rank === 1 ? 24 : 20,
+              fontSize: isFirst ? 24 : 20,
               fontFamily: "var(--font-display)",
             }}
           >
@@ -244,7 +331,7 @@ function PodiumCard({
         </div>
         <div>
           <p
-            className="text-[9px] font-black uppercase tracking-[0.14em]"
+            className="asc-leaderboard-stat-label text-[9px] font-black uppercase tracking-[0.14em]"
             style={{ color: "var(--asc-fg-3)" }}
           >
             {messages.results}
@@ -253,7 +340,7 @@ function PodiumCard({
             className="mt-1 font-black tabular-nums"
             style={{
               color: "var(--asc-fg-0)",
-              fontSize: rank === 1 ? 24 : 20,
+              fontSize: isFirst ? 24 : 20,
               fontFamily: "var(--font-display)",
             }}
           >
@@ -262,7 +349,7 @@ function PodiumCard({
         </div>
         <div>
           <p
-            className="text-[9px] font-black uppercase tracking-[0.14em]"
+            className="asc-leaderboard-stat-label text-[9px] font-black uppercase tracking-[0.14em]"
             style={{ color: "var(--asc-fg-3)" }}
           >
             {messages.best}
@@ -271,7 +358,7 @@ function PodiumCard({
             className="mt-1 font-black tabular-nums"
             style={{
               color: "var(--asc-fg-0)",
-              fontSize: rank === 1 ? 24 : 20,
+              fontSize: isFirst ? 24 : 20,
               fontFamily: "var(--font-display)",
             }}
           >
@@ -283,90 +370,142 @@ function PodiumCard({
   );
 }
 
+function getPodiumEntries(users: LeaderboardUser[]): PodiumEntry[] {
+  const topThree = users.slice(0, 3);
+
+  if (topThree.length >= 3) {
+    return [
+      { user: topThree[1], visualPlace: 2 },
+      { user: topThree[0], visualPlace: 1 },
+      { user: topThree[2], visualPlace: 3 },
+    ];
+  }
+
+  if (topThree.length === 2) {
+    return [
+      { user: topThree[1], visualPlace: 2 },
+      { user: topThree[0], visualPlace: 1 },
+    ];
+  }
+
+  if (topThree.length === 1) {
+    return [{ user: topThree[0], visualPlace: 1 }];
+  }
+
+  return [];
+}
+
+function PodiumSection({
+  users,
+  messages,
+  currentUserId,
+}: LeaderboardTableProps) {
+  const podiumEntries = getPodiumEntries(users);
+
+  if (podiumEntries.length === 0) {
+    return null;
+  }
+
+  const gridClassName =
+    podiumEntries.length === 1
+      ? "grid gap-4 lg:mx-auto lg:max-w-[460px]"
+      : "grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)] lg:items-end";
+
+  return (
+    <section className="mb-8">
+      <div className={gridClassName}>
+        {podiumEntries.map(({ user, visualPlace }) => (
+          <PodiumCard
+            key={user.id}
+            user={user}
+            messages={messages}
+            visualPlace={visualPlace}
+            isCurrentUser={
+              currentUserId !== undefined && String(user.id) === currentUserId
+            }
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function LeaderboardTable({
   users,
   messages,
   currentUserId,
 }: LeaderboardTableProps) {
-  const topThree = users.slice(0, 3);
   const remaining = users.slice(3);
-  const podiumOrder =
-    topThree.length === 3
-      ? [topThree[1], topThree[0], topThree[2]]
-      : topThree;
 
   return (
-    <section
-      className="overflow-hidden border shadow-2xl"
-      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-    >
-      <div
-        className="px-5 py-4"
-        style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-      >
-        <p
-          className="text-xs font-black uppercase tracking-[0.16em]"
-          style={{ color: "var(--asc-accent)" }}
-        >
-          {messages.playerRanking}
-        </p>
-        <h2 className="mt-1 text-xl" style={{ color: "var(--asc-fg-0)" }}>
-          {messages.standings}
-        </h2>
-      </div>
-
-      {topThree.length > 0 && (
-        <div
-          className="grid gap-4 p-5 lg:items-end"
-          style={{
-            borderBottom: "1px solid var(--asc-line-soft)",
-            gridTemplateColumns:
-              topThree.length === 3 ? "1fr 1.15fr 1fr" : undefined,
-          }}
-        >
-          {podiumOrder.map((user) => (
-            <PodiumCard
-              key={user.id}
-              user={user}
-              messages={messages}
-              isCurrentUser={
-                currentUserId !== undefined && String(user.id) === currentUserId
-              }
-            />
-          ))}
-        </div>
-      )}
+    <>
+      <PodiumSection
+        users={users}
+        messages={messages}
+        currentUserId={currentUserId}
+      />
 
       {remaining.length > 0 && (
-        <div>
-          <div
-            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] md:grid md:grid-cols-[64px_minmax(0,1fr)_130px_110px_120px_120px]"
-            style={{
-              borderBottom: "1px solid var(--asc-line-soft)",
-              background: "var(--asc-bg-2)",
-              color: "var(--asc-fg-3)",
-            }}
-          >
-            <span>{messages.rank}</span>
-            <span>{messages.player}</span>
-            <span>{messages.tier}</span>
-            <span>{messages.points}</span>
-            <span>{messages.results}</span>
-            <span>{messages.best}</span>
+        <div className="mt-8">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p
+                className="text-xs font-black uppercase tracking-[0.16em]"
+                style={{
+                  color: "var(--asc-accent)",
+                  fontFamily: "var(--font-mono, monospace)",
+                }}
+              >
+                Ranks 4 &ndash; 100
+              </p>
+              <h2 className="mt-1 text-3xl" style={{ color: "var(--asc-fg-0)" }}>
+                Ascendra Ladder
+              </h2>
+            </div>
           </div>
 
-          <div>
-            {remaining.map((user) => (
-              <RankingRow
-                key={user.id}
-                user={user}
-                messages={messages}
-                isCurrentUser={
-                  currentUserId !== undefined && String(user.id) === currentUserId
-                }
-              />
-            ))}
-          </div>
+          <section
+            className="relative border shadow-2xl"
+            style={{
+              overflow: "hidden",
+              borderColor: "var(--asc-line-soft)",
+              background: "var(--asc-bg-1)",
+              clipPath:
+                "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+            }}
+          >
+            <div aria-hidden="true" className="asc-corner-mark" />
+            <div
+              className="hidden px-[18px] py-[10px] text-[10px] font-black uppercase tracking-[0.16em] md:grid md:grid-cols-[64px_minmax(0,1fr)_130px_110px_120px_120px]"
+              style={{
+                borderBottom: "1px solid var(--asc-line-soft)",
+                background: "oklch(0.08 0.03 285)",
+                color: "var(--asc-fg-3)",
+                fontFamily: "var(--font-mono, monospace)",
+              }}
+            >
+              <span>{messages.rank}</span>
+              <span>{messages.player}</span>
+              <span>{messages.tier}</span>
+              <span>{messages.points}</span>
+              <span>{messages.results}</span>
+              <span>{messages.best}</span>
+            </div>
+
+            <div>
+              {remaining.map((user) => (
+                <RankingRow
+                  key={user.id}
+                  user={user}
+                  messages={messages}
+                  isCurrentUser={
+                    currentUserId !== undefined &&
+                    String(user.id) === currentUserId
+                  }
+                />
+              ))}
+            </div>
+          </section>
         </div>
       )}
 
@@ -375,6 +514,6 @@ export default function LeaderboardTable({
           {messages.noRankedPlayers}
         </div>
       )}
-    </section>
+    </>
   );
 }

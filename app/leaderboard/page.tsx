@@ -221,7 +221,7 @@ export default async function LeaderboardPage({
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative flex min-h-[430px] items-end overflow-hidden">
+        <section className="relative flex min-h-[360px] items-end overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -240,17 +240,24 @@ export default async function LeaderboardPage({
             }}
           />
 
-          <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 pb-14 pt-28 lg:px-8">
+          <div className="relative z-10 mx-auto w-full max-w-[1480px] px-6 pb-7 pt-24 lg:px-8">
             <p
-              className="mb-4 text-xs font-black uppercase tracking-[0.18em]"
-              style={{ color: "var(--asc-accent)" }}
+              className="mb-[14px] text-[11px] font-black uppercase tracking-[0.18em]"
+              style={{
+                color: "var(--asc-fg-2)",
+                fontFamily: "var(--font-mono, monospace)",
+              }}
             >
-              ▲ {messages.hero.label}
+              <span style={{ color: "var(--asc-accent)" }}>&#9650;</span>{" "}
+              {messages.hero.label}
             </p>
 
             <h1
-              className="text-5xl md:text-6xl"
-              style={{ color: "var(--asc-fg-0)" }}
+              style={{
+                color: "var(--asc-fg-0)",
+                fontSize: "clamp(36px, 4vw, 60px)",
+                lineHeight: 0.92,
+              }}
             >
               {messages.hero.title}
             </h1>
@@ -262,7 +269,7 @@ export default async function LeaderboardPage({
               {messages.hero.description}
             </p>
 
-            <div className="mt-7 flex flex-wrap items-center gap-2">
+            <div className="mt-[22px] flex flex-wrap items-center gap-2">
               <FilterPill
                 href={buildLeaderboardHref({
                   gameSlug: leaderboard.selectedGame?.slug,
@@ -324,7 +331,7 @@ export default async function LeaderboardPage({
           </div>
         </section>
 
-        <div className="relative z-20 mx-auto -mt-10 max-w-[1440px] px-6 pb-24 lg:px-8">
+        <div className="relative z-20 mx-auto -mt-5 max-w-[1480px] px-6 pb-24 lg:px-8">
           <LeaderboardDisclaimer />
           <LeaderboardContent
             type={leaderboard.type}

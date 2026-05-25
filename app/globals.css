@@ -284,3 +284,15 @@ article.overflow-hidden[class*="border"]::before {
   pointer-events: none;
   z-index: 30;
 }
+
+.asc-leaderboard-row {
+  transition: background 120ms ease;
+}
+
+.asc-leaderboard-row:hover {
+  background: oklch(0.20 0.10 285 / 0.08);
+}
+
+.asc-leaderboard-stat-label {
+  font-family: var(--font-mono, monospace);
+}
