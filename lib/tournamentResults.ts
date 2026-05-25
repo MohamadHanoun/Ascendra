@@ -43,6 +43,10 @@ type AwardResult =
       error: string;
     };
 
+type AwardTournamentResultsOptions = {
+  revalidateViews?: boolean;
+};
+
 type TournamentForAwarding = {
   id: string;
   title: string;
@@ -495,6 +499,7 @@ function getParticipationPoints(multiplier: number) {
 
 export async function awardTournamentResultsAndPoints(
   tournamentId: string,
+  options: AwardTournamentResultsOptions = {},
 ): Promise<AwardResult> {
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
@@ -746,7 +751,9 @@ export async function awardTournamentResultsAndPoints(
   }
 
   await publishAwardRealtimeEvents(tournamentId);
-  revalidateAwardViews(tournamentId);
+  if (options.revalidateViews ?? true) {
+    revalidateAwardViews(tournamentId);
+  }
 
   return {
     ok: true,

@@ -33,6 +33,31 @@ type TournamentLifecycleUpdate = {
   endedAt?: Date;
 };
 
+type TournamentLifecycleProcessOptions = {
+  revalidateViews?: boolean;
+};
+
+const tournamentLifecycleSelect = {
+  id: true,
+  status: true,
+  registrationStatus: true,
+  registrationOpensAt: true,
+  registrationClosesAt: true,
+  startsAt: true,
+  endsAt: true,
+  endedAt: true,
+  tournamentMatches: {
+    where: {
+      nextMatchId: null,
+      status: MatchStatus.completed,
+    },
+    select: {
+      id: true,
+    },
+    take: 1,
+  },
+} as const;
+
 function makeResult(): JobRunResult {
   return {
     ok: true,
@@ -55,6 +80,17 @@ function isBefore(now: Date, date: Date | null) {
 
 function hasCompletedFinalMatch(tournament: TournamentLifecycleInput) {
   return tournament.tournamentMatches.length > 0;
+}
+
+function shouldAwardBeforeEnding(
+  tournament: TournamentLifecycleInput,
+  update: TournamentLifecycleUpdate,
+) {
+  return (
+    update.status === ENDED_STATUS &&
+    tournament.status !== ENDED_STATUS &&
+    hasCompletedFinalMatch(tournament)
+  );
 }
 
 export function getTournamentLifecycleUpdate(
@@ -160,6 +196,73 @@ async function publishLifecycleEvents(
   await Promise.all(events);
 }
 
+async function processTournamentLifecycleUpdate(
+  tournament: TournamentLifecycleInput,
+  now: Date,
+  result: JobRunResult,
+  options: TournamentLifecycleProcessOptions = {},
+) {
+  const update = getTournamentLifecycleUpdate(tournament, now);
+
+  if (!update) {
+    result.skipped += 1;
+    return;
+  }
+
+  try {
+    if (shouldAwardBeforeEnding(tournament, update)) {
+      const awardResult = await awardTournamentResultsAndPoints(tournament.id, {
+        revalidateViews: options.revalidateViews ?? true,
+      });
+      if (!awardResult.ok) {
+        throw new Error(awardResult.error);
+      }
+    }
+
+    await prisma.tournament.update({
+      where: { id: tournament.id },
+      data: update,
+    });
+
+    await publishLifecycleEvents(tournament, update);
+    if (options.revalidateViews ?? true) {
+      revalidateTournamentViews(tournament.id);
+    }
+    result.processed += 1;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unexpected_error";
+    result.failed += 1;
+    result.errors.push(`tournament:${tournament.id}: ${message}`);
+  }
+}
+
+export async function syncTournamentLifecycleForTournament(
+  tournamentId: string,
+): Promise<JobRunResult> {
+  const start = Date.now();
+  const now = new Date();
+  const result = makeResult();
+
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: tournamentLifecycleSelect,
+  });
+
+  if (!tournament) {
+    result.skipped = 1;
+    result.durationMs = Date.now() - start;
+    return result;
+  }
+
+  await processTournamentLifecycleUpdate(tournament, now, result, {
+    revalidateViews: false,
+  });
+
+  result.ok = result.failed === 0;
+  result.durationMs = Date.now() - start;
+  return result;
+}
+
 export async function syncTournamentLifecycle(
   config: Pick<SyncConfig, "batchSize"> = {},
 ): Promise<JobRunResult> {
@@ -216,60 +319,13 @@ export async function syncTournamentLifecycle(
         },
       ],
     },
-    select: {
-      id: true,
-      status: true,
-      registrationStatus: true,
-      registrationOpensAt: true,
-      registrationClosesAt: true,
-      startsAt: true,
-      endsAt: true,
-      endedAt: true,
-      tournamentMatches: {
-        where: {
-          nextMatchId: null,
-          status: MatchStatus.completed,
-        },
-        select: {
-          id: true,
-        },
-        take: 1,
-      },
-    },
+    select: tournamentLifecycleSelect,
     orderBy: { updatedAt: "asc" },
     take: batchSize,
   });
 
   for (const tournament of tournaments) {
-    const update = getTournamentLifecycleUpdate(tournament, now);
-
-    if (!update) {
-      result.skipped += 1;
-      continue;
-    }
-
-    try {
-      if (hasCompletedFinalMatch(tournament)) {
-        const awardResult = await awardTournamentResultsAndPoints(tournament.id);
-        if (!awardResult.ok) {
-          throw new Error(awardResult.error);
-        }
-      }
-
-      await prisma.tournament.update({
-        where: { id: tournament.id },
-        data: update,
-      });
-
-      await publishLifecycleEvents(tournament, update);
-      revalidateTournamentViews(tournament.id);
-      result.processed += 1;
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "unexpected_error";
-      result.failed += 1;
-      result.errors.push(`tournament:${tournament.id}: ${message}`);
-    }
+    await processTournamentLifecycleUpdate(tournament, now, result);
   }
 
   result.ok = result.failed === 0;

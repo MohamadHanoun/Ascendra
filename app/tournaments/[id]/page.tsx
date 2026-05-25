@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import ProfileNotice from "@/components/ProfileNotice";
 import TournamentDetailsRealtime from "@/components/TournamentDetailsRealtime";
+import TournamentLifecycleRefresh from "@/components/TournamentLifecycleRefresh";
 import TournamentMatchesSection from "@/components/TournamentMatchesSection";
 import { TournamentRegistrationPanel } from "@/components/TournamentRegistrationPanel";
 import {
@@ -16,6 +17,7 @@ import {
   type TournamentDetailsMessages,
 } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
+import { syncTournamentLifecycleForTournament } from "@/lib/jobs/tournamentLifecycleJobs";
 import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
@@ -495,6 +497,8 @@ export default async function TournamentDetailsPage({
     getLocale(),
   ]);
 
+  await syncTournamentLifecycleForTournament(id);
+
   const messages = getDictionary(locale).tournamentDetails;
   const copy = pageCopy[locale];
 
@@ -532,6 +536,9 @@ export default async function TournamentDetailsPage({
         gameId: true,
         description: true,
         startsAt: true,
+        endsAt: true,
+        registrationOpensAt: true,
+        registrationClosesAt: true,
         prize: true,
         imageUrl: true,
         maxTeams: true,
@@ -959,6 +966,16 @@ export default async function TournamentDetailsPage({
             error={noticeParams.error}
           />
           <TournamentDetailsRealtime tournamentId={tournament.id} />
+          <TournamentLifecycleRefresh
+            registrationOpensAt={
+              tournament.registrationOpensAt?.toISOString() ?? null
+            }
+            registrationClosesAt={
+              tournament.registrationClosesAt?.toISOString() ?? null
+            }
+            startsAt={tournament.startsAt?.toISOString() ?? null}
+            endsAt={tournament.endsAt?.toISOString() ?? null}
+          />
 
           {/* Overview */}
           <section id="overview" className="scroll-mt-24">

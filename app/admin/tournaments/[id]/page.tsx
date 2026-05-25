@@ -23,6 +23,8 @@ import AdminTournamentResultsPanel from "@/components/AdminTournamentResultsPane
 import Footer from "@/components/Footer";
 import InlineAdminTournamentForm from "@/components/InlineAdminTournamentForm";
 import Navbar from "@/components/Navbar";
+import TournamentLifecycleRefresh from "@/components/TournamentLifecycleRefresh";
+import { syncTournamentLifecycleForTournament } from "@/lib/jobs/tournamentLifecycleJobs";
 import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
@@ -247,6 +249,8 @@ export default async function ManageTournamentPage({
   if (!session?.user) redirect("/login");
   if (!session.user.isAdmin) redirect("/admin");
 
+  await syncTournamentLifecycleForTournament(id);
+
   const [tournament, games, rawTournamentMatches] = await Promise.all([
     prisma.tournament.findUnique({
       where: { id },
@@ -366,6 +370,16 @@ export default async function ManageTournamentPage({
       style={{ background: "var(--asc-bg-0)" }}
     >
       <Navbar />
+      <TournamentLifecycleRefresh
+        registrationOpensAt={
+          tournament.registrationOpensAt?.toISOString() ?? null
+        }
+        registrationClosesAt={
+          tournament.registrationClosesAt?.toISOString() ?? null
+        }
+        startsAt={tournament.startsAt?.toISOString() ?? null}
+        endsAt={tournament.endsAt?.toISOString() ?? null}
+      />
 
       <section className="relative min-h-[480px] overflow-hidden">
         <div
