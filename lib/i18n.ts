@@ -10,6 +10,7 @@ export type NavigationMessages = {
   links: {
     home: string;
     tournaments: string;
+    games: string;
     leaderboard: string;
     news: string;
     community: string;
@@ -68,6 +69,7 @@ export type FooterMessages = {
   links: {
     home: string;
     tournaments: string;
+    games: string;
     leaderboard: string;
     news: string;
     community: string;
@@ -445,6 +447,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       links: {
         home: "Home",
         tournaments: "Tournaments",
+        games: "Games",
         leaderboard: "Leaderboard",
         news: "News",
         community: "Community",
@@ -504,6 +507,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       links: {
         home: "Home",
         tournaments: "Tournaments",
+        games: "Games",
         leaderboard: "Leaderboard",
         news: "News",
         community: "Community",
@@ -956,6 +960,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       links: {
         home: "الرئيسية",
         tournaments: "البطولات",
+        games: "الألعاب",
         leaderboard: "لوحة المتصدرين",
         news: "الأخبار",
         community: "المجتمع",
@@ -1015,6 +1020,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       links: {
         home: "الرئيسية",
         tournaments: "البطولات",
+        games: "الألعاب",
         leaderboard: "لوحة المتصدرين",
         news: "الأخبار",
         community: "المجتمع",

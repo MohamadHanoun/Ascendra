@@ -224,8 +224,8 @@ export default function NavbarClient({
   const mainLinks = [
     { href: "/", label: labels.links.home },
     { href: "/tournaments", label: labels.links.tournaments },
+    { href: "/games", label: labels.links.games },
     { href: "/leaderboard", label: labels.links.leaderboard },
-    { href: "/announcements", label: labels.links.news },
     { href: "/community", label: labels.links.community },
   ];
 

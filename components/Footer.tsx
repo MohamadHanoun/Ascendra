@@ -41,6 +41,7 @@ export default async function Footer() {
   const platformLinks = [
     { href: "/", label: messages.links.home },
     { href: "/tournaments", label: messages.links.tournaments },
+    { href: "/games", label: messages.links.games },
     { href: "/leaderboard", label: messages.links.leaderboard },
     { href: "/announcements", label: messages.links.news },
     { href: "/community", label: messages.links.community },
