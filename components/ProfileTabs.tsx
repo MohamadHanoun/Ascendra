@@ -177,20 +177,19 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   return (
     <div className="border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-0)" }}>
       <p style={{ color: "var(--asc-fg-3)", marginBottom: 2 }}>{label}</p>
-      <p style={{ color: "var(--asc-accent)" }}>{payload[0].value.toLocaleString()} MMR</p>
+      <p style={{ color: "var(--asc-accent)" }}>{payload[0].value.toLocaleString()} PTS</p>
     </div>
   );
 }
 
 function StatsTab({ tournamentResults, labels }: Pick<ProfileTabsProps, "tournamentResults" | "labels">) {
   const recent = tournamentResults.slice(0, 10);
-  // Build cumulative MMR progression oldest → newest
   const chronological = recent.slice().reverse();
   const chartData = chronological.map((r, i) => {
     const cumPoints = chronological.slice(0, i + 1).reduce((s, x) => s + x.points, 0);
     return {
       name: new Date(r.awardedAt).toLocaleDateString("en-GB", { month: "short", day: "2-digit" }),
-      mmr: Math.min(cumPoints * 15 + 1200, 9800),
+      points: cumPoints,
     };
   });
 
@@ -199,7 +198,7 @@ function StatsTab({ tournamentResults, labels }: Pick<ProfileTabsProps, "tournam
       <Card>
         <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
           <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ PERFORMANCE</p>
-          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>MMR HISTORY</h3>
+          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>POINT HISTORY</h3>
         </div>
         <div className="p-5">
           {chartData.length === 0 ? (
@@ -222,7 +221,7 @@ function StatsTab({ tournamentResults, labels }: Pick<ProfileTabsProps, "tournam
                 <Tooltip content={<CustomTooltip />} />
                 <Line
                   type="monotone"
-                  dataKey="mmr"
+                  dataKey="points"
                   stroke="var(--asc-accent)"
                   strokeWidth={2}
                   dot={false}

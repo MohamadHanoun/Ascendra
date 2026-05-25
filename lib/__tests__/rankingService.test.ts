@@ -159,7 +159,7 @@ describe("aggregateTeamLeaderboard", () => {
       ["team-b", 250, 2],
       ["team-c", 250, 2],
     ]);
-    expect(result[0].tier.name).toBe("Challenger");
+    expect(result[0].tier.name).toBe("Ember");
     expect(result[0].team?.name).toBe("Team A");
   });
 });
@@ -198,7 +198,7 @@ describe("aggregatePlayerLeaderboard", () => {
         totalPoints: 1201,
         eventCount: 4,
         rank: 1,
-        tier: expect.objectContaining({ name: "Elite" }),
+        tier: expect.objectContaining({ name: "Obsidian" }),
         user: expect.objectContaining({ username: "PlayerA" }),
       }),
     ]);

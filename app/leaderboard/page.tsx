@@ -28,6 +28,9 @@ type LeaderboardPageProps = {
   }>;
 };
 
+const leaderboardDisclaimer =
+  "Ascendra ranks are based only on Ascendra community tournament points. They are not official Riot ranks, MMR, ELO, or skill ratings.";
+
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const messages = getDictionary(locale).leaderboard.metadata;
@@ -129,6 +132,21 @@ function GameFilters({
         />
       ))}
     </>
+  );
+}
+
+function LeaderboardDisclaimer() {
+  return (
+    <p
+      className="mb-4 border px-4 py-3 text-xs leading-5"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "oklch(0.10 0.035 287 / 0.72)",
+        color: "var(--asc-fg-2)",
+      }}
+    >
+      {leaderboardDisclaimer}
+    </p>
   );
 }
 
@@ -307,6 +325,7 @@ export default async function LeaderboardPage({
         </section>
 
         <div className="relative z-20 mx-auto -mt-10 max-w-[1440px] px-6 pb-24 lg:px-8">
+          <LeaderboardDisclaimer />
           <LeaderboardContent
             type={leaderboard.type}
             data={leaderboard.data}
