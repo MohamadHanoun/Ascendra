@@ -165,10 +165,7 @@ function ButtonLink({
 function SectionRule({ label }: { label: string }) {
   return (
     <div className="mb-6 flex items-center gap-4">
-      <span
-        className="text-[10px] uppercase tracking-[0.18em]"
-        style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
-      >
+      <span className="asc-section-label">
         <span style={{ color: "var(--asc-accent)" }}>▲</span> {label}
       </span>
       <span className="h-px flex-1" style={{ background: "var(--asc-line-soft)" }} />

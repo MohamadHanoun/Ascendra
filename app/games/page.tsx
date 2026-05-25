@@ -208,15 +208,8 @@ function ActionLink({
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-2 px-3 py-2 text-[11px] font-black uppercase tracking-[0.14em] transition hover:opacity-90"
-      style={{
-        ...clippedCardStyle,
-        fontFamily: "var(--font-display)",
-        background: isGhost ? "transparent" : "var(--asc-bg-2)",
-        border: `1px solid ${isGhost ? "var(--asc-line)" : "var(--asc-line)"}`,
-        color: "var(--asc-fg-0)",
-        textDecoration: "none",
-      }}
+      className="asc-mini-button"
+      data-variant={isGhost ? "ghost" : undefined}
     >
       {children}
     </Link>
@@ -468,8 +461,7 @@ export default async function GamesPage() {
 
           <div className="relative z-10 mx-auto w-full max-w-[1680px] px-6 pb-9 pt-24 lg:px-10 2xl:px-14">
             <p
-              className="mb-[18px] text-[11px] uppercase tracking-[0.18em]"
-              style={{ ...monoStyle, color: "var(--asc-fg-2)" }}
+              className="asc-section-label mb-[18px]"
             >
               <span style={{ color: "var(--asc-accent)" }}>▲</span>{" "}
               Competitive Titles · {activeGamesCount} Supported
@@ -494,8 +486,7 @@ export default async function GamesPage() {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p
-                className="text-[10px] uppercase tracking-[0.18em]"
-                style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
+                className="asc-section-label"
               >
                 ▲ Registry
               </p>

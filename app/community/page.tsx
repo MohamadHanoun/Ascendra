@@ -143,8 +143,7 @@ function SectionRule({ label }: { label: string }) {
   return (
     <div className="mb-6 flex items-center gap-4">
       <span
-        className="text-[10px] uppercase tracking-[0.18em]"
-        style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
+        className="asc-section-label"
       >
         <span style={{ color: "var(--asc-accent)" }}>▲</span> {label}
       </span>
@@ -277,8 +276,7 @@ function FeatureCard({
         </p>
         <Link
           href={href}
-          className="mt-5 inline-flex text-[11px] font-black uppercase tracking-[0.14em]"
-          style={{ ...monoStyle, color: "var(--asc-accent)", textDecoration: "none" }}
+          className="asc-mini-button mt-5"
         >
           {label} <span aria-hidden="true">&nbsp;›</span>
         </Link>

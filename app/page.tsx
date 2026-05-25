@@ -292,8 +292,7 @@ function SectionHeader({
     <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p
-          className="text-xs font-black uppercase tracking-[0.18em]"
-          style={{ color: "var(--asc-accent)" }}
+          className="asc-section-label"
         >
           ▲ {label}
           {typeof count === "number" ? ` · ${count}` : ""}
@@ -1658,11 +1657,7 @@ export default async function HomePage() {
             >
               <Link
                 href="/tournaments"
-                className="border px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] transition hover:opacity-75"
-                style={{
-                  borderColor: "var(--asc-line-soft)",
-                  color: "var(--asc-fg-2)",
-                }}
+                className="asc-mini-button"
               >
                 All matches ›
               </Link>
@@ -1710,11 +1705,7 @@ export default async function HomePage() {
             >
               <Link
                 href="/tournaments"
-                className="border px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] transition hover:opacity-75"
-                style={{
-                  borderColor: "var(--asc-line-soft)",
-                  color: "var(--asc-fg-2)",
-                }}
+                className="asc-mini-button"
               >
                 All tournaments ›
               </Link>
@@ -1771,11 +1762,7 @@ export default async function HomePage() {
             >
               <Link
                 href="/games"
-                className="border px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] transition hover:opacity-75"
-                style={{
-                  borderColor: "var(--asc-line-soft)",
-                  color: "var(--asc-fg-2)",
-                }}
+                className="asc-mini-button"
               >
                 Games registry ›
               </Link>

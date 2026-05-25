@@ -418,13 +418,7 @@ export default function TeamLeaderboardTable({
         <div className="mt-8">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p
-                className="text-xs font-black uppercase tracking-[0.16em]"
-                style={{
-                  color: "var(--asc-accent)",
-                  fontFamily: "var(--font-mono, monospace)",
-                }}
-              >
+              <p className="asc-section-label">
                 Ranks 4 &ndash; 100
               </p>
               <h2 className="mt-1 text-3xl" style={{ color: "var(--asc-fg-0)" }}>

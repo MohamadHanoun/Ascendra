@@ -77,19 +77,8 @@ function FilterPill({
     <Link
       href={href}
       scroll={false}
-      className="text-[11px] uppercase tracking-[0.12em]"
-      style={{
-        fontFamily: "var(--font-mono, monospace)",
-        padding: "6px 12px",
-        border: `1px solid ${
-          active ? "var(--asc-accent)" : "var(--asc-line-soft)"
-        }`,
-        background: active ? "var(--asc-accent-dim)" : "transparent",
-        color: active ? "var(--asc-fg-0)" : "var(--asc-fg-3)",
-        clipPath:
-          "polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)",
-        textDecoration: "none",
-      }}
+      className="asc-filter-pill"
+      data-active={active ? "true" : "false"}
     >
       {label}
     </Link>
@@ -242,11 +231,7 @@ export default async function LeaderboardPage({
 
           <div className="relative z-10 mx-auto w-full max-w-[1480px] px-6 pb-7 pt-24 lg:px-8">
             <p
-              className="mb-[14px] text-[11px] font-black uppercase tracking-[0.18em]"
-              style={{
-                color: "var(--asc-fg-2)",
-                fontFamily: "var(--font-mono, monospace)",
-              }}
+              className="asc-section-label mb-[14px]"
             >
               <span style={{ color: "var(--asc-accent)" }}>&#9650;</span>{" "}
               {messages.hero.label}
@@ -269,7 +254,16 @@ export default async function LeaderboardPage({
               {messages.hero.description}
             </p>
 
-            <div className="mt-[22px] flex flex-wrap items-center gap-2">
+            <div
+              className="mt-[22px] flex flex-wrap items-center gap-2 border p-3"
+              style={{
+                borderColor: "var(--asc-line-soft)",
+                background: "oklch(0.08 0.035 285 / 0.70)",
+                clipPath:
+                  "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
+              }}
+            >
+              <span className="asc-section-label mr-1">Filters</span>
               <FilterPill
                 href={buildLeaderboardHref({
                   gameSlug: leaderboard.selectedGame?.slug,

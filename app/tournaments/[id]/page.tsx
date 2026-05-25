@@ -295,8 +295,7 @@ function PanelHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
       style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
     >
       <p
-        className="text-xs font-black uppercase tracking-[0.16em]"
-        style={{ color: "var(--asc-accent)" }}
+        className="asc-section-label"
       >
         ▲ {eyebrow}
       </p>
@@ -935,17 +934,8 @@ export default async function TournamentDetailsPage({
               <a
                 key={tab.href}
                 href={tab.href}
-                className="shrink-0 border-b-2 px-4 py-4 text-[10px] font-black uppercase tracking-[0.16em] transition hover:opacity-75"
-                style={{
-                  borderColor:
-                    tab.href === "#overview"
-                      ? "var(--asc-accent)"
-                      : "transparent",
-                  color:
-                    tab.href === "#overview"
-                      ? "var(--asc-fg-0)"
-                      : "var(--asc-fg-3)",
-                }}
+                className="asc-tab-link shrink-0"
+                data-active={tab.href === "#overview" ? "true" : "false"}
               >
                 {tab.label}
               </a>

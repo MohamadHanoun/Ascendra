@@ -162,8 +162,7 @@ function SummaryCard({
       <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_180px] md:items-end">
         <div>
           <p
-            className="text-xs font-black uppercase tracking-[0.18em]"
-            style={{ color: "var(--asc-accent)" }}
+            className="asc-section-label"
           >
             ▲ {label}
           </p>
@@ -304,8 +303,7 @@ export default async function RolesPage() {
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-32 pt-24 lg:px-10 2xl:px-14">
             <p
-              className="mb-4 text-xs font-black uppercase tracking-[0.22em]"
-              style={{ color: "var(--asc-accent)" }}
+              className="asc-section-label mb-4"
             >
               ▲ {messages.hero.label}
             </p>

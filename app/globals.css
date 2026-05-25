@@ -296,3 +296,165 @@ article.overflow-hidden[class*="border"]::before {
 .asc-leaderboard-stat-label {
   font-family: var(--font-mono, monospace);
 }
+
+.asc-section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  line-height: 1.25;
+  text-transform: uppercase;
+  color: oklch(0.84 0.055 285);
+}
+
+.asc-section-label__mark {
+  color: var(--asc-accent);
+  text-shadow: 0 0 14px var(--asc-accent-glow);
+}
+
+.asc-mini-button {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid oklch(0.50 0.11 285 / 0.58);
+  background: oklch(0.18 0.07 285 / 0.72);
+  color: var(--asc-fg-0);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  font-family: var(--font-display, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.asc-mini-button:hover {
+  border-color: var(--asc-accent);
+  background: var(--asc-accent-dim);
+  box-shadow: 0 0 18px var(--asc-accent-glow);
+  color: var(--asc-fg-0);
+  transform: translateY(-1px);
+}
+
+.asc-mini-button[data-variant="ghost"] {
+  background: transparent;
+  border-color: var(--asc-line);
+  color: var(--asc-fg-1);
+}
+
+.asc-mini-button[data-variant="ghost"]:hover {
+  background: var(--asc-accent-dim);
+  border-color: var(--asc-accent);
+}
+
+.asc-mini-button:focus-visible,
+.asc-filter-pill:focus-visible,
+.asc-tab-link:focus-visible {
+  outline: 2px solid var(--asc-accent);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px oklch(0.70 0.22 285 / 0.18);
+}
+
+.asc-info-pill {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--asc-line-soft);
+  background: oklch(0.12 0.04 285 / 0.72);
+  color: oklch(0.78 0.035 285);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.asc-filter-pill {
+  display: inline-flex;
+  min-height: 2.35rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.58rem 0.9rem;
+  border: 1px solid oklch(0.44 0.09 285 / 0.52);
+  background: oklch(0.14 0.052 285 / 0.86);
+  color: oklch(0.80 0.035 285);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+  line-height: 1;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease;
+}
+
+.asc-filter-pill:hover {
+  border-color: oklch(0.62 0.16 285 / 0.78);
+  background: oklch(0.20 0.075 285 / 0.9);
+  color: var(--asc-fg-0);
+}
+
+.asc-filter-pill[data-active="true"] {
+  border-color: var(--asc-accent);
+  background: linear-gradient(135deg, var(--asc-accent-2), oklch(0.46 0.19 270));
+  color: oklch(0.98 0.01 290);
+  box-shadow: 0 0 22px var(--asc-accent-glow);
+}
+
+.asc-tab-link {
+  display: inline-flex;
+  min-height: 2.8rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border: 1px solid transparent;
+  border-bottom: 2px solid transparent;
+  color: oklch(0.78 0.035 285);
+  font-family: var(--font-display, sans-serif);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.asc-tab-link:hover {
+  border-color: var(--asc-line-soft);
+  background: oklch(0.18 0.07 285 / 0.62);
+  color: var(--asc-fg-0);
+}
+
+.asc-tab-link[data-active="true"] {
+  border-color: oklch(0.50 0.12 285 / 0.48);
+  border-bottom-color: var(--asc-accent);
+  background: var(--asc-accent-dim);
+  color: var(--asc-fg-0);
+  box-shadow: inset 0 -1px 0 var(--asc-accent);
+}

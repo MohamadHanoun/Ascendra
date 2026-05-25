@@ -367,8 +367,7 @@ function SectionHeader({
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p
-          className="text-xs font-black uppercase tracking-[0.18em]"
-          style={{ color: "var(--asc-accent)" }}
+          className="asc-section-label"
         >
           ▲ {eyebrow}
           {typeof count === "number" ? ` · ${count}` : ""}
@@ -850,13 +849,7 @@ function TournamentDirectory({
   return (
     <section>
       <SectionHeader eyebrow={eyebrow} title={title} count={tournaments.length}>
-        <span
-          className="border px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em]"
-          style={{
-            borderColor: "var(--asc-line-soft)",
-            color: "var(--asc-fg-3)",
-          }}
-        >
+        <span className="asc-info-pill">
           {getTournamentCountLabel(tournaments.length, messages.labels)}
         </span>
       </SectionHeader>
@@ -1058,8 +1051,7 @@ export default async function TournamentsPage({
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-20 lg:px-10 2xl:px-14">
             <p
-              className="mb-4 text-xs font-black uppercase tracking-[0.22em]"
-              style={{ color: "var(--asc-accent)" }}
+              className="asc-section-label mb-4"
             >
               ▲ {copy.heroEyebrow} · {activeTournaments.length}{" "}
               {copy.activeEvents.toUpperCase()}
@@ -1142,8 +1134,7 @@ export default async function TournamentsPage({
                   >
                     <div>
                       <p
-                        className="text-xs font-black uppercase tracking-[0.18em]"
-                        style={{ color: "var(--asc-accent)" }}
+                        className="asc-section-label"
                       >
                         ▲ {copy.archivedEvents}
                       </p>
