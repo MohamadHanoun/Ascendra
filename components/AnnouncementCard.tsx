@@ -35,7 +35,7 @@ export default function AnnouncementCard({
         className="px-5 py-4"
         style={{
           borderBottom: "1px solid var(--asc-line-soft)",
-          background: announcement.important ? "oklch(0.25 0.14 75 / 0.05)" : "oklch(0.10 0.03 287 / 0.4)",
+          background: announcement.important ? "var(--asc-accent-dim)" : "var(--asc-card-muted)",
         }}
       >
         <div className="flex flex-wrap items-center gap-2">

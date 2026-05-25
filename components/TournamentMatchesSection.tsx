@@ -270,7 +270,7 @@ export default function TournamentMatchesSection({
           <div key={round}>
             <div
               className="px-5 py-2.5"
-              style={{ background: "oklch(0.10 0.03 287 / 0.5)" }}
+              style={{ background: "var(--asc-table-head-bg)" }}
             >
               <p
                 className="text-[11px] font-black uppercase tracking-[0.14em]"

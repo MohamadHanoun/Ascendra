@@ -113,7 +113,7 @@ function Pill({
     },
     gray: {
       borderColor: "var(--asc-line-soft)",
-      background: "oklch(0.10 0.02 287 / 0.25)",
+      background: "var(--asc-card-muted)",
       color: "var(--asc-fg-2)",
     },
   };
@@ -208,7 +208,7 @@ function FeaturedAnnouncement({
       style={{
         borderColor: "var(--asc-line-soft)",
         background:
-          "linear-gradient(135deg, oklch(0.18 0.10 285 / 0.56) 0%, var(--asc-bg-1) 58%, oklch(0.09 0.03 287) 100%)",
+          "linear-gradient(135deg, var(--asc-accent-dim) 0%, var(--asc-bg-1) 58%, var(--asc-card-muted) 100%)",
         clipPath:
           "polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px)",
       }}
@@ -219,7 +219,8 @@ function FeaturedAnnouncement({
         aria-hidden="true"
         className="absolute -right-8 -top-8 text-[180px] font-black leading-none"
         style={{
-          color: "oklch(1 0 0 / 0.035)",
+          color: "var(--asc-accent)",
+          opacity: 0.08,
           fontFamily: "var(--font-display)",
         }}
       >
@@ -371,7 +372,7 @@ export default async function AnnouncementsPage() {
 
   return (
     <main
-      className="asc-ambient min-h-screen overflow-hidden"
+      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
     >
       <div className="relative z-10">

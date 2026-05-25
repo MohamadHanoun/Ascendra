@@ -423,7 +423,7 @@ function FeaturedTournament({
   return (
     <Link
       href={`/tournaments/${tournament.id}`}
-      className="group relative block min-h-[260px] overflow-hidden border transition hover:opacity-95"
+      className="asc-image-card group relative block min-h-[260px] overflow-hidden border transition hover:opacity-95"
       style={{
         borderColor: "var(--asc-line-soft)",
         background: "var(--asc-bg-1)",
@@ -878,7 +878,7 @@ function TournamentDirectory({
               className="grid grid-cols-[2fr_1fr_0.8fr_0.8fr_0.9fr_0.9fr_1fr_0.4fr] gap-4 px-5 py-3"
               style={{
                 borderBottom: "1px solid var(--asc-line-soft)",
-                background: "oklch(0.08 0.03 285)",
+                background: "var(--asc-table-head-bg)",
               }}
             >
               {[
@@ -1023,16 +1023,16 @@ export default async function TournamentsPage({
 
   return (
     <main
-      className="asc-ambient min-h-screen overflow-hidden"
+      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
     >
       <div className="relative z-10">
         <Navbar />
 
         {/* Hero */}
-        <section className="relative min-h-[360px] overflow-hidden">
+        <section className="asc-image-hero relative min-h-[360px] overflow-hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center"
+            className="asc-hero-media absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage:
                 'url("/images/backgrounds/tournaments-hero.webp")',
@@ -1040,7 +1040,7 @@ export default async function TournamentsPage({
           />
 
           <div
-            className="absolute inset-0"
+            className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
                 "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.36) 0%, oklch(0.07 0.025 285 / 0.70) 58%, var(--asc-bg-0) 100%)",
@@ -1049,7 +1049,7 @@ export default async function TournamentsPage({
             }}
           />
 
-          <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-20 lg:px-10 2xl:px-14">
+          <div className="asc-image-hero-content relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-20 lg:px-10 2xl:px-14">
             <p
               className="asc-section-label mb-4"
             >

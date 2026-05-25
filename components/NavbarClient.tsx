@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import GlobalSearch from "@/components/GlobalSearch";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
+import PublicThemeToggle from "@/components/PublicThemeToggle";
 import type { Locale, NavigationMessages } from "@/lib/i18n";
 
 type NavbarClientProps = {
@@ -29,7 +30,7 @@ function BrandLogo() {
         width={44}
         height={44}
         priority
-        className="h-11 w-11 object-contain"
+        className="asc-brand-mark h-11 w-11 object-contain"
       />
       <Image
         src="/images/brand/ascendra-wordmark.png"
@@ -37,7 +38,7 @@ function BrandLogo() {
         width={165}
         height={44}
         priority
-        className="hidden h-10 w-auto object-contain sm:block"
+        className="asc-brand-wordmark hidden h-10 w-auto object-contain sm:block"
       />
     </Link>
   );
@@ -218,6 +219,7 @@ export default function NavbarClient({
 }: NavbarClientProps) {
   const pathname = usePathname();
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
 
   const mainLinks = [
     { href: "/", label: labels.links.home },
@@ -276,7 +278,7 @@ export default function NavbarClient({
         className="sticky top-0 z-40"
         style={{
           borderBottom: "1px solid var(--asc-line-soft)",
-          background: "oklch(0.06 0.03 287 / 0.92)",
+          background: "var(--asc-nav-bg, oklch(0.06 0.03 287 / 0.92))",
           backdropFilter: "blur(18px) saturate(140%)",
         }}
       >
@@ -315,6 +317,8 @@ export default function NavbarClient({
             >
               DISCORD
             </Link>
+
+            {!isAdminPath && <PublicThemeToggle />}
 
             {/* Bell */}
             <NotificationsDropdown isLoggedIn={isLoggedIn} />
@@ -581,6 +585,8 @@ export default function NavbarClient({
                 >
                   {labels.actions.joinDiscord}
                 </Link>
+
+                {!isAdminPath && <PublicThemeToggle compact />}
 
                 <LanguageSwitcher locale={locale} labels={labels.language} compact />
               </div>

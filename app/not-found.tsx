@@ -83,11 +83,11 @@ export default async function NotFound() {
   const messages = notFoundMessages[locale];
 
   return (
-    <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
+    <main className="asc-public-page asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[620px] overflow-hidden">
+        <section className="asc-image-card relative min-h-[620px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{

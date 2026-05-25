@@ -83,7 +83,7 @@ export default function TeamManagementCard({ team }: TeamManagementCardProps) {
 
   return (
     <article className="asc-card overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
-      <div className="p-6" style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "oklch(0.10 0.03 287 / 0.4)" }}>
+      <div className="p-6" style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-table-head-bg)" }}>
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
             <div className="mb-3 flex flex-wrap items-center gap-3">

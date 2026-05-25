@@ -184,11 +184,11 @@ function PodiumCard({
           ? "oklch(0.50 0.20 285 / 0.45)"
           : "var(--asc-line-soft)",
         background: isFirst
-          ? "linear-gradient(180deg, oklch(0.18 0.10 285 / 0.62) 0%, var(--asc-bg-1) 100%)"
+          ? "linear-gradient(180deg, var(--asc-accent-dim) 0%, var(--asc-bg-1) 100%)"
           : "var(--asc-bg-1)",
         boxShadow: isFirst
-          ? "0 24px 70px oklch(0.50 0.20 285 / 0.18)"
-          : "0 18px 48px oklch(0.05 0.02 285 / 0.34)",
+          ? "0 24px 70px var(--asc-accent-glow)"
+          : "var(--asc-shadow)",
         clipPath:
           "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
         marginBottom: visualPlace !== 1 ? 24 : 0,
@@ -203,7 +203,7 @@ function PodiumCard({
           position: "absolute",
           top: -10,
           right: -8,
-          color: "oklch(1 0 0)",
+          color: "var(--asc-accent)",
           fontFamily: "var(--font-display)",
           fontSize: ghostSize,
           fontWeight: 700,
@@ -442,7 +442,7 @@ export default function TeamLeaderboardTable({
               className="hidden px-[18px] py-[10px] text-[10px] font-black uppercase tracking-[0.16em] md:grid md:grid-cols-[64px_minmax(0,1fr)_130px_110px_120px_120px]"
               style={{
                 borderBottom: "1px solid var(--asc-line-soft)",
-                background: "oklch(0.08 0.03 285)",
+                background: "var(--asc-table-head-bg)",
                 color: "var(--asc-fg-3)",
                 fontFamily: "var(--font-mono, monospace)",
               }}

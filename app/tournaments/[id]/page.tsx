@@ -772,14 +772,14 @@ export default async function TournamentDetailsPage({
 
   return (
     <main
-      className="asc-ambient min-h-screen overflow-hidden"
+      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
     >
       <div className="relative z-10">
         <Navbar />
 
         {/* Hero */}
-        <section className="relative min-h-[620px] overflow-hidden">
+        <section className="asc-image-card relative min-h-[620px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url("${tournamentImage}")` }}
@@ -904,7 +904,7 @@ export default async function TournamentDetailsPage({
                 style={{
                   borderColor: "var(--asc-line)",
                   color: "var(--asc-fg-1)",
-                  background: "oklch(0.06 0.03 287 / 0.35)",
+                  background: "var(--asc-card-muted)",
                   clipPath:
                     "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
                 }}
@@ -920,7 +920,7 @@ export default async function TournamentDetailsPage({
           className="sticky top-0 z-30 border-y backdrop-blur"
           style={{
             borderColor: "var(--asc-line-soft)",
-            background: "oklch(0.07 0.025 285 / 0.82)",
+            background: "var(--asc-nav-bg)",
           }}
         >
           <div className="mx-auto flex max-w-[1680px] items-center gap-1 overflow-x-auto px-6 lg:px-10 2xl:px-14">

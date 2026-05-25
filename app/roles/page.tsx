@@ -215,7 +215,7 @@ function RoleCard({
       style={{
         borderColor: "var(--asc-line-soft)",
         background:
-          "linear-gradient(135deg, oklch(0.14 0.06 285 / 0.78), var(--asc-bg-1))",
+          "linear-gradient(135deg, var(--asc-accent-dim), var(--asc-bg-1))",
         clipPath: panelClip,
       }}
     >
@@ -269,22 +269,22 @@ export default async function RolesPage() {
 
   return (
     <main
-      className="asc-ambient min-h-screen overflow-hidden"
+      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
     >
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[460px] overflow-hidden">
+        <section className="asc-image-hero relative min-h-[460px] overflow-hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center"
+            className="asc-hero-media absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage: 'url("/images/backgrounds/community-hero.webp")',
             }}
           />
 
           <div
-            className="absolute inset-0"
+            className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
                 "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.28) 0%, oklch(0.07 0.025 285 / 0.65) 54%, var(--asc-bg-0) 100%)",
@@ -301,7 +301,7 @@ export default async function RolesPage() {
             }}
           />
 
-          <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-32 pt-24 lg:px-10 2xl:px-14">
+          <div className="asc-image-hero-content relative z-10 mx-auto max-w-[1680px] px-6 pb-32 pt-24 lg:px-10 2xl:px-14">
             <p
               className="asc-section-label mb-4"
             >

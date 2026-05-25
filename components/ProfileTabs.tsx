@@ -406,10 +406,11 @@ function CreateTeamForm({
               name="name"
               required
               placeholder={labels.teamNamePlaceholder}
-              className="border px-4 py-3 text-white outline-none transition"
+              className="border px-4 py-3 outline-none transition"
               style={{
                 borderColor: "var(--asc-line-soft)",
                 background: "var(--asc-bg-2)",
+                color: "var(--asc-fg-0)",
               }}
             />
           </label>

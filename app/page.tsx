@@ -360,10 +360,10 @@ function FeaturedEventCard({
 }) {
   return (
     <div
-      className="relative border p-6 shadow-2xl backdrop-blur"
+      className="asc-hero-light-card relative border p-6 shadow-2xl backdrop-blur"
       style={{
         borderColor: "var(--asc-line-soft)",
-        background: "oklch(0.09 0.035 287 / 0.86)",
+        background: "var(--asc-card)",
         clipPath:
           "polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)",
       }}
@@ -809,7 +809,7 @@ function GameTile({ game }: { game: GameData }) {
   return (
     <Link
       href="/games"
-      className="group relative block aspect-[3/4] overflow-hidden border transition hover:opacity-95"
+      className="asc-image-card group relative block aspect-[3/4] overflow-hidden border transition hover:opacity-95"
       style={{
         borderColor: "var(--asc-line-soft)",
         background: "var(--asc-bg-1)",
@@ -841,7 +841,7 @@ function GameTile({ game }: { game: GameData }) {
             style={{
               color: "var(--asc-fg-2)",
               borderColor: "var(--asc-line-soft)",
-              background: "oklch(0.10 0.03 285 / 0.60)",
+              background: "var(--asc-card-muted)",
             }}
           >
             {game._count.tournaments} TOURNAMENTS
@@ -908,7 +908,7 @@ function DiscordPreviewCard({ stats }: { stats: DiscordStats }) {
       style={{
         borderColor: "var(--asc-line-soft)",
         background:
-          "linear-gradient(135deg, oklch(0.30 0.18 270 / 0.88) 0%, oklch(0.12 0.05 280 / 0.96) 58%, oklch(0.08 0.03 285) 100%)",
+          "var(--asc-discord-card-bg)",
         clipPath:
           "polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)",
       }}
@@ -955,7 +955,7 @@ function DiscordPreviewCard({ stats }: { stats: DiscordStats }) {
                 className="border px-3 py-3"
                 style={{
                   borderColor: "var(--asc-line-soft)",
-                  background: "oklch(0.11 0.04 285 / 0.52)",
+                  background: "var(--asc-card-muted)",
                   clipPath:
                     "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
                 }}
@@ -1452,23 +1452,23 @@ export default async function HomePage() {
   );
   return (
     <main
-      className="asc-ambient min-h-screen overflow-hidden"
+      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
     >
       <div className="relative z-10">
         <Navbar />
 
         {/* Hero */}
-        <section className="relative min-h-[720px] overflow-hidden">
+        <section className="asc-image-hero relative min-h-[720px] overflow-hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center"
+            className="asc-hero-media absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage: 'url("/images/backgrounds/home-hero.webp")',
             }}
           />
 
           <div
-            className="absolute inset-0"
+            className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
                 "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.20) 0%, oklch(0.07 0.025 285 / 0.55) 55%, var(--asc-bg-0) 100%)",
@@ -1477,7 +1477,7 @@ export default async function HomePage() {
             }}
           />
 
-          <div className="relative z-10 mx-auto flex min-h-[720px] max-w-[1680px] items-end px-6 pb-20 pt-24 lg:px-10 2xl:px-14">
+          <div className="asc-image-hero-content relative z-10 mx-auto flex min-h-[720px] max-w-[1680px] items-end px-6 pb-20 pt-24 lg:px-10 2xl:px-14">
             <div className="grid w-full gap-10 lg:grid-cols-[3fr_2fr] lg:items-end">
               <div>
                 <p
@@ -1534,7 +1534,7 @@ export default async function HomePage() {
         <div
           className="asc-ticker-track"
           style={{
-            background: "oklch(0.12 0.03 287 / 0.60)",
+            background: "var(--asc-card-muted)",
             borderTop: "1px solid var(--asc-line-soft)",
             borderBottom: "1px solid var(--asc-line-soft)",
             padding: "10px 0",

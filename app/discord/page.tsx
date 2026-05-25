@@ -340,7 +340,7 @@ function CommandOptions({ command }: { command: DiscordSlashCommand }) {
             ...monoStyle,
             borderColor: "var(--asc-line-soft)",
             color: "var(--asc-fg-2)",
-            background: "oklch(0.12 0.04 285 / 0.58)",
+            background: "var(--asc-card-muted)",
           }}
           title={option.description}
         >
@@ -476,15 +476,15 @@ export default async function DiscordPage() {
 
   return (
     <main
-      className="asc-ambient min-h-screen overflow-hidden"
+      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
     >
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative flex min-h-[500px] items-end overflow-hidden">
+        <section className="asc-image-hero relative flex min-h-[500px] items-end overflow-hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-[0.55]"
+            className="asc-hero-media absolute inset-0 bg-cover bg-center opacity-[0.55]"
             style={{ backgroundImage: 'url("/images/backgrounds/community-hero.webp")' }}
           />
           <div
@@ -495,7 +495,7 @@ export default async function DiscordPage() {
             }}
           />
           <div
-            className="absolute inset-0"
+            className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
                 "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.34) 0%, oklch(0.07 0.025 285 / 0.58) 45%, var(--asc-bg-0) 100%)",
@@ -504,7 +504,7 @@ export default async function DiscordPage() {
             }}
           />
 
-          <div className="relative z-10 mx-auto w-full max-w-[1480px] px-6 pb-10 pt-24 lg:px-10 2xl:px-14">
+          <div className="asc-image-hero-content relative z-10 mx-auto w-full max-w-[1480px] px-6 pb-10 pt-24 lg:px-10 2xl:px-14">
             <div className="mb-[18px] flex items-center gap-3">
               <DiscordGlyph />
               <span

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Barlow_Condensed, Inter, Rajdhani } from "next/font/google";
 
+import { PublicThemeProvider } from "@/components/PublicThemeProvider";
 import { getTextDirection, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
+import { PUBLIC_THEME_STORAGE_KEY } from "@/lib/theme";
 import "./globals.css";
 
 const rajdhani = Rajdhani({
@@ -103,15 +105,22 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale();
+  const themeScript = `try{var t=localStorage.getItem("${PUBLIC_THEME_STORAGE_KEY}");document.documentElement.dataset.ascTheme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.ascTheme="dark"}`;
 
   return (
     <html
       lang={locale}
       dir={getTextDirection(locale)}
+      data-asc-theme="dark"
       suppressHydrationWarning
       className={`${rajdhani.variable} ${barlowCondensed.variable} ${inter.variable}`}
     >
-      <body>{children}</body>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body>
+        <PublicThemeProvider>{children}</PublicThemeProvider>
+      </body>
     </html>
   );
 }

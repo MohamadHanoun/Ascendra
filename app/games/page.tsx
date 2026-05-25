@@ -242,7 +242,7 @@ function GameRow({ game, index }: { game: GameRegistryItem; index: number }) {
       <div
         className="grid min-h-[180px] lg:grid-cols-[360px_minmax(0,1fr)]"
       >
-        <div className="relative min-h-[210px] overflow-hidden lg:min-h-[180px]">
+        <div className="asc-game-img-panel relative min-h-[210px] overflow-hidden lg:min-h-[180px]">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: cssUrl(artUrl) }}
@@ -438,19 +438,19 @@ export default async function GamesPage() {
   );
 
   return (
-    <main className="asc-ambient min-h-screen overflow-hidden" style={shellStyle}>
+    <main className="asc-public-page asc-ambient min-h-screen overflow-hidden" style={shellStyle}>
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative flex min-h-[360px] items-end overflow-hidden">
+        <section className="asc-image-hero relative flex min-h-[360px] items-end overflow-hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-70"
+            className="asc-hero-media absolute inset-0 bg-cover bg-center opacity-70"
             style={{
               backgroundImage: 'url("/images/backgrounds/tournaments-hero.webp")',
             }}
           />
           <div
-            className="absolute inset-0"
+            className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
                 "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.35) 0%, oklch(0.07 0.025 285 / 0.56) 45%, var(--asc-bg-0) 100%)",
@@ -459,7 +459,7 @@ export default async function GamesPage() {
             }}
           />
 
-          <div className="relative z-10 mx-auto w-full max-w-[1680px] px-6 pb-9 pt-24 lg:px-10 2xl:px-14">
+          <div className="asc-image-hero-content relative z-10 mx-auto w-full max-w-[1680px] px-6 pb-9 pt-24 lg:px-10 2xl:px-14">
             <p
               className="asc-section-label mb-[18px]"
             >

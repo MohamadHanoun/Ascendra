@@ -130,7 +130,7 @@ function LeaderboardDisclaimer() {
       className="mb-4 border px-4 py-3 text-xs leading-5"
       style={{
         borderColor: "var(--asc-line-soft)",
-        background: "oklch(0.10 0.035 287 / 0.72)",
+        background: "var(--asc-card-muted)",
         color: "var(--asc-fg-2)",
       }}
     >
@@ -204,15 +204,15 @@ export default async function LeaderboardPage({
 
   return (
     <main
-      className="asc-ambient min-h-screen overflow-hidden"
+      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
     >
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative flex min-h-[360px] items-end overflow-hidden">
+        <section className="asc-image-hero relative flex min-h-[360px] items-end overflow-hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center"
+            className="asc-hero-media absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage:
                 'url("/images/backgrounds/leaderboard-hero.webp")',
@@ -220,7 +220,7 @@ export default async function LeaderboardPage({
           />
 
           <div
-            className="absolute inset-0"
+            className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
                 "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.35) 0%, oklch(0.07 0.025 285 / 0.58) 45%, var(--asc-bg-0) 100%)",
@@ -229,7 +229,7 @@ export default async function LeaderboardPage({
             }}
           />
 
-          <div className="relative z-10 mx-auto w-full max-w-[1480px] px-6 pb-7 pt-24 lg:px-8">
+          <div className="asc-image-hero-content relative z-10 mx-auto w-full max-w-[1480px] px-6 pb-7 pt-24 lg:px-8">
             <p
               className="asc-section-label mb-[14px]"
             >
@@ -258,7 +258,7 @@ export default async function LeaderboardPage({
               className="mt-[22px] flex flex-wrap items-center gap-2 border p-3"
               style={{
                 borderColor: "var(--asc-line-soft)",
-                background: "oklch(0.08 0.035 285 / 0.70)",
+                background: "var(--asc-card)",
                 clipPath:
                   "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
               }}

@@ -134,7 +134,7 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
 
   return (
     <main
-      className="asc-ambient min-h-screen overflow-hidden"
+      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
     >
       <div className="relative z-10">
@@ -279,7 +279,7 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
                     <div
                       className="px-5 py-3"
                       style={{
-                        background: "oklch(0.10 0.03 287 / 0.5)",
+                        background: "var(--asc-table-head-bg)",
                         borderBottom: "1px solid var(--asc-line-soft)",
                       }}
                     >

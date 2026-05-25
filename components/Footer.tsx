@@ -13,15 +13,19 @@ function FooterColumn({
 }) {
   return (
     <div>
-      <h3 className="mb-4 text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
+      <h3
+        className="mb-4 text-xs font-black uppercase tracking-[0.18em]"
+        style={{ color: "var(--asc-accent)" }}
+      >
         {title}
       </h3>
+
       <div className="grid gap-3">
         {links.map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className="text-sm font-bold transition hover:text-white"
+            className="text-sm font-bold transition"
             style={{ color: "var(--asc-fg-3)" }}
           >
             {link.label}
@@ -62,7 +66,13 @@ export default async function Footer() {
   ];
 
   return (
-    <footer style={{ borderTop: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-1)" }}>
+    <footer
+      style={{
+        borderTop: "1px solid var(--asc-line-soft)",
+        background: "var(--asc-bg-1)",
+        color: "var(--asc-fg-1)",
+      }}
+    >
       <div className="grid gap-10 px-6 py-14 lg:grid-cols-[1.25fr_0.75fr_0.75fr_0.75fr_1fr] lg:px-10 2xl:px-14">
         <div>
           <Link href="/" className="inline-flex items-center gap-3">
@@ -71,18 +81,22 @@ export default async function Footer() {
               alt="Ascendra"
               width={50}
               height={50}
-              className="h-12 w-12 object-contain"
+              className="asc-brand-mark h-12 w-12 object-contain"
             />
+
             <Image
               src="/images/brand/ascendra-wordmark.png"
               alt="Ascendra"
               width={190}
               height={50}
-              className="h-11 w-auto object-contain"
+              className="asc-brand-wordmark h-11 w-auto object-contain"
             />
           </Link>
 
-          <p className="mt-6 max-w-md text-sm leading-7" style={{ color: "var(--asc-fg-3)" }}>
+          <p
+            className="mt-6 max-w-md text-sm leading-7"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
             {messages.description}
           </p>
 
@@ -93,16 +107,27 @@ export default async function Footer() {
         </div>
 
         <FooterColumn title={messages.columns.platform} links={platformLinks} />
-        <FooterColumn title={messages.columns.community} links={communityLinks} />
+        <FooterColumn
+          title={messages.columns.community}
+          links={communityLinks}
+        />
         <FooterColumn title={messages.columns.legal} links={legalLinks} />
 
         <div>
-          <h3 className="mb-4 text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
+          <h3
+            className="mb-4 text-xs font-black uppercase tracking-[0.18em]"
+            style={{ color: "var(--asc-accent)" }}
+          >
             {messages.columns.discord}
           </h3>
-          <p className="mb-5 text-sm leading-7" style={{ color: "var(--asc-fg-3)" }}>
+
+          <p
+            className="mb-5 text-sm leading-7"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
             {messages.discordDescription}
           </p>
+
           <Link
             href="/discord"
             className="inline-flex px-5 py-3 text-sm font-black text-white transition"
@@ -123,12 +148,17 @@ export default async function Footer() {
         >
           <p>
             © {new Date().getFullYear()}{" "}
-            <span className="font-bold" style={{ color: "var(--asc-fg-2)" }}>Ascendra</span>.{" "}
-            {messages.rights}
+            <span className="font-bold" style={{ color: "var(--asc-fg-2)" }}>
+              Ascendra
+            </span>
+            . {messages.rights}
           </p>
+
           <p>
             {messages.developedBy}{" "}
-            <span className="font-bold" style={{ color: "var(--asc-accent)" }}>Abu 3Day</span>
+            <span className="font-bold" style={{ color: "var(--asc-accent)" }}>
+              Abu 3Day
+            </span>
           </p>
         </div>
       </div>

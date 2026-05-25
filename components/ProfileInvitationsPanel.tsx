@@ -166,7 +166,7 @@ function ProfileInvitationsPanel({ invitations, receivedInvitations }: ProfileIn
 
   return (
     <section className="overflow-hidden border shadow-2xl" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
-      <div className="px-6 py-5" style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "oklch(0.10 0.03 287 / 0.4)" }}>
+      <div className="px-6 py-5" style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-table-head-bg)" }}>
         <p className="text-sm font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-accent)" }}>
           Invitations
         </p>

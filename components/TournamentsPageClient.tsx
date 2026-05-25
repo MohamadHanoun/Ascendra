@@ -367,7 +367,7 @@ export default function TournamentsPageClient({ tournaments, statusLabels, detai
               display: "flex", alignItems: "center",
               padding: "10px 18px",
               borderBottom: "1px solid var(--asc-line-soft)",
-              background: "oklch(0.08 0.03 285)",
+              background: "var(--asc-table-head-bg)",
             }}>
               {TABLE_COLS.map((h, i) => (
                 <div key={i} style={{
@@ -414,7 +414,7 @@ export default function TournamentsPageClient({ tournaments, statusLabels, detai
               display: "flex", alignItems: "center",
               padding: "10px 18px",
               borderBottom: "1px solid var(--asc-line-soft)",
-              background: "oklch(0.08 0.03 285)",
+              background: "var(--asc-table-head-bg)",
             }}>
               {TABLE_COLS.map((h, i) => (
                 <div key={i} style={{

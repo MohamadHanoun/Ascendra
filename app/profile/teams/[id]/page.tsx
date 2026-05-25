@@ -854,7 +854,7 @@ export default async function TeamDetailsPage({
 
   return (
     <main
-      className="asc-ambient min-h-screen overflow-hidden"
+      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
     >
       <div className="relative z-10">
@@ -899,7 +899,7 @@ export default async function TeamDetailsPage({
               className="relative mt-8 overflow-hidden border p-6 shadow-2xl shadow-black/30 backdrop-blur md:p-8"
               style={{
                 borderColor: "var(--asc-line-soft)",
-                background: "oklch(0.09 0.035 287 / 0.78)",
+                background: "var(--asc-card)",
                 clipPath: heroClip,
               }}
             >

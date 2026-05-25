@@ -208,7 +208,7 @@ export default async function AboutPage() {
   const messages = aboutMessages[locale];
 
   return (
-    <main className="asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
+    <main className="asc-public-page asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
       <div className="relative z-10">
         <Navbar />
 

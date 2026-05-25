@@ -458,3 +458,368 @@ article.overflow-hidden[class*="border"]::before {
   color: var(--asc-fg-0);
   box-shadow: inset 0 -1px 0 var(--asc-accent);
 }
+
+.asc-public-page {
+  --asc-bg: var(--asc-bg-0);
+  --asc-bg-soft: var(--asc-bg-1);
+  --asc-surface: var(--asc-bg-1);
+  --asc-surface-strong: var(--asc-bg-2);
+  --asc-card: var(--asc-bg-1);
+  --asc-card-muted: oklch(0.10 0.035 287 / 0.88);
+  --asc-text: var(--asc-fg-0);
+  --asc-text-muted: var(--asc-fg-2);
+  --asc-text-soft: var(--asc-fg-3);
+  --asc-line-strong: var(--asc-line);
+  --asc-shadow: 0 24px 70px rgb(0 0 0 / 0.42);
+  --asc-focus: var(--asc-accent);
+  --asc-nav-bg: oklch(0.06 0.03 287 / 0.92);
+  --asc-table-head-bg: oklch(0.08 0.03 285);
+  --asc-hover-soft: oklch(0.20 0.10 285 / 0.08);
+  --asc-discord-card-bg: linear-gradient(135deg, oklch(0.30 0.18 270 / 0.88) 0%, oklch(0.12 0.05 280 / 0.96) 60%, oklch(0.08 0.03 285) 100%);
+  background: var(--asc-bg-0);
+  color: var(--asc-fg-1);
+}
+
+[data-asc-theme="light"] .asc-public-page {
+  --asc-bg-0: #f4f6ff;
+  --asc-bg-1: #ffffff;
+  --asc-bg-2: #eef1ff;
+  --asc-bg-3: #e5e9fb;
+  --asc-line: rgb(98 87 215 / 0.34);
+  --asc-line-soft: rgb(98 87 215 / 0.18);
+  --asc-fg-0: #101426;
+  --asc-fg-1: #263047;
+  --asc-fg-2: #4f5870;
+  --asc-fg-3: #70778d;
+  --asc-accent: #6d5cff;
+  --asc-accent-2: #5146dd;
+  --asc-accent-glow: rgb(109 92 255 / 0.22);
+  --asc-accent-dim: rgb(109 92 255 / 0.12);
+  --asc-live: oklch(0.52 0.19 25);
+  --asc-green: oklch(0.45 0.13 150);
+  --asc-amber: oklch(0.54 0.13 75);
+  --asc-blue: oklch(0.48 0.15 235);
+  --asc-prize: #2563eb;
+  --asc-bg: #f4f6ff;
+  --asc-bg-soft: #eef1ff;
+  --asc-surface: rgb(255 255 255 / 0.92);
+  --asc-surface-strong: #ffffff;
+  --asc-card: rgb(255 255 255 / 0.92);
+  --asc-card-muted: #eef1ff;
+  --asc-text: #101426;
+  --asc-text-muted: #4f5870;
+  --asc-text-soft: #70778d;
+  --asc-line-strong: rgb(98 87 215 / 0.42);
+  --asc-shadow: 0 24px 70px rgb(31 28 87 / 0.13);
+  --asc-focus: #6d5cff;
+  --asc-nav-bg: rgb(248 250 255 / 0.88);
+  --asc-table-head-bg: #eef1ff;
+  --asc-hover-soft: rgb(109 92 255 / 0.08);
+  --asc-discord-card-bg: linear-gradient(135deg, rgb(226 230 255 / 0.96) 0%, rgb(255 255 255 / 0.94) 54%, rgb(237 241 255 / 0.98) 100%);
+  color-scheme: light;
+}
+
+[data-asc-theme="light"] .asc-public-page.asc-ambient::before {
+  background:
+    radial-gradient(ellipse 1100px 560px at 50% -10%, rgb(109 92 255 / 0.16), transparent 70%),
+    radial-gradient(ellipse 760px 420px at 100% 24%, rgb(56 126 248 / 0.12), transparent 70%);
+  mix-blend-mode: normal;
+}
+
+.asc-public-card,
+.asc-public-panel {
+  border: 1px solid var(--asc-line-soft);
+  background: var(--asc-card);
+  box-shadow: var(--asc-shadow);
+}
+
+.asc-public-muted {
+  color: var(--asc-fg-2);
+}
+
+.asc-public-page .asc-image-card {
+  --asc-bg-0: #08090e;
+  --asc-bg-1: #0d1117;
+  --asc-bg-2: oklch(0.15 0.045 287);
+  --asc-bg-3: oklch(0.20 0.055 290);
+  --asc-fg-0: oklch(0.985 0.005 285);
+  --asc-fg-1: oklch(0.88 0.018 285);
+  --asc-fg-2: oklch(0.70 0.03 285);
+  --asc-fg-3: oklch(0.54 0.04 285);
+  --asc-card: oklch(0.09 0.035 287 / 0.86);
+  --asc-card-muted: oklch(0.10 0.035 287 / 0.78);
+}
+
+.asc-public-border {
+  border-color: var(--asc-line-soft);
+}
+
+.asc-theme-toggle {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--asc-line-soft);
+  background: var(--asc-bg-1);
+  color: var(--asc-fg-1);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  cursor: pointer;
+  font-family: var(--font-display, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.asc-theme-toggle:hover {
+  border-color: var(--asc-accent);
+  background: var(--asc-accent-dim);
+  color: var(--asc-fg-0);
+  transform: translateY(-1px);
+}
+
+.asc-theme-toggle:focus-visible {
+  outline: 2px solid var(--asc-focus);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px var(--asc-accent-glow);
+}
+
+.asc-theme-toggle__icon {
+  display: grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  place-items: center;
+  border: 1px solid var(--asc-line-soft);
+  background: var(--asc-accent-dim);
+  color: var(--asc-accent);
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+
+.asc-theme-toggle[data-theme="light"] {
+  border-color: var(--asc-line);
+  background: var(--asc-bg-2);
+}
+
+.asc-theme-toggle[data-compact="true"] {
+  width: 100%;
+  min-height: 2.75rem;
+}
+
+.asc-public-page .asc-section-label {
+  color: var(--asc-fg-2);
+}
+
+.asc-public-page .asc-mini-button {
+  border-color: var(--asc-line);
+  background: var(--asc-card-muted);
+  color: var(--asc-fg-0);
+}
+
+.asc-public-page .asc-mini-button:hover {
+  border-color: var(--asc-accent);
+  background: var(--asc-accent-dim);
+}
+
+.asc-public-page .asc-mini-button[data-variant="ghost"] {
+  background: transparent;
+  color: var(--asc-fg-1);
+}
+
+.asc-public-page .asc-info-pill {
+  border-color: var(--asc-line-soft);
+  background: var(--asc-card-muted);
+  color: var(--asc-fg-2);
+}
+
+.asc-public-page .asc-filter-pill {
+  border-color: var(--asc-line);
+  background: var(--asc-card-muted);
+  color: var(--asc-fg-1);
+}
+
+.asc-public-page .asc-filter-pill:hover {
+  border-color: var(--asc-accent);
+  background: var(--asc-accent-dim);
+  color: var(--asc-fg-0);
+}
+
+.asc-public-page .asc-filter-pill[data-active="true"] {
+  border-color: var(--asc-accent);
+  background: linear-gradient(135deg, var(--asc-accent-2), oklch(0.46 0.19 270));
+  color: oklch(0.98 0.01 290);
+}
+
+.asc-public-page .asc-tab-link {
+  color: var(--asc-fg-2);
+}
+
+.asc-public-page .asc-tab-link:hover {
+  border-color: var(--asc-line-soft);
+  background: var(--asc-card-muted);
+  color: var(--asc-fg-0);
+}
+
+.asc-public-page .asc-tab-link[data-active="true"] {
+  border-color: var(--asc-line);
+  border-bottom-color: var(--asc-accent);
+  background: var(--asc-accent-dim);
+  color: var(--asc-fg-0);
+}
+
+.asc-public-page .asc-leaderboard-row:hover {
+  background: var(--asc-hover-soft);
+}
+
+.asc-public-page .hover\:text-white:hover {
+  color: var(--asc-fg-0) !important;
+}
+
+.asc-public-page .hover\:bg-white\/\[0\.02\]:hover,
+.asc-public-page .hover\:bg-white\/\[0\.025\]:hover,
+.asc-public-page .hover\:bg-white\/\[0\.03\]:hover {
+  background-color: var(--asc-hover-soft) !important;
+}
+
+[data-asc-theme="light"] .asc-public-page input,
+[data-asc-theme="light"] .asc-public-page textarea,
+[data-asc-theme="light"] .asc-public-page select {
+  color-scheme: light;
+}
+
+[data-asc-theme="light"] .asc-public-page select,
+[data-asc-theme="light"] .asc-public-page select option {
+  background-color: var(--asc-bg-1);
+  color: var(--asc-fg-0);
+}
+
+/* ── Image-backed heroes ── */
+/*
+ * Public image heroes keep the original dark esports artwork in Light Mode.
+ * The fog was caused by Light Mode pseudo overlays and the inline asc-hero-overlay
+ * gradient fading to var(--asc-bg-0). Disable those only in Light Mode.
+ */
+.asc-image-hero-content {
+  --asc-fg-0: oklch(0.97 0.006 285);
+  --asc-fg-1: oklch(0.92 0.012 285);
+  --asc-fg-2: rgba(255, 255, 255, 0.76);
+  --asc-fg-3: rgba(255, 255, 255, 0.50);
+}
+
+.asc-image-hero-content .asc-section-label {
+  color: oklch(0.84 0.12 285);
+}
+
+[data-asc-theme="light"] .asc-image-hero {
+  background: var(--asc-bg-0) !important;
+}
+
+[data-asc-theme="light"] .asc-image-hero .asc-hero-media {
+  display: block !important;
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+/* This is the inline gradient layer that created the gray fog/fade. */
+[data-asc-theme="light"] .asc-image-hero .asc-hero-overlay {
+  display: none !important;
+  opacity: 0 !important;
+  background: none !important;
+  transition: none !important;
+}
+
+[data-asc-theme="light"] .asc-image-hero::before,
+[data-asc-theme="light"] .asc-image-hero::after {
+  content: none !important;
+  display: none !important;
+  opacity: 0 !important;
+  background: none !important;
+}
+
+[data-asc-theme="light"] .asc-image-hero-content {
+  --asc-fg-0: #ffffff;
+  --asc-fg-1: #f8f7ff;
+  --asc-fg-2: rgba(255, 255, 255, 0.78);
+  --asc-fg-3: rgba(255, 255, 255, 0.56);
+}
+
+[data-asc-theme="light"] .asc-image-hero-content .asc-section-label {
+  color: #a997ff;
+}
+
+[data-asc-theme="light"] .asc-image-hero-content .asc-hero-light-card {
+  --asc-fg-0: #101426;
+  --asc-fg-1: #182033;
+  --asc-fg-2: #475069;
+  --asc-fg-3: #687087;
+}
+
+/* ── Navbar brand assets: visible in Light Mode ── */
+/*
+ * The wordmark and logo mark are white assets for dark backgrounds.
+ * In light mode the navbar background is near-white, so we invert them
+ * to make them dark and legible. Scoped to asc-public-page so admin
+ * pages (which never toggle light mode) are not affected.
+ */
+[data-asc-theme="light"] .asc-public-page .asc-brand-wordmark {
+  filter: invert(1) brightness(0.14);
+}
+
+[data-asc-theme="light"] .asc-public-page .asc-brand-mark {
+  filter: invert(1) brightness(0.14);
+}
+
+/* ── Light Mode fixes: footer logo + clear game thumbnails ── */
+/*
+ * Footer logo uses the same brand classes as the navbar.
+ * Game registry row images were getting a white fade because their inline
+ * overlay fades to var(--asc-bg-1), which becomes white in Light Mode.
+ * These rules make the image-side fade almost transparent only inside the
+ * game thumbnail container, without changing the light content panel.
+ */
+
+[data-asc-theme="light"] .asc-brand-wordmark,
+[data-asc-theme="light"] .asc-brand-mark {
+  filter: invert(1) brightness(0.14);
+}
+
+[data-asc-theme="light"] .asc-public-page div[class*="min-h-[210px]"][class*="overflow-hidden"] {
+  --asc-bg-1: rgb(255 255 255 / 0.06);
+}
+
+[data-asc-theme="light"] .asc-public-page div[class*="min-h-[210px]"][class*="overflow-hidden"] > div:first-child {
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+[data-asc-theme="light"] .asc-public-page div[class*="min-h-[210px]"][class*="overflow-hidden"] > div:nth-child(2) {
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+[data-asc-theme="light"] .asc-public-page .asc-image-card img,
+[data-asc-theme="light"] .asc-public-page .asc-image-card .asc-hero-media {
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+[data-asc-theme="light"] .asc-public-page .asc-image-card::before,
+[data-asc-theme="light"] .asc-public-page .asc-image-card::after {
+  opacity: 0 !important;
+  display: none !important;
+}
+
