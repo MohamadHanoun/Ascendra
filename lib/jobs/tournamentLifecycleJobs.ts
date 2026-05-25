@@ -249,17 +249,17 @@ export async function syncTournamentLifecycle(
     }
 
     try {
-      await prisma.tournament.update({
-        where: { id: tournament.id },
-        data: update,
-      });
-
       if (hasCompletedFinalMatch(tournament)) {
         const awardResult = await awardTournamentResultsAndPoints(tournament.id);
         if (!awardResult.ok) {
           throw new Error(awardResult.error);
         }
       }
+
+      await prisma.tournament.update({
+        where: { id: tournament.id },
+        data: update,
+      });
 
       await publishLifecycleEvents(tournament, update);
       revalidateTournamentViews(tournament.id);
