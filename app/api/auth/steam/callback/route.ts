@@ -14,6 +14,52 @@ const STEAM_PLAYER_URL =
   "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002";
 const STEAM_ID64_REGEX = /^https?:\/\/steamcommunity\.com\/openid\/id\/(\d+)$/;
 const STATE_COOKIE = "steam_openid_state";
+const STATE_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+};
+
+function getAppBaseUrl(request: Request) {
+  const configuredBaseUrl = process.env.APP_BASE_URL?.trim();
+
+  if (configuredBaseUrl) {
+    try {
+      return new URL(configuredBaseUrl).origin;
+    } catch {
+      // Fall back to the current request origin if APP_BASE_URL is invalid.
+    }
+  }
+
+  return new URL(request.url).origin;
+}
+
+function clearStateCookie(response: NextResponse) {
+  response.cookies.set(STATE_COOKIE, "", {
+    ...STATE_COOKIE_OPTIONS,
+    maxAge: 0,
+  });
+}
+
+function getStateCookieValue(request: Request) {
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const cookieMatch = cookieHeader
+    .split(";")
+    .map((c) => c.trim())
+    .find((c) => c.startsWith(`${STATE_COOKIE}=`));
+  const rawValue = cookieMatch?.slice(STATE_COOKIE.length + 1) ?? "";
+
+  if (!rawValue) {
+    return "";
+  }
+
+  try {
+    return decodeURIComponent(rawValue);
+  } catch {
+    return rawValue;
+  }
+}
 
 function redirect(
   baseUrl: string,
@@ -25,7 +71,7 @@ function redirect(
     url.searchParams.set(k, v);
   }
   const res = NextResponse.redirect(url.toString());
-  res.cookies.set(STATE_COOKIE, "", { maxAge: 0, path: "/" });
+  clearStateCookie(res);
   return res;
 }
 
@@ -56,17 +102,11 @@ async function writeAudit(opts: {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const baseUrl = new URL(request.url).origin;
+  const baseUrl = getAppBaseUrl(request);
 
   const returnedState = searchParams.get("state");
 
-  // Verify the state cookie.
-  const cookieHeader = request.headers.get("cookie") ?? "";
-  const cookieMatch = cookieHeader
-    .split(";")
-    .map((c) => c.trim())
-    .find((c) => c.startsWith(`${STATE_COOKIE}=`));
-  const cookieValue = cookieMatch?.slice(STATE_COOKIE.length + 1) ?? "";
+  const cookieValue = getStateCookieValue(request);
 
   if (!cookieValue || !returnedState) {
     return fail(baseUrl, "Session expired. Please try linking your account again.");
@@ -78,14 +118,14 @@ export async function GET(request: Request) {
     return fail(baseUrl, "Malformed session. Please try linking your account again.");
   }
 
-  // Constant-time comparison — prevents timing attacks.
+  // Constant-time comparison prevents timing attacks.
   const stateA = Buffer.from(returnedState);
   const stateB = Buffer.from(cookieState);
   const statesMatch =
     stateA.length === stateB.length && crypto.timingSafeEqual(stateA, stateB);
 
   if (!statesMatch) {
-    return fail(baseUrl, "State mismatch — possible CSRF. Please try again.");
+    return fail(baseUrl, "State mismatch. Please try again.");
   }
 
   // Verify the HMAC embedded in the state.
@@ -183,7 +223,7 @@ export async function GET(request: Request) {
   if (!match) {
     await writeAudit({
       action: "steam.openid.verify.invalid_claimed_id",
-      request: { userId, claimedId },
+      request: { userId },
       ok: false,
       error: "invalid_claimed_id",
     });
@@ -212,7 +252,7 @@ export async function GET(request: Request) {
           playerData.response?.players?.[0]?.personaname ?? null;
       }
     } catch {
-      // Non-fatal — we still proceed without a display name.
+      // Non-fatal; we still proceed without a display name.
     }
   }
 
@@ -230,7 +270,7 @@ export async function GET(request: Request) {
   if (existingLink && existingLink.userId !== userId) {
     await writeAudit({
       action: "steam.openid.link.conflict",
-      request: { userId, steamId64 },
+      request: { userId },
       ok: false,
       error: "already_linked_to_other_user",
     });
@@ -269,7 +309,7 @@ export async function GET(request: Request) {
 
   await writeAudit({
     action: "steam.openid.link.success",
-    request: { userId, steamId64 },
+    request: { userId },
     ok: true,
   });
 

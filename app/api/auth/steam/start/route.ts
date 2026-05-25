@@ -9,7 +9,21 @@ export const dynamic = "force-dynamic";
 
 const STEAM_OPENID_URL = "https://steamcommunity.com/openid/login";
 const STATE_COOKIE = "steam_openid_state";
-const STATE_TTL_SECONDS = 300; // 5 minutes
+const STATE_TTL_SECONDS = 600; // 10 minutes
+
+function getAppBaseUrl(request: Request) {
+  const configuredBaseUrl = process.env.APP_BASE_URL?.trim();
+
+  if (configuredBaseUrl) {
+    try {
+      return new URL(configuredBaseUrl).origin;
+    } catch {
+      // Fall back to the current request origin if APP_BASE_URL is invalid.
+    }
+  }
+
+  return new URL(request.url).origin;
+}
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -22,17 +36,16 @@ export async function GET(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const origin = new URL(request.url).origin;
-  const returnTo = `${origin}/api/auth/steam/callback`;
+  const appBaseUrl = getAppBaseUrl(request);
+  const returnTo = new URL("/api/auth/steam/callback", appBaseUrl).toString();
 
-  // CSRF nonce — HMAC-signed with a server-side secret so the callback can
-  // verify it without storing state in a database.
+  // CSRF nonce signed with a server-side secret so the callback can verify it.
   const secret = process.env.STEAM_OPENID_SECRET?.trim();
   if (!secret) {
-    const errUrl = new URL("/profile", request.url);
+    const errUrl = new URL("/profile", appBaseUrl);
     errUrl.searchParams.set(
       "error",
-      "Steam linking is not configured (missing STEAM_OPENID_SECRET).",
+      "Steam linking is not configured. Contact an administrator.",
     );
     return NextResponse.redirect(errUrl);
   }
@@ -47,7 +60,7 @@ export async function GET(request: Request) {
     "openid.ns": "http://specs.openid.net/auth/2.0",
     "openid.mode": "checkid_setup",
     "openid.return_to": `${returnTo}?state=${encodeURIComponent(state)}`,
-    "openid.realm": origin,
+    "openid.realm": appBaseUrl,
     "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select",
     "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select",
   });

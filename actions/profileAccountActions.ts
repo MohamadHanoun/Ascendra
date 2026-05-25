@@ -61,7 +61,7 @@ export async function unlinkSteamAccount(
     where: {
       userId_provider: { userId: user.id, provider: GameProvider.steam },
     },
-    select: { id: true, externalId: true },
+    select: { id: true },
   });
 
   if (!account) return fail("No Steam account is linked to your profile.");
@@ -70,7 +70,7 @@ export async function unlinkSteamAccount(
 
   await writeAudit({
     action: "steam.account.unlink",
-    request: { userId: user.id, steamId64: account.externalId },
+    request: { userId: user.id },
     ok: true,
   });
 
