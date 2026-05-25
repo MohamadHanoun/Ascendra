@@ -9,17 +9,17 @@ datasource db {
 // ─── NEW ─────────────────────────────────────────────────────────────────────
 
 model Game {
-  id            String  @id @default(cuid())
-  name          String
-  slug          String  @unique
-  shortName     String?
-  description   String?
-  iconUrl       String?
-  coverImageUrl String?
-  platform      String?
-  defaultTeamSize    Int @default(5)
-  defaultSubstitutes Int @default(0)
-  isActive      Boolean @default(true)
+  id                 String  @id @default(cuid())
+  name               String
+  slug               String  @unique
+  shortName          String?
+  description        String?
+  iconUrl            String?
+  coverImageUrl      String?
+  platform           String?
+  defaultTeamSize    Int     @default(5)
+  defaultSubstitutes Int     @default(0)
+  isActive           Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -27,7 +27,8 @@ model Game {
   tournaments Tournament[]
   teams       Team[]
 
-  integrations GameIntegration[]
+  integrations       GameIntegration[]
+  rankingPointEvents RankingPointEvent[]
 }
 
 // ─── UNCHANGED ───────────────────────────────────────────────────────────────
@@ -57,6 +58,7 @@ model User {
   playerGameAccounts PlayerGameAccount[]
   matchReports       MatchReport[]       @relation("MatchReportSubmitter")
   notifications      Notification[]
+  rankingPointEvents RankingPointEvent[]
 }
 
 // ─── MODIFIED ────────────────────────────────────────────────────────────────
@@ -66,6 +68,7 @@ model Tournament {
   title       String
   description String
   gameId      String?
+  seasonId    String?
 
   // Schedule
   startsAt             DateTime?
@@ -89,7 +92,7 @@ model Tournament {
   rules      String?
   region     String?
   platform   String?
-  visibility String @default("public")
+  visibility String  @default("public")
 
   // Status
   status             String    @default("draft")
@@ -106,15 +109,18 @@ model Tournament {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  game          Game?                    @relation(fields: [gameId], references: [id])
-  registrations TournamentRegistration[]
-  results       TournamentResult[]
-  matches       Match[]
+  game               Game?                    @relation(fields: [gameId], references: [id])
+  season             RankingSeason?           @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+  registrations      TournamentRegistration[]
+  results            TournamentResult[]
+  matches            Match[]
+  rankingPointEvents RankingPointEvent[]
 
   tournamentMatches TournamentMatch[]
 
   @@index([discordAnnouncementMessageId])
   @@index([gameId])
+  @@index([seasonId])
   @@index([status])
 }
 
@@ -138,12 +144,13 @@ model Team {
   leader User  @relation("TeamLeader", fields: [leaderId], references: [id], onDelete: Cascade)
   game   Game? @relation(fields: [gameId], references: [id])
 
-  members       TeamMember[]
-  invites       TeamInvite[]
-  registrations TournamentRegistration[]
-  results       TournamentResult[]
-  matchesAsA    Match[]                  @relation("MatchTeamA")
-  matchesAsB    Match[]                  @relation("MatchTeamB")
+  members            TeamMember[]
+  invites            TeamInvite[]
+  registrations      TournamentRegistration[]
+  results            TournamentResult[]
+  rankingPointEvents RankingPointEvent[]
+  matchesAsA         Match[]                  @relation("MatchTeamA")
+  matchesAsB         Match[]                  @relation("MatchTeamB")
 
   @@unique([name, leaderId])
   @@index([gameId])
@@ -237,6 +244,53 @@ model TournamentResult {
   @@unique([tournamentId, teamId])
   @@index([tournamentId])
   @@index([teamId])
+}
+
+model RankingSeason {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  startsAt  DateTime
+  endsAt    DateTime
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tournaments Tournament[]
+  pointEvents RankingPointEvent[]
+}
+
+model RankingPointEvent {
+  id           String   @id @default(cuid())
+  teamId       String?
+  userId       String?
+  gameId       String?
+  tournamentId String?
+  matchId      String?
+  seasonId     String?
+  points       Int
+  type         String
+  reason       String?
+  metadata     Json?
+  dedupeKey    String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  team       Team?            @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  user       User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  game       Game?            @relation(fields: [gameId], references: [id], onDelete: SetNull)
+  tournament Tournament?      @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
+  match      TournamentMatch? @relation(fields: [matchId], references: [id], onDelete: SetNull)
+  season     RankingSeason?   @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+
+  @@index([teamId])
+  @@index([userId])
+  @@index([gameId])
+  @@index([tournamentId])
+  @@index([matchId])
+  @@index([seasonId])
+  @@index([type])
+  @@index([createdAt])
 }
 
 model Match {
@@ -500,9 +554,10 @@ model TournamentMatch {
   nextMatch     TournamentMatch?  @relation("MatchAdvancement", fields: [nextMatchId], references: [id], onDelete: SetNull)
   feederMatches TournamentMatch[] @relation("MatchAdvancement")
 
-  games   TournamentMatchGame[]
-  reports MatchReport[]
-  room    GameRoom?
+  games              TournamentMatchGame[]
+  reports            MatchReport[]
+  room               GameRoom?
+  rankingPointEvents RankingPointEvent[]
 
   @@unique([tournamentId, roundNumber, matchNumber])
   @@index([tournamentId])
