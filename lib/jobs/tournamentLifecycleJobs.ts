@@ -3,6 +3,7 @@ import { MatchStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import { awardTournamentResultsAndPoints } from "@/lib/tournamentResults";
 
 import type { JobRunResult, SyncConfig } from "./types";
 
@@ -252,6 +253,13 @@ export async function syncTournamentLifecycle(
         where: { id: tournament.id },
         data: update,
       });
+
+      if (hasCompletedFinalMatch(tournament)) {
+        const awardResult = await awardTournamentResultsAndPoints(tournament.id);
+        if (!awardResult.ok) {
+          throw new Error(awardResult.error);
+        }
+      }
 
       await publishLifecycleEvents(tournament, update);
       revalidateTournamentViews(tournament.id);

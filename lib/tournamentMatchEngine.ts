@@ -16,6 +16,7 @@ import {
   notifyMatchDisputed,
   notifyMatchScheduled,
 } from "@/lib/matchNotifications";
+import { awardTournamentResultsAndPoints } from "@/lib/tournamentResults";
 
 export type EngineResult<T = void> =
   | { ok: true; data: T }
@@ -71,6 +72,28 @@ async function emitMatchEvent(
       ...(extra ?? {}),
     },
   });
+}
+
+async function awardFinalTournamentResults(tournamentId: string) {
+  try {
+    const result = await awardTournamentResultsAndPoints(tournamentId);
+
+    if (!result.ok) {
+      await writeAudit({
+        action: "tournament.results.award",
+        request: { tournamentId },
+        status: AuditStatus.failure,
+        error: result.error,
+      });
+    }
+  } catch (error) {
+    await writeAudit({
+      action: "tournament.results.award",
+      request: { tournamentId },
+      status: AuditStatus.failure,
+      error: error instanceof Error ? error.message : "unexpected_error",
+    });
+  }
 }
 
 // ─── Bracket Generation ──────────────────────────────────────────────────────
@@ -913,6 +936,7 @@ export async function advanceBracketAfterMatch(
         completedAt: match.completedAt ?? new Date(),
       },
     });
+    await awardFinalTournamentResults(match.tournamentId);
     return ok({ advanced: false });
   }
 

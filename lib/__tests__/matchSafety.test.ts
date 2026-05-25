@@ -64,6 +64,17 @@ vi.mock("@/lib/matchNotifications", () => ({
   notifyMatchRoomReady: vi.fn().mockResolvedValue({}),
 }));
 
+vi.mock("@/lib/tournamentResults", () => ({
+  awardTournamentResultsAndPoints: vi.fn().mockResolvedValue({
+    ok: true,
+    skipped: false,
+    tournamentId: "tourn1",
+    placements: [],
+    teamPointEvents: 0,
+    playerPointEvents: 0,
+  }),
+}));
+
 import {
   adminOverrideMatchResult,
   completeMatchGame,

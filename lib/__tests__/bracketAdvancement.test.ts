@@ -55,9 +55,21 @@ vi.mock("@/lib/matchNotifications", () => ({
   notifyMatchRoomReady: vi.fn().mockResolvedValue({}),
 }));
 
+vi.mock("@/lib/tournamentResults", () => ({
+  awardTournamentResultsAndPoints: vi.fn().mockResolvedValue({
+    ok: true,
+    skipped: false,
+    tournamentId: "tourn1",
+    placements: [],
+    teamPointEvents: 0,
+    playerPointEvents: 0,
+  }),
+}));
+
 // Import AFTER mocks are registered
 import { advanceBracketAfterMatch, completeMatchGame } from "../tournamentMatchEngine";
 import { prisma } from "@/lib/prisma";
+import { awardTournamentResultsAndPoints } from "@/lib/tournamentResults";
 
 // ─── Shared test data ─────────────────────────────────────────────────────────
 
@@ -175,6 +187,7 @@ describe("advanceBracketAfterMatch", () => {
       expect(m.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ status: MatchStatus.completed }) }),
       );
+      expect(awardTournamentResultsAndPoints).toHaveBeenCalledWith("tourn1");
     });
   });
 
