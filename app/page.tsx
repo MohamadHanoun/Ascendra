@@ -4,7 +4,6 @@ import Link from "next/link";
 
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
-import Sparkline from "@/components/ui/Sparkline";
 import { getDictionary, type HomeMessages, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
@@ -63,7 +62,6 @@ type LadderPreviewPlayer = {
   score: number;
   scoreLabel: string;
   accent: string;
-  trend: number[];
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -76,15 +74,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-function generateTrend(points: number, rank: number, len = 8): number[] {
-  return Array.from({ length: len }, (_, index) => {
-    const base = points * 0.92;
-    const wave = Math.sin(index * 1.15 + rank * 0.72) * points * 0.015;
-    const rise = (index / Math.max(len - 1, 1)) * points * 0.06;
-
-    return Math.round(Math.max(0, base + wave + rise));
-  });
-}
 
 function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
   if (!Array.isArray(snapshotMembers)) {
@@ -845,18 +834,20 @@ function GameTile({ game }: { game: GameData }) {
 
       <div aria-hidden="true" className="asc-corner-mark" />
 
-      <div className="absolute right-4 top-4">
-        <span
-          className="border px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
-          style={{
-            color: "var(--asc-green)",
-            borderColor: "oklch(0.55 0.14 150 / 0.45)",
-            background: "oklch(0.20 0.10 150 / 0.25)",
-          }}
-        >
-          {game._count.tournaments} LIVE
-        </span>
-      </div>
+      {game._count.tournaments > 0 && (
+        <div className="absolute right-4 top-4">
+          <span
+            className="border px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
+            style={{
+              color: "var(--asc-fg-2)",
+              borderColor: "var(--asc-line-soft)",
+              background: "oklch(0.10 0.03 285 / 0.60)",
+            }}
+          >
+            {game._count.tournaments} TOURNAMENTS
+          </span>
+        </div>
+      )}
 
       <div className="absolute inset-x-0 bottom-0 p-5">
         <h3 className="text-lg" style={{ color: "var(--asc-fg-0)" }}>
@@ -1033,90 +1024,29 @@ function HomeMetricTile({
 }
 
 function LeaderboardPreview({ players }: { players: TopPlayer[] }) {
-  const fallbackPlayers: LadderPreviewPlayer[] = [
-    {
-      id: "fallback-ravenous",
-      rank: 1,
-      name: "Ravenous",
-      initials: "RA",
-      meta: "NVX · NA-East · Duelist",
-      score: 4218,
-      scoreLabel: "PTS",
-      accent: "oklch(0.62 0.22 285)",
-      trend: generateTrend(4218, 1),
-    },
-    {
-      id: "fallback-kairoshi",
-      rank: 2,
-      name: "Kairoshi",
-      initials: "KA",
-      meta: "OBLK · JP · Initiator",
-      score: 4192,
-      scoreLabel: "PTS",
-      accent: "oklch(0.58 0.18 220)",
-      trend: generateTrend(4192, 2),
-    },
-    {
-      id: "fallback-nyxvoid",
-      rank: 3,
-      name: "NyxVoid",
-      initials: "NY",
-      meta: "CRSH · EU-W · Controller",
-      score: 4087,
-      scoreLabel: "PTS",
-      accent: "oklch(0.60 0.22 320)",
-      trend: generateTrend(4087, 3),
-    },
-    {
-      id: "fallback-vortexx",
-      rank: 4,
-      name: "Vortexx",
-      initials: "VO",
-      meta: "VRGE · EU-W · Sentinel",
-      score: 4051,
-      scoreLabel: "PTS",
-      accent: "oklch(0.58 0.20 250)",
-      trend: generateTrend(4051, 4),
-    },
-    {
-      id: "fallback-cinderfall",
-      rank: 5,
-      name: "Cinderfall",
-      initials: "CI",
-      meta: "AXIS · NA-West · Duelist",
-      score: 3998,
-      scoreLabel: "PTS",
-      accent: "oklch(0.62 0.22 25)",
-      trend: generateTrend(3998, 5),
-    },
+  const accents = [
+    "oklch(0.62 0.22 285)",
+    "oklch(0.58 0.18 220)",
+    "oklch(0.60 0.22 320)",
+    "oklch(0.58 0.20 250)",
+    "oklch(0.62 0.22 25)",
   ];
 
-  const displayPlayers: LadderPreviewPlayer[] =
-    players.length > 0
-      ? players.slice(0, 5).map((player, index) => ({
-          id: player.userId,
-          rank: index + 1,
-          name: player.username,
-          initials: player.username.slice(0, 2).toUpperCase(),
-          meta:
-            player.placement !== null
-              ? `Best #${player.placement} · Tournament points`
-              : "Tournament points",
-          score: player.points,
-          scoreLabel: "PTS",
-          accent:
-            index === 0
-              ? "oklch(0.62 0.22 285)"
-              : index === 1
-                ? "oklch(0.58 0.18 220)"
-                : index === 2
-                  ? "oklch(0.60 0.22 320)"
-                  : index === 3
-                    ? "oklch(0.58 0.20 250)"
-                    : "oklch(0.62 0.22 25)",
-          trend: generateTrend(Math.max(player.points, 100), index + 1),
-        }))
-      : fallbackPlayers;
+  const displayPlayers: LadderPreviewPlayer[] = players.slice(0, 5).map(
+    (player, index) => ({
+      id: player.userId,
+      rank: index + 1,
+      name: player.username,
+      initials: player.username.slice(0, 2).toUpperCase(),
+      meta:
+        player.placement !== null
+          ? `Best #${player.placement} · Tournament points`
+          : "Tournament points",
+      score: player.points,
+      scoreLabel: "PTS",
+      accent: accents[index] ?? accents[4],
+    }),
+  );
 
   return (
     <div>
@@ -1140,77 +1070,84 @@ function LeaderboardPreview({ players }: { players: TopPlayer[] }) {
           background: "var(--asc-bg-1)",
         }}
       >
-        {displayPlayers.map((player, index) => (
-          <Link
-            key={player.id}
-            href="/leaderboard"
-            className="flex items-center gap-4 px-5 py-4 transition hover:opacity-90"
-            style={{
-              borderTop: index ? "1px solid var(--asc-line-soft)" : "0",
-              background:
-                index === 0 ? "oklch(0.20 0.12 285 / 0.08)" : "transparent",
-            }}
-          >
-            <span
-              className="w-8 shrink-0 text-sm font-black tabular-nums"
+        {displayPlayers.length === 0 ? (
+          <div className="px-5 py-10 text-center">
+            <p
+              className="text-sm font-black uppercase tracking-[0.12em]"
+              style={{ color: "var(--asc-fg-0)" }}
+            >
+              No ranked players yet
+            </p>
+            <p className="mt-2 text-xs" style={{ color: "var(--asc-fg-3)" }}>
+              Rankings will appear here once tournament results are recorded.
+            </p>
+          </div>
+        ) : (
+          displayPlayers.map((player, index) => (
+            <Link
+              key={player.id}
+              href="/leaderboard"
+              className="flex items-center gap-4 px-5 py-4 transition hover:opacity-90"
               style={{
-                color: index < 3 ? "var(--asc-accent)" : "var(--asc-fg-3)",
+                borderTop: index ? "1px solid var(--asc-line-soft)" : "0",
+                background:
+                  index === 0
+                    ? "oklch(0.20 0.12 285 / 0.08)"
+                    : "transparent",
               }}
             >
-              {String(player.rank).padStart(2, "0")}
-            </span>
-
-            <span
-              className="grid h-9 w-9 shrink-0 place-items-center text-[11px] font-black text-white"
-              style={{
-                background: player.accent,
-                clipPath:
-                  "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
-              }}
-            >
-              {player.initials}
-            </span>
-
-            <span className="min-w-0 flex-1">
               <span
-                className="block truncate text-sm font-black"
-                style={{ color: "var(--asc-fg-0)" }}
+                className="w-8 shrink-0 text-sm font-black tabular-nums"
+                style={{
+                  color: index < 3 ? "var(--asc-accent)" : "var(--asc-fg-3)",
+                }}
               >
-                {player.name}
+                {String(player.rank).padStart(2, "0")}
               </span>
-              <span
-                className="mt-1 block truncate text-[10px] font-bold uppercase tracking-[0.12em]"
-                style={{ color: "var(--asc-fg-3)" }}
-              >
-                {player.meta}
-              </span>
-            </span>
 
-            <span className="hidden shrink-0 md:block">
-              <Sparkline
-                values={player.trend}
-                id={player.id}
-                width={72}
-                height={24}
-              />
-            </span>
+              <span
+                className="grid h-9 w-9 shrink-0 place-items-center text-[11px] font-black text-white"
+                style={{
+                  background: player.accent,
+                  clipPath:
+                    "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
+                }}
+              >
+                {player.initials}
+              </span>
 
-            <span className="w-20 shrink-0 text-right">
-              <span
-                className="block text-lg font-black tabular-nums"
-                style={{ color: "var(--asc-fg-0)" }}
-              >
-                {player.score.toLocaleString()}
+              <span className="min-w-0 flex-1">
+                <span
+                  className="block truncate text-sm font-black"
+                  style={{ color: "var(--asc-fg-0)" }}
+                >
+                  {player.name}
+                </span>
+                <span
+                  className="mt-1 block truncate text-[10px] font-bold uppercase tracking-[0.12em]"
+                  style={{ color: "var(--asc-fg-3)" }}
+                >
+                  {player.meta}
+                </span>
               </span>
-              <span
-                className="text-[9px] font-black uppercase tracking-[0.14em]"
-                style={{ color: "var(--asc-fg-3)" }}
-              >
-                {player.scoreLabel}
+
+              <span className="w-20 shrink-0 text-right">
+                <span
+                  className="block text-lg font-black tabular-nums"
+                  style={{ color: "var(--asc-fg-0)" }}
+                >
+                  {player.score.toLocaleString()}
+                </span>
+                <span
+                  className="text-[9px] font-black uppercase tracking-[0.14em]"
+                  style={{ color: "var(--asc-fg-3)" }}
+                >
+                  {player.scoreLabel}
+                </span>
               </span>
-            </span>
-          </Link>
-        ))}
+            </Link>
+          ))
+        )}
       </div>
     </div>
   );
@@ -1461,90 +1398,9 @@ export default async function HomePage() {
     .sort((a, b) => b.points - a.points)
     .slice(0, 5);
 
-  const placeholderGames: GameData[] = [
-    {
-      id: "val",
-      name: "VALORANT",
-      slug: "valorant",
-      shortName: "VAL",
-      defaultTeamSize: 5,
-      _count: { tournaments: 0, teams: 0 },
-    },
-    {
-      id: "cs2",
-      name: "CS2",
-      slug: "cs2",
-      shortName: "CS2",
-      defaultTeamSize: 5,
-      _count: { tournaments: 0, teams: 0 },
-    },
-    {
-      id: "lol",
-      name: "LEAGUE OF LEGENDS",
-      slug: "league-of-legends",
-      shortName: "LOL",
-      defaultTeamSize: 5,
-      _count: { tournaments: 0, teams: 0 },
-    },
-    {
-      id: "dota",
-      name: "DOTA 2",
-      slug: "dota2",
-      shortName: "D2",
-      defaultTeamSize: 5,
-      _count: { tournaments: 0, teams: 0 },
-    },
-    {
-      id: "bf",
-      name: "BATTLEFIELD",
-      slug: "battlefield",
-      shortName: "BF",
-      defaultTeamSize: 5,
-      _count: { tournaments: 0, teams: 0 },
-    },
-  ];
+  const displayGames = games;
 
-  const displayGames = games.length > 0 ? games : placeholderGames;
-
-  const placeholderAnnouncements: AnnouncementData[] = [
-    {
-      id: "a1",
-      title: "Season 7 Group Stage Schedule Confirmed",
-      category: "TOURNAMENT",
-      description:
-        "All 32 slots are filled. The group stage draw has been completed and schedules are now live.",
-      createdAt: new Date(Date.now() - 12 * 3600000),
-    },
-    {
-      id: "a2",
-      title: "Anti-Cheat System v2.0 Deployed",
-      category: "PLATFORM",
-      description:
-        "Enhanced behavioral detection now active across all supported titles.",
-      createdAt: new Date(Date.now() - 36 * 3600000),
-    },
-    {
-      id: "a3",
-      title: "MENA Region Dedicated Servers Are Live",
-      category: "COMMUNITY",
-      description:
-        "Dedicated low-latency servers for Middle East and North Africa players are now online.",
-      createdAt: new Date(Date.now() - 2 * 86400000),
-    },
-    {
-      id: "a4",
-      title: "Organizer Tools Beta Now Open",
-      category: "PLATFORM",
-      description:
-        "Apply for early access to bracket management and tournament scheduling tools.",
-      createdAt: new Date(Date.now() - 3 * 86400000),
-    },
-  ];
-
-  const displayAnnouncements =
-    recentAnnouncements.length > 0
-      ? recentAnnouncements
-      : placeholderAnnouncements;
+  const displayAnnouncements = recentAnnouncements;
 
   const featuredTournament = tournaments[0] ?? null;
 
@@ -1658,27 +1514,18 @@ export default async function HomePage() {
                 aria-hidden={copy === 1 ? true : undefined}
               >
                 {[
-                  { text: "LIVE", highlight: true },
-                  {
-                    text: "  NVX 13 · OBLK 11 · MAP 3 ASCENT",
-                    highlight: false,
-                  },
-                  { text: "  ◈ UP NEXT", highlight: true },
-                  { text: "  CRSH VS VRGE · 00:42", highlight: false },
-                  { text: "  ◈ QUALIFIERS", highlight: true },
-                  {
-                    text: "  RIFT OPEN — 96/128 TEAMS REGISTERED",
-                    highlight: false,
-                  },
-                  { text: "  ◈ SIGNING", highlight: true },
-                  { text: "  HOLLOWAY JOINS PHOENIX DRIFT", highlight: false },
-                  { text: "  ◈ PATCH 7.1", highlight: true },
-                  { text: "  APEX TIER SOFT-RESET LIVE", highlight: false },
-                  { text: "  ◈ PRIZE", highlight: true },
-                  {
-                    text: "  ASCENDRA MAJOR $1.25M GUARANTEED",
-                    highlight: false,
-                  },
+                  { text: "◈ TOURNAMENTS", highlight: true },
+                  { text: "  REGISTER YOUR TEAM AND COMPETE", highlight: false },
+                  { text: "  ◈ RANKINGS", highlight: true },
+                  { text: "  SEASONAL LEADERBOARD", highlight: false },
+                  { text: "  ◈ RESULTS", highlight: true },
+                  { text: "  VERIFIED MATCH RESULTS", highlight: false },
+                  { text: "  ◈ GAMES", highlight: true },
+                  { text: "  MULTI-TITLE COMPETITIVE PLATFORM", highlight: false },
+                  { text: "  ◈ COMMUNITY", highlight: true },
+                  { text: "  TEAM MANAGEMENT AND MATCH CENTER", highlight: false },
+                  { text: "  ◈ ASCENDRA", highlight: true },
+                  { text: "  PREMIUM ESPORTS PLATFORM", highlight: false },
                   { text: "  ✦ ", highlight: false },
                 ].map((segment, index) => (
                   <span
@@ -1899,11 +1746,33 @@ export default async function HomePage() {
               </Link>
             </SectionHeader>
 
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-              {displayGames.slice(0, 5).map((game) => (
-                <GameTile key={game.id} game={game} />
-              ))}
-            </div>
+            {displayGames.length === 0 ? (
+              <div
+                className="border p-6 text-center"
+                style={{
+                  borderColor: "var(--asc-line-soft)",
+                  background: "var(--asc-bg-1)",
+                  clipPath:
+                    "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+                }}
+              >
+                <p
+                  className="text-sm font-black uppercase tracking-[0.12em]"
+                  style={{ color: "var(--asc-fg-0)" }}
+                >
+                  No games configured yet
+                </p>
+                <p className="mt-2 text-xs" style={{ color: "var(--asc-fg-3)" }}>
+                  Supported titles will appear here once added to the registry.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+                {displayGames.slice(0, 5).map((game) => (
+                  <GameTile key={game.id} game={game} />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -1948,11 +1817,33 @@ export default async function HomePage() {
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader label="From the desk" title="Latest announcements" />
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {displayAnnouncements.map((item, index) => (
-                <AnnouncementCard key={item.id} item={item} index={index} />
-              ))}
-            </div>
+            {displayAnnouncements.length === 0 ? (
+              <div
+                className="border p-6 text-center"
+                style={{
+                  borderColor: "var(--asc-line-soft)",
+                  background: "var(--asc-bg-1)",
+                  clipPath:
+                    "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+                }}
+              >
+                <p
+                  className="text-sm font-black uppercase tracking-[0.12em]"
+                  style={{ color: "var(--asc-fg-0)" }}
+                >
+                  No announcements yet
+                </p>
+                <p className="mt-2 text-xs" style={{ color: "var(--asc-fg-3)" }}>
+                  Published announcements will appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {displayAnnouncements.map((item, index) => (
+                  <AnnouncementCard key={item.id} item={item} index={index} />
+                ))}
+              </div>
+            )}
 
             <div className="mt-8 flex justify-center">
               <SecondaryLink href="/announcements">
