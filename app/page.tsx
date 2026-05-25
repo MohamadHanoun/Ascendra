@@ -896,11 +896,10 @@ function DiscordGlyph() {
   );
 }
 
-function DiscordPreviewCard() {
+function DiscordPreviewCard({ inviteUrl }: { inviteUrl: string | null }) {
   return (
-    <Link
-      href="/community"
-      className="relative block overflow-hidden border p-5 transition hover:opacity-95"
+    <div
+      className="relative overflow-hidden border p-0"
       style={{
         borderColor: "var(--asc-line-soft)",
         background:
@@ -910,74 +909,81 @@ function DiscordPreviewCard() {
       }}
     >
       <div aria-hidden="true" className="asc-corner-mark" />
-
-      <div className="flex items-start gap-4">
-        <DiscordGlyph />
-
-        <div>
-          <p
-            className="text-[10px] font-black uppercase tracking-[0.18em]"
-            style={{ color: "var(--asc-fg-3)" }}
-          >
-            Community
-          </p>
-          <h3 className="text-xl" style={{ color: "var(--asc-fg-0)" }}>
-            The Ascendra Discord
-          </h3>
-        </div>
-      </div>
-
-      <p
-        className="mt-4 text-sm leading-6"
-        style={{ color: "var(--asc-fg-1)" }}
-      >
-        184K members. Live tournament rooms, ticket-bot disputes,
-        looking-for-game pings — your team's home base.
-      </p>
-
-      <div className="mt-5 flex gap-8">
-        <div>
-          <p
-            className="text-[10px] font-black uppercase tracking-[0.14em]"
-            style={{ color: "var(--asc-fg-3)" }}
-          >
-            Members
-          </p>
-          <p
-            className="mt-1 text-xl font-black tabular-nums"
-            style={{ color: "var(--asc-fg-0)" }}
-          >
-            184.2K
-          </p>
-        </div>
-
-        <div>
-          <p
-            className="text-[10px] font-black uppercase tracking-[0.14em]"
-            style={{ color: "var(--asc-fg-3)" }}
-          >
-            Online now
-          </p>
-          <p
-            className="mt-1 text-xl font-black tabular-nums"
-            style={{ color: "var(--asc-green)" }}
-          >
-            28.4K
-          </p>
-        </div>
-      </div>
-
-      <span
-        className="mt-7 inline-flex items-center justify-center px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-white"
+      <div
+        className="absolute inset-0"
         style={{
-          background: "oklch(0.62 0.18 270)",
-          clipPath:
-            "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+          background:
+            "radial-gradient(circle at 82% 18%, oklch(0.62 0.18 270 / 0.24), transparent 42%)",
         }}
-      >
-        Join the server
-      </span>
-    </Link>
+      />
+
+      <div className="relative z-10 p-5 md:p-6">
+        <div className="flex items-start gap-4">
+          <DiscordGlyph />
+
+          <div>
+            <p
+              className="text-[10px] font-black uppercase tracking-[0.18em]"
+              style={{ color: "oklch(0.85 0.10 270)" }}
+            >
+              Community
+            </p>
+            <h3 className="text-xl" style={{ color: "var(--asc-fg-0)" }}>
+              The Ascendra Discord
+            </h3>
+          </div>
+        </div>
+
+        <p
+          className="mt-4 text-sm leading-6"
+          style={{ color: "var(--asc-fg-1)" }}
+        >
+          Join Discord for live community coordination while tournaments,
+          rules, roles, and rankings stay available here on Ascendra.
+        </p>
+
+        <div
+          className="mt-5 border px-4 py-3 text-xs leading-5"
+          style={{
+            borderColor: "var(--asc-line-soft)",
+            background: "oklch(0.10 0.035 285 / 0.54)",
+            color: "var(--asc-fg-2)",
+          }}
+        >
+          Live Discord stats unavailable
+        </div>
+
+        {inviteUrl ? (
+          <a
+            href={inviteUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-7 inline-flex items-center justify-center px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-white transition hover:opacity-90"
+            style={{
+              background: "oklch(0.62 0.18 270)",
+              clipPath:
+                "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+            }}
+          >
+            Join the server
+          </a>
+        ) : (
+          <span
+            aria-disabled="true"
+            className="mt-7 inline-flex items-center justify-center border px-5 py-3 text-xs font-black uppercase tracking-[0.14em]"
+            style={{
+              borderColor: "var(--asc-line-soft)",
+              color: "var(--asc-fg-3)",
+              background: "oklch(0.14 0.04 285 / 0.65)",
+              clipPath:
+                "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+            }}
+          >
+            Join server unavailable
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1287,7 +1293,9 @@ export default async function HomePage() {
     allResults,
     recentAnnouncements,
     totalUsers,
+    totalTeams,
     activeTournamentCount,
+    publicTournamentCount,
   ] = await Promise.all([
     prisma.tournament.findMany({
       orderBy: { createdAt: "desc" },
@@ -1374,8 +1382,14 @@ export default async function HomePage() {
 
     prisma.user.count(),
 
+    prisma.team.count(),
+
     prisma.tournament.count({
-      where: { status: { in: ["open", "upcoming"] } },
+      where: { visibility: "public", status: { in: ["open", "upcoming"] } },
+    }),
+
+    prisma.tournament.count({
+      where: { visibility: "public" },
     }),
   ]);
 
@@ -1543,6 +1557,8 @@ export default async function HomePage() {
   const featuredCountdown = getCountdownParts(
     featuredTournament?.startsAt ?? null,
   );
+  const discordInviteUrl =
+    process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim() || null;
 
   return (
     <main
@@ -1898,30 +1914,28 @@ export default async function HomePage() {
               <LeaderboardPreview players={topPlayers} />
 
               <div className="grid gap-4">
-                <DiscordPreviewCard />
+                <DiscordPreviewCard inviteUrl={discordInviteUrl} />
 
                 <div className="grid grid-cols-2 gap-4">
                   <HomeMetricTile
                     label="Players"
-                    value={totalUsers > 0 ? formatCompact(totalUsers) : "48.2K"}
-                    sub="↑ 12% this month"
+                    value={formatCompact(totalUsers)}
+                    sub="Registered accounts"
                   />
                   <HomeMetricTile
-                    label="Matches today"
-                    value="3.2K"
-                    sub="↑ 480 since 6 AM"
+                    label="Teams"
+                    value={formatCompact(totalTeams)}
+                    sub="Registered teams"
                   />
                   <HomeMetricTile
                     label="Active tournaments"
-                    value={
-                      activeTournamentCount > 0 ? activeTournamentCount : 14
-                    }
-                    sub={`${displayGames.length} across games`}
+                    value={activeTournamentCount}
+                    sub={`${publicTournamentCount} public total`}
                   />
                   <HomeMetricTile
-                    label="Prize pooled"
-                    value="$2.1M"
-                    sub="Season 7 to date"
+                    label="Results"
+                    value={formatCompact(allResults.length)}
+                    sub="Tournament results"
                   />
                 </div>
               </div>
