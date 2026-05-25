@@ -28,8 +28,6 @@ type LeaderboardPageProps = {
   }>;
 };
 
-const leaderboardDisclaimer =
-  "Ascendra ranks are based only on community tournament points. They are not official game ranks, MMR, ELO, matchmaking ratings, or skill ratings.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -124,7 +122,7 @@ function GameFilters({
   );
 }
 
-function LeaderboardDisclaimer() {
+function LeaderboardDisclaimer({ text }: { text: string }) {
   return (
     <p
       className="mb-4 border px-4 py-3 text-xs leading-5"
@@ -134,7 +132,7 @@ function LeaderboardDisclaimer() {
         color: "var(--asc-fg-2)",
       }}
     >
-      {leaderboardDisclaimer}
+      {text}
     </p>
   );
 }
@@ -263,7 +261,7 @@ export default async function LeaderboardPage({
                   "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
               }}
             >
-              <span className="asc-section-label mr-1">Filters</span>
+              <span className="asc-section-label mr-1">{messages.filtersLabel}</span>
               <FilterPill
                 href={buildLeaderboardHref({
                   gameSlug: leaderboard.selectedGame?.slug,
@@ -326,7 +324,7 @@ export default async function LeaderboardPage({
         </section>
 
         <div className="relative z-20 mx-auto -mt-5 max-w-[1480px] px-6 pb-24 lg:px-8">
-          <LeaderboardDisclaimer />
+          <LeaderboardDisclaimer text={messages.disclaimer} />
           <LeaderboardContent
             type={leaderboard.type}
             data={leaderboard.data}

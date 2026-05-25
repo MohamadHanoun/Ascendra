@@ -134,7 +134,7 @@ function RankingRow({
                 className="text-[9px] font-black uppercase tracking-[0.14em]"
                 style={{ color: "var(--asc-accent)" }}
               >
-                YOU
+                {messages.youBadge}
               </span>
             )}
           </div>
@@ -292,7 +292,7 @@ function PodiumCard({
                 className="text-[9px] font-black uppercase tracking-[0.14em]"
                 style={{ color: "var(--asc-accent)" }}
               >
-                YOU
+                {messages.youBadge}
               </span>
             )}
           </div>
@@ -450,10 +450,10 @@ export default function LeaderboardTable({
           <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="asc-section-label">
-                Ranks 4 &ndash; 100
+                {messages.ranksLabel}
               </p>
               <h2 className="mt-1 text-3xl" style={{ color: "var(--asc-fg-0)" }}>
-                Ascendra Ladder
+                {messages.ladderTitle}
               </h2>
             </div>
           </div>

@@ -84,6 +84,7 @@ export type FooterMessages = {
   };
   discordDescription: string;
   joinDiscord: string;
+  openDiscordHub: string;
   rights: string;
   developedBy: string;
 };
@@ -335,7 +336,12 @@ export type LeaderboardMessages = {
     memberSingular: string;
     memberPlural: string;
     pointsSuffix: string;
+    ranksLabel: string;
+    ladderTitle: string;
+    youBadge: string;
   };
+  filtersLabel: string;
+  disclaimer: string;
   empty: {
     title: string;
     overallDescription: string;
@@ -523,6 +529,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       discordDescription:
         "Follow tournaments, team updates, announcements, and community activity directly on Discord.",
       joinDiscord: "Join Discord",
+      openDiscordHub: "Open Discord Hub",
       rights: "All rights reserved.",
       developedBy: "Developed by",
     },
@@ -853,7 +860,13 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         memberSingular: "member",
         memberPlural: "members",
         pointsSuffix: "pts",
+        ranksLabel: "Ranks 4 – 100",
+        ladderTitle: "Ascendra Ladder",
+        youBadge: "YOU",
       },
+      filtersLabel: "Filters",
+      disclaimer:
+        "Ascendra ranks are based only on community tournament points earned within our platform. MMR, in-game ranks, and external rating systems are not reflected here.",
       empty: {
         title: "No tournament points yet",
         overallDescription:
@@ -1036,6 +1049,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       discordDescription:
         "تابع البطولات وتحديثات الفرق والإعلانات ونشاط المجتمع مباشرة عبر Discord.",
       joinDiscord: "انضم إلى Discord",
+      openDiscordHub: "فتح مركز Discord",
       rights: "جميع الحقوق محفوظة.",
       developedBy: "تم التطوير بواسطة",
     },
@@ -1361,7 +1375,13 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         memberSingular: "عضو",
         memberPlural: "أعضاء",
         pointsSuffix: "نقطة",
+        ranksLabel: "المراكز 4 – 100",
+        ladderTitle: "سلّم Ascendra",
+        youBadge: "أنت",
       },
+      filtersLabel: "الفلاتر",
+      disclaimer:
+        "يستند ترتيب Ascendra إلى نقاط البطولات المجتمعية المكتسبة داخل منصتنا فقط. لا تنعكس هنا تقييمات MMR، أو المراتب داخل اللعبة، أو أنظمة التقييم الخارجية.",
       empty: {
         title: "لا توجد نقاط بطولات حاليًا",
         overallDescription: "سيظهر الترتيب هنا عند إضافة النتائج الرسمية.",

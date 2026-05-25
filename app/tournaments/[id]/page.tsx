@@ -71,6 +71,10 @@ const pageCopy: Record<
     noRulesBody: string;
     noScheduleTitle: string;
     noScheduleBody: string;
+    round: string;
+    vs: string;
+    view: string;
+    moreMatchesPrefix: string;
   }
 > = {
   en: {
@@ -106,6 +110,10 @@ const pageCopy: Record<
     noScheduleTitle: "Schedule will appear when matches are generated.",
     noScheduleBody:
       "Once the bracket or match schedule is created, all rounds will be listed in this section.",
+    round: "Round",
+    vs: "vs",
+    view: "View →",
+    moreMatchesPrefix: "more · see full bracket below",
   },
   ar: {
     breadcrumb: "البطولات",
@@ -140,6 +148,10 @@ const pageCopy: Record<
     noScheduleTitle: "سيظهر الجدول عند إنشاء المباريات.",
     noScheduleBody:
       "عند إنشاء القوس أو جدول المباريات، ستظهر كل الجولات في هذا القسم.",
+    round: "الجولة",
+    vs: "ضد",
+    view: "← عرض",
+    moreMatchesPrefix: "أكثر · انظر القوس الكامل أدناه",
   },
 };
 
@@ -1123,7 +1135,7 @@ export default async function TournamentDetailsPage({
                           className="text-xs font-black uppercase tracking-[0.14em]"
                           style={{ color: "var(--asc-accent)" }}
                         >
-                          Round {match.roundNumber}
+                          {copy.round} {match.roundNumber}
                         </p>
                         <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
                           <span
@@ -1132,7 +1144,7 @@ export default async function TournamentDetailsPage({
                             {teamAName}
                           </span>
                           {" "}
-                          <span style={{ color: "var(--asc-fg-3)" }}>vs</span>
+                          <span style={{ color: "var(--asc-fg-3)" }}>{copy.vs}</span>
                           {" "}
                           <span
                             style={{ color: teamBWon ? "var(--asc-green)" : undefined }}
@@ -1145,7 +1157,7 @@ export default async function TournamentDetailsPage({
                           className="text-xs font-black uppercase tracking-[0.08em]"
                           style={{ color: "var(--asc-accent)" }}
                         >
-                          View →
+                          {copy.view}
                         </span>
                       </Link>
                     );
@@ -1158,7 +1170,7 @@ export default async function TournamentDetailsPage({
                         color: "var(--asc-fg-3)",
                       }}
                     >
-                      +{tournamentMatches.length - 8} more · see full bracket below
+                      +{tournamentMatches.length - 8} {copy.moreMatchesPrefix}
                     </p>
                   )}
                 </div>

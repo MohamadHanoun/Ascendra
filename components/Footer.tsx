@@ -133,7 +133,7 @@ export default async function Footer() {
             className="inline-flex px-5 py-3 text-sm font-black text-white transition"
             style={{ background: "var(--asc-accent-2)" }}
           >
-            Open Discord Hub
+            {messages.openDiscordHub}
           </Link>
         </div>
       </div>

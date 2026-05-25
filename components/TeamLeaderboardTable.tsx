@@ -419,10 +419,10 @@ export default function TeamLeaderboardTable({
           <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="asc-section-label">
-                Ranks 4 &ndash; 100
+                {messages.ranksLabel}
               </p>
               <h2 className="mt-1 text-3xl" style={{ color: "var(--asc-fg-0)" }}>
-                Ascendra Ladder
+                {messages.ladderTitle}
               </h2>
             </div>
           </div>
