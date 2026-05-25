@@ -292,6 +292,8 @@ export type LeaderboardMessages = {
   };
   filters: {
     overall: string;
+    currentSeason: string;
+    lifetime: string;
   };
   headings: {
     players: string;
@@ -313,6 +315,7 @@ export type LeaderboardMessages = {
     teamRanking: string;
     standings: string;
     rank: string;
+    tier: string;
     player: string;
     team: string;
     role: string;
@@ -805,6 +808,8 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       },
       filters: {
         overall: "Overall",
+        currentSeason: "Current season",
+        lifetime: "Lifetime",
       },
       headings: {
         players: "Players",
@@ -826,6 +831,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         teamRanking: "Team ranking",
         standings: "Standings",
         rank: "Rank",
+        tier: "Tier",
         player: "Player",
         team: "Team",
         role: "Role",
@@ -1308,6 +1314,8 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       },
       filters: {
         overall: "الإجمالي",
+        currentSeason: "الموسم الحالي",
+        lifetime: "كل الأوقات",
       },
       headings: {
         players: "اللاعبون",
@@ -1329,6 +1337,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         teamRanking: "ترتيب الفرق",
         standings: "الترتيب",
         rank: "المركز",
+        tier: "الفئة",
         player: "اللاعب",
         team: "الفريق",
         role: "الدور",
