@@ -29,7 +29,7 @@ type LeaderboardPageProps = {
 };
 
 const leaderboardDisclaimer =
-  "Ascendra ranks are based only on Ascendra community tournament points. They are not official Riot ranks, MMR, ELO, or skill ratings.";
+  "Ascendra ranks are based only on community tournament points. They are not official game ranks, MMR, ELO, matchmaking ratings, or skill ratings.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
