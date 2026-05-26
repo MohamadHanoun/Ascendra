@@ -44,6 +44,16 @@ model User {
   lastGuildCheckAt DateTime?
   lastLoginAt      DateTime?
 
+  // FACEIT integration
+  faceitPlayerId      String?   @unique
+  faceitNickname      String?
+  faceitAvatar        String?
+  faceitCountry       String?
+  faceitUrl           String?
+  faceitSkillLevelCs2 Int?
+  faceitSteamId64     String?
+  faceitLinkedAt      DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

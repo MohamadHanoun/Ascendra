@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 
 import { GameProvider } from "@prisma/client";
 
-import { unlinkRiotAccount, unlinkSteamAccount } from "@/actions/profileAccountActions";
+import { connectFaceitAccount, unlinkFaceitAccount, unlinkRiotAccount, unlinkSteamAccount } from "@/actions/profileAccountActions";
 import { auth } from "@/auth";
+import FaceitConnectRow from "@/components/FaceitConnectRow";
 import Footer from "@/components/Footer";
 import LinkedAccountRow from "@/components/LinkedAccountRow";
 import Navbar from "@/components/Navbar";
@@ -126,6 +127,11 @@ type ProfileMessages = {
     unlinkAccountConfirmButton: string;
     confirmationEyebrow: string;
     cancelLabel: string;
+    faceitAccount: string;
+    faceitSubtitle: string;
+    faceitConnecting: string;
+    faceitSkillLevel: string;
+    faceitNicknamePlaceholder: string;
     acceptTitle: string;
     declineTitle: string;
     joinTeamTemplate: string;
@@ -242,6 +248,11 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       unlinkAccountConfirmButton: "Unlink account",
       confirmationEyebrow: "Confirmation",
       cancelLabel: "Cancel",
+      faceitAccount: "FACEIT Account",
+      faceitSubtitle: "CS2 · Skill Level · ELO",
+      faceitConnecting: "Connecting...",
+      faceitSkillLevel: "Skill Level",
+      faceitNicknamePlaceholder: "Enter FACEIT nickname",
       acceptTitle: "Accept team invitation?",
       declineTitle: "Decline team invitation?",
       joinTeamTemplate: "Join {team}? You will become a member of this team.",
@@ -357,6 +368,11 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       unlinkAccountConfirmButton: "إلغاء الربط",
       confirmationEyebrow: "تأكيد",
       cancelLabel: "إلغاء",
+      faceitAccount: "حساب FACEIT",
+      faceitSubtitle: "CS2 · المستوى · ELO",
+      faceitConnecting: "جارٍ الربط...",
+      faceitSkillLevel: "المستوى",
+      faceitNicknamePlaceholder: "أدخل اسم مستخدم FACEIT",
       acceptTitle: "قبول دعوة الفريق؟",
       declineTitle: "رفض دعوة الفريق؟",
       joinTeamTemplate: "الانضمام إلى {team}؟ ستصبح عضوًا في هذا الفريق.",
@@ -1050,6 +1066,36 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     />
                   );
                 })()}
+
+                <FaceitConnectRow
+                  connected={Boolean(user.faceitPlayerId)}
+                  faceitNickname={user.faceitNickname ?? null}
+                  faceitSkillLevel={user.faceitSkillLevelCs2 ?? null}
+                  faceitLinkedAt={
+                    user.faceitLinkedAt
+                      ? user.faceitLinkedAt.toLocaleDateString(locale, { dateStyle: "medium" })
+                      : null
+                  }
+                  connectAction={connectFaceitAccount}
+                  unlinkAction={unlinkFaceitAccount}
+                  labels={{
+                    title: messages.labels.faceitAccount,
+                    subtitle: messages.labels.faceitSubtitle,
+                    connected: messages.labels.connected,
+                    connect: messages.labels.connect,
+                    connecting: messages.labels.faceitConnecting,
+                    unlink: messages.labels.unlink,
+                    unlinking: messages.labels.unlinking,
+                    linked: messages.labels.linked,
+                    skillLevel: messages.labels.faceitSkillLevel,
+                    nicknamePlaceholder: messages.labels.faceitNicknamePlaceholder,
+                    confirmationEyebrow: messages.labels.confirmationEyebrow,
+                    unlinkAccountConfirmTitle: messages.labels.unlinkAccountConfirmTitle,
+                    unlinkAccountConfirmDescription: messages.labels.unlinkAccountConfirmDescription.replace("{provider}", "FACEIT"),
+                    unlinkAccountConfirmButton: messages.labels.unlinkAccountConfirmButton,
+                    cancel: messages.labels.cancelLabel,
+                  }}
+                />
               </div>
             </div>
           </div>

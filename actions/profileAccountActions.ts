@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { AuditStatus, GameProvider, Prisma } from "@prisma/client";
 
+import { FaceitApiError, getFaceitPlayerByNickname } from "@/lib/faceit";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
@@ -20,6 +21,14 @@ type AccountActionMessages = {
   steamUnlinked: string;
   noRiotAccount: string;
   riotUnlinked: string;
+  faceitNicknameRequired: string;
+  faceitPlayerNotFound: string;
+  faceitLookupFailed: string;
+  steamRequiredForFaceit: string;
+  faceitSteamMismatch: string;
+  faceitLinked: string;
+  noFaceitAccount: string;
+  faceitUnlinked: string;
 };
 
 const accountActionMessages: Record<Locale, AccountActionMessages> = {
@@ -29,6 +38,14 @@ const accountActionMessages: Record<Locale, AccountActionMessages> = {
     steamUnlinked: "Steam account unlinked.",
     noRiotAccount: "No Riot account is linked to your profile.",
     riotUnlinked: "Riot account unlinked.",
+    faceitNicknameRequired: "Please enter your FACEIT nickname.",
+    faceitPlayerNotFound: "FACEIT player not found. Check your nickname and try again.",
+    faceitLookupFailed: "FACEIT lookup failed. Please try again later.",
+    steamRequiredForFaceit: "Link your Steam account first before connecting FACEIT.",
+    faceitSteamMismatch: "Your FACEIT account is not linked to the same Steam account on your profile. Make sure both accounts use the same Steam ID.",
+    faceitLinked: "FACEIT account connected.",
+    noFaceitAccount: "No FACEIT account is linked to your profile.",
+    faceitUnlinked: "FACEIT account unlinked.",
   },
   ar: {
     loginRequired: "يرجى تسجيل الدخول أولًا.",
@@ -36,6 +53,14 @@ const accountActionMessages: Record<Locale, AccountActionMessages> = {
     steamUnlinked: "تم إلغاء ربط حساب Steam.",
     noRiotAccount: "لا يوجد حساب Riot مرتبط بملفك الشخصي.",
     riotUnlinked: "تم إلغاء ربط حساب Riot.",
+    faceitNicknameRequired: "يرجى إدخال اسم مستخدمك على FACEIT.",
+    faceitPlayerNotFound: "لم يتم العثور على لاعب FACEIT. تحقق من اسم المستخدم وحاول مجددًا.",
+    faceitLookupFailed: "فشل البحث في FACEIT. يرجى المحاولة لاحقًا.",
+    steamRequiredForFaceit: "يجب ربط حساب Steam أولًا قبل ربط FACEIT.",
+    faceitSteamMismatch: "حساب FACEIT الخاص بك غير مرتبط بنفس حساب Steam الموجود في ملفك الشخصي. تأكد من أن كلا الحسابين يستخدمان نفس معرّف Steam.",
+    faceitLinked: "تم ربط حساب FACEIT.",
+    noFaceitAccount: "لا يوجد حساب FACEIT مرتبط بملفك الشخصي.",
+    faceitUnlinked: "تم إلغاء ربط حساب FACEIT.",
   },
 };
 
@@ -145,4 +170,94 @@ export async function unlinkRiotAccount(
 
   revalidatePath("/profile");
   return success(messages.riotUnlinked);
+}
+
+// ─── Connect FACEIT account ──────────────────────────────────────────────────
+
+export async function connectFaceitAccount(
+  _prevState: AccountActionResult,
+  formData: FormData,
+): Promise<AccountActionResult> {
+  const messages = await getMessages();
+  const user = await requireUser();
+  if (!user) return fail(messages.loginRequired);
+
+  const nickname = (formData.get("faceitNickname") as string | null)?.trim();
+  if (!nickname) return fail(messages.faceitNicknameRequired);
+
+  // Require a linked Steam account to perform the Steam ID match
+  const steamAccount = await prisma.playerGameAccount.findUnique({
+    where: { userId_provider: { userId: user.id, provider: GameProvider.steam } },
+    select: { externalId: true },
+  });
+  if (!steamAccount) return fail(messages.steamRequiredForFaceit);
+
+  // Look up the FACEIT player by nickname
+  let player: Awaited<ReturnType<typeof getFaceitPlayerByNickname>>;
+  try {
+    player = await getFaceitPlayerByNickname(nickname, "cs2");
+  } catch (err) {
+    if (err instanceof FaceitApiError && err.status === 404) {
+      return fail(messages.faceitPlayerNotFound);
+    }
+    return fail(messages.faceitLookupFailed);
+  }
+
+  // Verify the FACEIT player's Steam ID matches the user's linked Steam ID
+  if (!player.steam_id_64 || player.steam_id_64 !== steamAccount.externalId) {
+    return fail(messages.faceitSteamMismatch);
+  }
+
+  const cs2Game = player.games?.["cs2"];
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      faceitPlayerId: player.player_id,
+      faceitNickname: player.nickname,
+      faceitAvatar: player.avatar ?? null,
+      faceitCountry: player.country ?? null,
+      faceitUrl: player.faceit_url ?? null,
+      faceitSkillLevelCs2: typeof cs2Game?.skill_level === "number" ? cs2Game.skill_level : null,
+      faceitSteamId64: player.steam_id_64,
+      faceitLinkedAt: new Date(),
+    },
+  });
+
+  revalidatePath("/profile");
+  return success(messages.faceitLinked);
+}
+
+// ─── Unlink FACEIT account ───────────────────────────────────────────────────
+
+export async function unlinkFaceitAccount(
+  _prevState: AccountActionResult,
+  _formData: FormData,
+): Promise<AccountActionResult> {
+  const messages = await getMessages();
+  const user = await requireUser();
+  if (!user) return fail(messages.loginRequired);
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { faceitPlayerId: true },
+  });
+  if (!dbUser?.faceitPlayerId) return fail(messages.noFaceitAccount);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      faceitPlayerId: null,
+      faceitNickname: null,
+      faceitAvatar: null,
+      faceitCountry: null,
+      faceitUrl: null,
+      faceitSkillLevelCs2: null,
+      faceitSteamId64: null,
+      faceitLinkedAt: null,
+    },
+  });
+
+  revalidatePath("/profile");
+  return success(messages.faceitUnlinked);
 }
