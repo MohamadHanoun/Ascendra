@@ -36,6 +36,7 @@ type FaceitMatchProofMessages = {
   openFaceit: string;
   proofSource: string;
   disclaimer: string;
+  disclaimerApplied: string;
   connectRequired: string;
   // Phase 4 — auto-confirm display
   autoApplied: string;
@@ -66,6 +67,8 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
     proofSource: "Proof source",
     disclaimer:
       "This proof does not change the official result automatically.",
+    disclaimerApplied:
+      "This FACEIT proof updated the official result automatically.",
     connectRequired:
       "Connect your FACEIT account on your profile to sync CS2 proof.",
     autoApplied: "FACEIT result auto-applied.",
@@ -92,6 +95,7 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
     openFaceit: "فتح مباراة FACEIT",
     proofSource: "مصدر الإثبات",
     disclaimer: "هذا الإثبات لا يغيّر النتيجة الرسمية تلقائيًا.",
+    disclaimerApplied: "قام إثبات FACEIT هذا بتحديث النتيجة الرسمية تلقائيًا.",
     connectRequired:
       "اربط حساب FACEIT في ملفك الشخصي لمزامنة إثبات CS2.",
     autoApplied: "تم تطبيق نتيجة FACEIT تلقائيًا.",
@@ -334,16 +338,29 @@ export default function FaceitMatchProofForm({
       )}
 
       {/* Disclaimer */}
-      <div
-        className="border px-3 py-2 text-xs leading-5"
-        style={{
-          borderColor: "oklch(0.65 0.14 75 / 0.4)",
-          background: "oklch(0.25 0.12 75 / 0.10)",
-          color: "var(--asc-amber)",
-        }}
-      >
-        {msgs.disclaimer}
-      </div>
+      {proof.faceitAutoAppliedAt ? (
+        <div
+          className="border px-3 py-2 text-xs leading-5"
+          style={{
+            borderColor: "oklch(0.55 0.14 150 / 0.4)",
+            background: "oklch(0.25 0.12 150 / 0.10)",
+            color: "var(--asc-green)",
+          }}
+        >
+          {msgs.disclaimerApplied}
+        </div>
+      ) : (
+        <div
+          className="border px-3 py-2 text-xs leading-5"
+          style={{
+            borderColor: "oklch(0.65 0.14 75 / 0.4)",
+            background: "oklch(0.25 0.12 75 / 0.10)",
+            color: "var(--asc-amber)",
+          }}
+        >
+          {msgs.disclaimer}
+        </div>
+      )}
 
       {/* FACEIT connect hint for non-connected participants */}
       {showConnectHint && (
