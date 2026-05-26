@@ -121,6 +121,9 @@ type ProfileMessages = {
     connect: string;
     unlink: string;
     unlinking: string;
+    unlinkAccountConfirmTitle: string;
+    unlinkAccountConfirmDescription: string;
+    unlinkAccountConfirmButton: string;
     confirmationEyebrow: string;
     cancelLabel: string;
     acceptTitle: string;
@@ -233,6 +236,10 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       connect: "Connect",
       unlink: "Unlink",
       unlinking: "Unlinking...",
+      unlinkAccountConfirmTitle: "Unlink account?",
+      unlinkAccountConfirmDescription:
+        "Are you sure you want to unlink your {provider} account?",
+      unlinkAccountConfirmButton: "Unlink account",
       confirmationEyebrow: "Confirmation",
       cancelLabel: "Cancel",
       acceptTitle: "Accept team invitation?",
@@ -344,6 +351,10 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       connect: "ربط",
       unlink: "إلغاء الربط",
       unlinking: "جارٍ إلغاء الربط...",
+      unlinkAccountConfirmTitle: "إلغاء ربط الحساب؟",
+      unlinkAccountConfirmDescription:
+        "هل أنت متأكد من إلغاء ربط حساب {provider}؟",
+      unlinkAccountConfirmButton: "إلغاء الربط",
       confirmationEyebrow: "تأكيد",
       cancelLabel: "إلغاء",
       acceptTitle: "قبول دعوة الفريق؟",
@@ -966,6 +977,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     <LinkedAccountRow
                       icon="R"
                       title={messages.labels.riotAccount}
+                      providerName="Riot"
                       subtitle="League of Legends · VALORANT"
                       connected={Boolean(riotAccount)}
                       displayName={
@@ -985,6 +997,14 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                         connect: messages.labels.connect,
                         unlink: messages.labels.unlink,
                         unlinking: messages.labels.unlinking,
+                        confirmationEyebrow: messages.labels.confirmationEyebrow,
+                        unlinkAccountConfirmTitle:
+                          messages.labels.unlinkAccountConfirmTitle,
+                        unlinkAccountConfirmDescription:
+                          messages.labels.unlinkAccountConfirmDescription,
+                        unlinkAccountConfirmButton:
+                          messages.labels.unlinkAccountConfirmButton,
+                        cancel: messages.labels.cancelLabel,
                       }}
                     />
                   );
@@ -998,6 +1018,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     <LinkedAccountRow
                       icon="S"
                       title={messages.labels.steamAccount}
+                      providerName="Steam"
                       subtitle={messages.labels.steamSubtitle}
                       connected={Boolean(steamAccount)}
                       displayName={
@@ -1017,6 +1038,14 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                         connect: messages.labels.connect,
                         unlink: messages.labels.unlink,
                         unlinking: messages.labels.unlinking,
+                        confirmationEyebrow: messages.labels.confirmationEyebrow,
+                        unlinkAccountConfirmTitle:
+                          messages.labels.unlinkAccountConfirmTitle,
+                        unlinkAccountConfirmDescription:
+                          messages.labels.unlinkAccountConfirmDescription,
+                        unlinkAccountConfirmButton:
+                          messages.labels.unlinkAccountConfirmButton,
+                        cancel: messages.labels.cancelLabel,
                       }}
                     />
                   );

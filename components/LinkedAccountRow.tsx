@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import type { AccountActionResult } from "@/actions/profileAccountActions";
+import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
 
 type Props = {
   icon: string;
   title: string;
+  providerName: string;
   subtitle: string;
   connected: boolean;
   displayName?: string | null;
@@ -22,6 +24,11 @@ type Props = {
     connect: string;
     unlink: string;
     unlinking: string;
+    confirmationEyebrow: string;
+    unlinkAccountConfirmTitle: string;
+    unlinkAccountConfirmDescription: string;
+    unlinkAccountConfirmButton: string;
+    cancel: string;
   };
 };
 
@@ -30,6 +37,7 @@ const INITIAL: AccountActionResult = { ok: false, message: "" };
 export default function LinkedAccountRow({
   icon,
   title,
+  providerName,
   subtitle,
   connected,
   displayName,
@@ -39,6 +47,23 @@ export default function LinkedAccountRow({
   labels,
 }: Props) {
   const [state, formAction, pending] = useActionState(unlinkAction, INITIAL);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (!pending) {
+      setConfirmOpen(false);
+    }
+  }, [pending]);
+
+  const confirmDescription = labels.unlinkAccountConfirmDescription.replace(
+    "{provider}",
+    providerName,
+  );
+
+  function submitUnlink() {
+    formRef.current?.requestSubmit();
+  }
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 bg-[var(--asc-bg-1)] px-5 py-4">
@@ -92,10 +117,11 @@ export default function LinkedAccountRow({
           >
             {labels.connected}
           </span>
-          <form action={formAction}>
+          <form ref={formRef} action={formAction}>
             <button
-              type="submit"
+              type="button"
               disabled={pending}
+              onClick={() => setConfirmOpen(true)}
               className="border px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
               style={{
                 borderColor: "oklch(0.50 0.20 25 / 0.4)",
@@ -106,6 +132,19 @@ export default function LinkedAccountRow({
               {pending ? labels.unlinking : labels.unlink}
             </button>
           </form>
+          <ConfirmDialogPortal
+            open={confirmOpen}
+            eyebrow={labels.confirmationEyebrow}
+            title={labels.unlinkAccountConfirmTitle}
+            description={confirmDescription}
+            confirmLabel={labels.unlinkAccountConfirmButton}
+            cancelLabel={labels.cancel}
+            pendingLabel={labels.unlinking}
+            pending={pending}
+            variant="danger"
+            onConfirm={submitUnlink}
+            onCancel={() => setConfirmOpen(false)}
+          />
           {state.message && (
             <p
               className="w-full text-[10px]"
