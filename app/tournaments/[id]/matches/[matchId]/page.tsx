@@ -781,6 +781,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                   teamA={teamA}
                   teamB={teamB}
                   hasExistingReport={userHasReport}
+                  locale={locale}
                 />
               </Panel>
             )}
@@ -793,6 +794,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                   gameNumber={match.games.length > 0 ? match.games[match.games.length - 1].gameNumber + 1 : 1}
                   isAdmin={isAdmin}
                   isParticipant={userTeamId !== null}
+                  locale={locale}
                   currentExternalMatchId={match.games.find((g) => g.externalMatchId)?.externalMatchId ?? null}
                 />
               </Panel>
@@ -845,6 +847,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                   gameNumber={match.games.length > 0 ? match.games[match.games.length - 1].gameNumber + 1 : 1}
                   isAdmin={isAdmin}
                   isParticipant={userTeamId !== null}
+                  locale={locale}
                   currentExternalMatchId={match.games.find((g) => g.externalMatchId)?.externalMatchId ?? null}
                 />
               </Panel>
@@ -895,7 +898,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                 <p className="mb-4 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
                   {msgs.dispute.desc}
                 </p>
-                <DisputeForm matchId={match.id} />
+                <DisputeForm matchId={match.id} locale={locale} />
               </Panel>
             )}
 

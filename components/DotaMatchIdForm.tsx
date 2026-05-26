@@ -7,30 +7,130 @@ import {
   findRecentDotaMatch,
   submitDotaMatchId,
 } from "@/actions/matchActions";
+import type { Locale } from "@/lib/i18n";
 
 const INITIAL_VERIFY: DotaVerifyResult = { ok: false, message: "" };
 const INITIAL_FIND: FindRecentDotaResult = { ok: false, message: "" };
 
-function ConfidenceBadge({ confidence }: { confidence?: string }) {
+type DotaMatchIdFormMessages = {
+  confidence: {
+    high: string;
+    medium: string;
+    rejected: string;
+  };
+  checks: {
+    na: string;
+    pass: string;
+    fail: string;
+    uniqueMatchId: string;
+    lobbyType: string;
+    timeWindow: string;
+    teamALinked: string;
+    teamBLinked: string;
+    winnerMapped: string;
+  };
+  instructionLead: string;
+  instructionMatchId: string;
+  instructionRest: string;
+  currentMatchId: string;
+  searchPending: string;
+  searchRecent: string;
+  minutesAgo: string;
+  coverageSummary: string;
+  matchIdLabel: string;
+  submitPending: string;
+  submit: string;
+};
+
+const dotaMatchIdFormMessages: Record<Locale, DotaMatchIdFormMessages> = {
+  en: {
+    confidence: {
+      high: "High confidence",
+      medium: "Medium — admin review",
+      rejected: "Rejected",
+    },
+    checks: {
+      na: "N/A",
+      pass: "✓ Pass",
+      fail: "✕ Fail",
+      uniqueMatchId: "Unique match ID in tournament",
+      lobbyType: "Valid lobby type (private / tournament / team)",
+      timeWindow: "Match within time window",
+      teamALinked: "Team A linked players ({percent}%)",
+      teamBLinked: "Team B linked players ({percent}%)",
+      winnerMapped: "Winner identified",
+    },
+    instructionLead: "After your Dota 2 lobby ends, paste the",
+    instructionMatchId: "Match ID",
+    instructionRest:
+      "from the post-game screen or from dotabuff.com. The lobby must be a private, tournament, or team match — public matchmaking is rejected. Results are verified against linked Steam accounts.",
+    currentMatchId: "Current match ID:",
+    searchPending: "Searching...",
+    searchRecent: "↺ Find Recent Dota 2 Match",
+    minutesAgo: "{minutes}m ago",
+    coverageSummary: "A:{teamA}% B:{teamB}%",
+    matchIdLabel: "Dota 2 Match ID",
+    submitPending: "Verifying...",
+    submit: "Verify & Submit",
+  },
+  ar: {
+    confidence: {
+      high: "ثقة عالية",
+      medium: "ثقة متوسطة - مراجعة المشرف",
+      rejected: "مرفوض",
+    },
+    checks: {
+      na: "غير متاح",
+      pass: "✓ ناجح",
+      fail: "✕ فشل",
+      uniqueMatchId: "معرّف مباراة فريد في البطولة",
+      lobbyType: "نوع صالة صالح (خاصة / بطولة / فريق)",
+      timeWindow: "المباراة ضمن الإطار الزمني",
+      teamALinked: "لاعبو الفريق A المرتبطون ({percent}%)",
+      teamBLinked: "لاعبو الفريق B المرتبطون ({percent}%)",
+      winnerMapped: "تم تحديد الفائز",
+    },
+    instructionLead: "بعد انتهاء صالة Dota 2، الصق",
+    instructionMatchId: "معرّف المباراة",
+    instructionRest:
+      "من شاشة ما بعد المباراة أو من dotabuff.com. يجب أن تكون الصالة خاصة أو بطولة أو مباراة فريق، وسيتم رفض المباريات العامة. يتم التحقق من النتائج عبر حسابات Steam المرتبطة.",
+    currentMatchId: "معرّف المباراة الحالي:",
+    searchPending: "جارٍ البحث...",
+    searchRecent: "↺ البحث عن مباراة Dota 2 حديثة",
+    minutesAgo: "قبل {minutes} د",
+    coverageSummary: "أ:{teamA}% ب:{teamB}%",
+    matchIdLabel: "معرّف مباراة Dota 2",
+    submitPending: "جارٍ التحقق...",
+    submit: "تحقق وأرسل",
+  },
+};
+
+function ConfidenceBadge({
+  confidence,
+  labels,
+}: {
+  confidence?: string;
+  labels: DotaMatchIdFormMessages["confidence"];
+}) {
   if (!confidence) return null;
   const styles: Record<
     string,
     { label: string; color: string; border: string; bg: string }
   > = {
     high: {
-      label: "High confidence",
+      label: labels.high,
       color: "var(--asc-green)",
       border: "oklch(0.55 0.14 150 / 0.5)",
       bg: "oklch(0.25 0.12 150 / 0.18)",
     },
     medium: {
-      label: "Medium — admin review",
+      label: labels.medium,
       color: "var(--asc-amber)",
       border: "oklch(0.65 0.14 75 / 0.5)",
       bg: "oklch(0.25 0.12 75 / 0.18)",
     },
     rejected: {
-      label: "Rejected",
+      label: labels.rejected,
       color: "var(--asc-live)",
       border: "oklch(0.50 0.20 25 / 0.5)",
       bg: "oklch(0.25 0.18 25 / 0.18)",
@@ -52,16 +152,18 @@ function CheckRow({
   label,
   pass,
   na,
+  labels,
 }: {
   label: string;
   pass: boolean;
   na?: boolean;
+  labels: DotaMatchIdFormMessages["checks"];
 }) {
   if (na) {
     return (
       <div className="flex items-center justify-between text-xs">
         <span style={{ color: "var(--asc-fg-3)" }}>{label}</span>
-        <span style={{ color: "var(--asc-fg-3)" }}>N/A</span>
+        <span style={{ color: "var(--asc-fg-3)" }}>{labels.na}</span>
       </div>
     );
   }
@@ -72,7 +174,7 @@ function CheckRow({
         className="font-black"
         style={{ color: pass ? "var(--asc-green)" : "var(--asc-live)" }}
       >
-        {pass ? "✓ Pass" : "✗ Fail"}
+        {pass ? labels.pass : labels.fail}
       </span>
     </div>
   );
@@ -83,6 +185,7 @@ type Props = {
   gameNumber: number;
   isAdmin: boolean;
   isParticipant: boolean;
+  locale: Locale;
   currentExternalMatchId?: string | null;
 };
 
@@ -91,8 +194,10 @@ export default function DotaMatchIdForm({
   gameNumber,
   isAdmin,
   isParticipant,
+  locale,
   currentExternalMatchId,
 }: Props) {
+  const messages = dotaMatchIdFormMessages[locale];
   const [verifyState, verifyAction, verifyPending] = useActionState(
     submitDotaMatchId,
     INITIAL_VERIFY,
@@ -118,11 +223,11 @@ export default function DotaMatchIdForm({
   return (
     <div className="grid gap-4">
       <p className="text-xs leading-5" style={{ color: "var(--asc-fg-3)" }}>
-        After your Dota 2 lobby ends, paste the{" "}
-        <strong style={{ color: "var(--asc-fg-2)" }}>Match ID</strong> from the
-        post-game screen or from dotabuff.com. The lobby must be a private,
-        tournament, or team match — public matchmaking is rejected. Results are
-        verified against linked Steam accounts.
+        {messages.instructionLead}{" "}
+        <strong style={{ color: "var(--asc-fg-2)" }}>
+          {messages.instructionMatchId}
+        </strong>{" "}
+        {messages.instructionRest}
       </p>
 
       {currentExternalMatchId && (
@@ -133,7 +238,9 @@ export default function DotaMatchIdForm({
             background: "var(--asc-bg-2)",
           }}
         >
-          <span style={{ color: "var(--asc-fg-3)" }}>Current match ID: </span>
+          <span style={{ color: "var(--asc-fg-3)" }}>
+            {messages.currentMatchId}{" "}
+          </span>
           <span className="font-mono font-black" style={{ color: "var(--asc-fg-1)" }}>
             {currentExternalMatchId}
           </span>
@@ -144,6 +251,7 @@ export default function DotaMatchIdForm({
       {isAdmin && (
         <form action={findAction}>
           <input type="hidden" name="matchId" value={matchId} />
+          <input type="hidden" name="locale" value={locale} />
           <button
             type="submit"
             disabled={findPending}
@@ -154,7 +262,7 @@ export default function DotaMatchIdForm({
               color: "var(--asc-fg-2)",
             }}
           >
-            {findPending ? "Searching…" : "↺ Find Recent Dota 2 Match"}
+            {findPending ? messages.searchPending : messages.searchRecent}
           </button>
         </form>
       )}
@@ -206,7 +314,14 @@ export default function DotaMatchIdForm({
                     {c.dotaMatchId}
                   </span>
                   <span style={{ color: "var(--asc-fg-3)" }}>
-                    {c.minutesAgo}m ago · A:{c.teamACoverage}% B:{c.teamBCoverage}%
+                    {messages.minutesAgo.replace(
+                      "{minutes}",
+                      String(c.minutesAgo),
+                    )}{" "}
+                    ·{" "}
+                    {messages.coverageSummary
+                      .replace("{teamA}", String(c.teamACoverage))
+                      .replace("{teamB}", String(c.teamBCoverage))}
                   </span>
                 </button>
               ))}
@@ -220,6 +335,7 @@ export default function DotaMatchIdForm({
         <form ref={formRef} action={verifyAction} className="grid gap-3">
           <input type="hidden" name="matchId" value={matchId} />
           <input type="hidden" name="gameNumber" value={gameNumber} />
+          <input type="hidden" name="locale" value={locale} />
 
           <div>
             <label
@@ -227,7 +343,7 @@ export default function DotaMatchIdForm({
               className="mb-1 block text-[10px] font-black uppercase tracking-[0.14em]"
               style={{ color: "var(--asc-fg-3)" }}
             >
-              Dota 2 Match ID
+              {messages.matchIdLabel}
             </label>
             <input
               id={`dota-match-id-${matchId}-${gameNumber}`}
@@ -256,7 +372,7 @@ export default function DotaMatchIdForm({
               color: "var(--asc-accent)",
             }}
           >
-            {verifyPending ? "Verifying…" : "Verify & Submit"}
+            {verifyPending ? messages.submitPending : messages.submit}
           </button>
         </form>
       )}
@@ -294,35 +410,50 @@ export default function DotaMatchIdForm({
             >
               {verifyState.message}
             </p>
-            <ConfidenceBadge confidence={verifyState.confidence} />
+            <ConfidenceBadge
+              confidence={verifyState.confidence}
+              labels={messages.confidence}
+            />
           </div>
 
           {verifyState.checks && (
             <div className="mt-3 grid gap-1.5">
               <CheckRow
-                label="Unique match ID in tournament"
+                label={messages.checks.uniqueMatchId}
                 pass={Boolean(verifyState.checks.uniqueMatchId)}
+                labels={messages.checks}
               />
               <CheckRow
-                label="Valid lobby type (private / tournament / team)"
+                label={messages.checks.lobbyType}
                 pass={Boolean(verifyState.checks.lobbyType)}
+                labels={messages.checks}
               />
               <CheckRow
-                label="Match within time window"
+                label={messages.checks.timeWindow}
                 pass={Boolean(verifyState.checks.timeWindow)}
                 na={verifyState.checks.timeWindow === null}
+                labels={messages.checks}
               />
               <CheckRow
-                label={`Team A linked players (${verifyState.checks.teamACoverage}%)`}
+                label={messages.checks.teamALinked.replace(
+                  "{percent}",
+                  String(verifyState.checks.teamACoverage),
+                )}
                 pass={Number(verifyState.checks.teamACoverage) >= 40}
+                labels={messages.checks}
               />
               <CheckRow
-                label={`Team B linked players (${verifyState.checks.teamBCoverage}%)`}
+                label={messages.checks.teamBLinked.replace(
+                  "{percent}",
+                  String(verifyState.checks.teamBCoverage),
+                )}
                 pass={Number(verifyState.checks.teamBCoverage) >= 40}
+                labels={messages.checks}
               />
               <CheckRow
-                label="Winner identified"
+                label={messages.checks.winnerMapped}
                 pass={Boolean(verifyState.checks.winnerMapped)}
+                labels={messages.checks}
               />
             </div>
           )}

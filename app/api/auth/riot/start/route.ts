@@ -10,15 +10,42 @@ export const dynamic = "force-dynamic";
 const RIOT_AUTH_URL = "https://auth.riotgames.com/authorize";
 const STATE_COOKIE = "riot_oauth_state";
 const STATE_TTL_SECONDS = 300; // 5 minutes
+type Locale = "en" | "ar";
+
+const riotStartMessages: Record<
+  Locale,
+  { signInFirst: string; notConfigured: string }
+> = {
+  en: {
+    signInFirst: "Please sign in first.",
+    notConfigured: "Riot account linking is not configured on this server.",
+  },
+  ar: {
+    signInFirst: "يرجى تسجيل الدخول أولًا.",
+    notConfigured: "ربط حساب Riot غير مفعّل على هذا الخادم.",
+  },
+};
+
+function getRequestLocale(request: Request): Locale {
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const localeCookie = cookieHeader
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith("ascendra_locale="));
+  const locale = localeCookie?.slice("ascendra_locale=".length);
+
+  return locale === "ar" ? "ar" : "en";
+}
 
 export async function GET(request: Request) {
+  const messages = riotStartMessages[getRequestLocale(request)];
   const session = await auth();
   const userId = (session?.user as { databaseId?: string } | undefined)
     ?.databaseId;
 
   if (!userId) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("error", "Please sign in first.");
+    loginUrl.searchParams.set("error", messages.signInFirst);
     return NextResponse.redirect(loginUrl);
   }
 
@@ -27,10 +54,7 @@ export async function GET(request: Request) {
 
   if (!clientId || !redirectUri) {
     const profileUrl = new URL("/profile", request.url);
-    profileUrl.searchParams.set(
-      "error",
-      "Riot account linking is not configured on this server.",
-    );
+    profileUrl.searchParams.set("error", messages.notConfigured);
     return NextResponse.redirect(profileUrl);
   }
 

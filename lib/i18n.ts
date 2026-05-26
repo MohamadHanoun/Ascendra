@@ -403,6 +403,9 @@ export type TournamentDetailsMessages = {
     selectTeam: string;
     registering: string;
     registerTeam: string;
+    registerConfirmationTitle: string;
+    registerConfirmationDescription: string;
+    cancel: string;
     cancelling: string;
     cancelRegistration: string;
     confirmation: string;
@@ -931,6 +934,10 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         selectTeam: "Select team",
         registering: "Registering...",
         registerTeam: "Register team",
+        registerConfirmationTitle: "Register team?",
+        registerConfirmationDescription:
+          "Submit this team registration for admin review. Make sure the selected team and roster are correct.",
+        cancel: "Cancel",
         cancelling: "Cancelling...",
         cancelRegistration: "Cancel registration",
         confirmation: "Confirmation",
@@ -1445,6 +1452,10 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         selectTeam: "اختر فريقًا",
         registering: "جارٍ التسجيل...",
         registerTeam: "تسجيل الفريق",
+        registerConfirmationTitle: "تسجيل الفريق؟",
+        registerConfirmationDescription:
+          "أرسل تسجيل هذا الفريق لمراجعة المشرفين. تأكد من صحة الفريق المختار والقائمة.",
+        cancel: "إلغاء",
         cancelling: "جارٍ الإلغاء...",
         cancelRegistration: "إلغاء التسجيل",
         confirmation: "تأكيد",

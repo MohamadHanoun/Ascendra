@@ -306,10 +306,10 @@ function RegisterForm({
       <ConfirmDialogPortal
         open={confirmOpen}
         eyebrow={messages.confirmation}
-        title="Register team?"
-        description="Submit this team registration for admin review. Make sure the selected team and roster are correct."
+        title={messages.registerConfirmationTitle}
+        description={messages.registerConfirmationDescription}
         confirmLabel={messages.registerTeam}
-        cancelLabel="Cancel"
+        cancelLabel={messages.cancel}
         pendingLabel={messages.registering}
         pending={pending}
         variant="primary"

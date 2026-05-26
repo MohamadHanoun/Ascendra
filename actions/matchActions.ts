@@ -13,6 +13,7 @@ import {
 } from "@/lib/gameIntegrations/steamDota2Adapter";
 import { notifyMatchConfirmed } from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
+import type { Locale } from "@/lib/i18n";
 import {
   adminOverrideMatchResult as engineAdminOverride,
   confirmMatchResult as engineConfirmMatchResult,
@@ -44,6 +45,114 @@ function getInt(formData: FormData, name: string, fallback: number) {
   const raw = getValue(formData, name);
   const parsed = parseInt(raw, 10);
   return isNaN(parsed) ? fallback : parsed;
+}
+
+type MatchIdActionMessages = {
+  loginRequired: string;
+  matchIdMissing: string;
+  teamIdMissing: string;
+  winnerTeamRequired: string;
+  scoresRequired: string;
+  enterValorantMatchId: string;
+  enterDotaMatchId: string;
+  invalidGameNumber: string;
+  matchNotFound: string;
+  teamsRequiredVerification: string;
+  matchAlreadyFinal: string;
+  notParticipant: string;
+  verificationRejected: string;
+  verifiedRecorded: string;
+  mediumConfidence: string;
+  reportAutoConfirmed: string;
+  reportDisputed: string;
+  reportWaiting: string;
+  disputeReasonRequired: string;
+  disputeFiled: string;
+  adminsOnlySearch: string;
+  teamsRequiredSearch: string;
+  noRecentValorant: string;
+  noRecentDota: string;
+  foundOneCandidate: string;
+  foundCandidates: string;
+};
+
+const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
+  en: {
+    loginRequired: "Please login first.",
+    matchIdMissing: "Match ID is missing.",
+    teamIdMissing: "Team ID is missing.",
+    winnerTeamRequired: "Winner team is required.",
+    scoresRequired: "Both team scores are required.",
+    enterValorantMatchId: "Please enter a VALORANT match ID.",
+    enterDotaMatchId: "Please enter a Dota 2 match ID.",
+    invalidGameNumber: "Game number is invalid.",
+    matchNotFound: "Match not found.",
+    teamsRequiredVerification:
+      "Both teams must be assigned before verification.",
+    matchAlreadyFinal: "This match is already finalised.",
+    notParticipant: "You are not a participant in this match.",
+    verificationRejected: "Verification rejected: {reason}",
+    verifiedRecorded: "Match verified and recorded automatically.",
+    mediumConfidence:
+      "Match ID submitted. Confidence is medium — an admin will review before the result is confirmed.",
+    reportAutoConfirmed: "Report submitted and auto-confirmed by the other team.",
+    reportDisputed:
+      "Report submitted. Both teams disagree — match flagged as disputed for admin review.",
+    reportWaiting: "Report submitted. Waiting for the other team to confirm.",
+    disputeReasonRequired: "A reason is required to open a dispute.",
+    disputeFiled: "Dispute filed. Admins will review the match.",
+    adminsOnlySearch: "Only admins can search recent matches.",
+    teamsRequiredSearch: "Both teams must be assigned before searching.",
+    noRecentValorant:
+      "No recent custom VALORANT matches found for these teams. Ensure players have linked their Riot accounts.",
+    noRecentDota:
+      "No recent Dota 2 matches found for these teams. Ensure players have linked their Steam accounts.",
+    foundOneCandidate: "Found 1 candidate.",
+    foundCandidates: "Found {count} candidates.",
+  },
+  ar: {
+    loginRequired: "يرجى تسجيل الدخول أولًا.",
+    matchIdMissing: "معرّف المباراة مفقود.",
+    teamIdMissing: "معرّف الفريق مفقود.",
+    winnerTeamRequired: "يجب تحديد الفريق الفائز.",
+    scoresRequired: "يجب إدخال نتيجتي الفريقين.",
+    enterValorantMatchId: "يرجى إدخال معرّف مباراة VALORANT.",
+    enterDotaMatchId: "يرجى إدخال معرّف مباراة Dota 2.",
+    invalidGameNumber: "رقم اللعبة غير صالح.",
+    matchNotFound: "لم يتم العثور على المباراة.",
+    teamsRequiredVerification: "يجب تحديد الفريقين قبل التحقق.",
+    matchAlreadyFinal: "هذه المباراة نهائية بالفعل.",
+    notParticipant: "أنت لست مشاركًا في هذه المباراة.",
+    verificationRejected: "تم رفض التحقق: {reason}",
+    verifiedRecorded: "تم التحقق من المباراة وتسجيلها تلقائيًا.",
+    mediumConfidence:
+      "تم إرسال معرّف المباراة. مستوى الثقة متوسط، وسيراجعه أحد المشرفين قبل تأكيد النتيجة.",
+    reportAutoConfirmed: "تم إرسال التقرير وتأكيده تلقائيًا من الفريق الآخر.",
+    reportDisputed:
+      "تم إرسال التقرير. يوجد اختلاف بين الفريقين، وتم وضع المباراة للمراجعة.",
+    reportWaiting: "تم إرسال التقرير. بانتظار تأكيد الفريق الآخر.",
+    disputeReasonRequired: "يجب إدخال سبب لفتح اعتراض.",
+    disputeFiled: "تم إرسال الاعتراض. سيراجع المشرفون المباراة.",
+    adminsOnlySearch: "يمكن للمشرفين فقط البحث عن المباريات الحديثة.",
+    teamsRequiredSearch: "يجب تحديد الفريقين قبل البحث.",
+    noRecentValorant:
+      "لم يتم العثور على مباريات VALORANT مخصصة حديثة لهذه الفرق. تأكد من أن اللاعبين ربطوا حسابات Riot الخاصة بهم.",
+    noRecentDota:
+      "لم يتم العثور على مباريات Dota 2 حديثة لهذه الفرق. تأكد من أن اللاعبين ربطوا حسابات Steam الخاصة بهم.",
+    foundOneCandidate: "تم العثور على نتيجة واحدة محتملة.",
+    foundCandidates: "تم العثور على {count} نتائج محتملة.",
+  },
+};
+
+function getActionLocale(formData: FormData): Locale {
+  return formData.get("locale") === "ar" ? "ar" : "en";
+}
+
+function formatActionMessage(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce(
+    (message, [key, value]) => message.replaceAll(`{${key}}`, value),
+    template,
+  );
 }
 
 async function requireUser() {
@@ -78,21 +187,22 @@ export async function submitMatchReport(
   _prevState: MatchActionResult,
   formData: FormData,
 ): Promise<MatchActionResult> {
+  const messages = matchIdActionMessages[getActionLocale(formData)];
   const sessionUser = await requireUser();
-  if (!sessionUser) return fail("Please login first.");
+  if (!sessionUser) return fail(messages.loginRequired);
 
   const matchId = getValue(formData, "matchId");
   const teamId = getValue(formData, "teamId");
   const winnerTeamId = getValue(formData, "winnerTeamId");
 
-  if (!matchId) return fail("Match ID is missing.");
-  if (!teamId) return fail("Team ID is missing.");
-  if (!winnerTeamId) return fail("Winner team is required.");
+  if (!matchId) return fail(messages.matchIdMissing);
+  if (!teamId) return fail(messages.teamIdMissing);
+  if (!winnerTeamId) return fail(messages.winnerTeamRequired);
 
   const teamAScore = getInt(formData, "teamAScore", -1);
   const teamBScore = getInt(formData, "teamBScore", -1);
   if (teamAScore < 0 || teamBScore < 0) {
-    return fail("Both team scores are required.");
+    return fail(messages.scoresRequired);
   }
 
   const evidenceUrl = getValue(formData, "evidenceUrl") || null;
@@ -115,14 +225,12 @@ export async function submitMatchReport(
   if (tournamentId) revalidateMatchPaths(tournamentId);
 
   if (result.data.autoConfirmed) {
-    return success("Report submitted and auto-confirmed by the other team.");
+    return success(messages.reportAutoConfirmed);
   }
   if (result.data.disputed) {
-    return success(
-      "Report submitted. Both teams disagree — match flagged as disputed for admin review.",
-    );
+    return success(messages.reportDisputed);
   }
-  return success("Report submitted. Waiting for the other team to confirm.");
+  return success(messages.reportWaiting);
 }
 
 // ─── Admin confirms a result ────────────────────────────────────────────────
@@ -155,14 +263,15 @@ export async function disputeMatchResult(
   _prevState: MatchActionResult,
   formData: FormData,
 ): Promise<MatchActionResult> {
+  const messages = matchIdActionMessages[getActionLocale(formData)];
   const sessionUser = await requireUser();
-  if (!sessionUser) return fail("Please login first.");
+  if (!sessionUser) return fail(messages.loginRequired);
 
   const matchId = getValue(formData, "matchId");
   const reason = getValue(formData, "reason");
 
-  if (!matchId) return fail("Match ID is missing.");
-  if (!reason) return fail("A reason is required to open a dispute.");
+  if (!matchId) return fail(messages.matchIdMissing);
+  if (!reason) return fail(messages.disputeReasonRequired);
 
   const result = await engineDisputeMatchResult(
     matchId,
@@ -174,7 +283,7 @@ export async function disputeMatchResult(
   const tournamentId = await loadMatchTournamentId(matchId);
   if (tournamentId) revalidateMatchPaths(tournamentId);
 
-  return success("Dispute filed. Admins will review the match.");
+  return success(messages.disputeFiled);
 }
 
 // ─── Admin force-sets a result ──────────────────────────────────────────────
@@ -234,23 +343,24 @@ export async function submitValorantMatchId(
   _prevState: ValorantVerifyResult,
   formData: FormData,
 ): Promise<ValorantVerifyResult> {
+  const messages = matchIdActionMessages[getActionLocale(formData)];
   const sessionUser = await requireUser();
   if (!sessionUser) {
-    return { ok: false, message: "Please login first." };
+    return { ok: false, message: messages.loginRequired };
   }
 
   const matchId = getValue(formData, "matchId");
   const gameNumberRaw = getValue(formData, "gameNumber");
   const valorantMatchId = getValue(formData, "valorantMatchId").trim();
 
-  if (!matchId) return { ok: false, message: "Match ID is missing." };
+  if (!matchId) return { ok: false, message: messages.matchIdMissing };
   if (!valorantMatchId) {
-    return { ok: false, message: "Please enter a VALORANT match ID." };
+    return { ok: false, message: messages.enterValorantMatchId };
   }
 
   const gameNumber = parseInt(gameNumberRaw, 10);
   if (!Number.isFinite(gameNumber) || gameNumber < 1) {
-    return { ok: false, message: "Game number is invalid." };
+    return { ok: false, message: messages.invalidGameNumber };
   }
 
   const match = await prisma.tournamentMatch.findUnique({
@@ -268,14 +378,14 @@ export async function submitValorantMatchId(
     },
   });
 
-  if (!match) return { ok: false, message: "Match not found." };
+  if (!match) return { ok: false, message: messages.matchNotFound };
   if (!match.teamAId || !match.teamBId) {
-    return { ok: false, message: "Both teams must be assigned before verification." };
+    return { ok: false, message: messages.teamsRequiredVerification };
   }
 
   const terminal: string[] = ["completed", "confirmed", "cancelled", "forfeit", "bye"];
   if (terminal.includes(match.status)) {
-    return { ok: false, message: "This match is already finalised." };
+    return { ok: false, message: messages.matchAlreadyFinal };
   }
 
   // Permission: user must be on one of the teams, or an admin.
@@ -297,7 +407,7 @@ export async function submitValorantMatchId(
           select: { id: true },
         });
     if (!membership && !leaderTeam) {
-      return { ok: false, message: "You are not a participant in this match." };
+      return { ok: false, message: messages.notParticipant };
     }
   }
 
@@ -362,7 +472,9 @@ export async function submitValorantMatchId(
     revalidateMatchPaths(match.tournamentId);
     return {
       ok: false,
-      message: `Verification rejected: ${v.reason}`,
+      message: formatActionMessage(messages.verificationRejected, {
+        reason: v.reason ?? "",
+      }),
       confidence: "rejected",
       checks: checksSummary,
       reason: v.reason,
@@ -394,7 +506,7 @@ export async function submitValorantMatchId(
     revalidateMatchPaths(match.tournamentId);
     return {
       ok: true,
-      message: "Match verified and recorded automatically.",
+      message: messages.verifiedRecorded,
       confidence: "high",
       checks: checksSummary,
     };
@@ -417,8 +529,7 @@ export async function submitValorantMatchId(
   revalidateMatchPaths(match.tournamentId);
   return {
     ok: true,
-    message:
-      "Match ID submitted. Confidence is medium — an admin will review before the result is confirmed.",
+    message: messages.mediumConfidence,
     confidence: "medium",
     checks: checksSummary,
     reason: v.reason,
@@ -442,14 +553,15 @@ export async function findRecentValorantMatch(
   _prevState: FindRecentResult,
   formData: FormData,
 ): Promise<FindRecentResult> {
+  const messages = matchIdActionMessages[getActionLocale(formData)];
   const sessionUser = await requireUser();
-  if (!sessionUser) return { ok: false, message: "Please login first." };
+  if (!sessionUser) return { ok: false, message: messages.loginRequired };
   if (!sessionUser.isAdmin) {
-    return { ok: false, message: "Only admins can search recent matches." };
+    return { ok: false, message: messages.adminsOnlySearch };
   }
 
   const matchId = getValue(formData, "matchId");
-  if (!matchId) return { ok: false, message: "Match ID is missing." };
+  if (!matchId) return { ok: false, message: messages.matchIdMissing };
 
   const match = await prisma.tournamentMatch.findUnique({
     where: { id: matchId },
@@ -459,7 +571,7 @@ export async function findRecentValorantMatch(
   if (!match?.teamAId || !match?.teamBId) {
     return {
       ok: false,
-      message: "Both teams must be assigned before searching.",
+      message: messages.teamsRequiredSearch,
     };
   }
 
@@ -474,15 +586,19 @@ export async function findRecentValorantMatch(
   if (result.candidates.length === 0) {
     return {
       ok: true,
-      message:
-        "No recent custom VALORANT matches found for these teams. Ensure players have linked their Riot accounts.",
+      message: messages.noRecentValorant,
       candidates: [],
     };
   }
 
   return {
     ok: true,
-    message: `Found ${result.candidates.length} candidate${result.candidates.length === 1 ? "" : "s"}.`,
+    message:
+      result.candidates.length === 1
+        ? messages.foundOneCandidate
+        : formatActionMessage(messages.foundCandidates, {
+            count: String(result.candidates.length),
+          }),
     candidates: result.candidates.map((c) => ({
       valorantMatchId: c.valorantMatchId,
       minutesAgo: c.minutesAgo,
@@ -506,21 +622,22 @@ export async function submitDotaMatchId(
   _prevState: DotaVerifyResult,
   formData: FormData,
 ): Promise<DotaVerifyResult> {
+  const messages = matchIdActionMessages[getActionLocale(formData)];
   const sessionUser = await requireUser();
   if (!sessionUser) {
-    return { ok: false, message: "Please login first." };
+    return { ok: false, message: messages.loginRequired };
   }
 
   const matchId = getValue(formData, "matchId");
   const gameNumberRaw = getValue(formData, "gameNumber");
   const dotaMatchId = getValue(formData, "dotaMatchId").trim();
 
-  if (!matchId) return { ok: false, message: "Match ID is missing." };
-  if (!dotaMatchId) return { ok: false, message: "Please enter a Dota 2 match ID." };
+  if (!matchId) return { ok: false, message: messages.matchIdMissing };
+  if (!dotaMatchId) return { ok: false, message: messages.enterDotaMatchId };
 
   const gameNumber = parseInt(gameNumberRaw, 10);
   if (!Number.isFinite(gameNumber) || gameNumber < 1) {
-    return { ok: false, message: "Game number is invalid." };
+    return { ok: false, message: messages.invalidGameNumber };
   }
 
   const match = await prisma.tournamentMatch.findUnique({
@@ -538,14 +655,14 @@ export async function submitDotaMatchId(
     },
   });
 
-  if (!match) return { ok: false, message: "Match not found." };
+  if (!match) return { ok: false, message: messages.matchNotFound };
   if (!match.teamAId || !match.teamBId) {
-    return { ok: false, message: "Both teams must be assigned before verification." };
+    return { ok: false, message: messages.teamsRequiredVerification };
   }
 
   const terminal: string[] = ["completed", "confirmed", "cancelled", "forfeit", "bye"];
   if (terminal.includes(match.status)) {
-    return { ok: false, message: "This match is already finalised." };
+    return { ok: false, message: messages.matchAlreadyFinal };
   }
 
   // Permission: user must be on one of the teams, or an admin.
@@ -567,7 +684,7 @@ export async function submitDotaMatchId(
           select: { id: true },
         });
     if (!membership && !leaderTeam) {
-      return { ok: false, message: "You are not a participant in this match." };
+      return { ok: false, message: messages.notParticipant };
     }
   }
 
@@ -632,7 +749,9 @@ export async function submitDotaMatchId(
     revalidateMatchPaths(match.tournamentId);
     return {
       ok: false,
-      message: `Verification rejected: ${v.reason}`,
+      message: formatActionMessage(messages.verificationRejected, {
+        reason: v.reason ?? "",
+      }),
       confidence: "rejected",
       checks: checksSummary,
       reason: v.reason,
@@ -663,7 +782,7 @@ export async function submitDotaMatchId(
     revalidateMatchPaths(match.tournamentId);
     return {
       ok: true,
-      message: "Match verified and recorded automatically.",
+      message: messages.verifiedRecorded,
       confidence: "high",
       checks: checksSummary,
     };
@@ -686,8 +805,7 @@ export async function submitDotaMatchId(
   revalidateMatchPaths(match.tournamentId);
   return {
     ok: true,
-    message:
-      "Match ID submitted. Confidence is medium — an admin will review before the result is confirmed.",
+    message: messages.mediumConfidence,
     confidence: "medium",
     checks: checksSummary,
     reason: v.reason,
@@ -711,14 +829,15 @@ export async function findRecentDotaMatch(
   _prevState: FindRecentDotaResult,
   formData: FormData,
 ): Promise<FindRecentDotaResult> {
+  const messages = matchIdActionMessages[getActionLocale(formData)];
   const sessionUser = await requireUser();
-  if (!sessionUser) return { ok: false, message: "Please login first." };
+  if (!sessionUser) return { ok: false, message: messages.loginRequired };
   if (!sessionUser.isAdmin) {
-    return { ok: false, message: "Only admins can search recent matches." };
+    return { ok: false, message: messages.adminsOnlySearch };
   }
 
   const matchId = getValue(formData, "matchId");
-  if (!matchId) return { ok: false, message: "Match ID is missing." };
+  if (!matchId) return { ok: false, message: messages.matchIdMissing };
 
   const match = await prisma.tournamentMatch.findUnique({
     where: { id: matchId },
@@ -726,7 +845,7 @@ export async function findRecentDotaMatch(
   });
 
   if (!match?.teamAId || !match?.teamBId) {
-    return { ok: false, message: "Both teams must be assigned before searching." };
+    return { ok: false, message: messages.teamsRequiredSearch };
   }
 
   const result = await findRecentDotaMatches({
@@ -740,15 +859,19 @@ export async function findRecentDotaMatch(
   if (result.candidates.length === 0) {
     return {
       ok: true,
-      message:
-        "No recent Dota 2 matches found for these teams. Ensure players have linked their Steam accounts.",
+      message: messages.noRecentDota,
       candidates: [],
     };
   }
 
   return {
     ok: true,
-    message: `Found ${result.candidates.length} candidate${result.candidates.length === 1 ? "" : "s"}.`,
+    message:
+      result.candidates.length === 1
+        ? messages.foundOneCandidate
+        : formatActionMessage(messages.foundCandidates, {
+            count: String(result.candidates.length),
+          }),
     candidates: result.candidates.map((c) => ({
       dotaMatchId: c.dotaMatchId,
       minutesAgo: c.minutesAgo,

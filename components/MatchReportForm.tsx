@@ -8,6 +8,7 @@ import {
   type MatchActionResult,
 } from "@/actions/matchActions";
 import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
+import type { Locale } from "@/lib/i18n";
 
 type Team = { id: string; name: string };
 
@@ -17,9 +18,98 @@ type MatchReportFormProps = {
   teamA: Team;
   teamB: Team;
   hasExistingReport: boolean;
+  locale: Locale;
 };
 
 const initialState: MatchActionResult = { ok: false, message: "" };
+
+type MatchReportFormMessages = {
+  existingReport: string;
+  declareWinner: string;
+  selectWinner: string;
+  scoreLabel: string;
+  evidenceUrl: string;
+  noteOptional: string;
+  notePlaceholder: string;
+  submitting: string;
+  submitResult: string;
+  confirmation: string;
+  submitTitle: string;
+  submitDescription: string;
+  submitConfirm: string;
+  cancel: string;
+  disputeReason: string;
+  disputePlaceholder: string;
+  filingDispute: string;
+  fileDispute: string;
+  disputeTitle: string;
+  disputeDescription: string;
+  disputeConfirm: string;
+};
+
+const matchReportFormMessages: Record<Locale, MatchReportFormMessages> = {
+  en: {
+    existingReport:
+      "You already submitted a report. Submitting again will replace your previous one.",
+    declareWinner: "Declare Winner",
+    selectWinner: "— Select winner —",
+    scoreLabel: "{team} score",
+    evidenceUrl: "Evidence URL (screenshot / VOD)",
+    noteOptional: "Note (optional)",
+    notePlaceholder: "Any extra context for the admin...",
+    submitting: "Submitting...",
+    submitResult: "Submit Result ›",
+    confirmation: "Confirmation",
+    submitTitle: "Submit match result?",
+    submitDescription:
+      "Submit this result for {teamA} vs {teamB}. Admins may review it if the opponent disputes it.",
+    submitConfirm: "Submit result",
+    cancel: "Cancel",
+    disputeReason: "Reason for dispute",
+    disputePlaceholder:
+      "Describe the problem clearly. Admins will review both sides.",
+    filingDispute: "Filing dispute...",
+    fileDispute: "File Dispute",
+    disputeTitle: "File dispute?",
+    disputeDescription:
+      "Submit this dispute for admin review. Use this only when the reported result is incorrect or incomplete.",
+    disputeConfirm: "File dispute",
+  },
+  ar: {
+    existingReport:
+      "لقد أرسلت تقريرًا من قبل. سيؤدي الإرسال مرة أخرى إلى استبدال التقرير السابق.",
+    declareWinner: "تحديد الفائز",
+    selectWinner: "- اختر الفائز -",
+    scoreLabel: "نتيجة {team}",
+    evidenceUrl: "رابط الدليل (لقطة شاشة / VOD)",
+    noteOptional: "ملاحظة (اختياري)",
+    notePlaceholder: "أي سياق إضافي للمشرف...",
+    submitting: "جارٍ الإرسال...",
+    submitResult: "إرسال النتيجة ›",
+    confirmation: "تأكيد",
+    submitTitle: "إرسال نتيجة المباراة؟",
+    submitDescription:
+      "أرسل هذه النتيجة لمباراة {teamA} ضد {teamB}. قد يراجعها المشرفون إذا اعترض الفريق الآخر.",
+    submitConfirm: "إرسال النتيجة",
+    cancel: "إلغاء",
+    disputeReason: "سبب الاعتراض",
+    disputePlaceholder:
+      "اشرح المشكلة بوضوح. سيراجع المشرفون الطرفين.",
+    filingDispute: "جارٍ إرسال الاعتراض...",
+    fileDispute: "إرسال اعتراض",
+    disputeTitle: "إرسال اعتراض؟",
+    disputeDescription:
+      "أرسل هذا الاعتراض لمراجعة المشرفين. استخدمه فقط عندما تكون النتيجة المبلغ عنها غير صحيحة أو غير مكتملة.",
+    disputeConfirm: "إرسال الاعتراض",
+  },
+};
+
+function formatMessage(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce(
+    (message, [key, value]) => message.replaceAll(`{${key}}`, value),
+    template,
+  );
+}
 
 function inputStyle(): React.CSSProperties {
   return {
@@ -77,7 +167,9 @@ export function MatchReportForm({
   teamA,
   teamB,
   hasExistingReport,
+  locale,
 }: MatchReportFormProps) {
+  const messages = matchReportFormMessages[locale];
   const reportFormRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -119,8 +211,7 @@ export function MatchReportForm({
             color: "var(--asc-amber)",
           }}
         >
-          You already submitted a report. Submitting again will replace your
-          previous one.
+          {messages.existingReport}
         </div>
       )}
 
@@ -134,11 +225,12 @@ export function MatchReportForm({
         >
           <input type="hidden" name="matchId" value={matchId} />
           <input type="hidden" name="teamId" value={userTeamId} />
+          <input type="hidden" name="locale" value={locale} />
 
           <div>
-            <label style={labelStyle()}>Declare Winner</label>
+            <label style={labelStyle()}>{messages.declareWinner}</label>
             <select name="winnerTeamId" required style={inputStyle()}>
-              <option value="">— Select winner —</option>
+              <option value="">{messages.selectWinner}</option>
               <option value={teamA.id}>{teamA.name}</option>
               <option value={teamB.id}>{teamB.name}</option>
             </select>
@@ -146,7 +238,9 @@ export function MatchReportForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label style={labelStyle()}>{teamA.name} score</label>
+              <label style={labelStyle()}>
+                {formatMessage(messages.scoreLabel, { team: teamA.name })}
+              </label>
               <input
                 type="number"
                 name="teamAScore"
@@ -159,7 +253,9 @@ export function MatchReportForm({
             </div>
 
             <div>
-              <label style={labelStyle()}>{teamB.name} score</label>
+              <label style={labelStyle()}>
+                {formatMessage(messages.scoreLabel, { team: teamB.name })}
+              </label>
               <input
                 type="number"
                 name="teamBScore"
@@ -173,7 +269,7 @@ export function MatchReportForm({
           </div>
 
           <div>
-            <label style={labelStyle()}>Evidence URL (screenshot / VOD)</label>
+            <label style={labelStyle()}>{messages.evidenceUrl}</label>
             <input
               type="url"
               name="evidenceUrl"
@@ -183,12 +279,12 @@ export function MatchReportForm({
           </div>
 
           <div>
-            <label style={labelStyle()}>Note (optional)</label>
+            <label style={labelStyle()}>{messages.noteOptional}</label>
             <textarea
               name="note"
               rows={2}
               maxLength={500}
-              placeholder="Any extra context for the admin…"
+              placeholder={messages.notePlaceholder}
               style={{ ...inputStyle(), resize: "vertical" }}
             />
           </div>
@@ -204,19 +300,22 @@ export function MatchReportForm({
                 "polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)",
             }}
           >
-            {reportPending ? "Submitting…" : "Submit Result ›"}
+            {reportPending ? messages.submitting : messages.submitResult}
           </button>
         </form>
       )}
 
       <ConfirmDialogPortal
         open={confirmOpen}
-        eyebrow="Confirmation"
-        title="Submit match result?"
-        description={`Submit this result for ${teamA.name} vs ${teamB.name}. Admins may review it if the opponent disputes it.`}
-        confirmLabel="Submit result"
-        cancelLabel="Cancel"
-        pendingLabel="Submitting..."
+        eyebrow={messages.confirmation}
+        title={messages.submitTitle}
+        description={formatMessage(messages.submitDescription, {
+          teamA: teamA.name,
+          teamB: teamB.name,
+        })}
+        confirmLabel={messages.submitConfirm}
+        cancelLabel={messages.cancel}
+        pendingLabel={messages.submitting}
         pending={reportPending}
         variant="primary"
         onConfirm={runReportAction}
@@ -228,9 +327,11 @@ export function MatchReportForm({
 
 type DisputeFormProps = {
   matchId: string;
+  locale: Locale;
 };
 
-export function DisputeForm({ matchId }: DisputeFormProps) {
+export function DisputeForm({ matchId, locale }: DisputeFormProps) {
+  const messages = matchReportFormMessages[locale];
   const disputeFormRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -272,15 +373,16 @@ export function DisputeForm({ matchId }: DisputeFormProps) {
           className="grid gap-4"
         >
           <input type="hidden" name="matchId" value={matchId} />
+          <input type="hidden" name="locale" value={locale} />
 
           <div>
-            <label style={labelStyle()}>Reason for dispute</label>
+            <label style={labelStyle()}>{messages.disputeReason}</label>
             <textarea
               name="reason"
               rows={3}
               maxLength={500}
               required
-              placeholder="Describe the problem clearly. Admins will review both sides."
+              placeholder={messages.disputePlaceholder}
               style={{ ...inputStyle(), resize: "vertical" }}
             />
           </div>
@@ -297,19 +399,19 @@ export function DisputeForm({ matchId }: DisputeFormProps) {
                 "polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)",
             }}
           >
-            {pending ? "Filing dispute…" : "File Dispute"}
+            {pending ? messages.filingDispute : messages.fileDispute}
           </button>
         </form>
       )}
 
       <ConfirmDialogPortal
         open={confirmOpen}
-        eyebrow="Confirmation"
-        title="File dispute?"
-        description="Submit this dispute for admin review. Use this only when the reported result is incorrect or incomplete."
-        confirmLabel="File dispute"
-        cancelLabel="Cancel"
-        pendingLabel="Filing dispute..."
+        eyebrow={messages.confirmation}
+        title={messages.disputeTitle}
+        description={messages.disputeDescription}
+        confirmLabel={messages.disputeConfirm}
+        cancelLabel={messages.cancel}
+        pendingLabel={messages.filingDispute}
         pending={pending}
         variant="danger"
         onConfirm={runDisputeAction}

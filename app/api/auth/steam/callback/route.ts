@@ -14,12 +14,78 @@ const STEAM_PLAYER_URL =
   "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002";
 const STEAM_ID64_REGEX = /^https?:\/\/steamcommunity\.com\/openid\/id\/(\d+)$/;
 const STATE_COOKIE = "steam_openid_state";
+type Locale = "en" | "ar";
+
+type SteamCallbackMessages = {
+  sessionExpired: string;
+  malformedSession: string;
+  stateMismatch: string;
+  invalidStateFormat: string;
+  notConfigured: string;
+  invalidSignature: string;
+  userNotFound: string;
+  cancelled: string;
+  networkError: string;
+  verifyFailed: string;
+  steamIdFailed: string;
+  alreadyLinked: string;
+  linked: string;
+  linkedWithName: string;
+};
+
+const steamCallbackMessages: Record<Locale, SteamCallbackMessages> = {
+  en: {
+    sessionExpired: "Session expired. Please try linking your account again.",
+    malformedSession: "Malformed session. Please try linking your account again.",
+    stateMismatch: "State mismatch. Please try again.",
+    invalidStateFormat: "Invalid state format.",
+    notConfigured: "Steam linking is not configured. Contact an administrator.",
+    invalidSignature: "Invalid state signature. Please try again.",
+    userNotFound: "User not found. Please sign in again.",
+    cancelled: "Steam account linking was cancelled.",
+    networkError: "Could not reach Steam servers. Please try again.",
+    verifyFailed: "Steam could not verify your identity. Please try again.",
+    steamIdFailed: "Could not extract Steam ID. Please try again.",
+    alreadyLinked:
+      "This Steam account is already linked to a different Ascendra account.",
+    linked: "Steam account linked successfully.",
+    linkedWithName: 'Steam account "{name}" linked successfully.',
+  },
+  ar: {
+    sessionExpired: "انتهت الجلسة. حاول ربط حسابك مرة أخرى.",
+    malformedSession: "جلسة غير صالحة. حاول ربط حسابك مرة أخرى.",
+    stateMismatch: "فشل التحقق من الجلسة. حاول مرة أخرى.",
+    invalidStateFormat: "تنسيق الجلسة غير صالح.",
+    notConfigured: "ربط حساب Steam غير مفعّل. تواصل مع أحد المشرفين.",
+    invalidSignature: "توقيع الجلسة غير صالح. حاول مرة أخرى.",
+    userNotFound: "لم يتم العثور على المستخدم. يرجى تسجيل الدخول مرة أخرى.",
+    cancelled: "تم إلغاء ربط حساب Steam.",
+    networkError: "تعذر الاتصال بخوادم Steam. حاول مرة أخرى.",
+    verifyFailed: "تعذر على Steam التحقق من هويتك. حاول مرة أخرى.",
+    steamIdFailed: "تعذر استخراج معرّف Steam. حاول مرة أخرى.",
+    alreadyLinked: "حساب Steam هذا مرتبط بحساب Ascendra آخر.",
+    linked: "تم ربط حساب Steam بنجاح.",
+    linkedWithName: 'تم ربط حساب Steam "{name}" بنجاح.',
+  },
+};
+
 const STATE_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "lax" as const,
   path: "/",
 };
+
+function getRequestLocale(request: Request): Locale {
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const localeCookie = cookieHeader
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith("ascendra_locale="));
+  const locale = localeCookie?.slice("ascendra_locale=".length);
+
+  return locale === "ar" ? "ar" : "en";
+}
 
 function getAppBaseUrl(request: Request) {
   const configuredBaseUrl = process.env.APP_BASE_URL?.trim();
@@ -103,19 +169,20 @@ async function writeAudit(opts: {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const baseUrl = getAppBaseUrl(request);
+  const messages = steamCallbackMessages[getRequestLocale(request)];
 
   const returnedState = searchParams.get("state");
 
   const cookieValue = getStateCookieValue(request);
 
   if (!cookieValue || !returnedState) {
-    return fail(baseUrl, "Session expired. Please try linking your account again.");
+    return fail(baseUrl, messages.sessionExpired);
   }
 
   const [cookieState, userId] = cookieValue.split("|");
 
   if (!cookieState || !userId) {
-    return fail(baseUrl, "Malformed session. Please try linking your account again.");
+    return fail(baseUrl, messages.malformedSession);
   }
 
   // Constant-time comparison prevents timing attacks.
@@ -125,13 +192,13 @@ export async function GET(request: Request) {
     stateA.length === stateB.length && crypto.timingSafeEqual(stateA, stateB);
 
   if (!statesMatch) {
-    return fail(baseUrl, "State mismatch. Please try again.");
+    return fail(baseUrl, messages.stateMismatch);
   }
 
   // Verify the HMAC embedded in the state.
   const [nonce, sig] = returnedState.split(".");
   if (!nonce || !sig) {
-    return fail(baseUrl, "Invalid state format.");
+    return fail(baseUrl, messages.invalidStateFormat);
   }
   const secret = process.env.STEAM_OPENID_SECRET?.trim();
   if (!secret) {
@@ -140,10 +207,7 @@ export async function GET(request: Request) {
       ok: false,
       error: "missing_STEAM_OPENID_SECRET",
     });
-    return fail(
-      baseUrl,
-      "Steam linking is not configured. Contact an administrator.",
-    );
+    return fail(baseUrl, messages.notConfigured);
   }
   const expectedSig = crypto
     .createHmac("sha256", secret)
@@ -155,7 +219,7 @@ export async function GET(request: Request) {
     sigA.length === sigB.length && crypto.timingSafeEqual(sigA, sigB);
 
   if (!sigValid) {
-    return fail(baseUrl, "Invalid state signature. Please try again.");
+    return fail(baseUrl, messages.invalidSignature);
   }
 
   // Confirm the user still exists.
@@ -164,13 +228,13 @@ export async function GET(request: Request) {
     select: { id: true },
   });
   if (!user) {
-    return fail(baseUrl, "User not found. Please sign in again.");
+    return fail(baseUrl, messages.userNotFound);
   }
 
   // Steam returns openid.mode=cancel when the user cancels.
   const mode = searchParams.get("openid.mode");
   if (mode === "cancel") {
-    return fail(baseUrl, "Steam account linking was cancelled.");
+    return fail(baseUrl, messages.cancelled);
   }
 
   // Verify the assertion with Steam (check_authentication).
@@ -198,7 +262,7 @@ export async function GET(request: Request) {
       ok: false,
       error: "network_error",
     });
-    return fail(baseUrl, "Could not reach Steam servers. Please try again.");
+    return fail(baseUrl, messages.networkError);
   }
 
   const verifyText = await verifyRes.text().catch(() => "");
@@ -211,10 +275,7 @@ export async function GET(request: Request) {
       ok: false,
       error: "invalid_assertion",
     });
-    return fail(
-      baseUrl,
-      "Steam could not verify your identity. Please try again.",
-    );
+    return fail(baseUrl, messages.verifyFailed);
   }
 
   // Extract SteamID64 from claimed_id URL.
@@ -227,7 +288,7 @@ export async function GET(request: Request) {
       ok: false,
       error: "invalid_claimed_id",
     });
-    return fail(baseUrl, "Could not extract Steam ID. Please try again.");
+    return fail(baseUrl, messages.steamIdFailed);
   }
   const steamId64 = match[1];
 
@@ -274,10 +335,7 @@ export async function GET(request: Request) {
       ok: false,
       error: "already_linked_to_other_user",
     });
-    return fail(
-      baseUrl,
-      "This Steam account is already linked to a different Ascendra account.",
-    );
+    return fail(baseUrl, messages.alreadyLinked);
   }
 
   // Upsert the linked account.
@@ -315,7 +373,7 @@ export async function GET(request: Request) {
 
   return redirect(baseUrl, "/profile", {
     message: displayName
-      ? `Steam account "${displayName}" linked successfully.`
-      : "Steam account linked successfully.",
+      ? messages.linkedWithName.replace("{name}", displayName)
+      : messages.linked,
   });
 }
