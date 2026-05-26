@@ -1,3 +1,5 @@
+import type { Locale } from "@/lib/i18n";
+
 type AnnouncementCardProps = {
   announcement: {
     id: string;
@@ -8,10 +10,12 @@ type AnnouncementCardProps = {
     createdAt: Date | string;
   };
   featured?: boolean;
+  locale?: Locale;
+  importantLabel?: string;
 };
 
-function formatDate(date: Date | string) {
-  return new Date(date).toLocaleDateString("en-GB", {
+function formatDate(date: Date | string, locale: Locale = "en") {
+  return new Date(date).toLocaleDateString(locale === "ar" ? "ar" : "en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -21,6 +25,8 @@ function formatDate(date: Date | string) {
 export default function AnnouncementCard({
   announcement,
   featured = false,
+  locale = "en",
+  importantLabel = "Important",
 }: AnnouncementCardProps) {
   const importantBorder = announcement.important
     ? { borderColor: "oklch(0.65 0.16 75 / 0.4)", background: "oklch(0.25 0.14 75 / 0.08)" }
@@ -51,7 +57,7 @@ export default function AnnouncementCard({
               className="inline-flex border px-3 py-1 text-xs font-black"
               style={{ borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)", color: "var(--asc-amber)" }}
             >
-              Important
+              {importantLabel}
             </span>
           )}
 
@@ -59,7 +65,7 @@ export default function AnnouncementCard({
             className="inline-flex border px-3 py-1 text-xs font-black"
             style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-3)" }}
           >
-            {formatDate(announcement.createdAt)}
+            {formatDate(announcement.createdAt, locale)}
           </span>
         </div>
       </div>
