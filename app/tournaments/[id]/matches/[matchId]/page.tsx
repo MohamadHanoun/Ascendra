@@ -111,12 +111,12 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     faceitWorkflow: {
       eyebrow: "FACEIT CS2",
       title: "CS2 FACEIT workflow",
-      step1: "Make sure all players have Steam and FACEIT connected.",
-      step2: "Create or open the FACEIT match room.",
-      step3: "Invite the correct teams/players on FACEIT.",
-      step4: "Paste the FACEIT match ID or room URL below.",
-      step5: "After the match ends, sync FACEIT proof.",
-      note: "FACEIT proof can automatically update the official result when auto-confirm is enabled.",
+      step1: "Play the CS2 match on FACEIT with the correct teams.",
+      step2: "After the match ends, copy the FACEIT match ID or room URL.",
+      step3: "An admin or authorized participant adds the FACEIT match ID below.",
+      step4: "Ascendra syncs the score, map, stats, demo link, and match status.",
+      step5: "If auto-confirm is enabled and team mapping is verified, Ascendra can apply the official result automatically.",
+      note: "When auto-confirm is disabled, FACEIT proof is stored for review and the official result remains manual.",
       teamReadiness: "Team readiness",
       faceitReady: "FACEIT ready",
       steamReady: "Steam ready",
@@ -160,12 +160,12 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     faceitWorkflow: {
       eyebrow: "FACEIT CS2",
       title: "سير عمل FACEIT لـ CS2",
-      step1: "تأكد أن جميع اللاعبين ربطوا Steam و FACEIT.",
-      step2: "أنشئ أو افتح غرفة مباراة FACEIT.",
-      step3: "ادعُ الفرق أو اللاعبين الصحيحين على FACEIT.",
-      step4: "الصق معرف مباراة FACEIT أو رابط الغرفة في الأسفل.",
-      step5: "بعد انتهاء المباراة، قم بمزامنة إثبات FACEIT.",
-      note: "يمكن لإثبات FACEIT تحديث النتيجة الرسمية تلقائيًا عند تفعيل التأكيد التلقائي.",
+      step1: "العب مباراة CS2 على FACEIT باستخدام الفرق الصحيحة.",
+      step2: "بعد انتهاء المباراة، انسخ FACEIT Match ID أو رابط الغرفة.",
+      step3: "يضيف المشرف أو اللاعب المخوّل FACEIT Match ID في الأسفل.",
+      step4: "سيقوم Ascendra بمزامنة النتيجة والخريطة والإحصائيات ورابط الديمو وحالة المباراة.",
+      step5: "إذا كان التأكيد التلقائي مفعّلًا وتم التحقق من مطابقة الفرق، يمكن اعتماد النتيجة الرسمية تلقائيًا.",
+      note: "عند تعطيل التأكيد التلقائي، يُحفظ إثبات FACEIT للمراجعة وتبقى النتيجة الرسمية يدوية.",
       teamReadiness: "جاهزية الفريق",
       faceitReady: "جاهز لـ FACEIT",
       steamReady: "جاهز لـ Steam",
@@ -770,7 +770,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                               </span>
                               <span
                                 className="font-black"
-                                style={{ color: allReady ? "var(--asc-green)" : "var(--asc-amber)" }}
+                                style={{ color: allReady ? "var(--asc-green)" : "var(--asc-live)" }}
                               >
                                 {team.faceitCount}/{team.total} {msgs.faceitWorkflow.faceitReady}
                               </span>

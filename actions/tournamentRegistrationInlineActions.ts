@@ -70,7 +70,7 @@ const actionMessages: Record<Locale, TournamentRegistrationActionMessages> = {
     cs2FaceitRequired:
       "Connect your FACEIT account on your profile before registering for a CS2 tournament.",
     cs2SteamFaceitMismatch:
-      "Your FACEIT account must be linked to the same Steam account. Update your accounts on your profile.",
+      "Your FACEIT account must belong to the same Steam account linked on your profile.",
     registrationIdMissing: "Registration ID is missing.",
     registrationNotFound: "Registration was not found.",
     onlyLeaderCanCancel: "Only the team leader can cancel this registration.",
@@ -105,7 +105,7 @@ const actionMessages: Record<Locale, TournamentRegistrationActionMessages> = {
     cs2FaceitRequired:
       "يرجى ربط حساب FACEIT في ملفك الشخصي قبل التسجيل في بطولة CS2.",
     cs2SteamFaceitMismatch:
-      "يجب أن يكون حساب FACEIT مرتبطًا بنفس حساب Steam. راجع حساباتك في ملفك الشخصي.",
+      "يجب أن يكون حساب FACEIT مرتبطًا بنفس حساب Steam الموجود في ملفك الشخصي.",
     registrationIdMissing: "معرّف التسجيل مفقود.",
     registrationNotFound: "لم يتم العثور على التسجيل.",
     onlyLeaderCanCancel: "يمكن لقائد الفريق فقط إلغاء هذا التسجيل.",

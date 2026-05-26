@@ -129,6 +129,8 @@ type ProfileMessages = {
     cancelLabel: string;
     faceitAccount: string;
     faceitSubtitle: string;
+    faceitHelp: string;
+    faceitConnectedHelp: string;
     faceitConnecting: string;
     faceitSkillLevel: string;
     faceitNicknamePlaceholder: string;
@@ -249,10 +251,14 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       confirmationEyebrow: "Confirmation",
       cancelLabel: "Cancel",
       faceitAccount: "FACEIT Account",
-      faceitSubtitle: "CS2 · Skill Level · ELO",
+      faceitSubtitle: "CS2 account verification",
+      faceitHelp:
+        "Connect Steam first. FACEIT must belong to the same Steam account.",
+      faceitConnectedHelp:
+        "FACEIT is linked and verified against your Steam account.",
       faceitConnecting: "Connecting...",
       faceitSkillLevel: "Skill Level",
-      faceitNicknamePlaceholder: "Enter FACEIT nickname",
+      faceitNicknamePlaceholder: "FACEIT nickname",
       acceptTitle: "Accept team invitation?",
       declineTitle: "Decline team invitation?",
       joinTeamTemplate: "Join {team}? You will become a member of this team.",
@@ -369,10 +375,14 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       confirmationEyebrow: "تأكيد",
       cancelLabel: "إلغاء",
       faceitAccount: "حساب FACEIT",
-      faceitSubtitle: "CS2 · المستوى · ELO",
+      faceitSubtitle: "التحقق من حساب CS2",
+      faceitHelp:
+        "اربط Steam أولًا قبل ربط FACEIT. يجب أن يكون حساب FACEIT مرتبطًا بنفس حساب Steam.",
+      faceitConnectedHelp:
+        "تم ربط FACEIT والتحقق من مطابقته مع حساب Steam.",
       faceitConnecting: "جارٍ الربط...",
       faceitSkillLevel: "المستوى",
-      faceitNicknamePlaceholder: "أدخل اسم مستخدم FACEIT",
+      faceitNicknamePlaceholder: "اسم مستخدم FACEIT",
       acceptTitle: "قبول دعوة الفريق؟",
       declineTitle: "رفض دعوة الفريق؟",
       joinTeamTemplate: "الانضمام إلى {team}؟ ستصبح عضوًا في هذا الفريق.",
@@ -1081,6 +1091,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   labels={{
                     title: messages.labels.faceitAccount,
                     subtitle: messages.labels.faceitSubtitle,
+                    help: messages.labels.faceitHelp,
+                    connectedHelp: messages.labels.faceitConnectedHelp,
                     connected: messages.labels.connected,
                     connect: messages.labels.connect,
                     connecting: messages.labels.faceitConnecting,

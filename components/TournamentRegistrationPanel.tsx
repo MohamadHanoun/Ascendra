@@ -567,7 +567,7 @@ function Cs2RequirementsBlock({
     linkLabel?: string;
   }) {
     return (
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span
             className="text-xs font-black"
@@ -612,6 +612,24 @@ function Cs2RequirementsBlock({
           done={readiness.faceitMatchesSteam}
           label={messages.cs2FaceitMatchesSteam}
         />
+      </div>
+      <div
+        className="mt-4 border px-3 py-2 text-sm font-black"
+        style={
+          readiness.isReady
+            ? {
+                borderColor: "oklch(0.55 0.14 150 / 0.5)",
+                background: "oklch(0.25 0.12 150 / 0.18)",
+                color: "var(--asc-green)",
+              }
+            : {
+                borderColor: "oklch(0.50 0.20 25 / 0.5)",
+                background: "oklch(0.25 0.18 25 / 0.18)",
+                color: "var(--asc-live)",
+              }
+        }
+      >
+        {readiness.isReady ? messages.cs2Ready : messages.cs2NotReady}
       </div>
     </div>
   );
@@ -720,9 +738,11 @@ function TournamentRegistrationPanel({
         slotsRemaining > 0 &&
         !hasOpenRegistration && (
           <section className="grid gap-4">
-            {isCs2 && cs2Readiness && !cs2Readiness.isReady ? (
+            {isCs2 && cs2Readiness && (
               <Cs2RequirementsBlock readiness={cs2Readiness} messages={messages} />
-            ) : availableTeams.length > 0 ? (
+            )}
+
+            {isCs2 && cs2Readiness && !cs2Readiness.isReady ? null : availableTeams.length > 0 ? (
               <RegisterForm
                 tournamentId={tournamentId}
                 availableTeams={availableTeams}

@@ -443,6 +443,8 @@ export type TournamentDetailsMessages = {
     cs2SteamConnected: string;
     cs2FaceitConnected: string;
     cs2FaceitMatchesSteam: string;
+    cs2Ready: string;
+    cs2NotReady: string;
     cs2ConnectSteam: string;
     cs2ConnectFaceit: string;
   };
@@ -981,12 +983,14 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         requirementAtLeast: "At least {count} player(s).",
         requirementNoPending: "No pending team invites.",
         tournamentStatus: "Tournament status",
-        cs2Requirements: "CS2 accounts required",
+        cs2Requirements: "CS2 tournament registration requirements",
         cs2RequirementsDescription:
-          "This is a CS2 tournament. Connect Steam and FACEIT before registering.",
+          "Connect Steam first, then link the FACEIT account that belongs to the same Steam account.",
         cs2SteamConnected: "Steam connected",
         cs2FaceitConnected: "FACEIT connected",
-        cs2FaceitMatchesSteam: "FACEIT linked to Steam",
+        cs2FaceitMatchesSteam: "Steam and FACEIT match verified",
+        cs2Ready: "You are ready to register",
+        cs2NotReady: "Complete these requirements before registering",
         cs2ConnectSteam: "Connect Steam",
         cs2ConnectFaceit: "Connect FACEIT",
       },
@@ -1505,12 +1509,14 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         requirementAtLeast: "يجب أن يحتوي الفريق على {count} لاعب على الأقل.",
         requirementNoPending: "يجب ألا توجد دعوات فريق معلقة.",
         tournamentStatus: "حالة البطولة",
-        cs2Requirements: "متطلبات حسابات CS2",
+        cs2Requirements: "متطلبات التسجيل في بطولة CS2",
         cs2RequirementsDescription:
-          "هذه بطولة CS2. يجب ربط حساب Steam وحساب FACEIT قبل التسجيل.",
-        cs2SteamConnected: "Steam مربوط",
-        cs2FaceitConnected: "FACEIT مربوط",
-        cs2FaceitMatchesSteam: "FACEIT مرتبط بـ Steam",
+          "اربط Steam أولًا، ثم اربط حساب FACEIT المرتبط بنفس حساب Steam.",
+        cs2SteamConnected: "Steam متصل",
+        cs2FaceitConnected: "FACEIT متصل",
+        cs2FaceitMatchesSteam: "تم التحقق من تطابق الحسابين",
+        cs2Ready: "أنت جاهز للتسجيل",
+        cs2NotReady: "أكمل المتطلبات قبل التسجيل",
         cs2ConnectSteam: "ربط Steam",
         cs2ConnectFaceit: "ربط FACEIT",
       },

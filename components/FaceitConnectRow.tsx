@@ -21,6 +21,8 @@ type Props = {
   labels: {
     title: string;
     subtitle: string;
+    help: string;
+    connectedHelp: string;
     connected: string;
     connect: string;
     connecting: string;
@@ -65,7 +67,7 @@ export default function FaceitConnectRow({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 bg-[var(--asc-bg-1)] px-5 py-4">
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 flex-1 items-start gap-4">
         <div
           className="grid h-10 w-10 shrink-0 place-items-center border text-xs font-black"
           style={{
@@ -80,20 +82,32 @@ export default function FaceitConnectRow({
         >
           F
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
             {labels.title}
           </p>
           <p className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
             {labels.subtitle}
           </p>
+          {!connected && (
+            <p
+              className="mt-1 max-w-xl text-xs leading-5"
+              style={{ color: "var(--asc-fg-2)" }}
+            >
+              {labels.help}
+            </p>
+          )}
         </div>
       </div>
 
       {connected ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="text-right">
-            <p className="font-mono font-black" style={{ color: "var(--asc-accent)" }}>
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
+          <div className="min-w-0 text-right">
+            <p
+              dir="ltr"
+              className="break-all font-mono font-black"
+              style={{ color: "var(--asc-accent)" }}
+            >
               {faceitNickname ?? "—"}
             </p>
             {faceitSkillLevel != null && (
@@ -107,6 +121,12 @@ export default function FaceitConnectRow({
                 {labels.linked} {faceitLinkedAt}
               </p>
             )}
+            <p
+              className="mt-1 max-w-sm text-[10px] leading-4"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              {labels.connectedHelp}
+            </p>
           </div>
           <span
             className="border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
@@ -157,7 +177,10 @@ export default function FaceitConnectRow({
         </div>
       ) : (
         <div className="flex flex-col items-end gap-2">
-          <form action={connectFormAction} className="flex items-center gap-2">
+          <form
+            action={connectFormAction}
+            className="flex flex-wrap items-center justify-end gap-2"
+          >
             <input
               type="text"
               name="faceitNickname"
@@ -170,13 +193,13 @@ export default function FaceitConnectRow({
                 border: "1px solid var(--asc-line-soft)",
                 color: "var(--asc-fg-0)",
                 outline: "none",
-                width: "180px",
+                width: "min(100%, 220px)",
               }}
             />
             <button
               type="submit"
               disabled={connectPending}
-              className="border px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
+              className="whitespace-nowrap border px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
               style={{
                 borderColor: "oklch(0.50 0.20 285 / 0.4)",
                 background: "var(--asc-accent-dim)",

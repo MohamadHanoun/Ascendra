@@ -50,14 +50,15 @@ type FaceitMatchProofMessages = {
 const formMessages: Record<Locale, FaceitMatchProofMessages> = {
   en: {
     instruction:
-      "Paste the FACEIT room URL or match ID after the FACEIT match is created.",
+      "After the FACEIT match ends, paste the FACEIT match ID or room URL. Ascendra will store score, map, stats, and demo proof.",
     inputLabel: "FACEIT match ID or room URL",
     inputPlaceholder:
       "e.g. 1-59d69823-3169-45a8-... or faceit.com/.../room/...",
     syncButton: "Sync FACEIT proof",
     syncing: "Syncing...",
-    syncHint: "Sync after the FACEIT match is finished.",
-    notSyncedYet: "Not synced yet",
+    syncHint:
+      "If auto-confirm is enabled and team mapping is verified, the official result may be applied automatically.",
+    notSyncedYet: "No FACEIT proof synced yet.",
     synced: "Synced",
     verified: "FACEIT verified",
     pendingReview: "Pending review",
@@ -66,14 +67,14 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
     scoreLabel: "FACEIT score",
     demoLabel: "Demo",
     openFaceit: "Open FACEIT match",
-    proofSource: "Proof source",
+    proofSource: "Stored FACEIT proof",
     disclaimer:
-      "This proof does not change the official result automatically.",
+      "Proof will be stored for review. Auto-confirm applies the official result only when it is enabled and team mapping is verified.",
     disclaimerApplied:
-      "This FACEIT proof updated the official result automatically.",
+      "This FACEIT proof applied the official result automatically.",
     connectRequired:
       "Connect your FACEIT account on your profile to sync CS2 proof.",
-    autoApplied: "FACEIT result auto-applied.",
+    autoApplied: "Official result auto-applied from FACEIT.",
     mappingMethodLabel: "Mapping method",
     mappingStrict: "Strict player match",
     mappingFactionOrder: "Faction order fallback",
@@ -81,13 +82,14 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
   },
   ar: {
     instruction:
-      "الصق رابط غرفة FACEIT أو معرف المباراة بعد إنشاء مباراة FACEIT.",
+      "بعد انتهاء مباراة FACEIT، الصق FACEIT Match ID أو رابط الغرفة. سيحفظ Ascendra النتيجة والخريطة والإحصائيات وإثبات الديمو.",
     inputLabel: "معرّف مباراة FACEIT أو رابط الغرفة",
     inputPlaceholder: "مثال: 1-59d69823-... أو faceit.com/.../room/...",
     syncButton: "مزامنة إثبات FACEIT",
     syncing: "جارٍ المزامنة...",
-    syncHint: "قم بالمزامنة بعد انتهاء مباراة FACEIT.",
-    notSyncedYet: "لم تتم المزامنة بعد",
+    syncHint:
+      "إذا كان التأكيد التلقائي مفعّلًا وتم التحقق من مطابقة الفرق، يمكن اعتماد النتيجة الرسمية تلقائيًا.",
+    notSyncedYet: "لم تتم مزامنة إثبات FACEIT بعد.",
     synced: "تمت المزامنة",
     verified: "موثق من FACEIT",
     pendingReview: "بانتظار المراجعة",
@@ -96,12 +98,13 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
     scoreLabel: "نتيجة FACEIT",
     demoLabel: "الديمو",
     openFaceit: "فتح مباراة FACEIT",
-    proofSource: "مصدر الإثبات",
-    disclaimer: "هذا الإثبات لا يغيّر النتيجة الرسمية تلقائيًا.",
-    disclaimerApplied: "قام إثبات FACEIT هذا بتحديث النتيجة الرسمية تلقائيًا.",
+    proofSource: "إثبات FACEIT محفوظ",
+    disclaimer:
+      "سيُحفظ الإثبات للمراجعة. يطبّق التأكيد التلقائي النتيجة الرسمية فقط عند تفعيله والتحقق من مطابقة الفرق.",
+    disclaimerApplied: "طبّق إثبات FACEIT هذا النتيجة الرسمية تلقائيًا.",
     connectRequired:
       "اربط حساب FACEIT في ملفك الشخصي لمزامنة إثبات CS2.",
-    autoApplied: "تم تطبيق نتيجة FACEIT تلقائيًا.",
+    autoApplied: "تم اعتماد النتيجة الرسمية تلقائيًا من FACEIT.",
     mappingMethodLabel: "طريقة المطابقة",
     mappingStrict: "مطابقة اللاعبين",
     mappingFactionOrder: "ترتيب فرق FACEIT",
@@ -172,10 +175,10 @@ export default function FaceitMatchProofForm({
           style={{
             borderColor: isVerified
               ? "oklch(0.55 0.14 150 / 0.4)"
-              : "oklch(0.65 0.14 75 / 0.4)",
+              : "oklch(0.50 0.20 285 / 0.35)",
             background: isVerified
               ? "oklch(0.25 0.12 150 / 0.10)"
-              : "oklch(0.25 0.12 75 / 0.10)",
+              : "var(--asc-accent-dim)",
           }}
         >
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -195,9 +198,9 @@ export default function FaceitMatchProofForm({
                       background: "oklch(0.25 0.12 150 / 0.18)",
                     }
                   : {
-                      color: "var(--asc-amber)",
-                      borderColor: "oklch(0.65 0.14 75 / 0.5)",
-                      background: "oklch(0.25 0.12 75 / 0.18)",
+                      color: "var(--asc-accent)",
+                      borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                      background: "var(--asc-accent-dim)",
                     }
               }
             >
@@ -209,13 +212,13 @@ export default function FaceitMatchProofForm({
             {proof.faceitStatus && (() => {
               const { text: statusText, isArabic: statusIsArabic } = translateFaceitStatus(proof.faceitStatus, locale);
               return (
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span style={{ color: "var(--asc-fg-3)" }}>
                     {msgs.statusLabel}
                   </span>
                   <span
                     dir={statusIsArabic ? undefined : "ltr"}
-                    className="font-mono font-black"
+                    className="break-all text-right font-mono font-black"
                     style={{ color: "var(--asc-fg-1)" }}
                   >
                     {statusText}
@@ -225,11 +228,11 @@ export default function FaceitMatchProofForm({
             })()}
 
             {proof.faceitMap && (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span style={{ color: "var(--asc-fg-3)" }}>{msgs.mapLabel}</span>
                 <span
                   dir="ltr"
-                  className="font-mono font-black"
+                  className="break-all text-right font-mono font-black"
                   style={{ color: "var(--asc-fg-1)" }}
                 >
                   {proof.faceitMap}
@@ -238,11 +241,11 @@ export default function FaceitMatchProofForm({
             )}
 
             {proof.faceitScoreRaw && (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span style={{ color: "var(--asc-fg-3)" }}>{msgs.scoreLabel}</span>
                 <span
                   dir="ltr"
-                  className="font-mono font-black"
+                  className="break-all text-right font-mono font-black"
                   style={{ color: "var(--asc-accent)" }}
                 >
                   {proof.faceitScoreRaw}
@@ -251,14 +254,15 @@ export default function FaceitMatchProofForm({
             )}
 
             {proof.faceitMatchUrl && (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span style={{ color: "var(--asc-fg-3)" }}>{msgs.openFaceit}</span>
                 <a
                   dir="ltr"
                   href={proof.faceitMatchUrl}
+                  title={proof.faceitMatchId}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-black transition hover:opacity-75"
+                  className="break-all text-right font-black transition hover:opacity-75"
                   style={{ color: "var(--asc-blue)" }}
                 >
                   {proof.faceitMatchId.slice(0, 14)}… →
@@ -267,14 +271,15 @@ export default function FaceitMatchProofForm({
             )}
 
             {proof.faceitDemoUrl && (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span style={{ color: "var(--asc-fg-3)" }}>{msgs.demoLabel}</span>
                 <a
                   dir="ltr"
                   href={proof.faceitDemoUrl}
+                  title={proof.faceitDemoUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-black transition hover:opacity-75"
+                  className="break-all text-right font-black transition hover:opacity-75"
                   style={{ color: "var(--asc-blue)" }}
                 >
                   .dem.gz →
@@ -283,9 +288,9 @@ export default function FaceitMatchProofForm({
             )}
 
             {proof.faceitSyncedAt && (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span style={{ color: "var(--asc-fg-3)" }}>{msgs.synced}</span>
-                <span style={{ color: "var(--asc-fg-3)" }}>
+                <span className="text-right" style={{ color: "var(--asc-fg-3)" }}>
                   {new Date(proof.faceitSyncedAt).toLocaleString(dateLocale, {
                     dateStyle: "medium",
                     timeStyle: "short",
@@ -300,14 +305,14 @@ export default function FaceitMatchProofForm({
                   className="my-1 border-t"
                   style={{ borderColor: "oklch(0.55 0.14 150 / 0.25)" }}
                 />
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span
                     className="font-black"
                     style={{ color: "var(--asc-green)" }}
                   >
                     {msgs.autoApplied}
                   </span>
-                  <span style={{ color: "var(--asc-fg-3)" }}>
+                  <span className="text-right" style={{ color: "var(--asc-fg-3)" }}>
                     {new Date(proof.faceitAutoAppliedAt).toLocaleString(dateLocale, {
                       dateStyle: "medium",
                       timeStyle: "short",
@@ -316,12 +321,12 @@ export default function FaceitMatchProofForm({
                 </div>
 
                 {proof.faceitAutoApplyMethod && (
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <span style={{ color: "var(--asc-fg-3)" }}>
                       {msgs.mappingMethodLabel}
                     </span>
                     <span
-                      className="font-black"
+                      className="text-right font-black"
                       style={{ color: "var(--asc-fg-1)" }}
                     >
                       {proof.faceitAutoApplyMethod === "strict"
@@ -356,9 +361,9 @@ export default function FaceitMatchProofForm({
         <div
           className="border px-3 py-2 text-xs leading-5"
           style={{
-            borderColor: "oklch(0.65 0.14 75 / 0.4)",
-            background: "oklch(0.25 0.12 75 / 0.10)",
-            color: "var(--asc-amber)",
+            borderColor: "oklch(0.50 0.20 285 / 0.35)",
+            background: "var(--asc-accent-dim)",
+            color: "var(--asc-accent)",
           }}
         >
           {msgs.disclaimer}
