@@ -70,13 +70,13 @@ const statsMessages: Record<Locale, StatsMessages> = {
       description: "إحصائيات منصة Ascendra والبطولات.",
     },
     hero: {
-      label: "المنصة",
+      label: "إحصائيات المنصة",
       title: "الإحصائيات",
       description: "نظرة سريعة على نشاط Ascendra.",
     },
     overview: {
       label: "نظرة عامة",
-      title: "الأرقام الرئيسية",
+      title: "أرقام المنصة الرئيسية",
     },
     labels: {
       players: "اللاعبون",
@@ -86,7 +86,7 @@ const statsMessages: Record<Locale, StatsMessages> = {
       games: "الألعاب",
       results: "نتائج",
       pts: "نقطة",
-      gameActivity: "الألعاب",
+      gameActivity: "إحصائيات البطولات",
       gameActivityDescription: "نشاط البطولات لهذه اللعبة.",
     },
   },

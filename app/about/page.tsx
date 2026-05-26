@@ -107,17 +107,17 @@ const aboutMessages: Record<Locale, AboutMessages> = {
 
   ar: {
     metadata: {
-      title: "حول المنصة | Ascendra",
+      title: "حول Ascendra | Ascendra",
       description: "تعرّف أكثر على Ascendra.",
     },
     hero: {
       label: "المنصة",
-      title: "حول المنصة",
+      title: "حول Ascendra",
       description:
-        "تم بناء Ascendra للفرق والبطولات ولوحة المتصدرين وتنظيم المنافسات التنافسية.",
+        "Ascendra مبنية للفرق والبطولات ولوحة المتصدرين وتنظيم المنافسات التنافسية.",
     },
     purpose: {
-      label: "الهدف",
+      label: "مهمتنا",
       title: "منافسات منظّمة واحترافية.",
       description:
         "تساعد المنصة اللاعبين على إدارة الفرق، والانضمام إلى البطولات، ومتابعة النتائج الرسمية، والمنافسة من خلال نظام أوضح وأكثر تنظيمًا.",
@@ -133,7 +133,7 @@ const aboutMessages: Record<Locale, AboutMessages> = {
       mottoValue: "الارتقاء",
     },
     core: {
-      label: "ماذا تقدم Ascendra",
+      label: "ما الذي تبنيه Ascendra",
       title: "المجالات الأساسية",
       values: [
         {

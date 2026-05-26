@@ -33,11 +33,11 @@ const notFoundMessages: Record<Locale, NotFoundMessages> = {
     label: "خطأ 404",
     title: "الصفحة غير موجودة.",
     description:
-      "الصفحة التي تحاول فتحها غير موجودة، أو تم نقلها، أو لم تعد متاحة.",
+      "تعذر العثور على الصفحة التي تبحث عنها. ربما تم نقلها أو لم تعد متاحة.",
     actions: {
       home: "العودة إلى الرئيسية",
-      tournaments: "البطولات",
-      community: "المجتمع",
+      tournaments: "عرض البطولات",
+      community: "فتح المجتمع",
     },
   },
 };
