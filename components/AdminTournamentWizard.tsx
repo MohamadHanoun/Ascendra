@@ -142,6 +142,7 @@ export default function AdminTournamentWizard({
 
   // Controlled fields: initialize from defaultValues when duplicating
   const [step, setStep] = useState(1);
+  const [justAdvanced, setJustAdvanced] = useState(false);
   const [teamSize, setTeamSize] = useState(defaultValues?.teamSize ?? 5);
   const [substitutes, setSubstitutes] = useState(
     defaultValues?.substitutesAllowed ?? 0,
@@ -188,7 +189,12 @@ export default function AdminTournamentWizard({
   }
 
   function goNext() {
-    if (step === 2) captureReview();
+    if (step === 2) {
+      captureReview();
+      setJustAdvanced(true);
+      window.setTimeout(() => setJustAdvanced(false), 300);
+    }
+
     setStep((s) => s + 1);
   }
 
@@ -197,19 +203,13 @@ export default function AdminTournamentWizard({
     setStep((s) => s - 1);
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = formRef.current;
-    if (!form) return;
-
-    const formData = new FormData(form);
-
+  function runCreate(formData: FormData) {
     startTransition(async () => {
       const result = await createTournamentInline(formData);
       setNotice(result);
 
       if (result.ok) {
-        form.reset();
+        formRef.current?.reset();
         setStep(1);
         // On reset, restore controlled fields to the defaults for this session
         setTeamSize(defaultValues?.teamSize ?? 5);
@@ -221,6 +221,21 @@ export default function AdminTournamentWizard({
         }, 450);
       }
     });
+  }
+
+  function handleCreateClick() {
+    if (step !== 3) return;
+    if (pending) return;
+    const form = formRef.current;
+    if (!form) return;
+
+    const formData = new FormData(form);
+    runCreate(formData);
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    return;
   }
 
   return (
@@ -702,8 +717,9 @@ export default function AdminTournamentWizard({
               </button>
             ) : (
               <button
-                type="submit"
-                disabled={pending}
+                type="button"
+                onClick={handleCreateClick}
+                disabled={pending || justAdvanced}
                 className="px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 style={{
                   background: "var(--asc-accent-2)",
