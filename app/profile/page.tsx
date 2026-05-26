@@ -109,6 +109,18 @@ type ProfileMessages = {
     result: string;
     best: string;
     pts: string;
+    ptsLabel: string;
+    discord: string;
+    linkedAccounts: string;
+    connectedGameAccounts: string;
+    riotAccount: string;
+    steamAccount: string;
+    steamSubtitle: string;
+    linked: string;
+    connected: string;
+    connect: string;
+    unlink: string;
+    unlinking: string;
     confirmationEyebrow: string;
     cancelLabel: string;
     acceptTitle: string;
@@ -209,6 +221,18 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       result: "result",
       best: "Best",
       pts: "pts",
+      ptsLabel: "PTS",
+      discord: "Discord",
+      linkedAccounts: "Linked Accounts",
+      connectedGameAccounts: "Connected Game Accounts",
+      riotAccount: "Riot Account",
+      steamAccount: "Steam Account",
+      steamSubtitle: "Dota 2 · CS2 · and more",
+      linked: "Linked",
+      connected: "Connected",
+      connect: "Connect",
+      unlink: "Unlink",
+      unlinking: "Unlinking...",
       confirmationEyebrow: "Confirmation",
       cancelLabel: "Cancel",
       acceptTitle: "Accept team invitation?",
@@ -308,6 +332,18 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       result: "نتيجة",
       best: "أفضل مركز",
       pts: "نقطة",
+      ptsLabel: "نقطة",
+      discord: "Discord",
+      linkedAccounts: "الحسابات المرتبطة",
+      connectedGameAccounts: "حسابات الألعاب المرتبطة",
+      riotAccount: "حساب Riot",
+      steamAccount: "حساب Steam",
+      steamSubtitle: "Dota 2 · CS2 · والمزيد",
+      linked: "تم الربط",
+      connected: "مرتبط",
+      connect: "ربط",
+      unlink: "إلغاء الربط",
+      unlinking: "جارٍ إلغاء الربط...",
       confirmationEyebrow: "تأكيد",
       cancelLabel: "إلغاء",
       acceptTitle: "قبول دعوة الفريق؟",
@@ -842,7 +878,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
               <StatCell
-                label="PTS"
+                label={messages.labels.ptsLabel}
                 value={tournamentPoints.toLocaleString()}
                 accent
               />
@@ -860,7 +896,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 value={invitations.length}
               />
               <StatCell
-                label="Discord"
+                label={messages.labels.discord}
                 value={
                   user.isGuildMember
                     ? messages.statuses.member
@@ -913,17 +949,15 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             />
           </div>
 
-          {/* Connected Game Accounts */}
           <div className="mt-10">
             <div className="relative overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
               <CornerMark />
               <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
-                <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ Linked Accounts</p>
-                <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>Connected Game Accounts</h2>
+                <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ {messages.labels.linkedAccounts}</p>
+                <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>{messages.labels.connectedGameAccounts}</h2>
               </div>
 
               <div className="grid gap-px" style={{ background: "var(--asc-line-soft)" }}>
-                {/* Riot (League of Legends / VALORANT) */}
                 {(() => {
                   const riotAccount = linkedAccounts.find(
                     (a: { provider: string }) => a.provider === GameProvider.riot_lol,
@@ -931,7 +965,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   return (
                     <LinkedAccountRow
                       icon="R"
-                      title="Riot Account"
+                      title={messages.labels.riotAccount}
                       subtitle="League of Legends · VALORANT"
                       connected={Boolean(riotAccount)}
                       displayName={
@@ -940,16 +974,22 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                       }
                       linkedDate={
                         riotAccount?.verifiedAt
-                          ? riotAccount.verifiedAt.toLocaleDateString("en", { dateStyle: "medium" })
+                          ? riotAccount.verifiedAt.toLocaleDateString(locale, { dateStyle: "medium" })
                           : null
                       }
                       connectHref="/api/auth/riot/start"
                       unlinkAction={unlinkRiotAccount}
+                      labels={{
+                        linked: messages.labels.linked,
+                        connected: messages.labels.connected,
+                        connect: messages.labels.connect,
+                        unlink: messages.labels.unlink,
+                        unlinking: messages.labels.unlinking,
+                      }}
                     />
                   );
                 })()}
 
-                {/* Steam */}
                 {(() => {
                   const steamAccount = linkedAccounts.find(
                     (a: { provider: string }) => a.provider === GameProvider.steam,
@@ -957,8 +997,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   return (
                     <LinkedAccountRow
                       icon="S"
-                      title="Steam Account"
-                      subtitle="Dota 2 · CS2 · and more"
+                      title={messages.labels.steamAccount}
+                      subtitle={messages.labels.steamSubtitle}
                       connected={Boolean(steamAccount)}
                       displayName={
                         steamAccount?.displayName ??
@@ -966,11 +1006,18 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                       }
                       linkedDate={
                         steamAccount?.verifiedAt
-                          ? steamAccount.verifiedAt.toLocaleDateString("en", { dateStyle: "medium" })
+                          ? steamAccount.verifiedAt.toLocaleDateString(locale, { dateStyle: "medium" })
                           : null
                       }
                       connectHref="/api/auth/steam/start"
                       unlinkAction={unlinkSteamAccount}
+                      labels={{
+                        linked: messages.labels.linked,
+                        connected: messages.labels.connected,
+                        connect: messages.labels.connect,
+                        unlink: messages.labels.unlink,
+                        unlinking: messages.labels.unlinking,
+                      }}
                     />
                   );
                 })()}

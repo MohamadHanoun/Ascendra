@@ -49,11 +49,15 @@ const CUT8 = "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100
 function NavAvatarPill({
   userName,
   userImage,
+  fallbackName,
+  playerLabel,
   isOpen,
   onClick,
 }: {
   userName: string | null;
   userImage: string | null;
+  fallbackName: string;
+  playerLabel: string;
   isOpen: boolean;
   onClick: () => void;
 }) {
@@ -99,12 +103,12 @@ function NavAvatarPill({
           color: "var(--asc-fg-0)",
           maxWidth: 96, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           textTransform: "uppercase",
-        }}>{userName || "Player"}</span>
+        }}>{userName || fallbackName}</span>
         <span style={{
           fontFamily: "var(--font-mono, monospace)",
           fontSize: 9, color: "var(--asc-accent)",
           letterSpacing: "0.08em",
-        }}>▲ PLAYER</span>
+        }}>▲ {playerLabel}</span>
       </div>
     </button>
   );
@@ -329,6 +333,8 @@ export default function NavbarClient({
                 <NavAvatarPill
                   userName={userName}
                   userImage={userImage}
+                  fallbackName={labels.account.fallbackName}
+                  playerLabel={labels.account.playerLabel}
                   isOpen={isProfileOpen}
                   onClick={() => setIsProfileOpen((v) => !v)}
                 />

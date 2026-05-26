@@ -16,6 +16,13 @@ type Props = {
     prevState: AccountActionResult,
     formData: FormData,
   ) => Promise<AccountActionResult>;
+  labels: {
+    linked: string;
+    connected: string;
+    connect: string;
+    unlink: string;
+    unlinking: string;
+  };
 };
 
 const INITIAL: AccountActionResult = { ok: false, message: "" };
@@ -29,6 +36,7 @@ export default function LinkedAccountRow({
   linkedDate,
   connectHref,
   unlinkAction,
+  labels,
 }: Props) {
   const [state, formAction, pending] = useActionState(unlinkAction, INITIAL);
 
@@ -70,7 +78,7 @@ export default function LinkedAccountRow({
             </p>
             {linkedDate && (
               <p className="text-[10px]" style={{ color: "var(--asc-fg-3)" }}>
-                Linked {linkedDate}
+                {labels.linked} {linkedDate}
               </p>
             )}
           </div>
@@ -82,7 +90,7 @@ export default function LinkedAccountRow({
               color: "var(--asc-green)",
             }}
           >
-            Connected
+            {labels.connected}
           </span>
           <form action={formAction}>
             <button
@@ -95,7 +103,7 @@ export default function LinkedAccountRow({
                 color: "var(--asc-live)",
               }}
             >
-              {pending ? "Unlinking…" : "Unlink"}
+              {pending ? labels.unlinking : labels.unlink}
             </button>
           </form>
           {state.message && (
@@ -118,7 +126,7 @@ export default function LinkedAccountRow({
               color: "var(--asc-accent)",
             }}
           >
-            Connect →
+            {labels.connect} →
           </a>
           {state.message && (
             <p

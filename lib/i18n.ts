@@ -30,6 +30,7 @@ export type NavigationMessages = {
   account: {
     signedIn: string;
     fallbackName: string;
+    playerLabel: string;
     logoutTitle: string;
     logoutDescription: string;
   };
@@ -473,6 +474,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       account: {
         signedIn: "Signed in",
         fallbackName: "Ascendra Player",
+        playerLabel: "Player",
         logoutTitle: "Confirm logout",
         logoutDescription: "Are you sure you want to log out?",
       },
@@ -993,6 +995,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
       account: {
         signedIn: "تم تسجيل الدخول",
         fallbackName: "لاعب Ascendra",
+        playerLabel: "لاعب",
         logoutTitle: "تأكيد تسجيل الخروج",
         logoutDescription: "هل أنت متأكد أنك تريد تسجيل الخروج؟",
       },
