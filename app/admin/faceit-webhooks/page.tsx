@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { Prisma } from "@prisma/client";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -20,8 +21,140 @@ const STATUS_STYLES: Record<string, { color: string; border: string; bg: string 
   skipped:      { color: "var(--asc-fg-3)",   border: "var(--asc-line-soft)",        bg: "var(--asc-bg-2)" },
   failed:       { color: "var(--asc-live)",   border: "oklch(0.50 0.20 25 / 0.5)",  bg: "oklch(0.25 0.18 25 / 0.18)" },
   received:     { color: "var(--asc-accent)", border: "oklch(0.50 0.20 285 / 0.4)", bg: "var(--asc-accent-dim)" },
-  unauthorized: { color: "var(--asc-amber)",  border: "oklch(0.65 0.14 75 / 0.5)",  bg: "oklch(0.25 0.12 75 / 0.18)" },
+  unauthorized: { color: "var(--asc-live)",   border: "oklch(0.50 0.20 25 / 0.5)",  bg: "oklch(0.25 0.18 25 / 0.18)" },
 };
+
+type AdminFaceitWebhooksPageProps = {
+  searchParams: Promise<{
+    status?: string | string[];
+    event?: string | string[];
+    q?: string | string[];
+    limit?: string | string[];
+  }>;
+};
+
+const STATUS_FILTER_OPTIONS = [
+  { value: "all", label: "All statuses" },
+  { value: "processed", label: "Processed" },
+  { value: "skipped", label: "Skipped" },
+  { value: "failed", label: "Failed" },
+  { value: "received", label: "Received" },
+  { value: "unauthorized", label: "Unauthorized" },
+];
+
+const EVENT_FILTER_OPTIONS = [
+  { value: "all", label: "All events" },
+  { value: "match_status_finished", label: "match_status_finished" },
+  { value: "match_demo_ready", label: "match_demo_ready" },
+];
+
+const LIMIT_OPTIONS = [50, 100];
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeStyle: "medium",
+  timeZone: "UTC",
+});
+
+const DISPLAY_SENSITIVE_KEYS = [
+  "authorization",
+  "cookie",
+  "header",
+  "key",
+  "password",
+  "secret",
+  "signature",
+  "token",
+];
+
+function formatAdminDate(date: Date | null): string {
+  if (!date) return "-";
+  return `${dateFormatter.format(date)} UTC`;
+}
+
+function isSensitiveDisplayKey(key: string): boolean {
+  const lower = key.toLowerCase();
+  return DISPLAY_SENSITIVE_KEYS.some((pattern) => lower.includes(pattern));
+}
+
+function sanitizePayloadForDisplay(value: unknown, depth = 0): unknown {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string") return value.slice(0, 500);
+  if (typeof value === "number" || typeof value === "boolean") return value;
+
+  if (Array.isArray(value)) {
+    if (depth >= 4) return [];
+    return value
+      .slice(0, 20)
+      .map((item) => sanitizePayloadForDisplay(item, depth + 1));
+  }
+
+  if (typeof value === "object") {
+    if (depth >= 4) return {};
+
+    const result: Record<string, unknown> = {};
+    for (const [key, childValue] of Object.entries(value)) {
+      if (isSensitiveDisplayKey(key)) continue;
+      result[key] = sanitizePayloadForDisplay(childValue, depth + 1);
+    }
+    return result;
+  }
+
+  return String(value).slice(0, 500);
+}
+
+function formatPayloadPreview(payload: unknown): string | null {
+  if (payload === null || payload === undefined) return null;
+
+  const text = JSON.stringify(sanitizePayloadForDisplay(payload), null, 2);
+  if (!text || text === "null") return null;
+
+  return text.length > 1800 ? `${text.slice(0, 1800)}\n... truncated` : text;
+}
+
+function DetailItem({ label, value }: { label: string; value: string | number | null | undefined }) {
+  return (
+    <div className="grid gap-1">
+      <dt className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+        {label}
+      </dt>
+      <dd className="break-all font-mono text-[11px]" style={{ color: "var(--asc-fg-1)" }}>
+        {value ?? "-"}
+      </dd>
+    </div>
+  );
+}
+
+function SummaryStat({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: number;
+  tone?: "neutral" | "green" | "red" | "accent";
+}) {
+  const color =
+    tone === "green"
+      ? "var(--asc-green)"
+      : tone === "red"
+        ? "var(--asc-live)"
+        : tone === "accent"
+          ? "var(--asc-accent)"
+          : "var(--asc-fg-0)";
+
+  return (
+    <div
+      className="border px-5 py-4"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+    >
+      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+        {label}
+      </p>
+      <p className="mt-2 text-2xl font-black" style={{ color }}>{value}</p>
+    </div>
+  );
+}
 
 function StatusBadge({ status }: { status: string }) {
   const style = STATUS_STYLES[status] ?? STATUS_STYLES.skipped;
@@ -35,8 +168,11 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default async function AdminFaceitWebhooksPage() {
+export default async function AdminFaceitWebhooksPage({
+  searchParams,
+}: AdminFaceitWebhooksPageProps) {
   const session = await auth();
+  const params = await searchParams;
 
   if (!session?.user) {
     redirect("/login");
@@ -46,21 +182,78 @@ export default async function AdminFaceitWebhooksPage() {
     redirect("/admin");
   }
 
-  const logs = await prisma.faceitWebhookLog.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 50,
-    select: {
-      id: true,
-      eventType: true,
-      faceitMatchId: true,
-      tournamentMatchId: true,
-      status: true,
-      reason: true,
-      httpStatus: true,
-      processedAt: true,
-      createdAt: true,
-    },
-  });
+  const rawStatus = Array.isArray(params.status) ? params.status[0] : params.status;
+  const rawEvent = Array.isArray(params.event) ? params.event[0] : params.event;
+  const rawLimit = Array.isArray(params.limit) ? params.limit[0] : params.limit;
+  const rawSearch = Array.isArray(params.q) ? params.q[0] : params.q;
+  const searchQuery = (rawSearch ?? "").trim().slice(0, 120);
+  const selectedStatus = STATUS_FILTER_OPTIONS.some((option) => option.value === rawStatus)
+    ? rawStatus ?? "all"
+    : "all";
+  const selectedEvent = EVENT_FILTER_OPTIONS.some((option) => option.value === rawEvent)
+    ? rawEvent ?? "all"
+    : "all";
+  const selectedLimit = rawLimit === "100" ? 100 : 50;
+
+  const whereParts: Prisma.FaceitWebhookLogWhereInput[] = [];
+  if (selectedStatus !== "all") {
+    whereParts.push({ status: selectedStatus });
+  }
+  if (selectedEvent !== "all") {
+    whereParts.push({ eventType: selectedEvent });
+  }
+  if (searchQuery) {
+    whereParts.push({
+      OR: [
+        { faceitMatchId: { contains: searchQuery, mode: "insensitive" } },
+        { tournamentMatchId: { contains: searchQuery, mode: "insensitive" } },
+        { reason: { contains: searchQuery, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  const where: Prisma.FaceitWebhookLogWhereInput =
+    whereParts.length > 0 ? { AND: whereParts } : {};
+
+  const currentSearchParams = new URLSearchParams();
+  if (selectedStatus !== "all") currentSearchParams.set("status", selectedStatus);
+  if (selectedEvent !== "all") currentSearchParams.set("event", selectedEvent);
+  if (searchQuery) currentSearchParams.set("q", searchQuery);
+  if (selectedLimit !== 50) currentSearchParams.set("limit", String(selectedLimit));
+  const currentQuery = currentSearchParams.toString();
+  const currentHref = currentQuery
+    ? `/admin/faceit-webhooks?${currentQuery}`
+    : "/admin/faceit-webhooks";
+
+  const [logs, totalCount, statusGroups] = await Promise.all([
+    prisma.faceitWebhookLog.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: selectedLimit,
+      select: {
+        id: true,
+        eventType: true,
+        faceitMatchId: true,
+        tournamentMatchId: true,
+        status: true,
+        reason: true,
+        httpStatus: true,
+        processedAt: true,
+        createdAt: true,
+        payload: true,
+      },
+    }),
+    prisma.faceitWebhookLog.count({ where }),
+    prisma.faceitWebhookLog.groupBy({
+      by: ["status"],
+      where,
+      _count: { _all: true },
+    }),
+  ]);
+
+  const statusCounts = new Map(
+    statusGroups.map((group) => [group.status, group._count._all]),
+  );
 
   // Resolve tournament IDs for match links in one query.
   const tournamentMatchIds = logs
@@ -108,7 +301,7 @@ export default async function AdminFaceitWebhooksPage() {
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7" style={{ color: "var(--asc-fg-2)" }}>
-            Last 50 incoming FACEIT webhook events. Sensitive fields are stripped before storage.
+            Newest matching FACEIT webhook events. Sensitive fields are stripped before storage and hidden from admin previews.
           </p>
 
           <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
@@ -128,9 +321,112 @@ export default async function AdminFaceitWebhooksPage() {
               className="border px-3 py-1 font-bold"
               style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
             >
-              {logs.length} entries
+              {logs.length} shown of {totalCount} matching
             </span>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-[1440px] gap-3 px-6 pb-6 lg:grid-cols-5 lg:px-10">
+        <SummaryStat label="Total" value={totalCount} />
+        <SummaryStat label="Processed" value={statusCounts.get("processed") ?? 0} tone="green" />
+        <SummaryStat label="Skipped" value={statusCounts.get("skipped") ?? 0} />
+        <SummaryStat label="Failed" value={statusCounts.get("failed") ?? 0} tone="red" />
+        <SummaryStat label="Unauthorized" value={statusCounts.get("unauthorized") ?? 0} tone="red" />
+      </section>
+
+      <section className="mx-auto max-w-[1440px] px-6 pb-6 lg:px-10">
+        <div
+          className="border p-5"
+          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+        >
+          <form
+            action="/admin/faceit-webhooks"
+            className="grid gap-4 xl:grid-cols-[190px_240px_minmax(260px,1fr)_150px_auto_auto_auto] xl:items-end"
+          >
+            <label className="grid gap-2 text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+              Status
+              <select
+                name="status"
+                defaultValue={selectedStatus}
+                className="border px-3 py-3 text-sm font-bold normal-case tracking-normal outline-none"
+                style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-1)" }}
+              >
+                {STATUS_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-2 text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+              Event
+              <select
+                name="event"
+                defaultValue={selectedEvent}
+                className="border px-3 py-3 text-sm font-bold normal-case tracking-normal outline-none"
+                style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-1)" }}
+              >
+                {EVENT_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-2 text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+              Search match IDs or reason
+              <input
+                name="q"
+                defaultValue={searchQuery}
+                placeholder="FACEIT match ID, Ascendra match ID, or reason"
+                className="border px-3 py-3 text-sm font-bold normal-case tracking-normal outline-none placeholder:font-medium"
+                style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-1)" }}
+              />
+            </label>
+
+            <label className="grid gap-2 text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+              Limit
+              <select
+                name="limit"
+                defaultValue={String(selectedLimit)}
+                className="border px-3 py-3 text-sm font-bold normal-case tracking-normal outline-none"
+                style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-1)" }}
+              >
+                {LIMIT_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <button
+              type="submit"
+              className="border px-5 py-3 text-sm font-black transition hover:opacity-90"
+              style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+            >
+              Apply filters
+            </button>
+
+            <Link
+              href="/admin/faceit-webhooks"
+              className="border px-5 py-3 text-center text-sm font-black transition hover:opacity-90"
+              style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
+            >
+              Reset
+            </Link>
+
+            <a
+              href={currentHref}
+              className="border px-5 py-3 text-center text-sm font-black transition hover:opacity-90"
+              style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}
+            >
+              Refresh logs
+            </a>
+          </form>
         </div>
       </section>
 
@@ -140,17 +436,17 @@ export default async function AdminFaceitWebhooksPage() {
             className="border px-6 py-10 text-center text-sm"
             style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-3)" }}
           >
-            No webhook events logged yet.
+            No FACEIT webhook events match these filters.
           </div>
         ) : (
           <div
             className="overflow-x-auto border"
             style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
           >
-            <table className="w-full min-w-[900px] text-xs">
+            <table className="w-full min-w-[1320px] text-xs">
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-                  {["Created", "Status", "Event", "FACEIT Match ID", "Ascendra Match", "Reason"].map((h) => (
+                  {["Created", "Status", "Event", "FACEIT Match ID", "Ascendra Match", "Reason", "Processed At", "Details"].map((h) => (
                     <th
                       key={h}
                       className="px-4 py-3 text-left font-black uppercase tracking-[0.12em]"
@@ -167,6 +463,7 @@ export default async function AdminFaceitWebhooksPage() {
                     ? matchLinks.get(log.tournamentMatchId)
                     : undefined;
                   const isEven = i % 2 === 0;
+                  const payloadPreview = formatPayloadPreview(log.payload);
                   return (
                     <tr
                       key={log.id}
@@ -180,7 +477,9 @@ export default async function AdminFaceitWebhooksPage() {
                         className="whitespace-nowrap px-4 py-3 font-mono"
                         style={{ color: "var(--asc-fg-3)" }}
                       >
-                        {log.createdAt.toISOString().replace("T", " ").slice(0, 19)}
+                        <time dateTime={log.createdAt.toISOString()} title={log.createdAt.toISOString()}>
+                          {formatAdminDate(log.createdAt)}
+                        </time>
                       </td>
 
                       {/* Status */}
@@ -239,6 +538,67 @@ export default async function AdminFaceitWebhooksPage() {
                         style={{ color: "var(--asc-fg-3)" }}
                       >
                         {log.reason ?? <span>—</span>}
+                      </td>
+
+                      {/* Processed At */}
+                      <td
+                        className="whitespace-nowrap px-4 py-3 font-mono"
+                        style={{ color: "var(--asc-fg-3)" }}
+                      >
+                        {log.processedAt ? (
+                          <time dateTime={log.processedAt.toISOString()} title={log.processedAt.toISOString()}>
+                            {formatAdminDate(log.processedAt)}
+                          </time>
+                        ) : (
+                          <span>-</span>
+                        )}
+                      </td>
+
+                      {/* Details */}
+                      <td className="px-4 py-3 align-top">
+                        <details className="min-w-[360px]">
+                          <summary
+                            className="cursor-pointer text-sm font-black transition hover:opacity-80"
+                            style={{ color: "var(--asc-accent)" }}
+                          >
+                            View details
+                          </summary>
+
+                          <div
+                            className="mt-3 grid gap-4 border p-4"
+                            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+                          >
+                            <dl className="grid gap-3 md:grid-cols-2">
+                              <DetailItem label="Log ID" value={log.id} />
+                              <DetailItem label="Event type" value={log.eventType} />
+                              <DetailItem label="FACEIT match ID" value={log.faceitMatchId} />
+                              <DetailItem label="Tournament match ID" value={log.tournamentMatchId} />
+                              <DetailItem label="Status" value={log.status} />
+                              <DetailItem label="Reason" value={log.reason} />
+                              <DetailItem label="HTTP status" value={log.httpStatus} />
+                              <DetailItem label="Created at" value={formatAdminDate(log.createdAt)} />
+                              <DetailItem label="Processed at" value={formatAdminDate(log.processedAt)} />
+                            </dl>
+
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+                                Sanitized payload preview
+                              </p>
+                              {payloadPreview ? (
+                                <pre
+                                  className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words border p-3 text-[11px] leading-5"
+                                  style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-0)", color: "var(--asc-fg-2)" }}
+                                >
+                                  {payloadPreview}
+                                </pre>
+                              ) : (
+                                <p className="mt-2 font-mono text-[11px]" style={{ color: "var(--asc-fg-3)" }}>
+                                  -
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </details>
                       </td>
                     </tr>
                   );
