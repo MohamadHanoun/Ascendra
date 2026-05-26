@@ -22,6 +22,9 @@ import { getLocale } from "@/lib/i18nServer";
 import { syncTournamentLifecycleForTournament } from "@/lib/jobs/tournamentLifecycleJobs";
 import { prisma } from "@/lib/prisma";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
+import { isCs2Game } from "@/lib/isCs2Game";
+import { computeCs2Readiness } from "@/lib/cs2AccountReadiness";
+import type { Cs2Readiness } from "@/lib/cs2AccountReadiness";
 
 export const dynamic = "force-dynamic";
 
@@ -576,6 +579,10 @@ export default async function TournamentDetailsPage({
               createdAt: "desc",
             },
           },
+          gameAccounts: {
+            where: { provider: "steam" },
+            select: { externalId: true },
+          },
         },
       })
     : null;
@@ -730,6 +737,14 @@ export default async function TournamentDetailsPage({
     tournament.game?.slug ?? null,
     tournament.imageUrl,
   );
+
+  const isCs2 = isCs2Game(tournament.game?.slug, tournament.game?.name);
+
+  const cs2Readiness: Cs2Readiness = computeCs2Readiness({
+    steamId64: currentUser?.gameAccounts?.[0]?.externalId ?? null,
+    faceitPlayerId: currentUser?.faceitPlayerId ?? null,
+    faceitSteamId64: currentUser?.faceitSteamId64 ?? null,
+  });
 
   const ownedTeamIds = currentUser?.ownedTeams.map((team) => team.id) || [];
 
@@ -1130,6 +1145,8 @@ export default async function TournamentDetailsPage({
                     statusLabels={messages.statuses}
                     playerLabel={messages.labels.player}
                     playersLabel={messages.labels.players}
+                    isCs2={isCs2}
+                    cs2Readiness={cs2Readiness}
                   />
                 </div>
               </div>

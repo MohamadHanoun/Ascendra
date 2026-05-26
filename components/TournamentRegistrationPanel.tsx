@@ -18,6 +18,7 @@ import type { TournamentRegistrationActionResult } from "@/actions/tournamentReg
 import CustomSelect from "@/components/CustomSelect";
 import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
 import type { TournamentDetailsMessages } from "@/lib/i18n";
+import type { Cs2Readiness } from "@/lib/cs2AccountReadiness";
 
 type AvailableTeam = {
   id: string;
@@ -57,6 +58,8 @@ type TournamentRegistrationPanelProps = {
   statusLabels: TournamentDetailsMessages["statuses"];
   playerLabel: string;
   playersLabel: string;
+  isCs2?: boolean;
+  cs2Readiness?: Cs2Readiness;
 };
 
 const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "";
@@ -547,6 +550,73 @@ function RequirementsList({
   );
 }
 
+function Cs2RequirementsBlock({
+  readiness,
+  messages,
+}: {
+  readiness: Cs2Readiness;
+  messages: TournamentDetailsMessages["panel"];
+}) {
+  function Row({
+    done,
+    label,
+    linkLabel,
+  }: {
+    done: boolean;
+    label: string;
+    linkLabel?: string;
+  }) {
+    return (
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span
+            className="text-xs font-black"
+            style={{ color: done ? "var(--asc-green)" : "var(--asc-live)" }}
+          >
+            {done ? "✓" : "✗"}
+          </span>
+          <span className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
+            {label}
+          </span>
+        </div>
+        {!done && linkLabel && (
+          <NoticeLink href="/profile">{linkLabel}</NoticeLink>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="border p-4"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+    >
+      <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
+        {messages.cs2Requirements}
+      </p>
+      <p className="mt-1 text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
+        {messages.cs2RequirementsDescription}
+      </p>
+      <div className="mt-4 grid gap-3">
+        <Row
+          done={readiness.steamConnected}
+          label={messages.cs2SteamConnected}
+          linkLabel={messages.cs2ConnectSteam}
+        />
+        <Row
+          done={readiness.faceitConnected}
+          label={messages.cs2FaceitConnected}
+          linkLabel={messages.cs2ConnectFaceit}
+        />
+        <Row
+          done={readiness.faceitMatchesSteam}
+          label={messages.cs2FaceitMatchesSteam}
+        />
+      </div>
+    </div>
+  );
+}
+
 function TournamentRegistrationPanel({
   tournamentId,
   tournamentStatus,
@@ -563,6 +633,8 @@ function TournamentRegistrationPanel({
   statusLabels,
   playerLabel,
   playersLabel,
+  isCs2 = false,
+  cs2Readiness,
 }: TournamentRegistrationPanelProps) {
   const hasOpenRegistration = activeRegistrations.some((registration) =>
     ["registered", "approved"].includes(registration.status),
@@ -648,7 +720,9 @@ function TournamentRegistrationPanel({
         slotsRemaining > 0 &&
         !hasOpenRegistration && (
           <section className="grid gap-4">
-            {availableTeams.length > 0 ? (
+            {isCs2 && cs2Readiness && !cs2Readiness.isReady ? (
+              <Cs2RequirementsBlock readiness={cs2Readiness} messages={messages} />
+            ) : availableTeams.length > 0 ? (
               <RegisterForm
                 tournamentId={tournamentId}
                 availableTeams={availableTeams}

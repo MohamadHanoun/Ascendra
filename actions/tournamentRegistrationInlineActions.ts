@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
+import { isCs2Game } from "@/lib/isCs2Game";
 import {
   createNotificationsOnceForUsers,
   getAdminNotificationUserIds,
@@ -33,6 +34,9 @@ type TournamentRegistrationActionMessages = {
   pendingInvites: string;
   alreadyRegistered: string;
   registeredSuccess: string;
+  cs2SteamRequired: string;
+  cs2FaceitRequired: string;
+  cs2SteamFaceitMismatch: string;
   registrationIdMissing: string;
   registrationNotFound: string;
   onlyLeaderCanCancel: string;
@@ -61,6 +65,12 @@ const actionMessages: Record<Locale, TournamentRegistrationActionMessages> = {
     alreadyRegistered: "This team is already registered for this tournament.",
     registeredSuccess:
       "Team registered successfully. Waiting for admin review.",
+    cs2SteamRequired:
+      "Connect your Steam account on your profile before registering for a CS2 tournament.",
+    cs2FaceitRequired:
+      "Connect your FACEIT account on your profile before registering for a CS2 tournament.",
+    cs2SteamFaceitMismatch:
+      "Your FACEIT account must be linked to the same Steam account. Update your accounts on your profile.",
     registrationIdMissing: "Registration ID is missing.",
     registrationNotFound: "Registration was not found.",
     onlyLeaderCanCancel: "Only the team leader can cancel this registration.",
@@ -90,6 +100,12 @@ const actionMessages: Record<Locale, TournamentRegistrationActionMessages> = {
     pendingInvites: "يرجى حل الدعوات المعلقة في الفريق قبل التسجيل.",
     alreadyRegistered: "هذا الفريق مسجل بالفعل في هذه البطولة.",
     registeredSuccess: "تم تسجيل الفريق بنجاح. بانتظار مراجعة الإدارة.",
+    cs2SteamRequired:
+      "يرجى ربط حساب Steam في ملفك الشخصي قبل التسجيل في بطولة CS2.",
+    cs2FaceitRequired:
+      "يرجى ربط حساب FACEIT في ملفك الشخصي قبل التسجيل في بطولة CS2.",
+    cs2SteamFaceitMismatch:
+      "يجب أن يكون حساب FACEIT مرتبطًا بنفس حساب Steam. راجع حساباتك في ملفك الشخصي.",
     registrationIdMissing: "معرّف التسجيل مفقود.",
     registrationNotFound: "لم يتم العثور على التسجيل.",
     onlyLeaderCanCancel: "يمكن لقائد الفريق فقط إلغاء هذا التسجيل.",
@@ -281,6 +297,7 @@ async function registerTeamForTournament(
           status: "approved",
         },
       },
+      game: { select: { slug: true, name: true } },
     },
   });
 
@@ -298,6 +315,22 @@ async function registerTeamForTournament(
 
   if (tournament.registrations.length >= tournament.maxTeams) {
     return fail(messages.slotsFull);
+  }
+
+  if (isCs2Game(tournament.game?.slug, tournament.game?.name)) {
+    const steamAccount = await prisma.playerGameAccount.findFirst({
+      where: { userId: user.id, provider: "steam" },
+      select: { externalId: true },
+    });
+    if (!steamAccount) {
+      return fail(messages.cs2SteamRequired);
+    }
+    if (!user.faceitPlayerId) {
+      return fail(messages.cs2FaceitRequired);
+    }
+    if (user.faceitSteamId64 !== steamAccount.externalId) {
+      return fail(messages.cs2SteamFaceitMismatch);
+    }
   }
 
   const team = await prisma.team.findUnique({

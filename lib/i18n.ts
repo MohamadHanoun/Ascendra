@@ -437,6 +437,14 @@ export type TournamentDetailsMessages = {
     requirementAtLeast: string;
     requirementNoPending: string;
     tournamentStatus: string;
+    // Phase 5 — CS2 account gating
+    cs2Requirements: string;
+    cs2RequirementsDescription: string;
+    cs2SteamConnected: string;
+    cs2FaceitConnected: string;
+    cs2FaceitMatchesSteam: string;
+    cs2ConnectSteam: string;
+    cs2ConnectFaceit: string;
   };
 };
 
@@ -973,6 +981,14 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         requirementAtLeast: "At least {count} player(s).",
         requirementNoPending: "No pending team invites.",
         tournamentStatus: "Tournament status",
+        cs2Requirements: "CS2 accounts required",
+        cs2RequirementsDescription:
+          "This is a CS2 tournament. Connect Steam and FACEIT before registering.",
+        cs2SteamConnected: "Steam connected",
+        cs2FaceitConnected: "FACEIT connected",
+        cs2FaceitMatchesSteam: "FACEIT linked to Steam",
+        cs2ConnectSteam: "Connect Steam",
+        cs2ConnectFaceit: "Connect FACEIT",
       },
     },
   },
@@ -1489,6 +1505,14 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         requirementAtLeast: "يجب أن يحتوي الفريق على {count} لاعب على الأقل.",
         requirementNoPending: "يجب ألا توجد دعوات فريق معلقة.",
         tournamentStatus: "حالة البطولة",
+        cs2Requirements: "متطلبات حسابات CS2",
+        cs2RequirementsDescription:
+          "هذه بطولة CS2. يجب ربط حساب Steam وحساب FACEIT قبل التسجيل.",
+        cs2SteamConnected: "Steam مربوط",
+        cs2FaceitConnected: "FACEIT مربوط",
+        cs2FaceitMatchesSteam: "FACEIT مرتبط بـ Steam",
+        cs2ConnectSteam: "ربط Steam",
+        cs2ConnectFaceit: "ربط FACEIT",
       },
     },
   },
