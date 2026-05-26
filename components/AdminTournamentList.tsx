@@ -218,13 +218,22 @@ export default async function AdminTournamentList() {
                     )}
                   </div>
 
-                  <Link
-                    href={`/admin/tournaments/${tournament.id}`}
-                    className="px-5 py-3 text-center text-sm font-black text-white transition hover:opacity-90"
-                    style={{ background: "var(--asc-accent-2)" }}
-                  >
-                    Manage
-                  </Link>
+                  <div className="grid gap-2">
+                    <Link
+                      href={`/admin/tournaments/${tournament.id}`}
+                      className="px-5 py-3 text-center text-sm font-black text-white transition hover:opacity-90"
+                      style={{ background: "var(--asc-accent-2)" }}
+                    >
+                      Manage
+                    </Link>
+                    <Link
+                      href={`/admin?tab=tournaments&duplicate=${tournament.id}`}
+                      className="px-5 py-2 text-center text-xs font-black transition hover:opacity-90"
+                      style={{ border: "1px solid var(--asc-line-soft)", color: "var(--asc-fg-2)" }}
+                    >
+                      Duplicate
+                    </Link>
+                  </div>
                 </article>
               );
             })}

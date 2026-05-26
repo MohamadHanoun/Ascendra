@@ -7,6 +7,14 @@ import { redirect } from "next/navigation";
 
 const allowedTournamentStatuses = ["open", "upcoming", "closed"];
 const allowedRegistrationStatuses = ["open", "closed"];
+const allowedFormats = [
+  "single_elimination",
+  "double_elimination",
+  "round_robin",
+  "swiss",
+  "group_stage",
+];
+const allowedVisibility = ["public", "private"];
 
 async function requireAdmin() {
   const session = await auth();
@@ -42,6 +50,24 @@ function getRequiredNumber(formData: FormData, key: string) {
   return value;
 }
 
+function getOptionalNumber(
+  formData: FormData,
+  key: string,
+  defaultValue: number,
+): number {
+  const raw = formData.get(key);
+  if (raw === null || String(raw).trim() === "") return defaultValue;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : defaultValue;
+}
+
+function getOptionalDate(formData: FormData, key: string): Date | null {
+  const raw = String(formData.get(key) || "").trim();
+  if (!raw) return null;
+  const date = new Date(raw);
+  return isNaN(date.getTime()) ? null : date;
+}
+
 export async function createTournament(formData: FormData) {
   await requireAdmin();
 
@@ -54,6 +80,31 @@ export async function createTournament(formData: FormData) {
 
   const maxTeams = getRequiredNumber(formData, "maxTeams");
   const teamSize = getRequiredNumber(formData, "teamSize");
+  const minTeams = getOptionalNumber(formData, "minTeams", 2);
+  const substitutesAllowed = getOptionalNumber(
+    formData,
+    "substitutesAllowed",
+    0,
+  );
+  const bestOf = getOptionalNumber(formData, "bestOf", 1);
+
+  const format =
+    getRequiredText(formData, "format") || "single_elimination";
+  const visibility =
+    getRequiredText(formData, "visibility") || "public";
+  const region = getRequiredText(formData, "region") || null;
+  const platform = getRequiredText(formData, "platform") || null;
+
+  const startsAt = getOptionalDate(formData, "startsAt");
+  const endsAt = getOptionalDate(formData, "endsAt");
+  const registrationOpensAt = getOptionalDate(
+    formData,
+    "registrationOpensAt",
+  );
+  const registrationClosesAt = getOptionalDate(
+    formData,
+    "registrationClosesAt",
+  );
 
   if (!title || !gameSlug || !prize || !description) {
     adminError("All tournament fields are required.");
@@ -65,6 +116,32 @@ export async function createTournament(formData: FormData) {
 
   if (!allowedRegistrationStatuses.includes(registrationStatus)) {
     adminError("Invalid registration status.");
+  }
+
+  if (!allowedFormats.includes(format)) {
+    adminError("Invalid tournament format.");
+  }
+
+  if (!allowedVisibility.includes(visibility)) {
+    adminError("Invalid visibility value.");
+  }
+
+  if (minTeams > maxTeams) {
+    adminError("Min teams cannot be greater than max teams.");
+  }
+
+  if (startsAt && endsAt && endsAt <= startsAt) {
+    adminError("End date must be after start date.");
+  }
+
+  if (
+    registrationOpensAt &&
+    registrationClosesAt &&
+    registrationClosesAt <= registrationOpensAt
+  ) {
+    adminError(
+      "Registration close date must be after registration open date.",
+    );
   }
 
   const game = await prisma.game.findUnique({ where: { slug: gameSlug } });
@@ -80,9 +157,20 @@ export async function createTournament(formData: FormData) {
       prize,
       description,
       maxTeams,
+      minTeams,
       teamSize,
+      substitutesAllowed,
+      bestOf,
+      format,
+      visibility,
+      region,
+      platform,
       status,
       registrationStatus,
+      startsAt,
+      endsAt,
+      registrationOpensAt,
+      registrationClosesAt,
     },
   });
 
@@ -113,6 +201,32 @@ export async function updateTournament(formData: FormData) {
       ? 1
       : getRequiredNumber(formData, "teamSize");
 
+  const minTeams = getOptionalNumber(formData, "minTeams", 2);
+  const substitutesAllowed = getOptionalNumber(
+    formData,
+    "substitutesAllowed",
+    0,
+  );
+  const bestOf = getOptionalNumber(formData, "bestOf", 1);
+
+  const format =
+    getRequiredText(formData, "format") || "single_elimination";
+  const visibility =
+    getRequiredText(formData, "visibility") || "public";
+  const region = getRequiredText(formData, "region") || null;
+  const platform = getRequiredText(formData, "platform") || null;
+
+  const startsAt = getOptionalDate(formData, "startsAt");
+  const endsAt = getOptionalDate(formData, "endsAt");
+  const registrationOpensAt = getOptionalDate(
+    formData,
+    "registrationOpensAt",
+  );
+  const registrationClosesAt = getOptionalDate(
+    formData,
+    "registrationClosesAt",
+  );
+
   if (!id) {
     adminError("Tournament ID is missing.");
   }
@@ -129,6 +243,32 @@ export async function updateTournament(formData: FormData) {
     adminError("Invalid registration status.");
   }
 
+  if (!allowedFormats.includes(format)) {
+    adminError("Invalid tournament format.");
+  }
+
+  if (!allowedVisibility.includes(visibility)) {
+    adminError("Invalid visibility value.");
+  }
+
+  if (minTeams > maxTeams) {
+    adminError("Min teams cannot be greater than max teams.");
+  }
+
+  if (startsAt && endsAt && endsAt <= startsAt) {
+    adminError("End date must be after start date.");
+  }
+
+  if (
+    registrationOpensAt &&
+    registrationClosesAt &&
+    registrationClosesAt <= registrationOpensAt
+  ) {
+    adminError(
+      "Registration close date must be after registration open date.",
+    );
+  }
+
   const game = await prisma.game.findUnique({ where: { slug: gameSlug } });
 
   if (!game) {
@@ -143,9 +283,20 @@ export async function updateTournament(formData: FormData) {
       prize,
       description,
       maxTeams,
+      minTeams,
       teamSize,
+      substitutesAllowed,
+      bestOf,
+      format,
+      visibility,
+      region,
+      platform,
       status,
       registrationStatus,
+      startsAt,
+      endsAt,
+      registrationOpensAt,
+      registrationClosesAt,
     },
   });
 

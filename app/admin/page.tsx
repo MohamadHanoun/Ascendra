@@ -19,7 +19,7 @@ import AdminTabNavigation from "@/components/AdminTabNavigation";
 import AdminMatchesPanel from "@/components/AdminMatchesPanel";
 import AdminTeamReview from "@/components/AdminTeamReview";
 import AdminToast from "@/components/AdminToast";
-import AdminTournamentForm from "@/components/AdminTournamentForm";
+import AdminTournamentWizard, { type TournamentDefaultValues } from "@/components/AdminTournamentWizard";
 import AdminTournamentList from "@/components/AdminTournamentList";
 import { DiscordLoginButton, LogoutButton } from "@/components/AuthButtons";
 import Footer from "@/components/Footer";
@@ -43,6 +43,7 @@ type AdminPageProps = {
     type?: string;
     botStatus?: string;
     botType?: string;
+    duplicate?: string;
   }>;
 };
 
@@ -220,6 +221,7 @@ async function renderAdminTab(
   activeTab: string,
   message?: string,
   error?: string,
+  duplicateId?: string,
 ) {
   if (activeTab === "overview") {
     const overviewItems = await getAdminOverview();
@@ -252,9 +254,56 @@ async function renderAdminTab(
       orderBy: { name: "asc" },
     });
 
+    let defaultValues: TournamentDefaultValues | undefined;
+
+    if (duplicateId) {
+      const source = await prisma.tournament.findUnique({
+        where: { id: duplicateId },
+        select: {
+          title: true,
+          description: true,
+          prize: true,
+          imageUrl: true,
+          maxTeams: true,
+          minTeams: true,
+          teamSize: true,
+          substitutesAllowed: true,
+          format: true,
+          bestOf: true,
+          region: true,
+          platform: true,
+          visibility: true,
+          game: { select: { slug: true } },
+        },
+      });
+
+      if (source) {
+        defaultValues = {
+          title: `${source.title} — copy`,
+          gameSlug: source.game?.slug ?? "",
+          imageUrl: source.imageUrl ?? "",
+          description: source.description,
+          prize: source.prize ?? "",
+          format: source.format,
+          bestOf: source.bestOf,
+          maxTeams: source.maxTeams,
+          minTeams: source.minTeams,
+          teamSize: source.teamSize,
+          substitutesAllowed: source.substitutesAllowed,
+          region: source.region ?? "",
+          platform: source.platform ?? "",
+          visibility: source.visibility,
+        };
+      }
+    }
+
     return (
       <section className="mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:px-10">
-        <AdminTournamentForm games={games} />
+        <AdminTournamentWizard
+          games={games}
+          defaultValues={defaultValues}
+          key={duplicateId ?? "create"}
+        />
         <AdminTournamentList />
       </section>
     );
@@ -426,6 +475,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     activeTab,
     params.message,
     params.error,
+    params.duplicate,
   );
 
   return (
