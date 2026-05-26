@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import type { Prisma } from "@prisma/client";
+import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
 import { auth } from "@/auth";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import { getFaceitIntegrationStatus } from "@/lib/faceitIntegrationStatus";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -66,6 +68,26 @@ const DISPLAY_SENSITIVE_KEYS = [
   "signature",
   "token",
 ];
+
+const MANUAL_WEBHOOK_TEST_COMMAND = [
+  '$secret = "YOUR_FACEIT_WEBHOOK_SECRET"',
+  "$headers = @{",
+  '  Authorization = "Bearer $secret"',
+  '  "Content-Type" = "application/json"',
+  "}",
+  "$body = @{",
+  '  event = "match_status_finished"',
+  "  payload = @{",
+  '    match_id = "FACEIT_MATCH_ID_HERE"',
+  "  }",
+  "} | ConvertTo-Json -Depth 10",
+  "",
+  "Invoke-RestMethod `",
+  "  -Method Post `",
+  '  -Uri "https://www.ascendrahub.com/api/webhooks/faceit" `',
+  "  -Headers $headers `",
+  "  -Body $body",
+].join("\n");
 
 function formatAdminDate(date: Date | null): string {
   if (!date) return "-";
@@ -156,6 +178,87 @@ function SummaryStat({
   );
 }
 
+function ConfigBadge({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: "green" | "red" | "neutral";
+}) {
+  const style =
+    tone === "green"
+      ? {
+          borderColor: "oklch(0.55 0.14 150 / 0.5)",
+          background: "oklch(0.25 0.12 150 / 0.18)",
+          color: "var(--asc-green)",
+        }
+      : tone === "red"
+        ? {
+            borderColor: "oklch(0.50 0.20 25 / 0.5)",
+            background: "oklch(0.25 0.18 25 / 0.18)",
+            color: "var(--asc-live)",
+          }
+        : {
+            borderColor: "var(--asc-line-soft)",
+            background: "var(--asc-bg-2)",
+            color: "var(--asc-fg-3)",
+          };
+
+  return (
+    <span
+      className="inline-flex w-fit border px-3 py-1 text-xs font-black uppercase tracking-[0.10em]"
+      style={style}
+    >
+      {label}
+    </span>
+  );
+}
+
+function StatusPanelItem({
+  label,
+  value,
+  badge,
+}: {
+  label: string;
+  value?: string;
+  badge?: ReactNode;
+}) {
+  return (
+    <div
+      className="grid gap-3 border px-5 py-4"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+    >
+      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+        {label}
+      </p>
+      {badge ?? (
+        <p className="font-mono text-sm font-bold" style={{ color: "var(--asc-fg-1)" }}>
+          {value}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ProductionSettingRow({
+  name,
+  recommendation,
+}: {
+  name: string;
+  recommendation: string;
+}) {
+  return (
+    <div className="grid gap-2 border-b py-3 last:border-b-0 md:grid-cols-[300px_minmax(0,1fr)]" style={{ borderColor: "var(--asc-line-soft)" }}>
+      <p className="font-mono text-xs font-black" style={{ color: "var(--asc-fg-1)" }}>
+        {name}
+      </p>
+      <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
+        {recommendation}
+      </p>
+    </div>
+  );
+}
+
 function StatusBadge({ status }: { status: string }) {
   const style = STATUS_STYLES[status] ?? STATUS_STYLES.skipped;
   return (
@@ -225,7 +328,16 @@ export default async function AdminFaceitWebhooksPage({
     ? `/admin/faceit-webhooks?${currentQuery}`
     : "/admin/faceit-webhooks";
 
-  const [logs, totalCount, statusGroups] = await Promise.all([
+  const integrationStatus = getFaceitIntegrationStatus();
+
+  const [
+    logs,
+    totalCount,
+    statusGroups,
+    lastWebhook,
+    lastProcessedWebhook,
+    recentWebhookStatuses,
+  ] = await Promise.all([
     prisma.faceitWebhookLog.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -249,11 +361,31 @@ export default async function AdminFaceitWebhooksPage({
       where,
       _count: { _all: true },
     }),
+    prisma.faceitWebhookLog.findFirst({
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    }),
+    prisma.faceitWebhookLog.findFirst({
+      where: { status: "processed", processedAt: { not: null } },
+      orderBy: [{ processedAt: "desc" }, { createdAt: "desc" }],
+      select: { processedAt: true },
+    }),
+    prisma.faceitWebhookLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: { status: true },
+    }),
   ]);
 
   const statusCounts = new Map(
     statusGroups.map((group) => [group.status, group._count._all]),
   );
+  const recentFailedCount = recentWebhookStatuses.filter(
+    (log) => log.status === "failed",
+  ).length;
+  const recentSkippedCount = recentWebhookStatuses.filter(
+    (log) => log.status === "skipped",
+  ).length;
 
   // Resolve tournament IDs for match links in one query.
   const tournamentMatchIds = logs
@@ -324,6 +456,147 @@ export default async function AdminFaceitWebhooksPage({
               {logs.length} shown of {totalCount} matching
             </span>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-[1440px] gap-6 px-6 pb-8 lg:px-10">
+        <div>
+          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
+            FACEIT production status
+          </p>
+          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
+            Integration safety
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
+            Environment flags are shown as configured, missing, enabled, or disabled only. Secret values are never displayed.
+          </p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <StatusPanelItem
+            label="FACEIT API key"
+            badge={
+              <ConfigBadge
+                label={integrationStatus.apiKeyConfigured ? "Configured" : "Missing"}
+                tone={integrationStatus.apiKeyConfigured ? "green" : "red"}
+              />
+            }
+          />
+          <StatusPanelItem
+            label="FACEIT webhook secret"
+            badge={
+              <ConfigBadge
+                label={integrationStatus.webhookSecretConfigured ? "Configured" : "Missing"}
+                tone={integrationStatus.webhookSecretConfigured ? "green" : "red"}
+              />
+            }
+          />
+          <StatusPanelItem
+            label="Auto-confirm"
+            badge={
+              <ConfigBadge
+                label={integrationStatus.autoConfirmEnabled ? "Enabled" : "Disabled"}
+                tone={integrationStatus.autoConfirmEnabled ? "green" : "neutral"}
+              />
+            }
+          />
+          <StatusPanelItem
+            label="Faction-order fallback"
+            badge={
+              <ConfigBadge
+                label={integrationStatus.factionOrderFallbackEnabled ? "Enabled" : "Disabled"}
+                tone={integrationStatus.factionOrderFallbackEnabled ? "red" : "green"}
+              />
+            }
+          />
+          <StatusPanelItem
+            label="Last webhook received"
+            value={lastWebhook ? formatAdminDate(lastWebhook.createdAt) : "No webhooks yet"}
+          />
+          <StatusPanelItem
+            label="Last processed webhook"
+            value={lastProcessedWebhook?.processedAt ? formatAdminDate(lastProcessedWebhook.processedAt) : "None processed yet"}
+          />
+          <StatusPanelItem label="Recent failed webhooks" value={`${recentFailedCount} of latest 50`} />
+          <StatusPanelItem label="Recent skipped webhooks" value={`${recentSkippedCount} of latest 50`} />
+        </div>
+
+        <div
+          className="border px-5 py-4"
+          style={
+            integrationStatus.factionOrderFallbackEnabled
+              ? {
+                  borderColor: "oklch(0.50 0.20 25 / 0.5)",
+                  background: "oklch(0.25 0.18 25 / 0.18)",
+                  color: "var(--asc-live)",
+                }
+              : integrationStatus.autoConfirmEnabled
+                ? {
+                    borderColor: "oklch(0.55 0.14 150 / 0.5)",
+                    background: "oklch(0.25 0.12 150 / 0.18)",
+                    color: "var(--asc-green)",
+                  }
+                : {
+                    borderColor: "var(--asc-line-soft)",
+                    background: "var(--asc-bg-1)",
+                    color: "var(--asc-fg-3)",
+                  }
+          }
+        >
+          <p className="text-sm font-black">
+            {integrationStatus.factionOrderFallbackEnabled
+              ? "Faction-order fallback is enabled. This is acceptable for testing, but should be disabled before public tournaments."
+              : integrationStatus.autoConfirmEnabled
+                ? "Auto-confirm is using safer matching only."
+                : "Auto-confirm is disabled. FACEIT proof will not apply official results automatically."}
+          </p>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          <section
+            className="border p-5"
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+          >
+            <p className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
+              Recommended production settings
+            </p>
+            <div className="mt-4">
+              <ProductionSettingRow
+                name="FACEIT_API_KEY"
+                recommendation="Configured. Required for FACEIT proof sync and match lookups."
+              />
+              <ProductionSettingRow
+                name="FACEIT_WEBHOOK_SECRET"
+                recommendation="Configured. Required before accepting production webhook calls."
+              />
+              <ProductionSettingRow
+                name="FACEIT_AUTO_CONFIRM_ENABLED"
+                recommendation="Set to true only when tournament operations are ready for automatic official result application."
+              />
+              <ProductionSettingRow
+                name="FACEIT_AUTO_CONFIRM_ALLOW_FACTION_ORDER"
+                recommendation="Set to false for public tournaments."
+              />
+            </div>
+          </section>
+
+          <details
+            className="border p-5"
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+          >
+            <summary
+              className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] transition hover:opacity-80"
+              style={{ color: "var(--asc-accent)" }}
+            >
+              Manual webhook test template
+            </summary>
+            <pre
+              className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap break-words border p-4 text-xs leading-6"
+              style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-0)", color: "var(--asc-fg-2)" }}
+            >
+              {MANUAL_WEBHOOK_TEST_COMMAND}
+            </pre>
+          </details>
         </div>
       </section>
 
