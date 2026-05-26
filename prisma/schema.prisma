@@ -676,3 +676,24 @@ model GameApiAuditLog {
 
   @@index([provider, action])
 }
+
+// ─── FACEIT WEBHOOK LOGGING — Phase 7 ────────────────────────────────────────
+
+model FaceitWebhookLog {
+  id                String    @id @default(cuid())
+  eventType         String?
+  faceitMatchId     String?
+  tournamentMatchId String?
+  status            String    // received | processed | skipped | failed | unauthorized
+  reason            String?
+  httpStatus        Int?
+  processedAt       DateTime?
+  payload           Json?
+  createdAt         DateTime  @default(now())
+
+  @@index([eventType])
+  @@index([faceitMatchId])
+  @@index([tournamentMatchId])
+  @@index([status])
+  @@index([createdAt])
+}

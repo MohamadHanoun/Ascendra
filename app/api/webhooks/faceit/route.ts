@@ -1,5 +1,5 @@
 /**
- * FACEIT webhook receiver — Phase 3.
+ * FACEIT webhook receiver — Phase 3 + Phase 7 (logging).
  *
  * Authentication
  * --------------
@@ -15,6 +15,13 @@
  *   - Looks up a TournamentMatch by faceitMatchId
  *   - If found: re-fetches details + stats and updates FACEIT proof fields only
  *
+ * Phase 7 behaviour
+ * -----------------
+ * Every authenticated request creates a FaceitWebhookLog entry:
+ *   - status="received" on entry, updated to processed/skipped/failed on exit
+ *   - Unauthorized requests log status="unauthorized" (no payload stored)
+ *   - Sensitive fields are stripped from the stored payload
+ *
  * This handler NEVER:
  *   - Updates the official match result (status, winnerTeamId)
  *   - Advances brackets
@@ -29,6 +36,13 @@ import { NextResponse } from "next/server";
 
 import { FaceitApiError, getFaceitMatchDetails, getFaceitMatchStats } from "@/lib/faceit";
 import { parseFaceitCs2MatchResult } from "@/lib/faceitCs2Parser";
+import {
+  createFaceitWebhookLog,
+  extractFaceitWebhookEventType,
+  extractFaceitWebhookMatchId,
+  sanitizeFaceitWebhookPayload,
+  updateFaceitWebhookLog,
+} from "@/lib/faceitWebhookLog";
 import type { FaceitWebhookPayload } from "@/lib/faceitTypes";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
@@ -57,31 +71,35 @@ function verifySecret(request: Request): boolean {
   return false;
 }
 
-async function syncProofForFaceitMatch(faceitMatchId: string): Promise<void> {
+type SyncProofResult =
+  | { found: false }
+  | { found: true; tournamentMatchId: string };
+
+async function syncProofForFaceitMatch(faceitMatchId: string): Promise<SyncProofResult> {
   // Only update if this FACEIT match ID is already linked to an Ascendra match.
   const existingMatch = await prisma.tournamentMatch.findUnique({
     where: { faceitMatchId },
     select: { id: true },
   });
-  if (!existingMatch) return;
+  if (!existingMatch) return { found: false };
 
   let details: Awaited<ReturnType<typeof getFaceitMatchDetails>>;
   try {
     details = await getFaceitMatchDetails(faceitMatchId);
   } catch (err) {
-    if (err instanceof FaceitApiError) return; // silently skip on API errors
-    return;
+    if (err instanceof FaceitApiError) throw err;
+    throw err;
   }
 
   let stats: Awaited<ReturnType<typeof getFaceitMatchStats>>;
   try {
     stats = await getFaceitMatchStats(faceitMatchId);
-  } catch {
-    // Stats may not be ready yet; skip silently.
-    return;
+  } catch (err) {
+    // Stats may not be ready yet; propagate so caller can log failure.
+    throw err;
   }
 
-  if (!stats.rounds || stats.rounds.length === 0) return;
+  if (!stats.rounds || stats.rounds.length === 0) return { found: true, tournamentMatchId: existingMatch.id };
 
   const parsed = parseFaceitCs2MatchResult({ matchId: faceitMatchId, details, stats });
 
@@ -114,21 +132,27 @@ async function syncProofForFaceitMatch(faceitMatchId: string): Promise<void> {
       faceitVerifiedAt: isVerified ? new Date() : null,
     },
   }).catch(() => undefined); // swallow DB errors — webhook must not 500
+
+  return { found: true, tournamentMatchId: existingMatch.id };
 }
 
 export async function POST(request: Request) {
   if (!verifySecret(request)) {
+    await createFaceitWebhookLog({ status: "unauthorized", httpStatus: 401 }).catch(() => undefined);
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  let payload: FaceitWebhookPayload;
+  let raw: unknown;
   try {
-    payload = (await request.json()) as FaceitWebhookPayload;
+    raw = await request.json();
   } catch {
     return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   }
 
-  const eventType = payload.event ?? "unknown";
+  const payload = raw as FaceitWebhookPayload;
+  const eventType = extractFaceitWebhookEventType(raw) ?? payload.event ?? "unknown";
+  const faceitMatchId = extractFaceitWebhookMatchId(raw) ?? payload.payload?.id;
+  const sanitizedPayload = sanitizeFaceitWebhookPayload(raw);
 
   if (process.env.NODE_ENV === "development") {
     console.log(
@@ -136,17 +160,60 @@ export async function POST(request: Request) {
     );
   }
 
+  const logId = await createFaceitWebhookLog({
+    eventType,
+    faceitMatchId: typeof faceitMatchId === "string" ? faceitMatchId : null,
+    status: "received",
+    httpStatus: 200,
+    payload: sanitizedPayload,
+  });
+
   if (
     eventType === "match_status_finished" ||
     eventType === "match_demo_ready"
   ) {
-    const faceitMatchId = payload.payload?.id;
-    if (typeof faceitMatchId === "string" && faceitMatchId.length > 0) {
-      await syncProofForFaceitMatch(faceitMatchId);
+    const matchId =
+      typeof faceitMatchId === "string" && faceitMatchId.length > 0
+        ? faceitMatchId
+        : null;
+
+    if (!matchId) {
+      await updateFaceitWebhookLog(logId, {
+        status: "skipped",
+        reason: "no_faceit_match_id_in_payload",
+      });
+      return NextResponse.json({ ok: true, logged: true, status: "skipped" });
+    }
+
+    try {
+      const result = await syncProofForFaceitMatch(matchId);
+      if (result.found) {
+        await updateFaceitWebhookLog(logId, {
+          status: "processed",
+          tournamentMatchId: result.tournamentMatchId,
+          processedAt: new Date(),
+        });
+        return NextResponse.json({ ok: true, logged: true, status: "processed" });
+      } else {
+        await updateFaceitWebhookLog(logId, {
+          status: "skipped",
+          reason: "no_matching_tournament_match",
+        });
+        return NextResponse.json({ ok: true, logged: true, status: "skipped" });
+      }
+    } catch (err) {
+      const reason =
+        err instanceof Error ? err.message.slice(0, 200) : "unknown_error";
+      await updateFaceitWebhookLog(logId, { status: "failed", reason });
+      return NextResponse.json({ ok: true, logged: true, status: "failed" });
     }
   }
 
   // TODO (future): match_cancelled → mark TournamentMatch as cancelled if not yet confirmed.
 
+  await updateFaceitWebhookLog(logId, {
+    status: "skipped",
+    reason: "unsupported_event",
+  });
   return NextResponse.json({ ok: true });
 }
