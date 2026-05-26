@@ -15,6 +15,8 @@ type FaceitProof = {
   faceitScoreRaw: string | null;
   faceitSyncedAt: string | null;
   faceitVerifiedAt: string | null;
+  faceitAutoAppliedAt: string | null;
+  faceitAutoApplyMethod: string | null; // "strict" | "faction_order"
 };
 
 type FaceitMatchProofMessages = {
@@ -35,6 +37,12 @@ type FaceitMatchProofMessages = {
   proofSource: string;
   disclaimer: string;
   connectRequired: string;
+  // Phase 4 — auto-confirm display
+  autoApplied: string;
+  mappingMethodLabel: string;
+  mappingStrict: string;
+  mappingFactionOrder: string;
+  autoAppliedAt: string;
 };
 
 const formMessages: Record<Locale, FaceitMatchProofMessages> = {
@@ -60,6 +68,11 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
       "This proof does not change the official result automatically.",
     connectRequired:
       "Connect your FACEIT account on your profile to sync CS2 proof.",
+    autoApplied: "FACEIT result auto-applied.",
+    mappingMethodLabel: "Mapping method",
+    mappingStrict: "Strict player match",
+    mappingFactionOrder: "Faction order fallback",
+    autoAppliedAt: "Auto-applied",
   },
   ar: {
     instruction:
@@ -81,6 +94,11 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
     disclaimer: "هذا الإثبات لا يغيّر النتيجة الرسمية تلقائيًا.",
     connectRequired:
       "اربط حساب FACEIT في ملفك الشخصي لمزامنة إثبات CS2.",
+    autoApplied: "تم تطبيق نتيجة FACEIT تلقائيًا.",
+    mappingMethodLabel: "طريقة المطابقة",
+    mappingStrict: "مطابقة اللاعبين",
+    mappingFactionOrder: "ترتيب فرق FACEIT",
+    autoAppliedAt: "تطبيق تلقائي",
   },
 };
 
@@ -267,6 +285,45 @@ export default function FaceitMatchProofForm({
                   })}
                 </span>
               </div>
+            )}
+
+            {proof.faceitAutoAppliedAt && (
+              <>
+                <div
+                  className="my-1 border-t"
+                  style={{ borderColor: "oklch(0.55 0.14 150 / 0.25)" }}
+                />
+                <div className="flex items-center justify-between">
+                  <span
+                    className="font-black"
+                    style={{ color: "var(--asc-green)" }}
+                  >
+                    {msgs.autoApplied}
+                  </span>
+                  <span style={{ color: "var(--asc-fg-3)" }}>
+                    {new Date(proof.faceitAutoAppliedAt).toLocaleString(dateLocale, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                  </span>
+                </div>
+
+                {proof.faceitAutoApplyMethod && (
+                  <div className="flex items-center justify-between">
+                    <span style={{ color: "var(--asc-fg-3)" }}>
+                      {msgs.mappingMethodLabel}
+                    </span>
+                    <span
+                      className="font-black"
+                      style={{ color: "var(--asc-fg-1)" }}
+                    >
+                      {proof.faceitAutoApplyMethod === "strict"
+                        ? msgs.mappingStrict
+                        : msgs.mappingFactionOrder}
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

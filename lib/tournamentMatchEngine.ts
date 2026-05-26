@@ -1023,6 +1023,101 @@ export async function advanceBracketAfterMatch(
   return ok({ advanced: true, nextMatchId: next.id });
 }
 
+// ─── FACEIT Auto-Confirm ──────────────────────────────────────────────────────
+// Applies an official match result sourced from FACEIT proof data.
+// Skips admin-user check; the caller is responsible for env-flag gating.
+
+export type ApplyFaceitAutoResultInput = {
+  matchId: string;
+  winnerTeamId: string;
+  teamAScore: number;
+  teamBScore: number;
+  mappingMethod: "strict" | "faction_order";
+};
+
+export async function applyFaceitAutoResult(
+  input: ApplyFaceitAutoResultInput,
+): Promise<EngineResult<{ matchStatus: MatchStatus }>> {
+  const match = await loadMatchOrFail(input.matchId);
+  if (!match) return fail("Match was not found.");
+
+  if (!match.teamAId || !match.teamBId) {
+    return fail("Both teams must be assigned before applying FACEIT result.");
+  }
+
+  if (
+    input.winnerTeamId !== match.teamAId &&
+    input.winnerTeamId !== match.teamBId
+  ) {
+    return fail("Winner must be one of the match teams.");
+  }
+
+  if (input.teamAScore < 0 || input.teamBScore < 0) {
+    return fail("Scores must be zero or positive.");
+  }
+
+  const terminalStatuses = new Set<MatchStatus>([
+    MatchStatus.completed,
+    MatchStatus.confirmed,
+    MatchStatus.cancelled,
+    MatchStatus.forfeit,
+    MatchStatus.bye,
+  ]);
+  if (terminalStatuses.has(match.status)) {
+    return fail("Match is already completed.");
+  }
+
+  const note = `FACEIT auto-confirm (${input.mappingMethod})`;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.matchReport.updateMany({
+      where: { matchId: input.matchId, status: ReportStatus.submitted },
+      data: { status: ReportStatus.rejected },
+    });
+
+    await tx.tournamentMatch.update({
+      where: { id: input.matchId },
+      data: {
+        status: MatchStatus.confirmed,
+        winnerTeamId: input.winnerTeamId,
+        completedAt: new Date(),
+        version: { increment: 1 },
+      },
+    });
+  });
+
+  await writeAudit({
+    action: "match.faceit_auto_confirm",
+    request: {
+      matchId: input.matchId,
+      winnerTeamId: input.winnerTeamId,
+      teamAScore: input.teamAScore,
+      teamBScore: input.teamBScore,
+      mappingMethod: input.mappingMethod,
+      note,
+    } as Prisma.InputJsonValue,
+    response: { matchStatus: MatchStatus.confirmed } as Prisma.InputJsonValue,
+    status: AuditStatus.success,
+  });
+
+  await emitMatchEvent(
+    "tournament.match.confirmed",
+    input.matchId,
+    match.tournamentId,
+    "public",
+    { faceitAutoConfirm: true, winnerTeamId: input.winnerTeamId, mappingMethod: input.mappingMethod },
+  );
+
+  await notifyMatchConfirmed(match, input.winnerTeamId, {
+    teamAScore: input.teamAScore,
+    teamBScore: input.teamBScore,
+  });
+
+  await advanceBracketAfterMatch(input.matchId, { adminOverride: true });
+
+  return ok({ matchStatus: MatchStatus.confirmed });
+}
+
 // ─── Admin Override ──────────────────────────────────────────────────────────
 
 export type AdminOverrideInput = {

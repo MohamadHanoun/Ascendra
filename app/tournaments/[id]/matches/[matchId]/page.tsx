@@ -336,6 +336,8 @@ export default async function MatchDetailPage({ params }: PageProps) {
     faceitScoreRaw: match.faceitScoreRaw ?? null,
     faceitSyncedAt: match.faceitSyncedAt?.toISOString() ?? null,
     faceitVerifiedAt: match.faceitVerifiedAt?.toISOString() ?? null,
+    faceitAutoAppliedAt: match.faceitAutoAppliedAt?.toISOString() ?? null,
+    faceitAutoApplyMethod: match.faceitAutoApplyMethod ?? null,
   };
 
   const cs2Meta =

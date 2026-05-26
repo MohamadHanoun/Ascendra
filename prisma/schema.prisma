@@ -573,6 +573,10 @@ model TournamentMatch {
   faceitSyncedAt           DateTime?
   faceitVerifiedAt         DateTime?
 
+  // FACEIT auto-confirm metadata — Phase 4
+  faceitAutoAppliedAt   DateTime?
+  faceitAutoApplyMethod String?    // "strict" | "faction_order"
+
   tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 
   nextMatch     TournamentMatch?  @relation("MatchAdvancement", fields: [nextMatchId], references: [id], onDelete: SetNull)

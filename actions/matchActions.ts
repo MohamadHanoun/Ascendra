@@ -13,6 +13,7 @@ import {
 } from "@/lib/gameIntegrations/steamDota2Adapter";
 import { FaceitApiError, getFaceitMatchDetails, getFaceitMatchStats } from "@/lib/faceit";
 import { parseFaceitCs2MatchResult } from "@/lib/faceitCs2Parser";
+import { attemptFaceitAutoConfirm } from "@/lib/faceitAutoConfirm";
 import { extractFaceitMatchId } from "@/lib/faceitMatchId";
 import { notifyMatchConfirmed } from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
@@ -87,6 +88,12 @@ type MatchIdActionMessages = {
   faceitSyncNotAllowed: string;
   faceitSyncFailed: string;
   faceitSyncSuccess: string;
+  // Phase 4 — auto-confirm feedback
+  faceitAutoApplied: string;
+  faceitSyncedMappingFailed: string;
+  faceitSyncedAutoDisabled: string;
+  faceitSyncedAlreadyCompleted: string;
+  faceitSyncedNotFinished: string;
 };
 
 const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
@@ -131,6 +138,11 @@ const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
     faceitSyncNotAllowed: "You are not allowed to sync FACEIT proof for this match.",
     faceitSyncFailed: "Failed to sync FACEIT match.",
     faceitSyncSuccess: "FACEIT match proof saved.",
+    faceitAutoApplied: "FACEIT proof synced and official result applied automatically.",
+    faceitSyncedMappingFailed: "FACEIT proof synced, but official result was not applied because team mapping could not be verified.",
+    faceitSyncedAutoDisabled: "FACEIT proof synced, but auto-confirm is disabled.",
+    faceitSyncedAlreadyCompleted: "FACEIT proof synced, but this match is already completed.",
+    faceitSyncedNotFinished: "FACEIT proof synced, but FACEIT match is not finished yet.",
   },
   ar: {
     loginRequired: "يرجى تسجيل الدخول أولًا.",
@@ -172,6 +184,11 @@ const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
     faceitSyncNotAllowed: "لا تملك صلاحية مزامنة إثبات FACEIT لهذه المباراة.",
     faceitSyncFailed: "فشل مزامنة مباراة FACEIT.",
     faceitSyncSuccess: "تم حفظ إثبات مباراة FACEIT.",
+    faceitAutoApplied: "تمت مزامنة إثبات FACEIT وتطبيق النتيجة الرسمية تلقائيًا.",
+    faceitSyncedMappingFailed: "تمت مزامنة إثبات FACEIT، لكن لم يتم تطبيق النتيجة الرسمية لأن مطابقة الفرق لم يتم التحقق منها.",
+    faceitSyncedAutoDisabled: "تمت مزامنة إثبات FACEIT، لكن التأكيد التلقائي غير مفعّل.",
+    faceitSyncedAlreadyCompleted: "تمت مزامنة إثبات FACEIT، لكن هذه المباراة مكتملة مسبقًا.",
+    faceitSyncedNotFinished: "تمت مزامنة إثبات FACEIT، لكن مباراة FACEIT لم تنتهِ بعد.",
   },
 };
 
@@ -1039,8 +1056,28 @@ export async function syncFaceitMatchProof(
     return fail(messages.faceitSyncFailed);
   }
 
+  // Attempt FACEIT auto-confirm (Phase 4).
+  const autoResult = await attemptFaceitAutoConfirm(matchId, parsed);
+
+  if (autoResult.applied) {
+    // Store auto-confirm metadata alongside the proof fields.
+    await prisma.tournamentMatch.update({
+      where: { id: matchId },
+      data: {
+        faceitAutoAppliedAt: new Date(),
+        faceitAutoApplyMethod: autoResult.mappingMethod,
+      },
+    }).catch(() => undefined);
+  }
+
   revalidateMatchPaths(match.tournamentId);
   revalidatePath(`/tournaments/${match.tournamentId}/matches/${matchId}`);
 
+  if (autoResult.applied) return success(messages.faceitAutoApplied);
+  if (autoResult.reason === "disabled") return success(messages.faceitSyncedAutoDisabled);
+  if (autoResult.reason === "not_finished") return success(messages.faceitSyncedNotFinished);
+  if (autoResult.reason === "already_terminal") return success(messages.faceitSyncedAlreadyCompleted);
+  if (autoResult.reason === "mapping_failed") return success(messages.faceitSyncedMappingFailed);
+  // missing_score, engine_error — proof is saved but auto-confirm unavailable
   return success(messages.faceitSyncSuccess);
 }
