@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { auth } from "@/auth";
+import FaceitMatchProofForm from "@/components/FaceitMatchProofForm";
 import Footer from "@/components/Footer";
 import MatchAdminControls from "@/components/MatchAdminControls";
 import MatchRealtimeRefresh from "@/components/MatchRealtimeRefresh";
@@ -53,6 +54,7 @@ type MatchDetailMessages = {
   login: { participate: string; signInDesc: string; signIn: string };
   verif: { title: string; submitMatchId: string };
   matchInfo: { title: string; round: string; match: string; format: string; status: string; type: string; byeValue: string; completed: string };
+  faceit: { eyebrow: string; title: string };
   backLink: string;
 };
 
@@ -88,6 +90,7 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     login: { participate: "Participate", signInDesc: "Sign in to submit your team's match result or open a dispute.", signIn: "Sign In ›" },
     verif: { title: "Game Status", submitMatchId: "Submit Match ID" },
     matchInfo: { title: "Match Info", round: "Round", match: "Match", format: "Best of", status: "Status", type: "Type", byeValue: "Bye (Auto-advance)", completed: "Completed" },
+    faceit: { eyebrow: "FACEIT CS2", title: "FACEIT CS2 Proof" },
     backLink: "All Matches",
   },
   ar: {
@@ -121,6 +124,7 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     login: { participate: "المشاركة", signInDesc: "سجّل دخولك لتقديم نتيجة فريقك أو تقديم اعتراض.", signIn: "تسجيل الدخول ←" },
     verif: { title: "حالة اللعبة", submitMatchId: "تقديم معرف المباراة" },
     matchInfo: { title: "معلومات المباراة", round: "الجولة", match: "المباراة", format: "الأفضل من", status: "الحالة", type: "النوع", byeValue: "تأهل تلقائي", completed: "اكتملت" },
+    faceit: { eyebrow: "FACEIT CS2", title: "إثبات FACEIT لـ CS2" },
     backLink: "كل المباريات",
   },
 };
@@ -311,6 +315,28 @@ export default async function MatchDetailPage({ params }: PageProps) {
     tournament.game?.slug?.toLowerCase().includes("counter-strike") ||
     tournament.game?.name?.toLowerCase().includes("cs2") ||
     tournament.game?.name?.toLowerCase().includes("counter-strike");
+
+  // Check if the current user has FACEIT connected (needed for CS2 proof panel).
+  let faceitConnected = false;
+  if (isCs2 && currentUserId) {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: currentUserId },
+      select: { faceitPlayerId: true },
+    });
+    faceitConnected = Boolean(dbUser?.faceitPlayerId);
+  }
+
+  // Serialize FACEIT proof fields for the client component.
+  const faceitProof = {
+    faceitMatchId: match.faceitMatchId ?? null,
+    faceitMatchUrl: match.faceitMatchUrl ?? null,
+    faceitStatus: match.faceitStatus ?? null,
+    faceitDemoUrl: match.faceitDemoUrl ?? null,
+    faceitMap: match.faceitMap ?? null,
+    faceitScoreRaw: match.faceitScoreRaw ?? null,
+    faceitSyncedAt: match.faceitSyncedAt?.toISOString() ?? null,
+    faceitVerifiedAt: match.faceitVerifiedAt?.toISOString() ?? null,
+  };
 
   const cs2Meta =
     match.room?.provider === "steam_cs2"
@@ -889,6 +915,20 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     );
                   })}
                 </div>
+              </Panel>
+            )}
+
+            {/* FACEIT CS2 proof */}
+            {isCs2 && (
+              <Panel eyebrow={msgs.faceit.eyebrow} title={msgs.faceit.title}>
+                <FaceitMatchProofForm
+                  matchId={match.id}
+                  isAdmin={isAdmin}
+                  isParticipant={userTeamId !== null}
+                  hasFaceitConnected={faceitConnected}
+                  locale={locale}
+                  proof={faceitProof}
+                />
               </Panel>
             )}
 

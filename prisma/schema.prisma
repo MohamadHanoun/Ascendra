@@ -559,6 +559,20 @@ model TournamentMatch {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
+  // FACEIT CS2 proof — Phase 3 (never auto-updates official result)
+  faceitMatchId            String?   @unique
+  faceitMatchUrl           String?
+  faceitStatus             String?
+  faceitDemoUrl            String?
+  faceitMap                String?
+  faceitScoreRaw           String?
+  faceitFaction1Score      Int?
+  faceitFaction2Score      Int?
+  faceitWinnerFaceitTeamId String?
+  faceitParsedResult       Json?
+  faceitSyncedAt           DateTime?
+  faceitVerifiedAt         DateTime?
+
   tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 
   nextMatch     TournamentMatch?  @relation("MatchAdvancement", fields: [nextMatchId], references: [id], onDelete: SetNull)

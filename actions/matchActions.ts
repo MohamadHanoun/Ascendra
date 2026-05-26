@@ -11,6 +11,9 @@ import {
   verifyDotaMatch,
   findRecentDotaMatches,
 } from "@/lib/gameIntegrations/steamDota2Adapter";
+import { FaceitApiError, getFaceitMatchDetails, getFaceitMatchStats } from "@/lib/faceit";
+import { parseFaceitCs2MatchResult } from "@/lib/faceitCs2Parser";
+import { extractFaceitMatchId } from "@/lib/faceitMatchId";
 import { notifyMatchConfirmed } from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
 import type { Locale } from "@/lib/i18n";
@@ -74,6 +77,16 @@ type MatchIdActionMessages = {
   noRecentDota: string;
   foundOneCandidate: string;
   foundCandidates: string;
+  // FACEIT proof sync
+  faceitMatchInputRequired: string;
+  faceitMatchInvalidInput: string;
+  faceitMatchNotFound: string;
+  faceitMatchNotCs2: string;
+  faceitMatchStatsUnavailable: string;
+  faceitConnectRequired: string;
+  faceitSyncNotAllowed: string;
+  faceitSyncFailed: string;
+  faceitSyncSuccess: string;
 };
 
 const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
@@ -109,6 +122,15 @@ const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
       "No recent Dota 2 matches found for these teams. Ensure players have linked their Steam accounts.",
     foundOneCandidate: "Found 1 candidate.",
     foundCandidates: "Found {count} candidates.",
+    faceitMatchInputRequired: "FACEIT match ID or URL is required.",
+    faceitMatchInvalidInput: "Invalid FACEIT match URL or ID.",
+    faceitMatchNotFound: "FACEIT match was not found.",
+    faceitMatchNotCs2: "FACEIT match is not a CS2 match.",
+    faceitMatchStatsUnavailable: "FACEIT match stats are not available yet.",
+    faceitConnectRequired: "You must connect FACEIT before syncing FACEIT proof.",
+    faceitSyncNotAllowed: "You are not allowed to sync FACEIT proof for this match.",
+    faceitSyncFailed: "Failed to sync FACEIT match.",
+    faceitSyncSuccess: "FACEIT match proof saved.",
   },
   ar: {
     loginRequired: "يرجى تسجيل الدخول أولًا.",
@@ -141,6 +163,15 @@ const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
       "لم يتم العثور على مباريات Dota 2 حديثة لهذه الفرق. تأكد من أن اللاعبين ربطوا حسابات Steam الخاصة بهم.",
     foundOneCandidate: "تم العثور على نتيجة واحدة محتملة.",
     foundCandidates: "تم العثور على {count} نتائج محتملة.",
+    faceitMatchInputRequired: "معرّف أو رابط مباراة FACEIT مطلوب.",
+    faceitMatchInvalidInput: "معرّف أو رابط مباراة FACEIT غير صالح.",
+    faceitMatchNotFound: "لم يتم العثور على مباراة FACEIT.",
+    faceitMatchNotCs2: "مباراة FACEIT هذه ليست مباراة CS2.",
+    faceitMatchStatsUnavailable: "إحصائيات مباراة FACEIT غير متاحة بعد.",
+    faceitConnectRequired: "يجب ربط FACEIT قبل مزامنة إثبات FACEIT.",
+    faceitSyncNotAllowed: "لا تملك صلاحية مزامنة إثبات FACEIT لهذه المباراة.",
+    faceitSyncFailed: "فشل مزامنة مباراة FACEIT.",
+    faceitSyncSuccess: "تم حفظ إثبات مباراة FACEIT.",
   },
 };
 
@@ -879,4 +910,137 @@ export async function findRecentDotaMatch(
       teamBCoverage: Math.round(c.teamBCoverage * 100),
     })),
   };
+}
+
+// ─── Sync FACEIT CS2 match proof ─────────────────────────────────────────────
+// Stores FACEIT proof data on the TournamentMatch.
+// NEVER updates official result, winner, status, or bracket advancement.
+
+export async function syncFaceitMatchProof(
+  _prevState: MatchActionResult,
+  formData: FormData,
+): Promise<MatchActionResult> {
+  const messages = matchIdActionMessages[getActionLocale(formData)];
+  const sessionUser = await requireUser();
+  if (!sessionUser) return fail(messages.loginRequired);
+
+  const matchId = getValue(formData, "matchId");
+  const faceitMatchInput = getValue(formData, "faceitMatchInput");
+
+  if (!matchId) return fail(messages.matchIdMissing);
+  if (!faceitMatchInput) return fail(messages.faceitMatchInputRequired);
+
+  const faceitMatchId = extractFaceitMatchId(faceitMatchInput);
+  if (!faceitMatchId) return fail(messages.faceitMatchInvalidInput);
+
+  const match = await prisma.tournamentMatch.findUnique({
+    where: { id: matchId },
+    select: { id: true, tournamentId: true, teamAId: true, teamBId: true },
+  });
+  if (!match) return fail(messages.matchNotFound);
+
+  // Permission: admin OR participant on one of the teams.
+  if (!sessionUser.isAdmin) {
+    const teamIds = [match.teamAId, match.teamBId].filter(
+      (x): x is string => Boolean(x),
+    );
+    if (teamIds.length === 0) return fail(messages.faceitSyncNotAllowed);
+
+    const membership = await prisma.teamMember.findFirst({
+      where: { userId: sessionUser.id, teamId: { in: teamIds } },
+      select: { id: true },
+    });
+    const leaderTeam = membership
+      ? null
+      : await prisma.team.findFirst({
+          where: { leaderId: sessionUser.id, id: { in: teamIds } },
+          select: { id: true },
+        });
+    if (!membership && !leaderTeam) return fail(messages.faceitSyncNotAllowed);
+
+    // Participants must have FACEIT connected.
+    const dbUser = await prisma.user.findUnique({
+      where: { id: sessionUser.id },
+      select: { faceitPlayerId: true },
+    });
+    if (!dbUser?.faceitPlayerId) return fail(messages.faceitConnectRequired);
+  }
+
+  // Fetch match details from FACEIT API.
+  let details: Awaited<ReturnType<typeof getFaceitMatchDetails>>;
+  try {
+    details = await getFaceitMatchDetails(faceitMatchId);
+  } catch (err) {
+    if (err instanceof FaceitApiError && err.status === 404) {
+      return fail(messages.faceitMatchNotFound);
+    }
+    return fail(messages.faceitSyncFailed);
+  }
+
+  // Soft CS2 check — game_id is present in real FACEIT responses.
+  const gameId = (details as Record<string, unknown>)["game_id"];
+  if (gameId && gameId !== "cs2") {
+    return fail(messages.faceitMatchNotCs2);
+  }
+
+  // Fetch match stats from FACEIT API.
+  let stats: Awaited<ReturnType<typeof getFaceitMatchStats>>;
+  try {
+    stats = await getFaceitMatchStats(faceitMatchId);
+  } catch (err) {
+    if (err instanceof FaceitApiError && err.status === 404) {
+      return fail(messages.faceitMatchStatsUnavailable);
+    }
+    return fail(messages.faceitSyncFailed);
+  }
+
+  if (!stats.rounds || stats.rounds.length === 0) {
+    return fail(messages.faceitMatchStatsUnavailable);
+  }
+
+  // Parse the result using the existing parser.
+  const parsed = parseFaceitCs2MatchResult({ matchId: faceitMatchId, details, stats });
+
+  const demoUrl = parsed.demoUrls[0] ?? null;
+  const matchUrl =
+    typeof details.faceit_url === "string" ? details.faceit_url : null;
+  const isVerified =
+    parsed.status === "FINISHED" && parsed.score !== undefined;
+
+  // Update FACEIT proof fields only.
+  // Official fields (status, winnerTeamId, completedAt, version) are not touched.
+  try {
+    await prisma.tournamentMatch.update({
+      where: { id: matchId },
+      data: {
+        faceitMatchId,
+        faceitMatchUrl: matchUrl,
+        faceitStatus: parsed.status,
+        faceitDemoUrl: demoUrl,
+        faceitMap: parsed.map ?? null,
+        faceitScoreRaw: parsed.score?.raw ?? null,
+        faceitFaction1Score: parsed.score?.faction1 ?? null,
+        faceitFaction2Score: parsed.score?.faction2 ?? null,
+        faceitWinnerFaceitTeamId: parsed.winnerFaceitTeamId ?? null,
+        faceitParsedResult: {
+          teams: parsed.teams.map((t) => ({
+            faceitTeamId: t.faceitTeamId,
+            name: t.name,
+            finalScore: t.finalScore,
+            won: t.won,
+            players: t.players,
+          })),
+        } as unknown as Prisma.InputJsonValue,
+        faceitSyncedAt: new Date(),
+        faceitVerifiedAt: isVerified ? new Date() : null,
+      },
+    });
+  } catch {
+    return fail(messages.faceitSyncFailed);
+  }
+
+  revalidateMatchPaths(match.tournamentId);
+  revalidatePath(`/tournaments/${match.tournamentId}/matches/${matchId}`);
+
+  return success(messages.faceitSyncSuccess);
 }
