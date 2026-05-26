@@ -16,18 +16,43 @@ type PublicMatch = {
   winnerName: string | null;
 };
 
+export type TournamentMatchesSectionLabels = {
+  scheduleEyebrow: string;
+  matchesTitle: string;
+  roundPrefix: string;
+  matchCenter: string;
+  live: string;
+  statuses: {
+    scheduled: string;
+    ready: string;
+    room_created: string;
+    in_progress: string;
+    result_pending: string;
+    disputed: string;
+    confirmed: string;
+    completed: string;
+    cancelled: string;
+    forfeit: string;
+    bye: string;
+  };
+};
+
 type TournamentMatchesSectionProps = {
   tournamentId: string;
   matches: PublicMatch[];
   locale: string;
+  labels: TournamentMatchesSectionLabels;
 };
 
 type StatusEntry = { label: string; style: React.CSSProperties };
 
-function getStatusEntry(status: string): StatusEntry {
+function getStatusEntry(
+  status: string,
+  statuses: TournamentMatchesSectionLabels["statuses"],
+): StatusEntry {
   const map: Record<string, StatusEntry> = {
     scheduled: {
-      label: "Scheduled",
+      label: statuses.scheduled,
       style: {
         color: "var(--asc-blue)",
         borderColor: "oklch(0.55 0.12 220 / 0.5)",
@@ -35,7 +60,7 @@ function getStatusEntry(status: string): StatusEntry {
       },
     },
     ready: {
-      label: "Ready",
+      label: statuses.ready,
       style: {
         color: "var(--asc-green)",
         borderColor: "oklch(0.55 0.14 150 / 0.5)",
@@ -43,7 +68,7 @@ function getStatusEntry(status: string): StatusEntry {
       },
     },
     room_created: {
-      label: "Room Created",
+      label: statuses.room_created,
       style: {
         color: "var(--asc-blue)",
         borderColor: "oklch(0.55 0.12 220 / 0.5)",
@@ -51,7 +76,7 @@ function getStatusEntry(status: string): StatusEntry {
       },
     },
     in_progress: {
-      label: "Live",
+      label: statuses.in_progress,
       style: {
         color: "var(--asc-live)",
         borderColor: "oklch(0.50 0.20 25 / 0.5)",
@@ -59,7 +84,7 @@ function getStatusEntry(status: string): StatusEntry {
       },
     },
     result_pending: {
-      label: "Result Pending",
+      label: statuses.result_pending,
       style: {
         color: "var(--asc-amber)",
         borderColor: "oklch(0.65 0.14 75 / 0.5)",
@@ -67,7 +92,7 @@ function getStatusEntry(status: string): StatusEntry {
       },
     },
     disputed: {
-      label: "Disputed",
+      label: statuses.disputed,
       style: {
         color: "var(--asc-live)",
         borderColor: "oklch(0.50 0.20 25 / 0.5)",
@@ -75,7 +100,7 @@ function getStatusEntry(status: string): StatusEntry {
       },
     },
     confirmed: {
-      label: "Confirmed",
+      label: statuses.confirmed,
       style: {
         color: "var(--asc-green)",
         borderColor: "oklch(0.55 0.14 150 / 0.5)",
@@ -83,7 +108,7 @@ function getStatusEntry(status: string): StatusEntry {
       },
     },
     completed: {
-      label: "Completed",
+      label: statuses.completed,
       style: {
         color: "var(--asc-accent)",
         borderColor: "oklch(0.50 0.20 285 / 0.4)",
@@ -91,7 +116,7 @@ function getStatusEntry(status: string): StatusEntry {
       },
     },
     cancelled: {
-      label: "Cancelled",
+      label: statuses.cancelled,
       style: {
         color: "var(--asc-live)",
         borderColor: "oklch(0.50 0.20 25 / 0.5)",
@@ -99,7 +124,7 @@ function getStatusEntry(status: string): StatusEntry {
       },
     },
     forfeit: {
-      label: "Forfeit",
+      label: statuses.forfeit,
       style: {
         color: "var(--asc-live)",
         borderColor: "oklch(0.50 0.20 25 / 0.5)",
@@ -107,7 +132,7 @@ function getStatusEntry(status: string): StatusEntry {
       },
     },
     bye: {
-      label: "Bye",
+      label: statuses.bye,
       style: {
         color: "var(--asc-fg-3)",
         borderColor: "var(--asc-line-soft)",
@@ -118,13 +143,25 @@ function getStatusEntry(status: string): StatusEntry {
   return (
     map[status] ?? {
       label: status,
-      style: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
+      style: {
+        color: "var(--asc-fg-3)",
+        borderColor: "var(--asc-line-soft)",
+        background: "transparent",
+      },
     }
   );
 }
 
-function MatchStatusBadge({ status }: { status: string }) {
-  const entry = getStatusEntry(status);
+function MatchStatusBadge({
+  status,
+  liveLabel,
+  statuses,
+}: {
+  status: string;
+  liveLabel: string;
+  statuses: TournamentMatchesSectionLabels["statuses"];
+}) {
+  const entry = getStatusEntry(status, statuses);
   const isLive = status === "in_progress";
 
   if (isLive) {
@@ -134,13 +171,16 @@ function MatchStatusBadge({ status }: { status: string }) {
         style={entry.style}
       >
         <span className="asc-live-dot" />
-        Live
+        {liveLabel}
       </span>
     );
   }
 
   return (
-    <span className="inline-flex border px-3 py-1 text-xs font-black" style={entry.style}>
+    <span
+      className="inline-flex border px-3 py-1 text-xs font-black"
+      style={entry.style}
+    >
       {entry.label}
     </span>
   );
@@ -150,10 +190,16 @@ function MatchCard({
   match,
   tournamentId,
   locale,
+  matchCenter,
+  liveLabel,
+  statuses,
 }: {
   match: PublicMatch;
   tournamentId: string;
   locale: string;
+  matchCenter: string;
+  liveLabel: string;
+  statuses: TournamentMatchesSectionLabels["statuses"];
 }) {
   const isLive = match.status === "in_progress";
   const isDone = ["completed", "confirmed", "forfeit"].includes(match.status);
@@ -161,8 +207,10 @@ function MatchCard({
   const teamAName = match.teamAName ?? "TBD";
   const teamBName = match.isBye ? "BYE" : (match.teamBName ?? "TBD");
 
-  const teamAWon = isDone && Boolean(match.winnerTeamId) && match.winnerTeamId === match.teamAId;
-  const teamBWon = isDone && Boolean(match.winnerTeamId) && match.winnerTeamId === match.teamBId;
+  const teamAWon =
+    isDone && Boolean(match.winnerTeamId) && match.winnerTeamId === match.teamAId;
+  const teamBWon =
+    isDone && Boolean(match.winnerTeamId) && match.winnerTeamId === match.teamBId;
 
   return (
     <Link
@@ -200,7 +248,11 @@ function MatchCard({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <MatchStatusBadge status={match.status} />
+        <MatchStatusBadge
+          status={match.status}
+          liveLabel={liveLabel}
+          statuses={statuses}
+        />
 
         <span className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
           Bo{match.bestOf}
@@ -225,7 +277,7 @@ function MatchCard({
           className="ml-auto text-xs font-black uppercase tracking-[0.08em]"
           style={{ color: "var(--asc-accent)" }}
         >
-          Match Center →
+          {matchCenter}
         </span>
       </div>
     </Link>
@@ -236,6 +288,7 @@ export default function TournamentMatchesSection({
   tournamentId,
   matches,
   locale,
+  labels,
 }: TournamentMatchesSectionProps) {
   if (matches.length === 0) return null;
 
@@ -253,15 +306,18 @@ export default function TournamentMatchesSection({
       className="overflow-hidden border shadow-2xl"
       style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
     >
-      <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+      <div
+        className="px-5 py-4"
+        style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+      >
         <p
           className="text-xs font-black uppercase tracking-[0.16em]"
           style={{ color: "var(--asc-accent)" }}
         >
-          Schedule
+          {labels.scheduleEyebrow}
         </p>
         <h2 className="mt-1 text-xl" style={{ color: "var(--asc-fg-0)" }}>
-          Matches
+          {labels.matchesTitle}
         </h2>
       </div>
 
@@ -276,14 +332,24 @@ export default function TournamentMatchesSection({
                 className="text-[11px] font-black uppercase tracking-[0.14em]"
                 style={{ color: "var(--asc-fg-3)" }}
               >
-                Round {round}
+                {labels.roundPrefix} {round}
               </p>
             </div>
 
             <div>
               {rounds[round].map((match) => (
-                <div key={match.id} style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-                  <MatchCard match={match} tournamentId={tournamentId} locale={locale} />
+                <div
+                  key={match.id}
+                  style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+                >
+                  <MatchCard
+                    match={match}
+                    tournamentId={tournamentId}
+                    locale={locale}
+                    matchCenter={labels.matchCenter}
+                    liveLabel={labels.live}
+                    statuses={labels.statuses}
+                  />
                 </div>
               ))}
             </div>

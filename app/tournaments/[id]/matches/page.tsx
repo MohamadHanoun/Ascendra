@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -13,54 +15,201 @@ type PageProps = {
   params: Promise<{ id: string }>;
 };
 
-export async function generateMetadata({
-  params,
-}: PageProps): Promise<Metadata> {
-  const { id } = await params;
+type MatchCenterMessages = {
+  metaTitle: string;
+  metaDescription: string;
+  matchCenterEyebrow: string;
+  bracket: string;
+  tournamentOverview: string;
+  totalMatches: string;
+  completed: string;
+  pending: string;
+  disputed: string;
+  bracketEyebrow: string;
+  noMatchesTitle: string;
+  noMatchesDesc: string;
+  grandFinal: string;
+  roundPrefix: string;
+  matchSingular: string;
+  matchPlural: string;
+  autoAdvance: string;
+  reportPending: string;
+  disputeOpen: string;
+  statuses: {
+    scheduled: string;
+    ready: string;
+    room_created: string;
+    in_progress: string;
+    result_pending: string;
+    disputed: string;
+    confirmed: string;
+    completed: string;
+    cancelled: string;
+    forfeit: string;
+    bye: string;
+  };
+};
+
+const matchCenterMessages: Record<Locale, MatchCenterMessages> = {
+  en: {
+    metaTitle: "· Match Center",
+    metaDescription: "Tournament bracket and match schedule.",
+    matchCenterEyebrow: "Match Center",
+    bracket: "Bracket",
+    tournamentOverview: "← Tournament Overview",
+    totalMatches: "Total Matches",
+    completed: "Completed",
+    pending: "Pending",
+    disputed: "Disputed",
+    bracketEyebrow: "▲ Bracket",
+    noMatchesTitle: "No matches generated yet",
+    noMatchesDesc:
+      "The tournament bracket will appear here once an admin generates it.",
+    grandFinal: "Grand Final",
+    roundPrefix: "Round",
+    matchSingular: "match",
+    matchPlural: "matches",
+    autoAdvance: "Auto-advance",
+    reportPending: "● Report pending",
+    disputeOpen: "⚠ Dispute open",
+    statuses: {
+      scheduled: "Scheduled",
+      ready: "Ready",
+      room_created: "Room Created",
+      in_progress: "Live",
+      result_pending: "Awaiting Result",
+      disputed: "Disputed",
+      confirmed: "Confirmed",
+      completed: "Completed",
+      cancelled: "Cancelled",
+      forfeit: "Forfeit",
+      bye: "Bye",
+    },
+  },
+  ar: {
+    metaTitle: "· مركز المباريات",
+    metaDescription: "القوس التنافسي وجدول المباريات للبطولة.",
+    matchCenterEyebrow: "مركز المباريات",
+    bracket: "القوس",
+    tournamentOverview: "→ نظرة عامة على البطولة",
+    totalMatches: "إجمالي المباريات",
+    completed: "منتهية",
+    pending: "قيد الانتظار",
+    disputed: "متنازع عليها",
+    bracketEyebrow: "▲ القوس",
+    noMatchesTitle: "لم يتم إنشاء مباريات بعد",
+    noMatchesDesc: "سيظهر قوس البطولة هنا بمجرد إنشائه من قِبل المشرف.",
+    grandFinal: "النهائي الكبير",
+    roundPrefix: "الجولة",
+    matchSingular: "مباراة",
+    matchPlural: "مباريات",
+    autoAdvance: "تأهل تلقائي",
+    reportPending: "● في انتظار التقرير",
+    disputeOpen: "⚠ اعتراض مفتوح",
+    statuses: {
+      scheduled: "مجدولة",
+      ready: "جاهزة",
+      room_created: "الغرفة مُنشأة",
+      in_progress: "مباشرة",
+      result_pending: "في انتظار النتيجة",
+      disputed: "متنازع عليها",
+      confirmed: "مؤكدة",
+      completed: "منتهية",
+      cancelled: "ملغاة",
+      forfeit: "خسارة بالتنازل",
+      bye: "تأهل تلقائي",
+    },
+  },
+};
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const [{ id }, locale] = await Promise.all([params, getLocale()]);
+  const msgs = matchCenterMessages[locale];
   const tournament = await prisma.tournament.findUnique({
     where: { id },
     select: { title: true },
   });
   return {
-    title: tournament ? `${tournament.title} · Match Center` : "Match Center",
-    description: "Tournament bracket and match schedule.",
+    title: tournament
+      ? `${tournament.title} ${msgs.metaTitle}`
+      : msgs.matchCenterEyebrow,
+    description: msgs.metaDescription,
   };
 }
 
-type MatchStatusTone = "blue" | "green" | "live" | "amber" | "red" | "violet" | "gray";
+type MatchStatusTone =
+  | "blue"
+  | "green"
+  | "live"
+  | "amber"
+  | "red"
+  | "violet"
+  | "gray";
 
-function matchStatusInfo(status: string): { label: string; tone: MatchStatusTone } {
+function getMatchStatusInfo(
+  status: string,
+  statuses: MatchCenterMessages["statuses"],
+): { label: string; tone: MatchStatusTone } {
   const map: Record<string, { label: string; tone: MatchStatusTone }> = {
-    scheduled: { label: "Scheduled", tone: "blue" },
-    ready: { label: "Ready", tone: "green" },
-    room_created: { label: "Room Created", tone: "blue" },
-    in_progress: { label: "Live", tone: "live" },
-    result_pending: { label: "Awaiting Result", tone: "amber" },
-    disputed: { label: "Disputed", tone: "red" },
-    confirmed: { label: "Confirmed", tone: "green" },
-    completed: { label: "Completed", tone: "violet" },
-    cancelled: { label: "Cancelled", tone: "red" },
-    forfeit: { label: "Forfeit", tone: "red" },
-    bye: { label: "Bye", tone: "gray" },
+    scheduled: { label: statuses.scheduled, tone: "blue" },
+    ready: { label: statuses.ready, tone: "green" },
+    room_created: { label: statuses.room_created, tone: "blue" },
+    in_progress: { label: statuses.in_progress, tone: "live" },
+    result_pending: { label: statuses.result_pending, tone: "amber" },
+    disputed: { label: statuses.disputed, tone: "red" },
+    confirmed: { label: statuses.confirmed, tone: "green" },
+    completed: { label: statuses.completed, tone: "violet" },
+    cancelled: { label: statuses.cancelled, tone: "red" },
+    forfeit: { label: statuses.forfeit, tone: "red" },
+    bye: { label: statuses.bye, tone: "gray" },
   };
   return map[status] ?? { label: status, tone: "gray" };
 }
 
 function tonedStyle(tone: MatchStatusTone): CSSProperties {
   const styles: Record<MatchStatusTone, CSSProperties> = {
-    blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
-    green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
-    live: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
-    amber: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.14 75 / 0.5)", background: "oklch(0.25 0.12 75 / 0.18)" },
-    red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
-    violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
-    gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
+    blue: {
+      color: "var(--asc-blue)",
+      borderColor: "oklch(0.55 0.12 220 / 0.5)",
+      background: "oklch(0.25 0.10 220 / 0.18)",
+    },
+    green: {
+      color: "var(--asc-green)",
+      borderColor: "oklch(0.55 0.14 150 / 0.5)",
+      background: "oklch(0.25 0.12 150 / 0.18)",
+    },
+    live: {
+      color: "var(--asc-live)",
+      borderColor: "oklch(0.50 0.20 25 / 0.5)",
+      background: "oklch(0.25 0.18 25 / 0.18)",
+    },
+    amber: {
+      color: "var(--asc-amber)",
+      borderColor: "oklch(0.65 0.14 75 / 0.5)",
+      background: "oklch(0.25 0.12 75 / 0.18)",
+    },
+    red: {
+      color: "var(--asc-live)",
+      borderColor: "oklch(0.50 0.20 25 / 0.5)",
+      background: "oklch(0.25 0.18 25 / 0.18)",
+    },
+    violet: {
+      color: "var(--asc-accent)",
+      borderColor: "oklch(0.50 0.20 285 / 0.4)",
+      background: "var(--asc-accent-dim)",
+    },
+    gray: {
+      color: "var(--asc-fg-3)",
+      borderColor: "var(--asc-line-soft)",
+      background: "transparent",
+    },
   };
   return styles[tone];
 }
 
 export default async function TournamentMatchesPage({ params }: PageProps) {
-  const { id } = await params;
+  const [{ id }, locale] = await Promise.all([params, getLocale()]);
+  const msgs = matchCenterMessages[locale];
 
   const tournament = await prisma.tournament.findUnique({
     where: { id },
@@ -147,7 +296,7 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
             className="mb-6 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] transition hover:opacity-75"
             style={{ color: "var(--asc-fg-2)" }}
           >
-            ← {tournament.title}
+            {locale === "ar" ? "→" : "←"} {tournament.title}
           </Link>
 
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -156,14 +305,15 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
                 className="text-[10px] font-black uppercase tracking-[0.16em]"
                 style={{ color: "var(--asc-accent)" }}
               >
-                ▲ {tournament.game?.name ? `${tournament.game.name} · ` : ""}
-                Match Center
+                ▲{" "}
+                {tournament.game?.name ? `${tournament.game.name} · ` : ""}
+                {msgs.matchCenterEyebrow}
               </p>
               <h1
                 className="mt-2 text-4xl md:text-5xl"
                 style={{ color: "var(--asc-fg-0)" }}
               >
-                Bracket
+                {msgs.bracket}
               </h1>
             </div>
 
@@ -177,7 +327,7 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
                   "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)",
               }}
             >
-              ← Tournament Overview
+              {msgs.tournamentOverview}
             </Link>
           </div>
 
@@ -185,11 +335,11 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
           {totalCount > 0 && (
             <div className="mt-6 flex flex-wrap gap-4">
               {[
-                { label: "Total Matches", value: totalCount, tone: "none" },
-                { label: "Completed", value: completedCount, tone: "accent" },
-                { label: "Pending", value: pendingCount, tone: "none" },
+                { label: msgs.totalMatches, value: totalCount, tone: "none" },
+                { label: msgs.completed, value: completedCount, tone: "accent" },
+                { label: msgs.pending, value: pendingCount, tone: "none" },
                 {
-                  label: "Disputed",
+                  label: msgs.disputed,
                   value: disputedCount,
                   tone: disputedCount > 0 ? "live" : "none",
                 },
@@ -244,27 +394,28 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
                 className="text-[10px] font-black uppercase tracking-[0.16em]"
                 style={{ color: "var(--asc-accent)" }}
               >
-                ▲ Bracket
+                {msgs.bracketEyebrow}
               </p>
               <p
                 className="mt-3 text-xl font-black"
                 style={{ color: "var(--asc-fg-0)" }}
               >
-                No matches generated yet
+                {msgs.noMatchesTitle}
               </p>
               <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-                The tournament bracket will appear here once an admin generates
-                it.
+                {msgs.noMatchesDesc}
               </p>
             </div>
           ) : (
             <div className="grid gap-6">
               {roundNumbers.map((round) => {
                 const roundMatches = rounds[round];
+                const isLastRound =
+                  round === roundNumbers[roundNumbers.length - 1];
                 const roundLabel =
-                  roundMatches.length === 1 && round === roundNumbers[roundNumbers.length - 1]
-                    ? "Grand Final"
-                    : `Round ${round}`;
+                  roundMatches.length === 1 && isLastRound
+                    ? msgs.grandFinal
+                    : `${msgs.roundPrefix} ${round}`;
 
                 return (
                   <div
@@ -290,7 +441,9 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
                         {roundLabel}
                         <span className="ml-2 opacity-50">
                           · {roundMatches.length}{" "}
-                          {roundMatches.length === 1 ? "match" : "matches"}
+                          {roundMatches.length === 1
+                            ? msgs.matchSingular
+                            : msgs.matchPlural}
                         </span>
                       </p>
                     </div>
@@ -298,13 +451,26 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
                     {/* Match rows */}
                     <div>
                       {roundMatches.map((match, index) => {
-                        const { label, tone } = matchStatusInfo(match.status);
-                        const isTerminal = ["completed", "confirmed", "forfeit", "bye"].includes(match.status);
-                        const teamAWon = isTerminal && match.winnerTeamId === match.teamAId;
-                        const teamBWon = isTerminal && match.winnerTeamId === match.teamBId;
+                        const { label, tone } = getMatchStatusInfo(
+                          match.status,
+                          msgs.statuses,
+                        );
+                        const isTerminal = [
+                          "completed",
+                          "confirmed",
+                          "forfeit",
+                          "bye",
+                        ].includes(match.status);
+                        const teamAWon =
+                          isTerminal &&
+                          match.winnerTeamId === match.teamAId;
+                        const teamBWon =
+                          isTerminal &&
+                          match.winnerTeamId === match.teamBId;
                         const hasPendingReports =
-                          match.reports.filter((r) => r.status === "submitted")
-                            .length > 0;
+                          match.reports.filter(
+                            (r) => r.status === "submitted",
+                          ).length > 0;
 
                         return (
                           <Link
@@ -313,7 +479,10 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
                             className="group block transition-colors hover:bg-white/[0.025]"
                             style={
                               index < roundMatches.length - 1
-                                ? { borderBottom: "1px solid var(--asc-line-soft)" }
+                                ? {
+                                    borderBottom:
+                                      "1px solid var(--asc-line-soft)",
+                                  }
                                 : {}
                             }
                           >
@@ -402,10 +571,13 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
                               </span>
                               {match.scheduledAt && (
                                 <span>
-                                  {match.scheduledAt.toLocaleString("en", {
-                                    dateStyle: "medium",
-                                    timeStyle: "short",
-                                  })}
+                                  {match.scheduledAt.toLocaleString(
+                                    locale === "ar" ? "ar" : "en",
+                                    {
+                                      dateStyle: "medium",
+                                      timeStyle: "short",
+                                    },
+                                  )}
                                 </span>
                               )}
                               {match.isBye && (
@@ -413,7 +585,7 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
                                   className="text-[10px] font-black uppercase tracking-widest"
                                   style={{ color: "var(--asc-fg-3)" }}
                                 >
-                                  Auto-advance
+                                  {msgs.autoAdvance}
                                 </span>
                               )}
                               {hasPendingReports && (
@@ -421,7 +593,7 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
                                   className="text-[10px] font-black uppercase tracking-widest"
                                   style={{ color: "var(--asc-amber)" }}
                                 >
-                                  ● Report pending
+                                  {msgs.reportPending}
                                 </span>
                               )}
                               {match.status === "disputed" && (
@@ -429,7 +601,7 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
                                   className="text-[10px] font-black uppercase tracking-widest"
                                   style={{ color: "var(--asc-live)" }}
                                 >
-                                  ⚠ Dispute open
+                                  {msgs.disputeOpen}
                                 </span>
                               )}
                             </div>

@@ -9,7 +9,9 @@ import Navbar from "@/components/Navbar";
 import ProfileNotice from "@/components/ProfileNotice";
 import TournamentDetailsRealtime from "@/components/TournamentDetailsRealtime";
 import TournamentLifecycleRefresh from "@/components/TournamentLifecycleRefresh";
-import TournamentMatchesSection from "@/components/TournamentMatchesSection";
+import TournamentMatchesSection, {
+  type TournamentMatchesSectionLabels,
+} from "@/components/TournamentMatchesSection";
 import { TournamentRegistrationPanel } from "@/components/TournamentRegistrationPanel";
 import {
   getDictionary,
@@ -152,6 +154,49 @@ const pageCopy: Record<
     vs: "ضد",
     view: "← عرض",
     moreMatchesPrefix: "أكثر · انظر القوس الكامل أدناه",
+  },
+};
+
+const matchSectionCopy: Record<Locale, TournamentMatchesSectionLabels> = {
+  en: {
+    scheduleEyebrow: "Schedule",
+    matchesTitle: "Matches",
+    roundPrefix: "Round",
+    matchCenter: "Match Center →",
+    live: "Live",
+    statuses: {
+      scheduled: "Scheduled",
+      ready: "Ready",
+      room_created: "Room Created",
+      in_progress: "Live",
+      result_pending: "Result Pending",
+      disputed: "Disputed",
+      confirmed: "Confirmed",
+      completed: "Completed",
+      cancelled: "Cancelled",
+      forfeit: "Forfeit",
+      bye: "Bye",
+    },
+  },
+  ar: {
+    scheduleEyebrow: "الجدول",
+    matchesTitle: "المباريات",
+    roundPrefix: "الجولة",
+    matchCenter: "← مركز المباريات",
+    live: "مباشر",
+    statuses: {
+      scheduled: "مجدولة",
+      ready: "جاهزة",
+      room_created: "الغرفة مُنشأة",
+      in_progress: "مباشرة",
+      result_pending: "في انتظار النتيجة",
+      disputed: "متنازع عليها",
+      confirmed: "مؤكدة",
+      completed: "منتهية",
+      cancelled: "ملغاة",
+      forfeit: "خسارة بالتنازل",
+      bye: "تأهل تلقائي",
+    },
   },
 };
 
@@ -1278,6 +1323,7 @@ export default async function TournamentDetailsPage({
                 tournamentId={id}
                 matches={tournamentMatches}
                 locale={locale}
+                labels={matchSectionCopy[locale]}
               />
             </div>
           </section>
