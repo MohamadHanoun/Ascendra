@@ -84,6 +84,24 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
   },
 };
 
+const FACEIT_STATUS_AR: Record<string, string> = {
+  FINISHED: "منتهية",
+  CANCELLED: "ملغاة",
+  ONGOING: "جارية",
+  VOTING: "تصويت",
+  READY: "جاهزة",
+  CONFIGURING: "جارٍ الإعداد",
+  MANUAL_RESULT: "نتيجة يدوية",
+};
+
+function translateFaceitStatus(status: string, locale: Locale): { text: string; isArabic: boolean } {
+  if (locale === "ar") {
+    const ar = FACEIT_STATUS_AR[status.toUpperCase()];
+    if (ar) return { text: ar, isArabic: true };
+  }
+  return { text: status, isArabic: false };
+}
+
 const INITIAL: MatchActionResult = { ok: false, message: "" };
 
 type Props = {
@@ -163,24 +181,29 @@ export default function FaceitMatchProofForm({
           </div>
 
           <div className="grid gap-1.5 text-xs">
-            {proof.faceitStatus && (
-              <div className="flex items-center justify-between">
-                <span style={{ color: "var(--asc-fg-3)" }}>
-                  {msgs.statusLabel}
-                </span>
-                <span
-                  className="font-mono font-black"
-                  style={{ color: "var(--asc-fg-1)" }}
-                >
-                  {proof.faceitStatus}
-                </span>
-              </div>
-            )}
+            {proof.faceitStatus && (() => {
+              const { text: statusText, isArabic: statusIsArabic } = translateFaceitStatus(proof.faceitStatus, locale);
+              return (
+                <div className="flex items-center justify-between">
+                  <span style={{ color: "var(--asc-fg-3)" }}>
+                    {msgs.statusLabel}
+                  </span>
+                  <span
+                    dir={statusIsArabic ? undefined : "ltr"}
+                    className="font-mono font-black"
+                    style={{ color: "var(--asc-fg-1)" }}
+                  >
+                    {statusText}
+                  </span>
+                </div>
+              );
+            })()}
 
             {proof.faceitMap && (
               <div className="flex items-center justify-between">
                 <span style={{ color: "var(--asc-fg-3)" }}>{msgs.mapLabel}</span>
                 <span
+                  dir="ltr"
                   className="font-mono font-black"
                   style={{ color: "var(--asc-fg-1)" }}
                 >
@@ -193,6 +216,7 @@ export default function FaceitMatchProofForm({
               <div className="flex items-center justify-between">
                 <span style={{ color: "var(--asc-fg-3)" }}>{msgs.scoreLabel}</span>
                 <span
+                  dir="ltr"
                   className="font-mono font-black"
                   style={{ color: "var(--asc-accent)" }}
                 >
@@ -205,6 +229,7 @@ export default function FaceitMatchProofForm({
               <div className="flex items-center justify-between">
                 <span style={{ color: "var(--asc-fg-3)" }}>{msgs.openFaceit}</span>
                 <a
+                  dir="ltr"
                   href={proof.faceitMatchUrl}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -220,6 +245,7 @@ export default function FaceitMatchProofForm({
               <div className="flex items-center justify-between">
                 <span style={{ color: "var(--asc-fg-3)" }}>{msgs.demoLabel}</span>
                 <a
+                  dir="ltr"
                   href={proof.faceitDemoUrl}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -287,6 +313,7 @@ export default function FaceitMatchProofForm({
               id={`faceit-proof-input-${matchId}`}
               name="faceitMatchInput"
               type="text"
+              dir="ltr"
               placeholder={msgs.inputPlaceholder}
               defaultValue={proof.faceitMatchId ?? ""}
               className="w-full border bg-transparent px-3 py-2 font-mono text-sm"
