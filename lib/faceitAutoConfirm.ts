@@ -74,7 +74,11 @@ export function resolveStrictMapping(
   if (naturalScore === reversedScore) return null; // ambiguous
 
   const team0MapsToA = naturalScore > reversedScore;
-  const isTeam0Winner = winnerFaceitTeamId === teams[0].faceitTeamId;
+  const winnerTeamIndex = teams.findIndex(
+    (team) => team.faceitTeamId === winnerFaceitTeamId,
+  );
+  if (winnerTeamIndex < 0) return null;
+  const isTeam0Winner = winnerTeamIndex === 0;
 
   if (team0MapsToA) {
     return {
@@ -102,7 +106,11 @@ export function resolveFactionOrderMapping(
   teamBId: string,
 ): MappingResult | null {
   if (teams.length < 2) return null;
-  const isTeam0Winner = winnerFaceitTeamId === teams[0].faceitTeamId;
+  const winnerTeamIndex = teams.findIndex(
+    (team) => team.faceitTeamId === winnerFaceitTeamId,
+  );
+  if (winnerTeamIndex < 0) return null;
+  const isTeam0Winner = winnerTeamIndex === 0;
   return {
     winnerTeamId: isTeam0Winner ? teamAId : teamBId,
     teamAScore: score.faction1,

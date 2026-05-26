@@ -219,6 +219,32 @@ describe("resolveStrictMapping", () => {
     expect(result).toBeNull();
   });
 
+  it("returns null when FACEIT winner is missing", () => {
+    const result = resolveStrictMapping(
+      TEAMS_NATURAL,
+      SCORE,
+      undefined,
+      teamAIds,
+      teamBIds,
+      TEAM_A_ID,
+      TEAM_B_ID,
+    );
+    expect(result).toBeNull();
+  });
+
+  it("returns null when FACEIT winner does not match a parsed FACEIT team", () => {
+    const result = resolveStrictMapping(
+      TEAMS_NATURAL,
+      SCORE,
+      "unknown-faceit-team",
+      teamAIds,
+      teamBIds,
+      TEAM_A_ID,
+      TEAM_B_ID,
+    );
+    expect(result).toBeNull();
+  });
+
   it("assigns correct winner when team1 wins in natural order", () => {
     const result = resolveStrictMapping(
       TEAMS_NATURAL,
@@ -281,7 +307,7 @@ describe("resolveFactionOrderMapping", () => {
     expect(result).toBeNull();
   });
 
-  it("handles undefined winnerFaceitTeamId gracefully (no match)", () => {
+  it("returns null when FACEIT winner is missing", () => {
     const result = resolveFactionOrderMapping(
       TEAMS_NATURAL,
       SCORE,
@@ -289,11 +315,17 @@ describe("resolveFactionOrderMapping", () => {
       TEAM_A_ID,
       TEAM_B_ID,
     );
-    // undefined !== FACEIT_TEAM_0_ID → isTeam0Winner=false → team1 = teamB wins
-    expect(result).toEqual({
-      winnerTeamId: TEAM_B_ID,
-      teamAScore: 13,
-      teamBScore: 10,
-    });
+    expect(result).toBeNull();
+  });
+
+  it("returns null when FACEIT winner does not match a parsed FACEIT team", () => {
+    const result = resolveFactionOrderMapping(
+      TEAMS_NATURAL,
+      SCORE,
+      "unknown-faceit-team",
+      TEAM_A_ID,
+      TEAM_B_ID,
+    );
+    expect(result).toBeNull();
   });
 });

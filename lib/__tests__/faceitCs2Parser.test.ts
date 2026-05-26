@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getFaceitMatchGameId,
+  isFaceitCs2MatchDetails,
   parseFaceitCs2MatchResult,
 } from "@/lib/faceitCs2Parser";
 import type { FaceitMatchDetails, FaceitMatchStatsResponse } from "@/lib/faceitTypes";
@@ -81,6 +83,55 @@ const minimalStats: FaceitMatchStatsResponse = {
     },
   ],
 };
+
+describe("getFaceitMatchGameId", () => {
+  it("reads FACEIT match game from game", () => {
+    expect(getFaceitMatchGameId({ match_id: MATCH_ID, game: "cs2" })).toBe(
+      "cs2",
+    );
+  });
+
+  it("reads FACEIT match game from game_id", () => {
+    expect(
+      getFaceitMatchGameId({
+        match_id: MATCH_ID,
+        game_id: "CS2",
+      } as FaceitMatchDetails),
+    ).toBe("cs2");
+  });
+
+  it("falls back to game when game_id is empty", () => {
+    expect(
+      getFaceitMatchGameId({
+        match_id: MATCH_ID,
+        game_id: "",
+        game: "cs2",
+      } as FaceitMatchDetails),
+    ).toBe("cs2");
+  });
+
+  it("returns null when FACEIT match game is missing", () => {
+    expect(getFaceitMatchGameId({ match_id: MATCH_ID })).toBeNull();
+  });
+});
+
+describe("isFaceitCs2MatchDetails", () => {
+  it("accepts CS2 match details", () => {
+    expect(isFaceitCs2MatchDetails({ match_id: MATCH_ID, game: "cs2" })).toBe(
+      true,
+    );
+  });
+
+  it("rejects non-CS2 match details", () => {
+    expect(
+      isFaceitCs2MatchDetails({ match_id: MATCH_ID, game: "valorant" }),
+    ).toBe(false);
+  });
+
+  it("rejects details without a game id", () => {
+    expect(isFaceitCs2MatchDetails({ match_id: MATCH_ID })).toBe(false);
+  });
+});
 
 describe("parseFaceitCs2MatchResult", () => {
   it("extracts match id, status, and faceit URL", () => {

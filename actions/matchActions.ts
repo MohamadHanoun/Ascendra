@@ -12,9 +12,10 @@ import {
   findRecentDotaMatches,
 } from "@/lib/gameIntegrations/steamDota2Adapter";
 import { FaceitApiError, getFaceitMatchDetails, getFaceitMatchStats } from "@/lib/faceit";
-import { parseFaceitCs2MatchResult } from "@/lib/faceitCs2Parser";
+import { isFaceitCs2MatchDetails, parseFaceitCs2MatchResult } from "@/lib/faceitCs2Parser";
 import { attemptFaceitAutoConfirm } from "@/lib/faceitAutoConfirm";
 import { extractFaceitMatchId } from "@/lib/faceitMatchId";
+import { isCs2Game } from "@/lib/isCs2Game";
 import { notifyMatchConfirmed } from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
 import type { Locale } from "@/lib/i18n";
@@ -931,7 +932,7 @@ export async function findRecentDotaMatch(
 
 // ─── Sync FACEIT CS2 match proof ─────────────────────────────────────────────
 // Stores FACEIT proof data on the TournamentMatch.
-// NEVER updates official result, winner, status, or bracket advancement.
+// Official result application is delegated to FACEIT auto-confirm when enabled.
 
 export async function syncFaceitMatchProof(
   _prevState: MatchActionResult,
@@ -952,9 +953,23 @@ export async function syncFaceitMatchProof(
 
   const match = await prisma.tournamentMatch.findUnique({
     where: { id: matchId },
-    select: { id: true, tournamentId: true, teamAId: true, teamBId: true },
+    select: {
+      id: true,
+      tournamentId: true,
+      teamAId: true,
+      teamBId: true,
+      tournament: {
+        select: {
+          game: { select: { slug: true, name: true } },
+        },
+      },
+    },
   });
   if (!match) return fail(messages.matchNotFound);
+
+  if (!isCs2Game(match.tournament.game?.slug, match.tournament.game?.name)) {
+    return fail(messages.faceitMatchNotCs2);
+  }
 
   // Permission: admin OR participant on one of the teams.
   if (!sessionUser.isAdmin) {
@@ -994,9 +1009,7 @@ export async function syncFaceitMatchProof(
     return fail(messages.faceitSyncFailed);
   }
 
-  // Soft CS2 check — game_id is present in real FACEIT responses.
-  const gameId = (details as Record<string, unknown>)["game_id"];
-  if (gameId && gameId !== "cs2") {
+  if (!isFaceitCs2MatchDetails(details)) {
     return fail(messages.faceitMatchNotCs2);
   }
 

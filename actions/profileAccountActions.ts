@@ -26,6 +26,7 @@ type AccountActionMessages = {
   faceitLookupFailed: string;
   steamRequiredForFaceit: string;
   faceitSteamMismatch: string;
+  faceitAlreadyLinked: string;
   faceitLinked: string;
   noFaceitAccount: string;
   faceitUnlinked: string;
@@ -43,6 +44,7 @@ const accountActionMessages: Record<Locale, AccountActionMessages> = {
     faceitLookupFailed: "FACEIT lookup failed. Please try again later.",
     steamRequiredForFaceit: "Link your Steam account first before connecting FACEIT.",
     faceitSteamMismatch: "Your FACEIT account is not linked to the same Steam account on your profile. Make sure both accounts use the same Steam ID.",
+    faceitAlreadyLinked: "This FACEIT account is already linked to a different Ascendra account.",
     faceitLinked: "FACEIT account connected.",
     noFaceitAccount: "No FACEIT account is linked to your profile.",
     faceitUnlinked: "FACEIT account unlinked.",
@@ -58,6 +60,7 @@ const accountActionMessages: Record<Locale, AccountActionMessages> = {
     faceitLookupFailed: "فشل البحث في FACEIT. يرجى المحاولة لاحقًا.",
     steamRequiredForFaceit: "يجب ربط حساب Steam أولًا قبل ربط FACEIT.",
     faceitSteamMismatch: "حساب FACEIT الخاص بك غير مرتبط بنفس حساب Steam الموجود في ملفك الشخصي. تأكد من أن كلا الحسابين يستخدمان نفس معرّف Steam.",
+    faceitAlreadyLinked: "حساب FACEIT هذا مرتبط مسبقًا بحساب Ascendra آخر.",
     faceitLinked: "تم ربط حساب FACEIT.",
     noFaceitAccount: "لا يوجد حساب FACEIT مرتبط بملفك الشخصي.",
     faceitUnlinked: "تم إلغاء ربط حساب FACEIT.",
@@ -206,6 +209,14 @@ export async function connectFaceitAccount(
   // Verify the FACEIT player's Steam ID matches the user's linked Steam ID
   if (!player.steam_id_64 || player.steam_id_64 !== steamAccount.externalId) {
     return fail(messages.faceitSteamMismatch);
+  }
+
+  const existingFaceitUser = await prisma.user.findUnique({
+    where: { faceitPlayerId: player.player_id },
+    select: { id: true },
+  });
+  if (existingFaceitUser && existingFaceitUser.id !== user.id) {
+    return fail(messages.faceitAlreadyLinked);
   }
 
   const cs2Game = player.games?.["cs2"];

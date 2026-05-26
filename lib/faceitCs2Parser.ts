@@ -82,6 +82,24 @@ function extractDemoUrls(details: FaceitMatchDetails): string[] {
   return details.demo_url.filter((u): u is string => typeof u === "string" && u.length > 0);
 }
 
+export function getFaceitMatchGameId(details: FaceitMatchDetails): string | null {
+  const fields = details as Record<string, unknown>;
+
+  for (const key of ["game_id", "game"]) {
+    const raw = fields[key];
+    if (typeof raw !== "string") continue;
+
+    const normalized = raw.trim().toLowerCase();
+    if (normalized.length > 0) return normalized;
+  }
+
+  return null;
+}
+
+export function isFaceitCs2MatchDetails(details: FaceitMatchDetails): boolean {
+  return getFaceitMatchGameId(details) === "cs2";
+}
+
 export function parseFaceitCs2MatchResult(input: {
   matchId: string;
   details: FaceitMatchDetails;
