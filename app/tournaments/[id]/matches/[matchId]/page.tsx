@@ -18,6 +18,7 @@ import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { isCs2Game } from "@/lib/isCs2Game";
 import { isFaceitAutoConfirmEnabled } from "@/lib/faceitAutoConfirm";
+import { normalizeFaceitParsedResultView } from "@/lib/faceitParsedResultView";
 
 export const dynamic = "force-dynamic";
 
@@ -382,6 +383,9 @@ export default async function MatchDetailPage({ params }: PageProps) {
     faceitAutoAppliedAt: match.faceitAutoAppliedAt?.toISOString() ?? null,
     faceitAutoApplyMethod: match.faceitAutoApplyMethod ?? null,
   };
+  const faceitParsedResultView = normalizeFaceitParsedResultView(
+    match.faceitParsedResult,
+  );
 
   const cs2Meta =
     match.room?.provider === "steam_cs2"
@@ -1104,6 +1108,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                   hasFaceitConnected={faceitConnected}
                   locale={locale}
                   proof={faceitProof}
+                  parsedResult={faceitParsedResultView}
                 />
               </Panel>
             )}

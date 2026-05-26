@@ -4,6 +4,10 @@ import { useActionState } from "react";
 
 import type { MatchActionResult } from "@/actions/matchActions";
 import { syncFaceitMatchProof } from "@/actions/matchActions";
+import {
+  hasFaceitPlayerRows,
+  type FaceitParsedResultView,
+} from "@/lib/faceitParsedResultView";
 import type { Locale } from "@/lib/i18n";
 
 type FaceitProof = {
@@ -28,7 +32,9 @@ type FaceitMatchProofMessages = {
   syncHint: string;
   notSyncedYet: string;
   synced: string;
+  matchIdLabel: string;
   verified: string;
+  verifiedAtLabel: string;
   pendingReview: string;
   statusLabel: string;
   mapLabel: string;
@@ -36,6 +42,17 @@ type FaceitMatchProofMessages = {
   demoLabel: string;
   openFaceit: string;
   proofSource: string;
+  playerStatsTitle: string;
+  playerLabel: string;
+  killsLabel: string;
+  deathsLabel: string;
+  assistsLabel: string;
+  adrLabel: string;
+  hsLabel: string;
+  mvpLabel: string;
+  kdLabel: string;
+  teamFallback: string;
+  winnerLabel: string;
   disclaimer: string;
   disclaimerApplied: string;
   connectRequired: string;
@@ -60,14 +77,27 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
       "If auto-confirm is enabled and team mapping is verified, the official result may be applied automatically.",
     notSyncedYet: "No FACEIT proof synced yet.",
     synced: "Synced",
+    matchIdLabel: "FACEIT match ID",
     verified: "FACEIT verified",
+    verifiedAtLabel: "Verified",
     pendingReview: "Pending review",
-    statusLabel: "FACEIT status",
+    statusLabel: "Status",
     mapLabel: "Map",
-    scoreLabel: "FACEIT score",
+    scoreLabel: "Score",
     demoLabel: "Demo",
     openFaceit: "Open FACEIT match",
-    proofSource: "Stored FACEIT proof",
+    proofSource: "FACEIT proof",
+    playerStatsTitle: "Player stats",
+    playerLabel: "Player",
+    killsLabel: "K",
+    deathsLabel: "D",
+    assistsLabel: "A",
+    adrLabel: "ADR",
+    hsLabel: "HS%",
+    mvpLabel: "MVP",
+    kdLabel: "KD",
+    teamFallback: "FACEIT team",
+    winnerLabel: "Winner",
     disclaimer:
       "Proof will be stored for review. Auto-confirm applies the official result only when it is enabled and team mapping is verified.",
     disclaimerApplied:
@@ -91,14 +121,27 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
       "إذا كان التأكيد التلقائي مفعّلًا وتم التحقق من مطابقة الفرق، يمكن اعتماد النتيجة الرسمية تلقائيًا.",
     notSyncedYet: "لم تتم مزامنة إثبات FACEIT بعد.",
     synced: "تمت المزامنة",
+    matchIdLabel: "FACEIT Match ID",
     verified: "موثق من FACEIT",
+    verifiedAtLabel: "تم التحقق",
     pendingReview: "بانتظار المراجعة",
-    statusLabel: "حالة FACEIT",
+    statusLabel: "الحالة",
     mapLabel: "الخريطة",
-    scoreLabel: "نتيجة FACEIT",
-    demoLabel: "الديمو",
+    scoreLabel: "النتيجة",
+    demoLabel: "العرض التجريبي",
     openFaceit: "فتح مباراة FACEIT",
-    proofSource: "إثبات FACEIT محفوظ",
+    proofSource: "إثبات FACEIT",
+    playerStatsTitle: "إحصائيات اللاعبين",
+    playerLabel: "اللاعب",
+    killsLabel: "K",
+    deathsLabel: "D",
+    assistsLabel: "A",
+    adrLabel: "ADR",
+    hsLabel: "HS%",
+    mvpLabel: "MVP",
+    kdLabel: "KD",
+    teamFallback: "فريق FACEIT",
+    winnerLabel: "الفائز",
     disclaimer:
       "سيُحفظ الإثبات للمراجعة. يطبّق التأكيد التلقائي النتيجة الرسمية فقط عند تفعيله والتحقق من مطابقة الفرق.",
     disclaimerApplied: "طبّق إثبات FACEIT هذا النتيجة الرسمية تلقائيًا.",
@@ -112,24 +155,6 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
   },
 };
 
-const FACEIT_STATUS_AR: Record<string, string> = {
-  FINISHED: "منتهية",
-  CANCELLED: "ملغاة",
-  ONGOING: "جارية",
-  VOTING: "تصويت",
-  READY: "جاهزة",
-  CONFIGURING: "جارٍ الإعداد",
-  MANUAL_RESULT: "نتيجة يدوية",
-};
-
-function translateFaceitStatus(status: string, locale: Locale): { text: string; isArabic: boolean } {
-  if (locale === "ar") {
-    const ar = FACEIT_STATUS_AR[status.toUpperCase()];
-    if (ar) return { text: ar, isArabic: true };
-  }
-  return { text: status, isArabic: false };
-}
-
 const INITIAL: MatchActionResult = { ok: false, message: "" };
 
 type Props = {
@@ -139,7 +164,20 @@ type Props = {
   hasFaceitConnected: boolean;
   locale: Locale;
   proof: FaceitProof;
+  parsedResult: FaceitParsedResultView;
 };
+
+function formatStat(value: number | undefined, digits = 0): string {
+  if (value === undefined) {
+    return "—";
+  }
+
+  return digits > 0 ? value.toFixed(digits) : String(value);
+}
+
+function formatOptionalScore(value: number | undefined): string | null {
+  return value === undefined ? null : String(value);
+}
 
 export default function FaceitMatchProofForm({
   matchId,
@@ -148,6 +186,7 @@ export default function FaceitMatchProofForm({
   hasFaceitConnected,
   locale,
   proof,
+  parsedResult,
 }: Props) {
   const msgs = formMessages[locale];
   const [state, formAction, pending] = useActionState(
@@ -158,6 +197,7 @@ export default function FaceitMatchProofForm({
   const canSync = isAdmin || (isParticipant && hasFaceitConnected);
   const showConnectHint = isParticipant && !hasFaceitConnected && !isAdmin;
   const isVerified = Boolean(proof.faceitVerifiedAt);
+  const hasPlayerStats = hasFaceitPlayerRows(parsedResult);
 
   const dateLocale = locale === "ar" ? "ar" : "en";
 
@@ -209,23 +249,35 @@ export default function FaceitMatchProofForm({
           </div>
 
           <div className="grid gap-1.5 text-xs">
-            {proof.faceitStatus && (() => {
-              const { text: statusText, isArabic: statusIsArabic } = translateFaceitStatus(proof.faceitStatus, locale);
-              return (
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span style={{ color: "var(--asc-fg-3)" }}>
-                    {msgs.statusLabel}
-                  </span>
-                  <span
-                    dir={statusIsArabic ? undefined : "ltr"}
-                    className="break-all text-right font-mono font-black"
-                    style={{ color: "var(--asc-fg-1)" }}
-                  >
-                    {statusText}
-                  </span>
-                </div>
-              );
-            })()}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span style={{ color: "var(--asc-fg-3)" }}>
+                {msgs.matchIdLabel}
+              </span>
+              <span
+                dir="ltr"
+                title={proof.faceitMatchId}
+                className="break-all text-right font-mono font-black"
+                style={{ color: "var(--asc-fg-1)" }}
+              >
+                {proof.faceitMatchId}
+              </span>
+            </div>
+
+            {proof.faceitStatus && (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span style={{ color: "var(--asc-fg-3)" }}>
+                  {msgs.statusLabel}
+                </span>
+                <span
+                  dir="ltr"
+                  title={proof.faceitStatus}
+                  className="break-all text-right font-mono font-black"
+                  style={{ color: "var(--asc-fg-1)" }}
+                >
+                  {proof.faceitStatus}
+                </span>
+              </div>
+            )}
 
             {proof.faceitMap && (
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -299,6 +351,20 @@ export default function FaceitMatchProofForm({
               </div>
             )}
 
+            {proof.faceitVerifiedAt && (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span style={{ color: "var(--asc-fg-3)" }}>
+                  {msgs.verifiedAtLabel}
+                </span>
+                <span className="text-right" style={{ color: "var(--asc-fg-3)" }}>
+                  {new Date(proof.faceitVerifiedAt).toLocaleString(dateLocale, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </span>
+              </div>
+            )}
+
             {proof.faceitAutoAppliedAt && (
               <>
                 <div
@@ -310,7 +376,7 @@ export default function FaceitMatchProofForm({
                     className="font-black"
                     style={{ color: "var(--asc-green)" }}
                   >
-                    {msgs.autoApplied}
+                    {msgs.autoAppliedAt}
                   </span>
                   <span className="text-right" style={{ color: "var(--asc-fg-3)" }}>
                     {new Date(proof.faceitAutoAppliedAt).toLocaleString(dateLocale, {
@@ -343,6 +409,155 @@ export default function FaceitMatchProofForm({
         <p className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
           {msgs.notSyncedYet}
         </p>
+      )}
+
+      {hasPlayerStats && (
+        <div className="grid gap-3">
+          <p
+            className="text-[10px] font-black uppercase tracking-[0.14em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            {msgs.playerStatsTitle}
+          </p>
+
+          {parsedResult.teams.map((team, teamIndex) => {
+            if (team.players.length === 0) {
+              return null;
+            }
+
+            const teamScore = formatOptionalScore(team.finalScore);
+            const teamName =
+              team.name ?? `${msgs.teamFallback} ${teamIndex + 1}`;
+
+            return (
+              <div
+                key={team.faceitTeamId ?? `${teamName}-${teamIndex}`}
+                className="overflow-hidden border"
+                style={{
+                  borderColor: team.won
+                    ? "oklch(0.55 0.14 150 / 0.35)"
+                    : "var(--asc-line-soft)",
+                  background: "var(--asc-bg-2)",
+                }}
+              >
+                <div
+                  className="flex flex-wrap items-center justify-between gap-2 px-3 py-2"
+                  style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+                >
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <span
+                      dir="ltr"
+                      title={team.faceitTeamId ?? teamName}
+                      className="max-w-full truncate font-mono text-xs font-black"
+                      style={{ color: "var(--asc-fg-1)" }}
+                    >
+                      {teamName}
+                    </span>
+                    {team.won && (
+                      <span
+                        className="border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.10em]"
+                        style={{
+                          color: "var(--asc-green)",
+                          borderColor: "oklch(0.55 0.14 150 / 0.45)",
+                          background: "oklch(0.25 0.12 150 / 0.14)",
+                        }}
+                      >
+                        {msgs.winnerLabel}
+                      </span>
+                    )}
+                  </div>
+                  {teamScore && (
+                    <span
+                      dir="ltr"
+                      className="font-mono text-xs font-black"
+                      style={{ color: "var(--asc-accent)" }}
+                    >
+                      {teamScore}
+                    </span>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[640px] text-xs">
+                    <thead>
+                      <tr style={{ color: "var(--asc-fg-3)" }}>
+                        <th className="px-3 py-2 text-left font-black">
+                          {msgs.playerLabel}
+                        </th>
+                        <th className="px-2 py-2 text-right font-black">
+                          {msgs.killsLabel}
+                        </th>
+                        <th className="px-2 py-2 text-right font-black">
+                          {msgs.deathsLabel}
+                        </th>
+                        <th className="px-2 py-2 text-right font-black">
+                          {msgs.assistsLabel}
+                        </th>
+                        <th className="px-2 py-2 text-right font-black">
+                          {msgs.adrLabel}
+                        </th>
+                        <th className="px-2 py-2 text-right font-black">
+                          {msgs.hsLabel}
+                        </th>
+                        <th className="px-2 py-2 text-right font-black">
+                          {msgs.mvpLabel}
+                        </th>
+                        <th className="px-3 py-2 text-right font-black">
+                          {msgs.kdLabel}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {team.players.map((player, playerIndex) => (
+                        <tr
+                          key={
+                            player.faceitPlayerId ??
+                            `${player.nickname}-${playerIndex}`
+                          }
+                          style={{
+                            borderTop: "1px solid var(--asc-line-soft)",
+                            color: "var(--asc-fg-1)",
+                          }}
+                        >
+                          <td className="px-3 py-2">
+                            <span
+                              dir="ltr"
+                              title={player.faceitPlayerId ?? player.nickname}
+                              className="block max-w-[14rem] truncate font-mono font-black"
+                            >
+                              {player.nickname}
+                            </span>
+                          </td>
+                          <td dir="ltr" className="px-2 py-2 text-right font-mono">
+                            {formatStat(player.kills)}
+                          </td>
+                          <td dir="ltr" className="px-2 py-2 text-right font-mono">
+                            {formatStat(player.deaths)}
+                          </td>
+                          <td dir="ltr" className="px-2 py-2 text-right font-mono">
+                            {formatStat(player.assists)}
+                          </td>
+                          <td dir="ltr" className="px-2 py-2 text-right font-mono">
+                            {formatStat(player.adr, 1)}
+                          </td>
+                          <td dir="ltr" className="px-2 py-2 text-right font-mono">
+                            {formatStat(player.headshotsPercent)}
+                          </td>
+                          <td dir="ltr" className="px-2 py-2 text-right font-mono">
+                            {formatStat(player.mvps)}
+                          </td>
+                          <td dir="ltr" className="px-3 py-2 text-right font-mono">
+                            {formatStat(player.kdRatio, 2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* Disclaimer */}
