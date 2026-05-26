@@ -58,6 +58,7 @@ type ProfileTabsProps = {
   userId: string;
   isGuildMember: boolean;
   dbGames: Game[];
+  tabLabels: { stats: string; teams: string; history: string; achievements: string };
   labels: {
     by: string;
     members: string;
@@ -78,6 +79,17 @@ type ProfileTabsProps = {
     result: string;
     best: string;
     pts: string;
+    confirmationEyebrow: string;
+    cancelLabel: string;
+    acceptTitle: string;
+    declineTitle: string;
+    joinTeamTemplate: string;
+    declineTeamTemplate: string;
+    acceptingLabel: string;
+    decliningLabel: string;
+    creatingLabel: string;
+    createTeamDialogTitle: string;
+    createTeamDialogDesc: string;
   };
   sectionLabels: {
     invitations: string;
@@ -92,6 +104,23 @@ type ProfileTabsProps = {
     discordRequiredMeta: string;
     tournamentHistory: string;
     noTournamentResults: string;
+    performanceEyebrow: string;
+    pointHistoryTitle: string;
+    noTournamentData: string;
+    recentMatchesEyebrow: string;
+    matchHistoryTitle: string;
+    noResultsYet: string;
+    fullRecordEyebrow: string;
+    tournamentHistoryTitle: string;
+    achievementsEyebrow: string;
+    achievementsTitle: string;
+    comingSoon: string;
+    comingSoonDesc: string;
+    tableColTournament: string;
+    tableColTeam: string;
+    tableColPlace: string;
+    tableColPts: string;
+    tableColDate: string;
   };
   statuses: {
     active: string;
@@ -102,13 +131,6 @@ type ProfileTabsProps = {
   };
   heroLabels: { team: string; teams: string };
 };
-
-const TABS: { id: TabId; label: string }[] = [
-  { id: "stats", label: "Stats" },
-  { id: "teams", label: "Teams" },
-  { id: "history", label: "History" },
-  { id: "achievements", label: "Achievements" },
-];
 
 function getCount(n: number, singular: string, plural: string) {
   return n === 1 ? singular : plural;
@@ -160,6 +182,8 @@ function SectionHeader({ eyebrow, title, action }: { eyebrow: string; title: str
   );
 }
 
+void SectionHeader;
+
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <div
@@ -172,17 +196,31 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   );
 }
 
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
+function CustomTooltip({
+  active,
+  payload,
+  label,
+  ptsLabel,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string;
+  ptsLabel: string;
+}) {
   if (!active || !payload?.length) return null;
   return (
     <div className="border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-0)" }}>
       <p style={{ color: "var(--asc-fg-3)", marginBottom: 2 }}>{label}</p>
-      <p style={{ color: "var(--asc-accent)" }}>{payload[0].value.toLocaleString()} PTS</p>
+      <p style={{ color: "var(--asc-accent)" }}>{payload[0].value.toLocaleString()} {ptsLabel}</p>
     </div>
   );
 }
 
-function StatsTab({ tournamentResults, labels }: Pick<ProfileTabsProps, "tournamentResults" | "labels">) {
+function StatsTab({
+  tournamentResults,
+  labels,
+  sectionLabels,
+}: Pick<ProfileTabsProps, "tournamentResults" | "labels" | "sectionLabels">) {
   const recent = tournamentResults.slice(0, 10);
   const chronological = recent.slice().reverse();
   const chartData = chronological.map((r, i) => {
@@ -197,12 +235,18 @@ function StatsTab({ tournamentResults, labels }: Pick<ProfileTabsProps, "tournam
     <div className="grid gap-6">
       <Card>
         <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ PERFORMANCE</p>
-          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>POINT HISTORY</h3>
+          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
+            ▲ {sectionLabels.performanceEyebrow}
+          </p>
+          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+            {sectionLabels.pointHistoryTitle}
+          </h3>
         </div>
         <div className="p-5">
           {chartData.length === 0 ? (
-            <p className="py-8 text-center text-sm" style={{ color: "var(--asc-fg-3)" }}>No tournament data yet.</p>
+            <p className="py-8 text-center text-sm" style={{ color: "var(--asc-fg-3)" }}>
+              {sectionLabels.noTournamentData}
+            </p>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
@@ -218,7 +262,7 @@ function StatsTab({ tournamentResults, labels }: Pick<ProfileTabsProps, "tournam
                   axisLine={false}
                   tickLine={false}
                 />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip ptsLabel={sectionLabels.tableColPts} />} />
                 <Line
                   type="monotone"
                   dataKey="points"
@@ -235,22 +279,26 @@ function StatsTab({ tournamentResults, labels }: Pick<ProfileTabsProps, "tournam
 
       <Card>
         <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ RECENT MATCHES</p>
-          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>MATCH HISTORY</h3>
+          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
+            ▲ {sectionLabels.recentMatchesEyebrow}
+          </p>
+          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+            {sectionLabels.matchHistoryTitle}
+          </h3>
         </div>
         {tournamentResults.length === 0 ? (
-          <p className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>No results yet.</p>
+          <p className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>{sectionLabels.noResultsYet}</p>
         ) : (
           <>
             <div
               className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] md:grid md:grid-cols-[minmax(0,1fr)_120px_80px_80px_100px]"
               style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
             >
-              <span>Tournament</span>
-              <span>Team</span>
-              <span>Place</span>
-              <span>PTS</span>
-              <span>Date</span>
+              <span>{sectionLabels.tableColTournament}</span>
+              <span>{sectionLabels.tableColTeam}</span>
+              <span>{sectionLabels.tableColPlace}</span>
+              <span>{sectionLabels.tableColPts}</span>
+              <span>{sectionLabels.tableColDate}</span>
             </div>
             {tournamentResults.slice(0, 6).map((r) => {
               const teamName = r.snapshotTeamName ?? r.team.name;
@@ -294,15 +342,12 @@ function InviteResponseButton({
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
-
   const isAccept = response === "accepted";
 
   function runAction() {
     const formData = new FormData();
-
     formData.set("inviteId", inviteId);
     formData.set("response", response);
-
     startTransition(async () => {
       await respondToTeamInvite(formData);
       setOpen(false);
@@ -315,22 +360,12 @@ function InviteResponseButton({
         type="button"
         onClick={() => setOpen(true)}
         disabled={pending}
-        className={`px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${
-          isAccept ? "" : "border"
-        }`}
+        className={`px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${isAccept ? "" : "border"}`}
         style={{
           ...(isAccept
-            ? {
-                background: "oklch(0.55 0.14 150)",
-                color: "#fff",
-              }
-            : {
-                borderColor: "oklch(0.50 0.20 25 / 0.5)",
-                color: "var(--asc-live)",
-                background: "transparent",
-              }),
-          clipPath:
-            "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+            ? { background: "oklch(0.55 0.14 150)", color: "#fff" }
+            : { borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }),
+          clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
         }}
       >
         {isAccept ? labels.accept : labels.decline}
@@ -338,18 +373,16 @@ function InviteResponseButton({
 
       <ConfirmDialogPortal
         open={open}
-        eyebrow="Confirmation"
-        title={
-          isAccept ? "Accept team invitation?" : "Decline team invitation?"
-        }
+        eyebrow={labels.confirmationEyebrow}
+        title={isAccept ? labels.acceptTitle : labels.declineTitle}
         description={
           isAccept
-            ? `Join ${teamName}? You will become a member of this team.`
-            : `Decline the invitation to join ${teamName}?`
+            ? labels.joinTeamTemplate.replace("{team}", teamName)
+            : labels.declineTeamTemplate.replace("{team}", teamName)
         }
         confirmLabel={isAccept ? labels.accept : labels.decline}
-        cancelLabel="Cancel"
-        pendingLabel={isAccept ? "Accepting..." : "Declining..."}
+        cancelLabel={labels.cancelLabel}
+        pendingLabel={isAccept ? labels.acceptingLabel : labels.decliningLabel}
         pending={pending}
         variant={isAccept ? "success" : "danger"}
         onConfirm={runAction}
@@ -377,13 +410,8 @@ function CreateTeamForm({
 
   function runAction() {
     const form = formRef.current;
-
-    if (!form) {
-      return;
-    }
-
+    if (!form) return;
     const formData = new FormData(form);
-
     startTransition(async () => {
       await createTeam(formData);
       setOpen(false);
@@ -395,34 +423,22 @@ function CreateTeamForm({
       <form ref={formRef} onSubmit={handleSubmit} className="grid gap-5 p-5">
         <div className="relative z-50 grid gap-5 md:grid-cols-2">
           <label className="grid gap-2">
-            <span
-              className="text-xs font-black uppercase tracking-[0.12em]"
-              style={{ color: "var(--asc-fg-3)" }}
-            >
+            <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
               {labels.teamName}
             </span>
-
             <input
               name="name"
               required
               placeholder={labels.teamNamePlaceholder}
               className="border px-4 py-3 outline-none transition"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                background: "var(--asc-bg-2)",
-                color: "var(--asc-fg-0)",
-              }}
+              style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-0)" }}
             />
           </label>
 
           <label className="grid gap-2">
-            <span
-              className="text-xs font-black uppercase tracking-[0.12em]"
-              style={{ color: "var(--asc-fg-3)" }}
-            >
+            <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
               {labels.game}
             </span>
-
             <CustomSelect
               name="gameSlug"
               required
@@ -443,22 +459,21 @@ function CreateTeamForm({
           style={{
             background: "var(--asc-accent-2)",
             boxShadow: "0 0 20px var(--asc-accent-glow)",
-            clipPath:
-              "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+            clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
           }}
         >
-          {pending ? "Creating..." : labels.createTeam}
+          {pending ? labels.creatingLabel : labels.createTeam}
         </button>
       </form>
 
       <ConfirmDialogPortal
         open={open}
-        eyebrow="Confirmation"
-        title="Create team?"
-        description="Create this team with the selected game. You will become the team leader."
+        eyebrow={labels.confirmationEyebrow}
+        title={labels.createTeamDialogTitle}
+        description={labels.createTeamDialogDesc}
         confirmLabel={labels.createTeam}
-        cancelLabel="Cancel"
-        pendingLabel="Creating..."
+        cancelLabel={labels.cancelLabel}
+        pendingLabel={labels.creatingLabel}
         pending={pending}
         variant="primary"
         onConfirm={runAction}
@@ -475,23 +490,11 @@ function TeamsTab({
     <div className="grid gap-6">
       {invitations.length > 0 && (
         <Card>
-          <div
-            className="px-5 py-4"
-            style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-          >
-            <p
-              className="text-xs font-black uppercase tracking-[0.16em]"
-              style={{ color: "var(--asc-accent)" }}
-            >
+          <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+            <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
               ▲ {sectionLabels.invitations}
             </p>
-            <h3
-              className="mt-1 text-xl font-black uppercase"
-              style={{
-                color: "var(--asc-fg-0)",
-                fontFamily: "'Barlow Condensed', sans-serif",
-              }}
-            >
+            <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
               {sectionLabels.teamInvitations}
             </h3>
           </div>
@@ -502,36 +505,16 @@ function TeamsTab({
               style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
             >
               <div>
-                <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
-                  {inv.team.name}
-                </p>
-                <p
-                  className="mt-1 text-sm"
-                  style={{ color: "var(--asc-fg-3)" }}
-                >
+                <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>{inv.team.name}</p>
+                <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                   {inv.team.game?.name ?? "—"} · {inv.team.members.length}{" "}
-                  {getCount(
-                    inv.team.members.length,
-                    labels.member,
-                    labels.members,
-                  )}{" "}
+                  {getCount(inv.team.members.length, labels.member, labels.members)}{" "}
                   · {labels.by} {inv.invitedBy.username}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <InviteResponseButton
-                  inviteId={inv.id}
-                  response="accepted"
-                  teamName={inv.team.name}
-                  labels={labels}
-                />
-
-                <InviteResponseButton
-                  inviteId={inv.id}
-                  response="rejected"
-                  teamName={inv.team.name}
-                  labels={labels}
-                />
+                <InviteResponseButton inviteId={inv.id} response="accepted" teamName={inv.team.name} labels={labels} />
+                <InviteResponseButton inviteId={inv.id} response="rejected" teamName={inv.team.name} labels={labels} />
               </div>
             </div>
           ))}
@@ -539,35 +522,19 @@ function TeamsTab({
       )}
 
       <Card>
-        <div
-          className="px-5 py-4"
-          style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-        >
-          <p
-            className="text-xs font-black uppercase tracking-[0.16em]"
-            style={{ color: "var(--asc-accent)" }}
-          >
+        <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
             ▲ {sectionLabels.myTeams}
           </p>
-          <h3
-            className="mt-1 text-xl font-black uppercase"
-            style={{
-              color: "var(--asc-fg-0)",
-              fontFamily: "'Barlow Condensed', sans-serif",
-            }}
-          >
+          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
             {sectionLabels.myTeams} · {teams.length}{" "}
             {getCount(teams.length, heroLabels.team, heroLabels.teams)}
           </h3>
         </div>
         {teams.length === 0 ? (
           <div className="p-5">
-            <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
-              {sectionLabels.noTeamsTitle}
-            </p>
-            <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-              {sectionLabels.noTeamsDescription}
-            </p>
+            <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>{sectionLabels.noTeamsTitle}</p>
+            <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>{sectionLabels.noTeamsDescription}</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2">
@@ -575,75 +542,28 @@ function TeamsTab({
               const membership = team.members.find((m) => m.userId === userId);
               const isLeader = team.leaderId === userId;
               return (
-                <article
-                  key={team.id}
-                  className="relative border-b p-5 transition"
-                  style={{ borderColor: "var(--asc-line-soft)" }}
-                >
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      position: "absolute",
-                      top: 9,
-                      left: 9,
-                      width: 8,
-                      height: 8,
-                      borderTop: "1px solid var(--asc-accent)",
-                      borderLeft: "1px solid var(--asc-accent)",
-                      opacity: 0.5,
-                    }}
-                  />
+                <article key={team.id} className="relative border-b p-5 transition" style={{ borderColor: "var(--asc-line-soft)" }}>
+                  <div aria-hidden="true" style={{ position: "absolute", top: 9, left: 9, width: 8, height: 8, borderTop: "1px solid var(--asc-accent)", borderLeft: "1px solid var(--asc-accent)", opacity: 0.5 }} />
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p
-                        className="truncate font-black"
-                        style={{
-                          color: "var(--asc-fg-0)",
-                          fontFamily: "'Barlow Condensed', sans-serif",
-                          fontSize: 18,
-                        }}
-                      >
+                      <p className="truncate font-black" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18 }}>
                         {team.name}
                       </p>
-                      <p
-                        className="mt-1 text-xs"
-                        style={{ color: "var(--asc-fg-3)" }}
-                      >
+                      <p className="mt-1 text-xs" style={{ color: "var(--asc-fg-3)" }}>
                         {team.game?.name ?? "—"} · {team.members.length}{" "}
-                        {getCount(
-                          team.members.length,
-                          labels.member,
-                          labels.members,
-                        )}
+                        {getCount(team.members.length, labels.member, labels.members)}
                       </p>
                     </div>
                     <StatusBadge status={team.status} statuses={statuses} />
                   </div>
                   {team.rejectionReason && (
-                    <p
-                      className="mt-2 text-xs"
-                      style={{ color: "var(--asc-live)" }}
-                    >
-                      {team.rejectionReason}
-                    </p>
+                    <p className="mt-2 text-xs" style={{ color: "var(--asc-live)" }}>{team.rejectionReason}</p>
                   )}
                   <div className="mt-4 flex items-center justify-between">
-                    <p
-                      className="text-xs font-black uppercase tracking-[0.12em]"
-                      style={{ color: "var(--asc-fg-3)" }}
-                    >
-                      {isLeader
-                        ? labels.leader
-                        : (membership?.role ?? statuses.member)}
+                    <p className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+                      {isLeader ? labels.leader : (membership?.role ?? statuses.member)}
                     </p>
-                    <Link
-                      href={`/profile/teams/${team.id}`}
-                      className="px-4 py-2 text-xs font-black transition hover:opacity-90"
-                      style={{
-                        background: "var(--asc-accent-2)",
-                        color: "#fff",
-                      }}
-                    >
+                    <Link href={`/profile/teams/${team.id}`} className="px-4 py-2 text-xs font-black transition hover:opacity-90" style={{ background: "var(--asc-accent-2)", color: "#fff" }}>
                       {labels.open}
                     </Link>
                   </div>
@@ -655,51 +575,24 @@ function TeamsTab({
       </Card>
 
       <Card>
-        <div
-          className="px-5 py-4"
-          style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-        >
-          <p
-            className="text-xs font-black uppercase tracking-[0.16em]"
-            style={{ color: "var(--asc-accent)" }}
-          >
+        <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
             ▲ {sectionLabels.createTeam}
           </p>
-          <h3
-            className="mt-1 text-xl font-black uppercase"
-            style={{
-              color: "var(--asc-fg-0)",
-              fontFamily: "'Barlow Condensed', sans-serif",
-            }}
-          >
+          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
             {sectionLabels.startNewTeam}
           </h3>
           <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-            {isGuildMember
-              ? sectionLabels.createTeamMeta
-              : sectionLabels.discordRequiredMeta}
+            {isGuildMember ? sectionLabels.createTeamMeta : sectionLabels.discordRequiredMeta}
           </p>
         </div>
         {isGuildMember ? (
           <CreateTeamForm dbGames={dbGames} labels={labels} />
         ) : (
           <div className="p-5">
-            <div
-              className="border p-4"
-              style={{
-                borderColor: "oklch(0.50 0.20 285 / 0.4)",
-                background: "var(--asc-accent-dim)",
-              }}
-            >
-              <p className="font-black" style={{ color: "var(--asc-accent)" }}>
-                {labels.ascendraDiscordRequired}
-              </p>
-              <p
-                className="mt-2 text-sm leading-6"
-                style={{ color: "var(--asc-fg-2)" }}
-              >
-                {labels.discordRequiredDescription}
-              </p>
+            <div className="border p-4" style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" }}>
+              <p className="font-black" style={{ color: "var(--asc-accent)" }}>{labels.ascendraDiscordRequired}</p>
+              <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>{labels.discordRequiredDescription}</p>
             </div>
           </div>
         )}
@@ -708,28 +601,35 @@ function TeamsTab({
   );
 }
 
-function HistoryTab({ tournamentResults, labels }: Pick<ProfileTabsProps, "tournamentResults" | "labels">) {
+function HistoryTab({
+  tournamentResults,
+  labels,
+  sectionLabels,
+}: Pick<ProfileTabsProps, "tournamentResults" | "labels" | "sectionLabels">) {
   return (
     <Card>
       <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-        <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ FULL RECORD</p>
+        <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
+          ▲ {sectionLabels.fullRecordEyebrow}
+        </p>
         <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
-          TOURNAMENT HISTORY · {tournamentResults.length} {getCount(tournamentResults.length, labels.result, labels.results)}
+          {sectionLabels.tournamentHistoryTitle} · {tournamentResults.length}{" "}
+          {getCount(tournamentResults.length, labels.result, labels.results)}
         </h3>
       </div>
       {tournamentResults.length === 0 ? (
-        <p className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>No tournament results yet.</p>
+        <p className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>{sectionLabels.noTournamentResults}</p>
       ) : (
         <>
           <div
             className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] md:grid md:grid-cols-[minmax(0,1fr)_130px_80px_80px_110px]"
             style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
           >
-            <span>Tournament</span>
-            <span>Team</span>
-            <span>Place</span>
-            <span>PTS</span>
-            <span>Date</span>
+            <span>{sectionLabels.tableColTournament}</span>
+            <span>{sectionLabels.tableColTeam}</span>
+            <span>{sectionLabels.tableColPlace}</span>
+            <span>{sectionLabels.tableColPts}</span>
+            <span>{sectionLabels.tableColDate}</span>
           </div>
           {tournamentResults.map((r) => {
             const teamName = r.snapshotTeamName ?? r.team.name;
@@ -759,16 +659,24 @@ function HistoryTab({ tournamentResults, labels }: Pick<ProfileTabsProps, "tourn
   );
 }
 
-function AchievementsTab() {
+function AchievementsTab({ sectionLabels }: { sectionLabels: ProfileTabsProps["sectionLabels"] }) {
   return (
     <Card>
       <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-        <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ PLAYER ACHIEVEMENTS</p>
-        <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>ACHIEVEMENTS</h3>
+        <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
+          ▲ {sectionLabels.achievementsEyebrow}
+        </p>
+        <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+          {sectionLabels.achievementsTitle}
+        </h3>
       </div>
       <div className="p-10 text-center">
-        <p className="text-4xl font-black uppercase" style={{ color: "var(--asc-fg-3)", fontFamily: "'Barlow Condensed', sans-serif", opacity: 0.4 }}>COMING SOON</p>
-        <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>Achievements will be unlocked as you compete in tournaments.</p>
+        <p className="text-4xl font-black uppercase" style={{ color: "var(--asc-fg-3)", fontFamily: "'Barlow Condensed', sans-serif", opacity: 0.4 }}>
+          {sectionLabels.comingSoon}
+        </p>
+        <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+          {sectionLabels.comingSoonDesc}
+        </p>
       </div>
     </Card>
   );
@@ -777,14 +685,18 @@ function AchievementsTab() {
 export default function ProfileTabs(props: ProfileTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>("stats");
 
+  const tabs: { id: TabId; label: string }[] = [
+    { id: "stats", label: props.tabLabels.stats },
+    { id: "teams", label: props.tabLabels.teams },
+    { id: "history", label: props.tabLabels.history },
+    { id: "achievements", label: props.tabLabels.achievements },
+  ];
+
   return (
     <div>
       {/* Tab navigation */}
-      <div
-        className="mb-6 flex"
-        style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-      >
-        {TABS.map((tab) => {
+      <div className="mb-6 flex" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+        {tabs.map((tab) => {
           const isActive = tab.id === activeTab;
           return (
             <button
@@ -806,7 +718,7 @@ export default function ProfileTabs(props: ProfileTabsProps) {
 
       {/* Tab content */}
       {activeTab === "stats" && (
-        <StatsTab tournamentResults={props.tournamentResults} labels={props.labels} />
+        <StatsTab tournamentResults={props.tournamentResults} labels={props.labels} sectionLabels={props.sectionLabels} />
       )}
       {activeTab === "teams" && (
         <TeamsTab
@@ -822,9 +734,9 @@ export default function ProfileTabs(props: ProfileTabsProps) {
         />
       )}
       {activeTab === "history" && (
-        <HistoryTab tournamentResults={props.tournamentResults} labels={props.labels} />
+        <HistoryTab tournamentResults={props.tournamentResults} labels={props.labels} sectionLabels={props.sectionLabels} />
       )}
-      {activeTab === "achievements" && <AchievementsTab />}
+      {activeTab === "achievements" && <AchievementsTab sectionLabels={props.sectionLabels} />}
     </div>
   );
 }

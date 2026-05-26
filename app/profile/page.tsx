@@ -48,6 +48,12 @@ type ProfileMessages = {
     invites: string;
     invite: string;
   };
+  tabLabels: {
+    stats: string;
+    teams: string;
+    history: string;
+    achievements: string;
+  };
   sections: {
     invitations: string;
     teamInvitations: string;
@@ -65,6 +71,23 @@ type ProfileMessages = {
     progress: string;
     tournamentHistory: string;
     noTournamentResults: string;
+    performanceEyebrow: string;
+    pointHistoryTitle: string;
+    noTournamentData: string;
+    recentMatchesEyebrow: string;
+    matchHistoryTitle: string;
+    noResultsYet: string;
+    fullRecordEyebrow: string;
+    tournamentHistoryTitle: string;
+    achievementsEyebrow: string;
+    achievementsTitle: string;
+    comingSoon: string;
+    comingSoonDesc: string;
+    tableColTournament: string;
+    tableColTeam: string;
+    tableColPlace: string;
+    tableColPts: string;
+    tableColDate: string;
   };
   labels: {
     by: string;
@@ -86,6 +109,17 @@ type ProfileMessages = {
     result: string;
     best: string;
     pts: string;
+    confirmationEyebrow: string;
+    cancelLabel: string;
+    acceptTitle: string;
+    declineTitle: string;
+    joinTeamTemplate: string;
+    declineTeamTemplate: string;
+    acceptingLabel: string;
+    decliningLabel: string;
+    creatingLabel: string;
+    createTeamDialogTitle: string;
+    createTeamDialogDesc: string;
   };
   statuses: {
     active: string;
@@ -113,6 +147,12 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       invites: "invites",
       invite: "invite",
     },
+    tabLabels: {
+      stats: "Stats",
+      teams: "Teams",
+      history: "History",
+      achievements: "Achievements",
+    },
     sections: {
       invitations: "Invitations",
       teamInvitations: "Team invitations",
@@ -130,6 +170,23 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       progress: "Progress",
       tournamentHistory: "Tournament history",
       noTournamentResults: "No tournament results yet.",
+      performanceEyebrow: "PERFORMANCE",
+      pointHistoryTitle: "POINT HISTORY",
+      noTournamentData: "No tournament data yet.",
+      recentMatchesEyebrow: "RECENT MATCHES",
+      matchHistoryTitle: "MATCH HISTORY",
+      noResultsYet: "No results yet.",
+      fullRecordEyebrow: "FULL RECORD",
+      tournamentHistoryTitle: "TOURNAMENT HISTORY",
+      achievementsEyebrow: "PLAYER ACHIEVEMENTS",
+      achievementsTitle: "ACHIEVEMENTS",
+      comingSoon: "COMING SOON",
+      comingSoonDesc: "Achievements will be unlocked as you compete in tournaments.",
+      tableColTournament: "Tournament",
+      tableColTeam: "Team",
+      tableColPlace: "Place",
+      tableColPts: "PTS",
+      tableColDate: "Date",
     },
     labels: {
       by: "by",
@@ -152,6 +209,17 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       result: "result",
       best: "Best",
       pts: "pts",
+      confirmationEyebrow: "Confirmation",
+      cancelLabel: "Cancel",
+      acceptTitle: "Accept team invitation?",
+      declineTitle: "Decline team invitation?",
+      joinTeamTemplate: "Join {team}? You will become a member of this team.",
+      declineTeamTemplate: "Decline the invitation to join {team}?",
+      acceptingLabel: "Accepting...",
+      decliningLabel: "Declining...",
+      creatingLabel: "Creating...",
+      createTeamDialogTitle: "Create team?",
+      createTeamDialogDesc: "Create this team with the selected game. You will become the team leader.",
     },
     statuses: {
       active: "Active",
@@ -178,6 +246,12 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       invites: "دعوات",
       invite: "دعوة",
     },
+    tabLabels: {
+      stats: "الإحصاءات",
+      teams: "الفرق",
+      history: "السجل",
+      achievements: "الإنجازات",
+    },
     sections: {
       invitations: "الدعوات",
       teamInvitations: "دعوات الفرق",
@@ -195,6 +269,23 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       progress: "التقدم",
       tournamentHistory: "سجل البطولات",
       noTournamentResults: "لا توجد نتائج بطولات حاليًا.",
+      performanceEyebrow: "الأداء",
+      pointHistoryTitle: "سجل النقاط",
+      noTournamentData: "لا توجد بيانات بطولات بعد.",
+      recentMatchesEyebrow: "المباريات الأخيرة",
+      matchHistoryTitle: "سجل المباريات",
+      noResultsYet: "لا توجد نتائج بعد.",
+      fullRecordEyebrow: "السجل الكامل",
+      tournamentHistoryTitle: "سجل البطولات",
+      achievementsEyebrow: "إنجازات اللاعب",
+      achievementsTitle: "الإنجازات",
+      comingSoon: "قريبًا",
+      comingSoonDesc: "ستُفتح الإنجازات مع مشاركتك في البطولات.",
+      tableColTournament: "البطولة",
+      tableColTeam: "الفريق",
+      tableColPlace: "المركز",
+      tableColPts: "النقاط",
+      tableColDate: "التاريخ",
     },
     labels: {
       by: "بواسطة",
@@ -217,6 +308,17 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       result: "نتيجة",
       best: "أفضل مركز",
       pts: "نقطة",
+      confirmationEyebrow: "تأكيد",
+      cancelLabel: "إلغاء",
+      acceptTitle: "قبول دعوة الفريق؟",
+      declineTitle: "رفض دعوة الفريق؟",
+      joinTeamTemplate: "الانضمام إلى {team}؟ ستصبح عضوًا في هذا الفريق.",
+      declineTeamTemplate: "رفض دعوة الانضمام إلى {team}؟",
+      acceptingLabel: "جارٍ القبول...",
+      decliningLabel: "جارٍ الرفض...",
+      creatingLabel: "جارٍ الإنشاء...",
+      createTeamDialogTitle: "إنشاء فريق؟",
+      createTeamDialogDesc: "إنشاء هذا الفريق مع اللعبة المختارة. ستصبح قائد الفريق.",
     },
     statuses: {
       active: "نشط",
@@ -800,6 +902,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               userId={user.id}
               isGuildMember={user.isGuildMember}
               dbGames={dbGames}
+              tabLabels={messages.tabLabels}
               labels={messages.labels}
               sectionLabels={messages.sections}
               statuses={messages.statuses}

@@ -13,6 +13,8 @@ import DotaMatchIdForm from "@/components/DotaMatchIdForm";
 import ValorantMatchIdForm from "@/components/ValorantMatchIdForm";
 import Navbar from "@/components/Navbar";
 import { prisma } from "@/lib/prisma";
+import type { Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18nServer";
 
 export const dynamic = "force-dynamic";
 
@@ -21,38 +23,125 @@ type PageProps = {
   searchParams: Promise<{ message?: string; error?: string }>;
 };
 
-export async function generateMetadata({
-  params,
-}: PageProps): Promise<Metadata> {
-  const { matchId } = await params;
-  const match = await prisma.tournamentMatch.findUnique({
-    where: { id: matchId },
-    select: { roundNumber: true, matchNumber: true },
-  });
-  return {
-    title: match
-      ? `Round ${match.roundNumber} · Match ${match.matchNumber}`
-      : "Match Detail",
+// ─── i18n ─────────────────────────────────────────────────────────────────────
+
+type MatchStatuses = {
+  scheduled: string; ready: string; room_created: string; in_progress: string;
+  result_pending: string; disputed: string; confirmed: string; completed: string;
+  cancelled: string; forfeit: string; bye: string;
+};
+
+type ReportStatuses = { submitted: string; confirmed: string; rejected: string; superseded: string };
+
+type MatchDetailMessages = {
+  meta: { round: string; match: string; matchDetail: string };
+  breadcrumb: { tournaments: string; matchCenter: string };
+  vs: { teamA: string; teamB: string; winner: string; vs: string; scheduled: string; winnerBadge: string };
+  matchStatuses: MatchStatuses;
+  reportStatuses: ReportStatuses;
+  gameRoom: { eyebrow: string; title: string; roomCode: string; password: string; joinUrl: string };
+  cs2: {
+    dedicatedMode: string; manualMode: string; serverDetailsTitle: string;
+    dedicatedDesc: string; manualDesc: string; warning: string;
+    serverAddress: string; gotvSpectator: string; logSource: string;
   };
-}
+  lol: { title: string; desc: string };
+  games: { eyebrow: string; played: string; title: string; game: string };
+  reports: { eyebrow: string; title: string; declaredWinner: string; score: string; viewEvidence: string; noMatchId: string };
+  submit: { eyebrow: string; title: string };
+  dispute: { eyebrow: string; title: string; desc: string };
+  login: { participate: string; signInDesc: string; signIn: string };
+  verif: { title: string; submitMatchId: string };
+  matchInfo: { title: string; round: string; match: string; format: string; status: string; type: string; byeValue: string; completed: string };
+  backLink: string;
+};
+
+const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
+  en: {
+    meta: { round: "Round", match: "Match", matchDetail: "Match Detail" },
+    breadcrumb: { tournaments: "Tournaments", matchCenter: "Match Center" },
+    vs: { teamA: "Team A", teamB: "Team B", winner: "Winner", vs: "vs", scheduled: "Scheduled", winnerBadge: "✓ Winner" },
+    matchStatuses: {
+      scheduled: "Scheduled", ready: "Ready", room_created: "Room Created",
+      in_progress: "Live", result_pending: "Awaiting Result", disputed: "Disputed",
+      confirmed: "Confirmed", completed: "Completed", cancelled: "Cancelled",
+      forfeit: "Forfeit", bye: "Bye",
+    },
+    reportStatuses: { submitted: "Pending review", confirmed: "Confirmed", rejected: "Rejected", superseded: "Superseded" },
+    gameRoom: { eyebrow: "Game Room", title: "Room Details", roomCode: "Room Code", password: "Password", joinUrl: "Join URL" },
+    cs2: {
+      dedicatedMode: "Dedicated Server", manualMode: "Manual Lobby",
+      serverDetailsTitle: "Server Details",
+      dedicatedDesc: "Connect using the details below. Result reporting via SRCDS log ingestion — submit manually if automation is unavailable.",
+      manualDesc: "Connect using the details below. After the match, submit your result via the Match Report form with a screenshot as evidence.",
+      warning: "After the match ends, submit your result using the Match Report form with a screenshot as evidence. Both teams must report — if they agree, the result is confirmed automatically.",
+      serverAddress: "Server Address", gotvSpectator: "GOTV Spectator", logSource: "Log Source",
+    },
+    lol: {
+      title: "Tournament Codes",
+      desc: "Paste the code in the League client → Play → Tournament. The result is reported automatically when the game ends.",
+    },
+    games: { eyebrow: "Games", played: "played", title: "Game-by-Game", game: "Game" },
+    reports: { eyebrow: "Reports", title: "Submitted Reports", declaredWinner: "Declared winner", score: "Score", viewEvidence: "View evidence →", noMatchId: "No match ID submitted" },
+    submit: { eyebrow: "Match Report", title: "Submit Result" },
+    dispute: { eyebrow: "Dispute", title: "Open a Dispute", desc: "If there is a problem with the submitted result, describe it below. Admins will review both reports and resolve the match." },
+    login: { participate: "Participate", signInDesc: "Sign in to submit your team's match result or open a dispute.", signIn: "Sign In ›" },
+    verif: { title: "Game Status", submitMatchId: "Submit Match ID" },
+    matchInfo: { title: "Match Info", round: "Round", match: "Match", format: "Best of", status: "Status", type: "Type", byeValue: "Bye (Auto-advance)", completed: "Completed" },
+    backLink: "All Matches",
+  },
+  ar: {
+    meta: { round: "الجولة", match: "المباراة", matchDetail: "تفاصيل المباراة" },
+    breadcrumb: { tournaments: "البطولات", matchCenter: "مركز المباريات" },
+    vs: { teamA: "الفريق أ", teamB: "الفريق ب", winner: "الفائز", vs: "مقابل", scheduled: "موعد مجدول", winnerBadge: "✓ الفائز" },
+    matchStatuses: {
+      scheduled: "مجدولة", ready: "جاهزة", room_created: "الغرفة منشأة",
+      in_progress: "جارية", result_pending: "في انتظار النتيجة", disputed: "متنازع عليها",
+      confirmed: "مؤكدة", completed: "مكتملة", cancelled: "ملغاة",
+      forfeit: "خسارة بالتخلف", bye: "تأهل تلقائي",
+    },
+    reportStatuses: { submitted: "قيد المراجعة", confirmed: "مؤكد", rejected: "مرفوض", superseded: "مُستبدل" },
+    gameRoom: { eyebrow: "غرفة اللعب", title: "تفاصيل الغرفة", roomCode: "رمز الغرفة", password: "كلمة المرور", joinUrl: "رابط الانضمام" },
+    cs2: {
+      dedicatedMode: "خادم مخصص", manualMode: "صالة يدوية",
+      serverDetailsTitle: "تفاصيل الخادم",
+      dedicatedDesc: "الاتصال باستخدام التفاصيل أدناه. يتم الإبلاغ عن النتيجة عبر استيعاب سجلات SRCDS — قدّمها يدويًا إذا لم تكن الأتمتة متاحة.",
+      manualDesc: "الاتصال باستخدام التفاصيل أدناه. بعد المباراة، قدّم نتيجتك عبر نموذج تقرير المباراة مع لقطة شاشة كدليل.",
+      warning: "بعد انتهاء المباراة، قدّم نتيجتك باستخدام نموذج تقرير المباراة مع لقطة شاشة كدليل. يجب أن يُقدّم كلا الفريقين تقريرًا — وإذا اتفقا، تُؤكّد النتيجة تلقائيًا.",
+      serverAddress: "عنوان الخادم", gotvSpectator: "مراقب GOTV", logSource: "مصدر السجلات",
+    },
+    lol: {
+      title: "رموز البطولة",
+      desc: "الصق الرمز في عميل League (Play > Tournament). تُبلَّغ النتيجة تلقائيًا عند انتهاء اللعبة.",
+    },
+    games: { eyebrow: "المباريات", played: "ملعوبة", title: "لعبة بلعبة", game: "لعبة" },
+    reports: { eyebrow: "التقارير", title: "التقارير المقدمة", declaredWinner: "الفائز المُعلن", score: "النتيجة", viewEvidence: "عرض الدليل ←", noMatchId: "لم يُقدم معرف مباراة" },
+    submit: { eyebrow: "تقرير المباراة", title: "تقديم النتيجة" },
+    dispute: { eyebrow: "اعتراض", title: "تقديم اعتراض", desc: "إذا كانت هناك مشكلة في النتيجة المُقدمة، صفها أدناه. سيراجع المشرفون كلا التقريرين ويُحسمون المباراة." },
+    login: { participate: "المشاركة", signInDesc: "سجّل دخولك لتقديم نتيجة فريقك أو تقديم اعتراض.", signIn: "تسجيل الدخول ←" },
+    verif: { title: "حالة اللعبة", submitMatchId: "تقديم معرف المباراة" },
+    matchInfo: { title: "معلومات المباراة", round: "الجولة", match: "المباراة", format: "الأفضل من", status: "الحالة", type: "النوع", byeValue: "تأهل تلقائي", completed: "اكتملت" },
+    backLink: "كل المباريات",
+  },
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 type Tone = "blue" | "green" | "live" | "amber" | "red" | "violet" | "gray";
 
-function matchStatusInfo(status: string): { label: string; tone: Tone } {
+function matchStatusInfo(status: string, statuses: MatchStatuses): { label: string; tone: Tone } {
   const map: Record<string, { label: string; tone: Tone }> = {
-    scheduled: { label: "Scheduled", tone: "blue" },
-    ready: { label: "Ready", tone: "green" },
-    room_created: { label: "Room Created", tone: "blue" },
-    in_progress: { label: "Live", tone: "live" },
-    result_pending: { label: "Awaiting Result", tone: "amber" },
-    disputed: { label: "Disputed", tone: "red" },
-    confirmed: { label: "Confirmed", tone: "green" },
-    completed: { label: "Completed", tone: "violet" },
-    cancelled: { label: "Cancelled", tone: "red" },
-    forfeit: { label: "Forfeit", tone: "red" },
-    bye: { label: "Bye", tone: "gray" },
+    scheduled: { label: statuses.scheduled, tone: "blue" },
+    ready: { label: statuses.ready, tone: "green" },
+    room_created: { label: statuses.room_created, tone: "blue" },
+    in_progress: { label: statuses.in_progress, tone: "live" },
+    result_pending: { label: statuses.result_pending, tone: "amber" },
+    disputed: { label: statuses.disputed, tone: "red" },
+    confirmed: { label: statuses.confirmed, tone: "green" },
+    completed: { label: statuses.completed, tone: "violet" },
+    cancelled: { label: statuses.cancelled, tone: "red" },
+    forfeit: { label: statuses.forfeit, tone: "red" },
+    bye: { label: statuses.bye, tone: "gray" },
   };
   return map[status] ?? { label: status, tone: "gray" };
 }
@@ -70,17 +159,16 @@ function tonedStyle(tone: Tone): CSSProperties {
   return styles[tone];
 }
 
-function reportStatusInfo(status: string): { label: string; tone: Tone } {
+function reportStatusInfo(status: string, statuses: ReportStatuses): { label: string; tone: Tone } {
   const map: Record<string, { label: string; tone: Tone }> = {
-    submitted: { label: "Pending review", tone: "amber" },
-    confirmed: { label: "Confirmed", tone: "green" },
-    rejected: { label: "Rejected", tone: "red" },
-    superseded: { label: "Superseded", tone: "gray" },
+    submitted: { label: statuses.submitted, tone: "amber" },
+    confirmed: { label: statuses.confirmed, tone: "green" },
+    rejected: { label: statuses.rejected, tone: "red" },
+    superseded: { label: statuses.superseded, tone: "gray" },
   };
   return map[status] ?? { label: status, tone: "gray" };
 }
 
-// Panel card wrapper
 function Panel({
   eyebrow,
   title,
@@ -114,14 +202,31 @@ function Panel({
   );
 }
 
+// ─── generateMetadata ─────────────────────────────────────────────────────────
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { matchId } = await params;
+  const [match, locale] = await Promise.all([
+    prisma.tournamentMatch.findUnique({
+      where: { id: matchId },
+      select: { roundNumber: true, matchNumber: true },
+    }),
+    getLocale(),
+  ]);
+  const msgs = matchDetailMessages[locale];
+  return {
+    title: match
+      ? `${msgs.meta.round} ${match.roundNumber} · ${msgs.meta.match} ${match.matchNumber}`
+      : msgs.meta.matchDetail,
+  };
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function MatchDetailPage({
-  params,
-}: PageProps) {
+export default async function MatchDetailPage({ params }: PageProps) {
   const { id: tournamentId, matchId } = await params;
 
-  const [session, tournament, match] = await Promise.all([
+  const [session, tournament, match, locale] = await Promise.all([
     auth(),
     prisma.tournament.findUnique({
       where: { id: tournamentId },
@@ -138,9 +243,13 @@ export default async function MatchDetailPage({
         room: true,
       },
     }),
+    getLocale(),
   ]);
 
   if (!tournament || !match || match.tournamentId !== tournamentId) notFound();
+
+  const msgs = matchDetailMessages[locale];
+  const dateLocale = locale === "ar" ? "ar" : "en";
 
   // Load team names
   const teamIds = [match.teamAId, match.teamBId, match.winnerTeamId].filter(
@@ -165,25 +274,21 @@ export default async function MatchDetailPage({
     ? (teamName.get(match.winnerTeamId) ?? null)
     : null;
 
-  // Current user context
   const sessionUser = session?.user as
     | { databaseId?: string; isAdmin?: boolean }
     | undefined;
   const isAdmin = Boolean(sessionUser?.isAdmin);
   const currentUserId = sessionUser?.databaseId ?? null;
 
-  // Determine if user belongs to a match team
   let userTeamId: string | null = null;
   if (currentUserId && (match.teamAId || match.teamBId)) {
     const matchTeamIds = [match.teamAId, match.teamBId].filter(
       (x): x is string => Boolean(x),
     );
-
     const membership = await prisma.teamMember.findFirst({
       where: { userId: currentUserId, teamId: { in: matchTeamIds } },
       select: { teamId: true },
     });
-
     if (membership) {
       userTeamId = membership.teamId;
     } else {
@@ -198,11 +303,9 @@ export default async function MatchDetailPage({
   const isValorant =
     tournament.game?.slug?.toLowerCase().includes("valorant") ||
     tournament.game?.name?.toLowerCase().includes("valorant");
-
   const isDota =
     tournament.game?.slug?.toLowerCase().includes("dota") ||
     tournament.game?.name?.toLowerCase().includes("dota");
-
   const isCs2 =
     tournament.game?.slug?.toLowerCase().includes("cs2") ||
     tournament.game?.slug?.toLowerCase().includes("counter-strike") ||
@@ -214,7 +317,7 @@ export default async function MatchDetailPage({
       ? parseCs2Metadata(match.room.metadata)
       : null;
 
-  const { label: statusLabel, tone: statusTone } = matchStatusInfo(match.status);
+  const { label: statusLabel, tone: statusTone } = matchStatusInfo(match.status, msgs.matchStatuses);
   const isTerminal = ["completed", "confirmed", "forfeit", "bye", "cancelled"].includes(match.status);
   const shouldRefreshRealtime = !["completed", "cancelled", "forfeit", "bye"].includes(match.status);
   const canSubmitReport =
@@ -223,15 +326,11 @@ export default async function MatchDetailPage({
     userTeamId !== null &&
     match.teamAId !== null &&
     match.teamBId !== null;
-
   const canDispute =
     ["in_progress", "result_pending"].includes(match.status) &&
     userTeamId !== null;
-
   const userHasReport = match.reports.some(
-    (r) =>
-      r.teamId === userTeamId &&
-      r.status === "submitted",
+    (r) => r.teamId === userTeamId && r.status === "submitted",
   );
 
   const roundLabel =
@@ -253,31 +352,19 @@ export default async function MatchDetailPage({
           />
         )}
 
-        {/* Page header / breadcrumb */}
+        {/* Breadcrumb */}
         <header className="mx-auto max-w-[1680px] px-6 pb-6 pt-10 lg:px-10 2xl:px-14">
           <div className="flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-[0.14em]">
-            <Link
-              href="/tournaments"
-              className="transition hover:opacity-75"
-              style={{ color: "var(--asc-fg-3)" }}
-            >
-              Tournaments
+            <Link href="/tournaments" className="transition hover:opacity-75" style={{ color: "var(--asc-fg-3)" }}>
+              {msgs.breadcrumb.tournaments}
             </Link>
             <span style={{ color: "var(--asc-fg-3)" }}>·</span>
-            <Link
-              href={`/tournaments/${tournamentId}`}
-              className="transition hover:opacity-75"
-              style={{ color: "var(--asc-fg-3)" }}
-            >
+            <Link href={`/tournaments/${tournamentId}`} className="transition hover:opacity-75" style={{ color: "var(--asc-fg-3)" }}>
               {tournament.title}
             </Link>
             <span style={{ color: "var(--asc-fg-3)" }}>·</span>
-            <Link
-              href={`/tournaments/${tournamentId}/matches`}
-              className="transition hover:opacity-75"
-              style={{ color: "var(--asc-fg-3)" }}
-            >
-              Match Center
+            <Link href={`/tournaments/${tournamentId}/matches`} className="transition hover:opacity-75" style={{ color: "var(--asc-fg-3)" }}>
+              {msgs.breadcrumb.matchCenter}
             </Link>
             <span style={{ color: "var(--asc-fg-3)" }}>·</span>
             <span style={{ color: "var(--asc-fg-1)" }}>
@@ -290,14 +377,10 @@ export default async function MatchDetailPage({
         <section className="mx-auto max-w-[1680px] px-6 pb-6 lg:px-10 2xl:px-14">
           <div
             className="relative overflow-hidden border"
-            style={{
-              borderColor: "var(--asc-line-soft)",
-              background: "var(--asc-bg-1)",
-            }}
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
           >
             <div aria-hidden className="asc-corner-mark" />
 
-            {/* Match meta bar */}
             <div
               className="flex flex-wrap items-center gap-3 px-5 py-3"
               style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
@@ -309,7 +392,6 @@ export default async function MatchDetailPage({
                 ▲ {tournament.game?.name ?? "Match"} · R{match.roundNumber} ·
                 M{match.matchNumber} · BO{match.bestOf}
               </p>
-
               <span
                 className="inline-flex items-center gap-1.5 border px-3 py-0.5 text-[10px] font-black uppercase tracking-[0.10em]"
                 style={tonedStyle(statusTone)}
@@ -317,7 +399,6 @@ export default async function MatchDetailPage({
                 {statusTone === "live" && <span className="asc-live-dot" />}
                 {statusLabel}
               </span>
-
               {isAdmin && (
                 <span
                   className="ml-auto inline-flex border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.10em]"
@@ -332,59 +413,38 @@ export default async function MatchDetailPage({
             <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-6 px-6 py-8 md:gap-10 md:px-10">
               {/* Team A */}
               <div className="text-center md:text-right">
-                <p
-                  className="text-[10px] font-black uppercase tracking-[0.14em]"
-                  style={{ color: "var(--asc-fg-3)" }}
-                >
-                  Team A
+                <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                  {msgs.vs.teamA}
                 </p>
                 <p
                   className="mt-2 text-2xl font-black md:text-4xl"
                   style={{
                     fontFamily: "var(--font-display)",
-                    color:
-                      isTerminal && match.winnerTeamId === match.teamAId
-                        ? "var(--asc-green)"
-                        : "var(--asc-fg-0)",
+                    color: isTerminal && match.winnerTeamId === match.teamAId ? "var(--asc-green)" : "var(--asc-fg-0)",
                   }}
                 >
                   {teamA?.name ?? "TBD"}
                 </p>
                 {isTerminal && match.winnerTeamId === match.teamAId && (
-                  <p
-                    className="mt-1 text-xs font-black uppercase tracking-widest"
-                    style={{ color: "var(--asc-green)" }}
-                  >
-                    ✓ Winner
+                  <p className="mt-1 text-xs font-black uppercase tracking-widest" style={{ color: "var(--asc-green)" }}>
+                    {msgs.vs.winnerBadge}
                   </p>
                 )}
               </div>
 
-              {/* Centre VS / score */}
+              {/* Centre */}
               <div className="flex flex-col items-center gap-2">
                 {winnerName ? (
-                  <p
-                    className="text-xs font-black uppercase tracking-[0.14em]"
-                    style={{ color: "var(--asc-fg-3)" }}
-                  >
-                    Winner
+                  <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                    {msgs.vs.winner}
                   </p>
                 ) : (
-                  <p
-                    className="text-xl font-black uppercase tracking-[0.2em]"
-                    style={{ color: "var(--asc-fg-3)" }}
-                  >
-                    vs
+                  <p className="text-xl font-black uppercase tracking-[0.2em]" style={{ color: "var(--asc-fg-3)" }}>
+                    {msgs.vs.vs}
                   </p>
                 )}
                 {winnerName && (
-                  <p
-                    className="text-sm font-black"
-                    style={{
-                      color: "var(--asc-green)",
-                      fontFamily: "var(--font-display)",
-                    }}
-                  >
+                  <p className="text-sm font-black" style={{ color: "var(--asc-green)", fontFamily: "var(--font-display)" }}>
                     {winnerName}
                   </p>
                 )}
@@ -392,47 +452,35 @@ export default async function MatchDetailPage({
 
               {/* Team B */}
               <div className="text-center md:text-left">
-                <p
-                  className="text-[10px] font-black uppercase tracking-[0.14em]"
-                  style={{ color: "var(--asc-fg-3)" }}
-                >
-                  Team B
+                <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                  {msgs.vs.teamB}
                 </p>
                 <p
                   className="mt-2 text-2xl font-black md:text-4xl"
                   style={{
                     fontFamily: "var(--font-display)",
-                    color:
-                      isTerminal && match.winnerTeamId === match.teamBId
-                        ? "var(--asc-green)"
-                        : "var(--asc-fg-0)",
+                    color: isTerminal && match.winnerTeamId === match.teamBId ? "var(--asc-green)" : "var(--asc-fg-0)",
                   }}
                 >
                   {teamB?.name ?? "TBD"}
                 </p>
                 {isTerminal && match.winnerTeamId === match.teamBId && (
-                  <p
-                    className="mt-1 text-xs font-black uppercase tracking-widest"
-                    style={{ color: "var(--asc-green)" }}
-                  >
-                    ✓ Winner
+                  <p className="mt-1 text-xs font-black uppercase tracking-widest" style={{ color: "var(--asc-green)" }}>
+                    {msgs.vs.winnerBadge}
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Schedule info footer */}
+            {/* Schedule footer */}
             {match.scheduledAt && (
               <div
                 className="flex flex-wrap items-center gap-4 px-5 py-3 text-xs"
-                style={{
-                  borderTop: "1px solid var(--asc-line-soft)",
-                  color: "var(--asc-fg-3)",
-                }}
+                style={{ borderTop: "1px solid var(--asc-line-soft)", color: "var(--asc-fg-3)" }}
               >
-                <span className="font-bold">Scheduled</span>
+                <span className="font-bold">{msgs.vs.scheduled}</span>
                 <span>
-                  {match.scheduledAt.toLocaleString("en", {
+                  {match.scheduledAt.toLocaleString(dateLocale, {
                     dateStyle: "full",
                     timeStyle: "short",
                   })}
@@ -448,47 +496,32 @@ export default async function MatchDetailPage({
           <div className="grid gap-6">
             {/* Game room */}
             {match.room && (
-              <Panel eyebrow="Game Room" title="Room Details">
+              <Panel eyebrow={msgs.gameRoom.eyebrow} title={msgs.gameRoom.title}>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {match.room.roomCode && (
                     <div>
-                      <p
-                        className="text-[10px] font-black uppercase tracking-[0.14em]"
-                        style={{ color: "var(--asc-fg-3)" }}
-                      >
-                        Room Code
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                        {msgs.gameRoom.roomCode}
                       </p>
-                      <p
-                        className="mt-1 font-mono text-xl font-black"
-                        style={{ color: "var(--asc-accent)" }}
-                      >
+                      <p className="mt-1 font-mono text-xl font-black" style={{ color: "var(--asc-accent)" }}>
                         {match.room.roomCode}
                       </p>
                     </div>
                   )}
                   {match.room.password && (
                     <div>
-                      <p
-                        className="text-[10px] font-black uppercase tracking-[0.14em]"
-                        style={{ color: "var(--asc-fg-3)" }}
-                      >
-                        Password
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                        {msgs.gameRoom.password}
                       </p>
-                      <p
-                        className="mt-1 font-mono text-base font-black"
-                        style={{ color: "var(--asc-fg-0)" }}
-                      >
+                      <p className="mt-1 font-mono text-base font-black" style={{ color: "var(--asc-fg-0)" }}>
                         {match.room.password}
                       </p>
                     </div>
                   )}
                   {match.room.joinUrl && (
                     <div className="sm:col-span-2">
-                      <p
-                        className="text-[10px] font-black uppercase tracking-[0.14em]"
-                        style={{ color: "var(--asc-fg-3)" }}
-                      >
-                        Join URL
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                        {msgs.gameRoom.joinUrl}
                       </p>
                       <a
                         href={match.room.joinUrl}
@@ -508,89 +541,55 @@ export default async function MatchDetailPage({
             {/* CS2 server details */}
             {cs2Meta && (
               <Panel
-                eyebrow={`CS2 · ${cs2Meta.mode === "dedicated_server" ? "Dedicated Server" : "Manual Lobby"}`}
-                title="Server Details"
+                eyebrow={`CS2 · ${cs2Meta.mode === "dedicated_server" ? msgs.cs2.dedicatedMode : msgs.cs2.manualMode}`}
+                title={msgs.cs2.serverDetailsTitle}
               >
                 <div className="grid gap-4">
                   <p className="text-xs leading-5" style={{ color: "var(--asc-fg-3)" }}>
-                    {cs2Meta.mode === "dedicated_server"
-                      ? "Connect using the details below. Result reporting via SRCDS log ingestion — submit manually if automation is unavailable."
-                      : "Connect using the details below. After the match, submit your result via the Match Report form with a screenshot as evidence."}
+                    {cs2Meta.mode === "dedicated_server" ? msgs.cs2.dedicatedDesc : msgs.cs2.manualDesc}
                   </p>
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     {cs2Meta.serverIp && (
                       <div>
-                        <p
-                          className="text-[10px] font-black uppercase tracking-[0.14em]"
-                          style={{ color: "var(--asc-fg-3)" }}
-                        >
-                          Server Address
+                        <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                          {msgs.cs2.serverAddress}
                         </p>
-                        <p
-                          className="mt-1 font-mono text-base font-black"
-                          style={{ color: "var(--asc-accent)" }}
-                        >
-                          {cs2Meta.serverIp}
-                          {cs2Meta.serverPort ? `:${cs2Meta.serverPort}` : ""}
+                        <p className="mt-1 font-mono text-base font-black" style={{ color: "var(--asc-accent)" }}>
+                          {cs2Meta.serverIp}{cs2Meta.serverPort ? `:${cs2Meta.serverPort}` : ""}
                         </p>
-                        <p
-                          className="mt-0.5 text-[10px]"
-                          style={{ color: "var(--asc-fg-3)" }}
-                        >
-                          connect {cs2Meta.serverIp}
-                          {cs2Meta.serverPort ? `:${cs2Meta.serverPort}` : ""}
+                        <p className="mt-0.5 text-[10px]" style={{ color: "var(--asc-fg-3)" }}>
+                          connect {cs2Meta.serverIp}{cs2Meta.serverPort ? `:${cs2Meta.serverPort}` : ""}
                           {cs2Meta.password ? `; password ${cs2Meta.password}` : ""}
                         </p>
                       </div>
                     )}
-
                     {cs2Meta.password && (
                       <div>
-                        <p
-                          className="text-[10px] font-black uppercase tracking-[0.14em]"
-                          style={{ color: "var(--asc-fg-3)" }}
-                        >
-                          Password
+                        <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                          {msgs.gameRoom.password}
                         </p>
-                        <p
-                          className="mt-1 font-mono text-base font-black"
-                          style={{ color: "var(--asc-fg-0)" }}
-                        >
+                        <p className="mt-1 font-mono text-base font-black" style={{ color: "var(--asc-fg-0)" }}>
                           {cs2Meta.password}
                         </p>
                       </div>
                     )}
-
                     {cs2Meta.gotvUrl && (
                       <div className="sm:col-span-2">
-                        <p
-                          className="text-[10px] font-black uppercase tracking-[0.14em]"
-                          style={{ color: "var(--asc-fg-3)" }}
-                        >
-                          GOTV Spectator
+                        <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                          {msgs.cs2.gotvSpectator}
                         </p>
-                        <p
-                          className="mt-1 font-mono text-sm"
-                          style={{ color: "var(--asc-blue)" }}
-                        >
+                        <p className="mt-1 font-mono text-sm" style={{ color: "var(--asc-blue)" }}>
                           {cs2Meta.gotvUrl}
                         </p>
                       </div>
                     )}
-
                     {cs2Meta.mode === "dedicated_server" && cs2Meta.logSource && (
                       <div className="sm:col-span-2">
-                        <p
-                          className="text-[10px] font-black uppercase tracking-[0.14em]"
-                          style={{ color: "var(--asc-fg-3)" }}
-                        >
-                          Log Source
+                        <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                          {msgs.cs2.logSource}
                         </p>
-                        <p
-                          className="mt-1 font-mono text-xs"
-                          style={{ color: "var(--asc-fg-3)" }}
-                        >
+                        <p className="mt-1 font-mono text-xs" style={{ color: "var(--asc-fg-3)" }}>
                           {cs2Meta.logSource}
                         </p>
                       </div>
@@ -599,139 +598,85 @@ export default async function MatchDetailPage({
 
                   <div
                     className="border px-3 py-2 text-xs leading-5"
-                    style={{
-                      borderColor: "oklch(0.65 0.14 75 / 0.4)",
-                      background: "oklch(0.25 0.12 75 / 0.10)",
-                      color: "var(--asc-amber)",
-                    }}
+                    style={{ borderColor: "oklch(0.65 0.14 75 / 0.4)", background: "oklch(0.25 0.12 75 / 0.10)", color: "var(--asc-amber)" }}
                   >
-                    After the match ends, submit your result using the{" "}
-                    <strong>Match Report</strong> form with a screenshot as evidence.
-                    Both teams must report — if they agree, the result is confirmed
-                    automatically.
+                    {msgs.cs2.warning}
                   </div>
                 </div>
               </Panel>
             )}
 
-            {/* League of Legends tournament codes (per-game) */}
-            {match.room?.provider === "riot_lol" &&
-              match.games.some((g) => g.externalRoomId) && (
-                <Panel
-                  eyebrow="League of Legends"
-                  title="Tournament Codes"
-                >
-                  <p
-                    className="mb-3 text-xs"
-                    style={{ color: "var(--asc-fg-3)" }}
-                  >
-                    Paste the code in the League client → Play → Tournament. The
-                    result is reported automatically when the game ends.
-                  </p>
-                  <div className="grid gap-2">
-                    {match.games
-                      .filter((g) => g.externalRoomId)
-                      .map((g) => (
-                        <div
-                          key={g.id}
-                          className="flex flex-wrap items-center justify-between gap-3 border px-4 py-3"
-                          style={{
-                            borderColor: "var(--asc-line-soft)",
-                            background: "var(--asc-bg-2)",
-                          }}
+            {/* League of Legends tournament codes */}
+            {match.room?.provider === "riot_lol" && match.games.some((g) => g.externalRoomId) && (
+              <Panel eyebrow="League of Legends" title={msgs.lol.title}>
+                <p className="mb-3 text-xs" style={{ color: "var(--asc-fg-3)" }}>
+                  {msgs.lol.desc}
+                </p>
+                <div className="grid gap-2">
+                  {match.games
+                    .filter((g) => g.externalRoomId)
+                    .map((g) => (
+                      <div
+                        key={g.id}
+                        className="flex flex-wrap items-center justify-between gap-3 border px-4 py-3"
+                        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+                      >
+                        <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "var(--asc-fg-3)" }}>
+                          {msgs.games.game} {g.gameNumber}
+                        </span>
+                        <span className="font-mono text-base font-black" style={{ color: "var(--asc-accent)" }}>
+                          {g.externalRoomId}
+                        </span>
+                        <span
+                          className="text-[10px] font-black uppercase tracking-widest"
+                          style={{ color: g.status === "completed" ? "var(--asc-green)" : "var(--asc-fg-3)" }}
                         >
-                          <span
-                            className="text-[10px] font-black uppercase tracking-widest"
-                            style={{ color: "var(--asc-fg-3)" }}
-                          >
-                            Game {g.gameNumber}
-                          </span>
-                          <span
-                            className="font-mono text-base font-black"
-                            style={{ color: "var(--asc-accent)" }}
-                          >
-                            {g.externalRoomId}
-                          </span>
-                          <span
-                            className="text-[10px] font-black uppercase tracking-widest"
-                            style={{
-                              color:
-                                g.status === "completed"
-                                  ? "var(--asc-green)"
-                                  : "var(--asc-fg-3)",
-                            }}
-                          >
-                            {g.status}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-                </Panel>
-              )}
+                          {g.status}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </Panel>
+            )}
 
             {/* Per-game breakdown */}
             {match.games.length > 0 && (
               <Panel
-                eyebrow={`Games · ${match.games.length} played`}
-                title="Game-by-Game"
+                eyebrow={`${msgs.games.eyebrow} · ${match.games.length} ${msgs.games.played}`}
+                title={msgs.games.title}
               >
                 <div className="grid gap-2">
                   {match.games.map((game) => {
                     const gameWinnerName = game.winnerTeamId
                       ? (teamName.get(game.winnerTeamId) ?? "Unknown")
                       : null;
-
                     return (
                       <div
                         key={game.id}
                         className="grid grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-3 border px-4 py-3"
-                        style={{
-                          borderColor: "var(--asc-line-soft)",
-                          background: "var(--asc-bg-2)",
-                        }}
+                        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
                       >
-                        <span
-                          className="text-[10px] font-black uppercase tracking-widest"
-                          style={{ color: "var(--asc-fg-3)" }}
-                        >
+                        <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "var(--asc-fg-3)" }}>
                           G{game.gameNumber}
                         </span>
                         <span
                           className="text-right font-black"
-                          style={{
-                            color:
-                              game.winnerTeamId === match.teamAId
-                                ? "var(--asc-green)"
-                                : "var(--asc-fg-0)",
-                          }}
+                          style={{ color: game.winnerTeamId === match.teamAId ? "var(--asc-green)" : "var(--asc-fg-0)" }}
                         >
                           {teamA?.name ?? "TBD"}
                         </span>
-                        <span
-                          className="text-center font-mono font-black tabular-nums"
-                          style={{ color: "var(--asc-fg-0)" }}
-                        >
+                        <span className="text-center font-mono font-black tabular-nums" style={{ color: "var(--asc-fg-0)" }}>
                           {game.teamAScore} — {game.teamBScore}
                         </span>
                         <span
                           className="font-black"
-                          style={{
-                            color:
-                              game.winnerTeamId === match.teamBId
-                                ? "var(--asc-green)"
-                                : "var(--asc-fg-0)",
-                          }}
+                          style={{ color: game.winnerTeamId === match.teamBId ? "var(--asc-green)" : "var(--asc-fg-0)" }}
                         >
                           {teamB?.name ?? "TBD"}
                         </span>
                         <span
                           className="text-[10px] font-black uppercase tracking-widest"
-                          style={{
-                            color:
-                              game.status === "completed"
-                                ? "var(--asc-green)"
-                                : "var(--asc-fg-3)",
-                          }}
+                          style={{ color: game.status === "completed" ? "var(--asc-green)" : "var(--asc-fg-3)" }}
                         >
                           {gameWinnerName ? "✓" : game.status}
                         </span>
@@ -745,40 +690,26 @@ export default async function MatchDetailPage({
             {/* Reports */}
             {match.reports.length > 0 && (
               <Panel
-                eyebrow={`Reports · ${match.reports.length}`}
-                title="Submitted Reports"
+                eyebrow={`${msgs.reports.eyebrow} · ${match.reports.length}`}
+                title={msgs.reports.title}
               >
                 <div className="grid gap-3">
                   {match.reports.map((report) => {
-                    const { label: rLabel, tone: rTone } = reportStatusInfo(
-                      report.status,
-                    );
-                    const reportTeamName =
-                      teamName.get(report.teamId) ?? "Unknown team";
-                    const reportWinnerName =
-                      teamName.get(report.winnerTeamId) ?? "Unknown";
-
+                    const { label: rLabel, tone: rTone } = reportStatusInfo(report.status, msgs.reportStatuses);
+                    const reportTeamName = teamName.get(report.teamId) ?? "Unknown team";
+                    const reportWinnerName = teamName.get(report.winnerTeamId) ?? "Unknown";
                     return (
                       <div
                         key={report.id}
                         className="border p-4"
-                        style={{
-                          borderColor: "var(--asc-line-soft)",
-                          background: "var(--asc-bg-2)",
-                        }}
+                        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span
-                              className="text-xs font-black"
-                              style={{ color: "var(--asc-fg-1)" }}
-                            >
+                            <span className="text-xs font-black" style={{ color: "var(--asc-fg-1)" }}>
                               {reportTeamName}
                             </span>
-                            <span
-                              className="text-xs"
-                              style={{ color: "var(--asc-fg-3)" }}
-                            >
+                            <span className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
                               · {report.submittedBy.username}
                             </span>
                           </div>
@@ -790,43 +721,25 @@ export default async function MatchDetailPage({
                           </span>
                         </div>
 
-                        <div
-                          className="mt-3 grid gap-1 text-sm"
-                          style={{ color: "var(--asc-fg-2)" }}
-                        >
+                        <div className="mt-3 grid gap-1 text-sm" style={{ color: "var(--asc-fg-2)" }}>
                           <p>
-                            <span
-                              className="text-[10px] font-black uppercase tracking-widest"
-                              style={{ color: "var(--asc-fg-3)" }}
-                            >
-                              Declared winner
+                            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "var(--asc-fg-3)" }}>
+                              {msgs.reports.declaredWinner}
                             </span>{" "}
-                            <span
-                              className="font-black"
-                              style={{ color: "var(--asc-fg-0)" }}
-                            >
+                            <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>
                               {reportWinnerName}
                             </span>
                           </p>
                           <p>
-                            <span
-                              className="text-[10px] font-black uppercase tracking-widest"
-                              style={{ color: "var(--asc-fg-3)" }}
-                            >
-                              Score
+                            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "var(--asc-fg-3)" }}>
+                              {msgs.reports.score}
                             </span>{" "}
-                            <span
-                              className="font-mono font-black"
-                              style={{ color: "var(--asc-fg-0)" }}
-                            >
+                            <span className="font-mono font-black" style={{ color: "var(--asc-fg-0)" }}>
                               {report.teamAScore} — {report.teamBScore}
                             </span>
                           </p>
                           {report.note && (
-                            <p
-                              className="mt-1 text-xs leading-5"
-                              style={{ color: "var(--asc-fg-3)" }}
-                            >
+                            <p className="mt-1 text-xs leading-5" style={{ color: "var(--asc-fg-3)" }}>
                               {report.note}
                             </p>
                           )}
@@ -838,16 +751,13 @@ export default async function MatchDetailPage({
                               className="mt-1 inline-block text-xs font-bold transition hover:opacity-75"
                               style={{ color: "var(--asc-blue)" }}
                             >
-                              View evidence →
+                              {msgs.reports.viewEvidence}
                             </a>
                           )}
                         </div>
 
-                        <p
-                          className="mt-3 text-[10px]"
-                          style={{ color: "var(--asc-fg-3)" }}
-                        >
-                          {new Date(report.createdAt).toLocaleString("en", {
+                        <p className="mt-3 text-[10px]" style={{ color: "var(--asc-fg-3)" }}>
+                          {new Date(report.createdAt).toLocaleString(dateLocale, {
                             dateStyle: "medium",
                             timeStyle: "short",
                           })}
@@ -860,11 +770,11 @@ export default async function MatchDetailPage({
             )}
           </div>
 
-          {/* Right column: actions */}
+          {/* Right column */}
           <div className="grid gap-6" style={{ alignContent: "start" }}>
-            {/* Submit result — only for match participants */}
+            {/* Submit result */}
             {canSubmitReport && teamA && teamB && userTeamId && (
-              <Panel eyebrow="Match Report" title="Submit Result">
+              <Panel eyebrow={msgs.submit.eyebrow} title={msgs.submit.title}>
                 <MatchReportForm
                   matchId={match.id}
                   userTeamId={userTeamId}
@@ -875,29 +785,22 @@ export default async function MatchDetailPage({
               </Panel>
             )}
 
-            {/* VALORANT match ID — shown for VALORANT games on active matches */}
+            {/* VALORANT match ID */}
             {isValorant && !isTerminal && teamA && teamB && (
-              <Panel eyebrow="VALORANT" title="Submit Match ID">
+              <Panel eyebrow="VALORANT" title={msgs.verif.submitMatchId}>
                 <ValorantMatchIdForm
                   matchId={match.id}
-                  gameNumber={
-                    match.games.length > 0
-                      ? match.games[match.games.length - 1].gameNumber + 1
-                      : 1
-                  }
+                  gameNumber={match.games.length > 0 ? match.games[match.games.length - 1].gameNumber + 1 : 1}
                   isAdmin={isAdmin}
                   isParticipant={userTeamId !== null}
-                  currentExternalMatchId={
-                    match.games.find((g) => g.externalMatchId)
-                      ?.externalMatchId ?? null
-                  }
+                  currentExternalMatchId={match.games.find((g) => g.externalMatchId)?.externalMatchId ?? null}
                 />
               </Panel>
             )}
 
-            {/* VALORANT game-by-game verification status — shown for terminated matches too */}
+            {/* VALORANT verification */}
             {isValorant && match.games.length > 0 && (
-              <Panel eyebrow="VALORANT Verification" title="Game Status">
+              <Panel eyebrow="VALORANT Verification" title={msgs.verif.title}>
                 <div className="grid gap-2">
                   {match.games.map((g) => {
                     const hasId = Boolean(g.externalMatchId);
@@ -905,38 +808,24 @@ export default async function MatchDetailPage({
                       <div
                         key={g.id}
                         className="flex flex-wrap items-center justify-between gap-2 border px-3 py-2 text-xs"
-                        style={{
-                          borderColor: "var(--asc-line-soft)",
-                          background: "var(--asc-bg-2)",
-                        }}
+                        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
                       >
-                        <span
-                          className="font-black uppercase tracking-widest"
-                          style={{ color: "var(--asc-fg-3)" }}
-                        >
-                          Game {g.gameNumber}
+                        <span className="font-black uppercase tracking-widest" style={{ color: "var(--asc-fg-3)" }}>
+                          {msgs.games.game} {g.gameNumber}
                         </span>
                         {hasId ? (
-                          <span
-                            className="font-mono"
-                            style={{ color: "var(--asc-fg-2)" }}
-                          >
+                          <span className="font-mono" style={{ color: "var(--asc-fg-2)" }}>
                             {g.externalMatchId}
                           </span>
                         ) : (
-                          <span style={{ color: "var(--asc-fg-3)" }}>
-                            No match ID submitted
-                          </span>
+                          <span style={{ color: "var(--asc-fg-3)" }}>{msgs.reports.noMatchId}</span>
                         )}
                         <span
                           className="font-black uppercase tracking-widest"
                           style={{
-                            color:
-                              g.status === "completed"
-                                ? "var(--asc-green)"
-                                : g.status === "cancelled"
-                                  ? "var(--asc-live)"
-                                  : "var(--asc-fg-3)",
+                            color: g.status === "completed" ? "var(--asc-green)"
+                              : g.status === "cancelled" ? "var(--asc-live)"
+                              : "var(--asc-fg-3)",
                           }}
                         >
                           {g.status}
@@ -948,29 +837,22 @@ export default async function MatchDetailPage({
               </Panel>
             )}
 
-            {/* Dota 2 match ID — shown for Dota tournaments on active matches */}
+            {/* Dota 2 match ID */}
             {isDota && !isTerminal && teamA && teamB && (
-              <Panel eyebrow="Dota 2" title="Submit Match ID">
+              <Panel eyebrow="Dota 2" title={msgs.verif.submitMatchId}>
                 <DotaMatchIdForm
                   matchId={match.id}
-                  gameNumber={
-                    match.games.length > 0
-                      ? match.games[match.games.length - 1].gameNumber + 1
-                      : 1
-                  }
+                  gameNumber={match.games.length > 0 ? match.games[match.games.length - 1].gameNumber + 1 : 1}
                   isAdmin={isAdmin}
                   isParticipant={userTeamId !== null}
-                  currentExternalMatchId={
-                    match.games.find((g) => g.externalMatchId)
-                      ?.externalMatchId ?? null
-                  }
+                  currentExternalMatchId={match.games.find((g) => g.externalMatchId)?.externalMatchId ?? null}
                 />
               </Panel>
             )}
 
-            {/* Dota 2 game-by-game verification status */}
+            {/* Dota 2 verification */}
             {isDota && match.games.length > 0 && (
-              <Panel eyebrow="Dota 2 Verification" title="Game Status">
+              <Panel eyebrow="Dota 2 Verification" title={msgs.verif.title}>
                 <div className="grid gap-2">
                   {match.games.map((g) => {
                     const hasId = Boolean(g.externalMatchId);
@@ -978,38 +860,24 @@ export default async function MatchDetailPage({
                       <div
                         key={g.id}
                         className="flex flex-wrap items-center justify-between gap-2 border px-3 py-2 text-xs"
-                        style={{
-                          borderColor: "var(--asc-line-soft)",
-                          background: "var(--asc-bg-2)",
-                        }}
+                        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
                       >
-                        <span
-                          className="font-black uppercase tracking-widest"
-                          style={{ color: "var(--asc-fg-3)" }}
-                        >
-                          Game {g.gameNumber}
+                        <span className="font-black uppercase tracking-widest" style={{ color: "var(--asc-fg-3)" }}>
+                          {msgs.games.game} {g.gameNumber}
                         </span>
                         {hasId ? (
-                          <span
-                            className="font-mono"
-                            style={{ color: "var(--asc-fg-2)" }}
-                          >
+                          <span className="font-mono" style={{ color: "var(--asc-fg-2)" }}>
                             {g.externalMatchId}
                           </span>
                         ) : (
-                          <span style={{ color: "var(--asc-fg-3)" }}>
-                            No match ID submitted
-                          </span>
+                          <span style={{ color: "var(--asc-fg-3)" }}>{msgs.reports.noMatchId}</span>
                         )}
                         <span
                           className="font-black uppercase tracking-widest"
                           style={{
-                            color:
-                              g.status === "completed"
-                                ? "var(--asc-green)"
-                                : g.status === "cancelled"
-                                  ? "var(--asc-live)"
-                                  : "var(--asc-fg-3)",
+                            color: g.status === "completed" ? "var(--asc-green)"
+                              : g.status === "cancelled" ? "var(--asc-live)"
+                              : "var(--asc-fg-3)",
                           }}
                         >
                           {g.status}
@@ -1021,15 +889,11 @@ export default async function MatchDetailPage({
               </Panel>
             )}
 
-            {/* Dispute — only when result is pending */}
+            {/* Dispute */}
             {canDispute && (
-              <Panel eyebrow="Dispute" title="Open a Dispute">
-                <p
-                  className="mb-4 text-sm leading-6"
-                  style={{ color: "var(--asc-fg-2)" }}
-                >
-                  If there is a problem with the submitted result, describe it
-                  below. Admins will review both reports and resolve the match.
+              <Panel eyebrow={msgs.dispute.eyebrow} title={msgs.dispute.title}>
+                <p className="mb-4 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
+                  {msgs.dispute.desc}
                 </p>
                 <DisputeForm matchId={match.id} />
               </Panel>
@@ -1039,56 +903,39 @@ export default async function MatchDetailPage({
             {!currentUserId && !isTerminal && (
               <div
                 className="relative border p-5"
-                style={{
-                  borderColor: "var(--asc-line-soft)",
-                  background: "var(--asc-bg-1)",
-                }}
+                style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
               >
                 <div aria-hidden className="asc-corner-mark" />
-                <p
-                  className="text-[10px] font-black uppercase tracking-[0.16em]"
-                  style={{ color: "var(--asc-fg-3)" }}
-                >
-                  Participate
+                <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-fg-3)" }}>
+                  {msgs.login.participate}
                 </p>
-                <p
-                  className="mt-2 text-sm leading-6"
-                  style={{ color: "var(--asc-fg-2)" }}
-                >
-                  Sign in to submit your team&apos;s match result or open a
-                  dispute.
+                <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
+                  {msgs.login.signInDesc}
                 </p>
                 <Link
                   href="/login"
                   className="mt-4 inline-flex px-5 py-2.5 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:opacity-90"
                   style={{
                     background: "var(--asc-accent-2)",
-                    clipPath:
-                      "polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)",
+                    clipPath: "polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)",
                   }}
                 >
-                  Sign In ›
+                  {msgs.login.signIn}
                 </Link>
               </div>
             )}
 
-            {/* Admin controls */}
+            {/* Admin controls — NOT translated */}
             {isAdmin && teamA && teamB && (
               <div
                 className="relative overflow-hidden border"
-                style={{
-                  borderColor: "oklch(0.65 0.14 75 / 0.3)",
-                  background: "oklch(0.25 0.12 75 / 0.06)",
-                }}
+                style={{ borderColor: "oklch(0.65 0.14 75 / 0.3)", background: "oklch(0.25 0.12 75 / 0.06)" }}
               >
                 <div
                   className="flex items-center gap-3 px-5 py-3"
                   style={{ borderBottom: "1px solid oklch(0.65 0.14 75 / 0.2)" }}
                 >
-                  <p
-                    className="text-[10px] font-black uppercase tracking-[0.16em]"
-                    style={{ color: "var(--asc-amber)" }}
-                  >
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-amber)" }}>
                     ▲ Admin Controls
                   </p>
                   <span
@@ -1112,59 +959,35 @@ export default async function MatchDetailPage({
             {/* Match metadata */}
             <div
               className="relative border"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                background: "var(--asc-bg-1)",
-              }}
+              style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
             >
               <div aria-hidden className="asc-corner-mark" />
-              <div
-                className="px-5 py-3"
-                style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-              >
-                <p
-                  className="text-[10px] font-black uppercase tracking-[0.16em]"
-                  style={{ color: "var(--asc-fg-3)" }}
-                >
-                  Match Info
+              <div className="px-5 py-3" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+                <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-fg-3)" }}>
+                  {msgs.matchInfo.title}
                 </p>
               </div>
               <div className="grid gap-3 p-5">
                 {[
-                  { label: "Round", value: `Round ${match.roundNumber}` },
-                  { label: "Match", value: `#${match.matchNumber}` },
-                  { label: "Format", value: `Best of ${match.bestOf}` },
-                  {
-                    label: "Status",
-                    value: statusLabel,
-                    style: tonedStyle(statusTone),
-                  },
-                  match.isBye
-                    ? { label: "Type", value: "Bye (Auto-advance)" }
-                    : null,
+                  { label: msgs.matchInfo.round, value: `${msgs.matchInfo.round} ${match.roundNumber}` },
+                  { label: msgs.matchInfo.match, value: `#${match.matchNumber}` },
+                  { label: msgs.matchInfo.format, value: `${msgs.matchInfo.format} ${match.bestOf}` },
+                  { label: msgs.matchInfo.status, value: statusLabel, style: tonedStyle(statusTone) },
+                  match.isBye ? { label: msgs.matchInfo.type, value: msgs.matchInfo.byeValue } : null,
                   match.completedAt
                     ? {
-                        label: "Completed",
-                        value: new Date(match.completedAt).toLocaleDateString(
-                          "en",
-                          { dateStyle: "medium" },
-                        ),
+                        label: msgs.matchInfo.completed,
+                        value: new Date(match.completedAt).toLocaleDateString(dateLocale, { dateStyle: "medium" }),
                       }
                     : null,
                 ]
                   .filter(Boolean)
                   .map((item) => (
                     <div key={item!.label}>
-                      <p
-                        className="text-[10px] font-black uppercase tracking-[0.14em]"
-                        style={{ color: "var(--asc-fg-3)" }}
-                      >
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
                         {item!.label}
                       </p>
-                      <p
-                        className="mt-0.5 text-sm font-bold"
-                        style={item!.style ?? { color: "var(--asc-fg-1)" }}
-                      >
+                      <p className="mt-0.5 text-sm font-bold" style={item!.style ?? { color: "var(--asc-fg-1)" }}>
                         {item!.value}
                       </p>
                     </div>
@@ -1179,11 +1002,10 @@ export default async function MatchDetailPage({
               style={{
                 borderColor: "var(--asc-line-soft)",
                 color: "var(--asc-fg-2)",
-                clipPath:
-                  "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)",
+                clipPath: "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)",
               }}
             >
-              ← All Matches
+              {locale === "ar" ? "→" : "←"} {msgs.backLink}
             </Link>
           </div>
         </div>
