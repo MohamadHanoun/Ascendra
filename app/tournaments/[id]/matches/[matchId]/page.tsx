@@ -58,6 +58,19 @@ type MatchDetailMessages = {
   verif: { title: string; submitMatchId: string };
   matchInfo: { title: string; round: string; match: string; format: string; status: string; type: string; byeValue: string; completed: string };
   faceit: { eyebrow: string; title: string };
+  cs2PlayerMatch: {
+    eyebrow: string;
+    title: string;
+    matchup: string;
+    playedOnFaceit: string;
+    joinWhenAvailable: string;
+    afterMatchSync: string;
+    autoConfirmEnabled: string;
+    autoConfirmDisabled: string;
+    openRoom: string;
+    matchIdLabel: string;
+    roomUnavailable: string;
+  };
   faceitWorkflow: {
     eyebrow: string;
     title: string;
@@ -109,6 +122,20 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     verif: { title: "Game Status", submitMatchId: "Submit Match ID" },
     matchInfo: { title: "Match Info", round: "Round", match: "Match", format: "Best of", status: "Status", type: "Type", byeValue: "Bye (Auto-advance)", completed: "Completed" },
     faceit: { eyebrow: "FACEIT CS2", title: "FACEIT CS2 Proof" },
+    cs2PlayerMatch: {
+      eyebrow: "FACEIT CS2",
+      title: "Your CS2 match",
+      matchup: "Matchup",
+      playedOnFaceit: "This match is played on FACEIT.",
+      joinWhenAvailable: "Join the FACEIT room when the link is available.",
+      afterMatchSync: "After the match ends, Ascendra can sync the score, map, and stats from FACEIT.",
+      autoConfirmEnabled: "Auto-confirm is enabled. The official result may be applied automatically.",
+      autoConfirmDisabled: "Auto-confirm is disabled. Proof will be stored for admin review.",
+      openRoom: "Open FACEIT room",
+      matchIdLabel: "FACEIT Match ID",
+      roomUnavailable:
+        "FACEIT room link is not available yet. Wait for an admin or tournament organizer to add it.",
+    },
     faceitWorkflow: {
       eyebrow: "FACEIT CS2",
       title: "CS2 FACEIT workflow",
@@ -158,6 +185,20 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     verif: { title: "حالة اللعبة", submitMatchId: "تقديم معرف المباراة" },
     matchInfo: { title: "معلومات المباراة", round: "الجولة", match: "المباراة", format: "الأفضل من", status: "الحالة", type: "النوع", byeValue: "تأهل تلقائي", completed: "اكتملت" },
     faceit: { eyebrow: "FACEIT CS2", title: "إثبات FACEIT لـ CS2" },
+    cs2PlayerMatch: {
+      eyebrow: "FACEIT CS2",
+      title: "مباراتك في CS2",
+      matchup: "المواجهة",
+      playedOnFaceit: "تُلعب هذه المباراة على FACEIT.",
+      joinWhenAvailable: "ادخل إلى غرفة FACEIT عند توفر الرابط.",
+      afterMatchSync: "بعد انتهاء المباراة، يمكن لـ Ascendra مزامنة النتيجة والخريطة والإحصائيات من FACEIT.",
+      autoConfirmEnabled: "التأكيد التلقائي مفعّل. يمكن اعتماد النتيجة الرسمية تلقائيًا.",
+      autoConfirmDisabled: "التأكيد التلقائي غير مفعّل. سيُحفظ الإثبات لمراجعة المسؤولين.",
+      openRoom: "فتح غرفة FACEIT",
+      matchIdLabel: "FACEIT Match ID",
+      roomUnavailable:
+        "رابط غرفة FACEIT غير متوفر بعد. انتظر حتى يضيفه المسؤول أو منظّم البطولة.",
+    },
     faceitWorkflow: {
       eyebrow: "FACEIT CS2",
       title: "سير عمل FACEIT لـ CS2",
@@ -643,6 +684,118 @@ export default async function MatchDetailPage({ params }: PageProps) {
                       >
                         {match.room.joinUrl}
                       </a>
+                    </div>
+                  )}
+                </div>
+              </Panel>
+            )}
+
+            {/* Player-facing CS2 FACEIT instructions */}
+            {isCs2 && (
+              <Panel
+                eyebrow={msgs.cs2PlayerMatch.eyebrow}
+                title={msgs.cs2PlayerMatch.title}
+              >
+                <div className="grid gap-4">
+                  <div
+                    className="border p-3"
+                    style={{
+                      borderColor: "var(--asc-line-soft)",
+                      background: "var(--asc-bg-2)",
+                    }}
+                  >
+                    <p
+                      className="text-[10px] font-black uppercase tracking-[0.14em]"
+                      style={{ color: "var(--asc-fg-3)" }}
+                    >
+                      {msgs.cs2PlayerMatch.matchup}
+                    </p>
+                    <p
+                      className="mt-1 break-words text-lg font-black"
+                      style={{ color: "var(--asc-fg-0)" }}
+                    >
+                      {teamA?.name ?? msgs.vs.teamA}{" "}
+                      <span style={{ color: "var(--asc-fg-3)" }}>
+                        {msgs.vs.vs}
+                      </span>{" "}
+                      {teamB?.name ?? msgs.vs.teamB}
+                    </p>
+                  </div>
+
+                  <div className="grid gap-2 text-sm leading-6">
+                    {[
+                      msgs.cs2PlayerMatch.playedOnFaceit,
+                      msgs.cs2PlayerMatch.joinWhenAvailable,
+                      msgs.cs2PlayerMatch.afterMatchSync,
+                      faceitAutoConfirmEnabled
+                        ? msgs.cs2PlayerMatch.autoConfirmEnabled
+                        : msgs.cs2PlayerMatch.autoConfirmDisabled,
+                    ].map((line) => (
+                      <p key={line} style={{ color: "var(--asc-fg-2)" }}>
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+
+                  {faceitProof.faceitMatchUrl ? (
+                    <div className="grid gap-2">
+                      <a
+                        href={faceitProof.faceitMatchUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex max-w-full items-center justify-center border px-5 py-3 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80"
+                        style={{
+                          borderColor: "oklch(0.50 0.20 285 / 0.45)",
+                          background: "var(--asc-accent-dim)",
+                          color: "var(--asc-accent)",
+                          clipPath:
+                            "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)",
+                        }}
+                      >
+                        {msgs.cs2PlayerMatch.openRoom}
+                      </a>
+                      <p
+                        dir="ltr"
+                        title={faceitProof.faceitMatchUrl}
+                        className="break-all font-mono text-xs"
+                        style={{ color: "var(--asc-fg-3)" }}
+                      >
+                        {faceitProof.faceitMatchUrl}
+                      </p>
+                    </div>
+                  ) : faceitProof.faceitMatchId ? (
+                    <div
+                      className="border p-3"
+                      style={{
+                        borderColor: "oklch(0.50 0.20 285 / 0.35)",
+                        background: "var(--asc-accent-dim)",
+                      }}
+                    >
+                      <p
+                        className="text-[10px] font-black uppercase tracking-[0.14em]"
+                        style={{ color: "var(--asc-fg-3)" }}
+                      >
+                        {msgs.cs2PlayerMatch.matchIdLabel}
+                      </p>
+                      <p
+                        dir="ltr"
+                        title={faceitProof.faceitMatchId}
+                        className="mt-1 break-all font-mono text-sm font-black"
+                        style={{ color: "var(--asc-accent)" }}
+                      >
+                        {faceitProof.faceitMatchId}
+                      </p>
+                    </div>
+                  ) : (
+                    <div
+                      className="border px-3 py-2 text-xs leading-5"
+                      style={{
+                        borderColor: "oklch(0.50 0.20 285 / 0.35)",
+                        background: "var(--asc-accent-dim)",
+                        color: "var(--asc-accent)",
+                      }}
+                    >
+                      {msgs.cs2PlayerMatch.roomUnavailable}
                     </div>
                   )}
                 </div>

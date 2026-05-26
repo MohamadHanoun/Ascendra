@@ -14,3 +14,40 @@ export function extractFaceitMatchId(input: string): string | null {
   const m = trimmed.match(FACEIT_ROOM_URL_RE);
   return m ? m[1].toLowerCase() : null;
 }
+
+export type FaceitMatchLinkForDisplay = {
+  matchId: string;
+  matchUrl: string | null;
+};
+
+export function normalizeFaceitMatchLinkForDisplay(
+  input: string,
+): FaceitMatchLinkForDisplay | null {
+  const matchId = extractFaceitMatchId(input);
+  if (!matchId) return null;
+
+  const trimmed = input.trim();
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return { matchId, matchUrl: null };
+  }
+
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    return null;
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  const isFaceitHost =
+    hostname === "faceit.com" || hostname.endsWith(".faceit.com");
+
+  if (!isFaceitHost) {
+    return null;
+  }
+
+  return {
+    matchId,
+    matchUrl: `${url.origin}${url.pathname}`,
+  };
+}

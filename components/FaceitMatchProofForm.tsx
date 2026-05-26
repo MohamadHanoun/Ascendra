@@ -3,7 +3,10 @@
 import { useActionState } from "react";
 
 import type { MatchActionResult } from "@/actions/matchActions";
-import { syncFaceitMatchProof } from "@/actions/matchActions";
+import {
+  setFaceitMatchLinkForPlayers,
+  syncFaceitMatchProof,
+} from "@/actions/matchActions";
 import {
   hasFaceitPlayerRows,
   type FaceitParsedResultView,
@@ -30,6 +33,12 @@ type FaceitMatchProofMessages = {
   syncButton: string;
   syncing: string;
   syncHint: string;
+  roomLinkTitle: string;
+  roomLinkLabel: string;
+  roomLinkPlaceholder: string;
+  roomLinkButton: string;
+  roomLinkSaving: string;
+  roomLinkHint: string;
   notSyncedYet: string;
   synced: string;
   matchIdLabel: string;
@@ -75,6 +84,14 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
     syncing: "Syncing...",
     syncHint:
       "If auto-confirm is enabled and team mapping is verified, the official result may be applied automatically.",
+    roomLinkTitle: "FACEIT room link",
+    roomLinkLabel: "FACEIT match link or Match ID",
+    roomLinkPlaceholder:
+      "https://www.faceit.com/en/cs2/room/1-... or 1-...",
+    roomLinkButton: "Save FACEIT room",
+    roomLinkSaving: "Saving...",
+    roomLinkHint:
+      "Visible to players only. This does not sync proof, verify the match, or apply a result.",
     notSyncedYet: "No FACEIT proof synced yet.",
     synced: "Synced",
     matchIdLabel: "FACEIT match ID",
@@ -119,6 +136,14 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
     syncing: "جارٍ المزامنة...",
     syncHint:
       "إذا كان التأكيد التلقائي مفعّلًا وتم التحقق من مطابقة الفرق، يمكن اعتماد النتيجة الرسمية تلقائيًا.",
+    roomLinkTitle: "رابط غرفة FACEIT",
+    roomLinkLabel: "رابط مباراة FACEIT أو Match ID",
+    roomLinkPlaceholder:
+      "https://www.faceit.com/ar/cs2/room/1-... أو 1-...",
+    roomLinkButton: "حفظ غرفة FACEIT",
+    roomLinkSaving: "جارٍ الحفظ...",
+    roomLinkHint:
+      "يظهر هذا الرابط للاعبين فقط. لا يقوم بمزامنة الإثبات أو التحقق من المباراة أو اعتماد النتيجة.",
     notSyncedYet: "لم تتم مزامنة إثبات FACEIT بعد.",
     synced: "تمت المزامنة",
     matchIdLabel: "FACEIT Match ID",
@@ -189,8 +214,12 @@ export default function FaceitMatchProofForm({
   parsedResult,
 }: Props) {
   const msgs = formMessages[locale];
-  const [state, formAction, pending] = useActionState(
+  const [syncState, syncFormAction, syncPending] = useActionState(
     syncFaceitMatchProof,
+    INITIAL,
+  );
+  const [roomLinkState, roomLinkFormAction, roomLinkPending] = useActionState(
+    setFaceitMatchLinkForPlayers,
     INITIAL,
   );
 
@@ -592,9 +621,99 @@ export default function FaceitMatchProofForm({
         </p>
       )}
 
+      {/* Admin-only room link form */}
+      {isAdmin && (
+        <form
+          action={roomLinkFormAction}
+          className="grid gap-3 border p-4"
+          style={{
+            borderColor: "var(--asc-line-soft)",
+            background: "var(--asc-bg-2)",
+          }}
+        >
+          <input type="hidden" name="matchId" value={matchId} />
+          <input type="hidden" name="locale" value={locale} />
+
+          <div>
+            <p
+              className="mb-2 text-[10px] font-black uppercase tracking-[0.14em]"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              {msgs.roomLinkTitle}
+            </p>
+            <label
+              htmlFor={`faceit-room-link-input-${matchId}`}
+              className="mb-1 block text-[10px] font-black uppercase tracking-[0.14em]"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              {msgs.roomLinkLabel}
+            </label>
+            <input
+              id={`faceit-room-link-input-${matchId}`}
+              name="faceitRoomInput"
+              type="text"
+              dir="ltr"
+              placeholder={msgs.roomLinkPlaceholder}
+              defaultValue={proof.faceitMatchUrl ?? proof.faceitMatchId ?? ""}
+              className="w-full border bg-transparent px-3 py-2 font-mono text-sm"
+              style={{
+                borderColor: "var(--asc-line-soft)",
+                color: "var(--asc-fg-0)",
+                outline: "none",
+              }}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <button
+              type="submit"
+              disabled={roomLinkPending}
+              className="border px-5 py-2.5 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
+              style={{
+                borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                background: "var(--asc-accent-dim)",
+                color: "var(--asc-accent)",
+              }}
+            >
+              {roomLinkPending ? msgs.roomLinkSaving : msgs.roomLinkButton}
+            </button>
+            <p className="text-xs leading-5" style={{ color: "var(--asc-fg-3)" }}>
+              {msgs.roomLinkHint}
+            </p>
+          </div>
+
+          {roomLinkState.message && (
+            <div
+              className="border px-3 py-2 text-xs"
+              style={{
+                borderColor: roomLinkState.ok
+                  ? "oklch(0.55 0.14 150 / 0.4)"
+                  : "oklch(0.50 0.20 25 / 0.4)",
+                background: roomLinkState.ok
+                  ? "oklch(0.25 0.12 150 / 0.12)"
+                  : "oklch(0.25 0.18 25 / 0.12)",
+              }}
+            >
+              <p
+                className="font-black"
+                style={{
+                  color: roomLinkState.ok
+                    ? "var(--asc-green)"
+                    : "var(--asc-live)",
+                }}
+              >
+                {roomLinkState.message}
+              </p>
+            </div>
+          )}
+        </form>
+      )}
+
       {/* Sync form */}
       {canSync && (
-        <form action={formAction} className="grid gap-3">
+        <form action={syncFormAction} className="grid gap-3">
           <input type="hidden" name="matchId" value={matchId} />
           <input type="hidden" name="locale" value={locale} />
 
@@ -627,7 +746,7 @@ export default function FaceitMatchProofForm({
           <div className="grid gap-2">
             <button
               type="submit"
-              disabled={pending}
+              disabled={syncPending}
               className="border px-5 py-2.5 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
               style={{
                 borderColor: "oklch(0.50 0.20 285 / 0.4)",
@@ -635,7 +754,7 @@ export default function FaceitMatchProofForm({
                 color: "var(--asc-accent)",
               }}
             >
-              {pending ? msgs.syncing : msgs.syncButton}
+              {syncPending ? msgs.syncing : msgs.syncButton}
             </button>
             <p className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
               {msgs.syncHint}
@@ -645,14 +764,14 @@ export default function FaceitMatchProofForm({
       )}
 
       {/* Action result */}
-      {state.message && (
+      {syncState.message && (
         <div
           className="border px-3 py-2 text-xs"
           style={{
-            borderColor: state.ok
+            borderColor: syncState.ok
               ? "oklch(0.55 0.14 150 / 0.4)"
               : "oklch(0.50 0.20 25 / 0.4)",
-            background: state.ok
+            background: syncState.ok
               ? "oklch(0.25 0.12 150 / 0.12)"
               : "oklch(0.25 0.18 25 / 0.12)",
           }}
@@ -660,10 +779,10 @@ export default function FaceitMatchProofForm({
           <p
             className="font-black"
             style={{
-              color: state.ok ? "var(--asc-green)" : "var(--asc-live)",
+              color: syncState.ok ? "var(--asc-green)" : "var(--asc-live)",
             }}
           >
-            {state.message}
+            {syncState.message}
           </p>
         </div>
       )}

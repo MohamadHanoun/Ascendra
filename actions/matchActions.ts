@@ -14,7 +14,10 @@ import {
 import { FaceitApiError, getFaceitMatchDetails, getFaceitMatchStats } from "@/lib/faceit";
 import { isFaceitCs2MatchDetails, parseFaceitCs2MatchResult } from "@/lib/faceitCs2Parser";
 import { attemptFaceitAutoConfirm } from "@/lib/faceitAutoConfirm";
-import { extractFaceitMatchId } from "@/lib/faceitMatchId";
+import {
+  extractFaceitMatchId,
+  normalizeFaceitMatchLinkForDisplay,
+} from "@/lib/faceitMatchId";
 import { isCs2Game } from "@/lib/isCs2Game";
 import { notifyMatchConfirmed } from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
@@ -89,6 +92,12 @@ type MatchIdActionMessages = {
   faceitSyncNotAllowed: string;
   faceitSyncFailed: string;
   faceitSyncSuccess: string;
+  faceitRoomInputRequired: string;
+  faceitRoomInvalidInput: string;
+  faceitRoomNotAllowed: string;
+  faceitRoomAlreadyUsed: string;
+  faceitRoomSaveFailed: string;
+  faceitRoomSaved: string;
   // Phase 4 — auto-confirm feedback
   faceitAutoApplied: string;
   faceitSyncedMappingFailed: string;
@@ -139,6 +148,12 @@ const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
     faceitSyncNotAllowed: "You are not allowed to sync FACEIT proof for this match.",
     faceitSyncFailed: "Failed to sync FACEIT match.",
     faceitSyncSuccess: "FACEIT proof saved for review.",
+    faceitRoomInputRequired: "FACEIT match link or Match ID is required.",
+    faceitRoomInvalidInput: "Enter a valid FACEIT match link or Match ID.",
+    faceitRoomNotAllowed: "Only Ascendra admins can update the FACEIT room link.",
+    faceitRoomAlreadyUsed: "This FACEIT match is already linked to another Ascendra match.",
+    faceitRoomSaveFailed: "Failed to save FACEIT room link.",
+    faceitRoomSaved: "FACEIT room link saved.",
     faceitAutoApplied: "FACEIT proof synced and the official result was applied automatically.",
     faceitSyncedMappingFailed: "FACEIT proof was saved, but the official result was not applied because team mapping could not be verified.",
     faceitSyncedAutoDisabled: "FACEIT proof saved for review. Auto-confirm is disabled.",
@@ -185,6 +200,12 @@ const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
     faceitSyncNotAllowed: "لا تملك صلاحية مزامنة إثبات FACEIT لهذه المباراة.",
     faceitSyncFailed: "فشل مزامنة مباراة FACEIT.",
     faceitSyncSuccess: "تم حفظ إثبات FACEIT للمراجعة.",
+    faceitRoomInputRequired: "رابط مباراة FACEIT أو Match ID مطلوب.",
+    faceitRoomInvalidInput: "أدخل رابط مباراة FACEIT أو Match ID صالحًا.",
+    faceitRoomNotAllowed: "يمكن لمشرفي Ascendra فقط تحديث رابط غرفة FACEIT.",
+    faceitRoomAlreadyUsed: "مباراة FACEIT هذه مرتبطة بمباراة أخرى في Ascendra.",
+    faceitRoomSaveFailed: "تعذر حفظ رابط غرفة FACEIT.",
+    faceitRoomSaved: "تم حفظ رابط غرفة FACEIT.",
     faceitAutoApplied: "تمت مزامنة إثبات FACEIT واعتماد النتيجة الرسمية تلقائيًا.",
     faceitSyncedMappingFailed: "تم حفظ إثبات FACEIT، لكن لم يتم اعتماد النتيجة الرسمية لأن مطابقة الفرق لم يتم التحقق منها.",
     faceitSyncedAutoDisabled: "تم حفظ إثبات FACEIT للمراجعة. التأكيد التلقائي غير مفعّل.",
@@ -928,6 +949,69 @@ export async function findRecentDotaMatch(
       teamBCoverage: Math.round(c.teamBCoverage * 100),
     })),
   };
+}
+
+// ─── Admin: set FACEIT room/match link for players ───────────────────────────
+// Display-only: does not fetch FACEIT, verify proof, apply results, or advance brackets.
+
+export async function setFaceitMatchLinkForPlayers(
+  _prevState: MatchActionResult,
+  formData: FormData,
+): Promise<MatchActionResult> {
+  const messages = matchIdActionMessages[getActionLocale(formData)];
+  const sessionUser = await requireUser();
+  if (!sessionUser) return fail(messages.loginRequired);
+  if (!sessionUser.isAdmin) return fail(messages.faceitRoomNotAllowed);
+
+  const matchId = getValue(formData, "matchId");
+  const faceitRoomInput = getValue(formData, "faceitRoomInput");
+
+  if (!matchId) return fail(messages.matchIdMissing);
+  if (!faceitRoomInput) return fail(messages.faceitRoomInputRequired);
+
+  const normalized = normalizeFaceitMatchLinkForDisplay(faceitRoomInput);
+  if (!normalized) return fail(messages.faceitRoomInvalidInput);
+
+  const match = await prisma.tournamentMatch.findUnique({
+    where: { id: matchId },
+    select: {
+      id: true,
+      tournamentId: true,
+      tournament: {
+        select: {
+          game: { select: { slug: true, name: true } },
+        },
+      },
+    },
+  });
+
+  if (!match) return fail(messages.matchNotFound);
+  if (!isCs2Game(match.tournament.game?.slug, match.tournament.game?.name)) {
+    return fail(messages.faceitMatchNotCs2);
+  }
+
+  try {
+    await prisma.tournamentMatch.update({
+      where: { id: match.id },
+      data: {
+        faceitMatchId: normalized.matchId,
+        faceitMatchUrl: normalized.matchUrl,
+      },
+    });
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      return fail(messages.faceitRoomAlreadyUsed);
+    }
+    return fail(messages.faceitRoomSaveFailed);
+  }
+
+  revalidateMatchPaths(match.tournamentId);
+  revalidatePath(`/tournaments/${match.tournamentId}/matches/${match.id}`);
+
+  return success(messages.faceitRoomSaved);
 }
 
 // ─── Sync FACEIT CS2 match proof ─────────────────────────────────────────────
