@@ -579,7 +579,7 @@ export default async function TournamentDetailsPage({
               createdAt: "desc",
             },
           },
-          gameAccounts: {
+          playerGameAccounts: {
             where: { provider: "steam" },
             select: { externalId: true },
           },
@@ -741,7 +741,7 @@ export default async function TournamentDetailsPage({
   const isCs2 = isCs2Game(tournament.game?.slug, tournament.game?.name);
 
   const cs2Readiness: Cs2Readiness = computeCs2Readiness({
-    steamId64: currentUser?.gameAccounts?.[0]?.externalId ?? null,
+    steamId64: currentUser?.playerGameAccounts?.[0]?.externalId ?? null,
     faceitPlayerId: currentUser?.faceitPlayerId ?? null,
     faceitSteamId64: currentUser?.faceitSteamId64 ?? null,
   });

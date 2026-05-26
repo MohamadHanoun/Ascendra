@@ -16,6 +16,8 @@ import Navbar from "@/components/Navbar";
 import { prisma } from "@/lib/prisma";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
+import { isCs2Game } from "@/lib/isCs2Game";
+import { isFaceitAutoConfirmEnabled } from "@/lib/faceitAutoConfirm";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +57,21 @@ type MatchDetailMessages = {
   verif: { title: string; submitMatchId: string };
   matchInfo: { title: string; round: string; match: string; format: string; status: string; type: string; byeValue: string; completed: string };
   faceit: { eyebrow: string; title: string };
+  faceitWorkflow: {
+    eyebrow: string;
+    title: string;
+    step1: string;
+    step2: string;
+    step3: string;
+    step4: string;
+    step5: string;
+    note: string;
+    teamReadiness: string;
+    faceitReady: string;
+    steamReady: string;
+    autoConfirmEnabled: string;
+    autoConfirmDisabled: string;
+  };
   backLink: string;
 };
 
@@ -91,6 +108,21 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     verif: { title: "Game Status", submitMatchId: "Submit Match ID" },
     matchInfo: { title: "Match Info", round: "Round", match: "Match", format: "Best of", status: "Status", type: "Type", byeValue: "Bye (Auto-advance)", completed: "Completed" },
     faceit: { eyebrow: "FACEIT CS2", title: "FACEIT CS2 Proof" },
+    faceitWorkflow: {
+      eyebrow: "FACEIT CS2",
+      title: "CS2 FACEIT workflow",
+      step1: "Make sure all players have Steam and FACEIT connected.",
+      step2: "Create or open the FACEIT match room.",
+      step3: "Invite the correct teams/players on FACEIT.",
+      step4: "Paste the FACEIT match ID or room URL below.",
+      step5: "After the match ends, sync FACEIT proof.",
+      note: "FACEIT proof can automatically update the official result when auto-confirm is enabled.",
+      teamReadiness: "Team readiness",
+      faceitReady: "FACEIT ready",
+      steamReady: "Steam ready",
+      autoConfirmEnabled: "Auto-confirm is enabled",
+      autoConfirmDisabled: "Auto-confirm is disabled",
+    },
     backLink: "All Matches",
   },
   ar: {
@@ -125,6 +157,21 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     verif: { title: "حالة اللعبة", submitMatchId: "تقديم معرف المباراة" },
     matchInfo: { title: "معلومات المباراة", round: "الجولة", match: "المباراة", format: "الأفضل من", status: "الحالة", type: "النوع", byeValue: "تأهل تلقائي", completed: "اكتملت" },
     faceit: { eyebrow: "FACEIT CS2", title: "إثبات FACEIT لـ CS2" },
+    faceitWorkflow: {
+      eyebrow: "FACEIT CS2",
+      title: "سير عمل FACEIT لـ CS2",
+      step1: "تأكد أن جميع اللاعبين ربطوا Steam و FACEIT.",
+      step2: "أنشئ أو افتح غرفة مباراة FACEIT.",
+      step3: "ادعُ الفرق أو اللاعبين الصحيحين على FACEIT.",
+      step4: "الصق معرف مباراة FACEIT أو رابط الغرفة في الأسفل.",
+      step5: "بعد انتهاء المباراة، قم بمزامنة إثبات FACEIT.",
+      note: "يمكن لإثبات FACEIT تحديث النتيجة الرسمية تلقائيًا عند تفعيل التأكيد التلقائي.",
+      teamReadiness: "جاهزية الفريق",
+      faceitReady: "جاهز لـ FACEIT",
+      steamReady: "جاهز لـ Steam",
+      autoConfirmEnabled: "التأكيد التلقائي مفعّل",
+      autoConfirmDisabled: "التأكيد التلقائي غير مفعّل",
+    },
     backLink: "كل المباريات",
   },
 };
@@ -310,11 +357,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
   const isDota =
     tournament.game?.slug?.toLowerCase().includes("dota") ||
     tournament.game?.name?.toLowerCase().includes("dota");
-  const isCs2 =
-    tournament.game?.slug?.toLowerCase().includes("cs2") ||
-    tournament.game?.slug?.toLowerCase().includes("counter-strike") ||
-    tournament.game?.name?.toLowerCase().includes("cs2") ||
-    tournament.game?.name?.toLowerCase().includes("counter-strike");
+  const isCs2 = isCs2Game(tournament.game?.slug, tournament.game?.name);
 
   // Check if the current user has FACEIT connected (needed for CS2 proof panel).
   let faceitConnected = false;
@@ -344,6 +387,42 @@ export default async function MatchDetailPage({ params }: PageProps) {
     match.room?.provider === "steam_cs2"
       ? parseCs2Metadata(match.room.metadata)
       : null;
+
+  // CS2-only: team member readiness and auto-confirm status
+  type TeamReadinessSummary = {
+    teamId: string;
+    name: string;
+    faceitCount: number;
+    total: number;
+  };
+  let teamReadinessSummary: TeamReadinessSummary[] | null = null;
+  let faceitAutoConfirmEnabled = false;
+
+  if (isCs2) {
+    faceitAutoConfirmEnabled = isFaceitAutoConfirmEnabled();
+
+    const cs2TeamIds = [match.teamAId, match.teamBId].filter(
+      (x): x is string => Boolean(x),
+    );
+    if (cs2TeamIds.length > 0) {
+      const cs2Members = await prisma.teamMember.findMany({
+        where: { teamId: { in: cs2TeamIds } },
+        select: {
+          teamId: true,
+          user: { select: { faceitPlayerId: true } },
+        },
+      });
+      teamReadinessSummary = cs2TeamIds.map((tid) => {
+        const members = cs2Members.filter((m) => m.teamId === tid);
+        return {
+          teamId: tid,
+          name: teamName.get(tid) ?? "TBD",
+          faceitCount: members.filter((m) => m.user.faceitPlayerId).length,
+          total: members.length,
+        };
+      });
+    }
+  }
 
   const { label: statusLabel, tone: statusTone } = matchStatusInfo(match.status, msgs.matchStatuses);
   const isTerminal = ["completed", "confirmed", "forfeit", "bye", "cancelled"].includes(match.status);
@@ -629,6 +708,101 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     style={{ borderColor: "oklch(0.65 0.14 75 / 0.4)", background: "oklch(0.25 0.12 75 / 0.10)", color: "var(--asc-amber)" }}
                   >
                     {msgs.cs2.warning}
+                  </div>
+                </div>
+              </Panel>
+            )}
+
+            {/* CS2 FACEIT workflow guide */}
+            {isCs2 && (
+              <Panel
+                eyebrow={msgs.faceitWorkflow.eyebrow}
+                title={msgs.faceitWorkflow.title}
+              >
+                <div className="grid gap-5">
+                  {/* Numbered steps */}
+                  <ol className="grid gap-2">
+                    {[
+                      msgs.faceitWorkflow.step1,
+                      msgs.faceitWorkflow.step2,
+                      msgs.faceitWorkflow.step3,
+                      msgs.faceitWorkflow.step4,
+                      msgs.faceitWorkflow.step5,
+                    ].map((step, i) => (
+                      <li
+                        key={i}
+                        className="flex gap-3 text-sm leading-6"
+                        style={{ color: "var(--asc-fg-2)" }}
+                      >
+                        <span
+                          className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center border text-[10px] font-black"
+                          style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
+                        >
+                          {i + 1}
+                        </span>
+                        {step}
+                      </li>
+                    ))}
+                  </ol>
+
+                  {/* Team readiness summary */}
+                  {teamReadinessSummary && teamReadinessSummary.length > 0 && (
+                    <div
+                      className="border p-3"
+                      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+                    >
+                      <p
+                        className="mb-2 text-[10px] font-black uppercase tracking-[0.14em]"
+                        style={{ color: "var(--asc-fg-3)" }}
+                      >
+                        {msgs.faceitWorkflow.teamReadiness}
+                      </p>
+                      <div className="grid gap-2">
+                        {teamReadinessSummary.map((team) => {
+                          const allReady = team.total > 0 && team.faceitCount === team.total;
+                          return (
+                            <div
+                              key={team.teamId}
+                              className="flex items-center justify-between gap-3 text-xs"
+                            >
+                              <span className="font-black" style={{ color: "var(--asc-fg-1)" }}>
+                                {team.name}
+                              </span>
+                              <span
+                                className="font-black"
+                                style={{ color: allReady ? "var(--asc-green)" : "var(--asc-amber)" }}
+                              >
+                                {team.faceitCount}/{team.total} {msgs.faceitWorkflow.faceitReady}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Auto-confirm status */}
+                  <div
+                    className="flex items-center gap-2 text-xs"
+                    style={{ color: faceitAutoConfirmEnabled ? "var(--asc-green)" : "var(--asc-fg-3)" }}
+                  >
+                    <span className="font-black">
+                      {faceitAutoConfirmEnabled
+                        ? msgs.faceitWorkflow.autoConfirmEnabled
+                        : msgs.faceitWorkflow.autoConfirmDisabled}
+                    </span>
+                  </div>
+
+                  {/* Note */}
+                  <div
+                    className="border px-3 py-2 text-xs leading-5"
+                    style={{
+                      borderColor: "oklch(0.50 0.20 285 / 0.3)",
+                      background: "var(--asc-accent-dim)",
+                      color: "var(--asc-accent)",
+                    }}
+                  >
+                    {msgs.faceitWorkflow.note}
                   </div>
                 </div>
               </Panel>

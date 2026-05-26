@@ -25,6 +25,7 @@ type FaceitMatchProofMessages = {
   inputPlaceholder: string;
   syncButton: string;
   syncing: string;
+  syncHint: string;
   notSyncedYet: string;
   synced: string;
   verified: string;
@@ -49,12 +50,13 @@ type FaceitMatchProofMessages = {
 const formMessages: Record<Locale, FaceitMatchProofMessages> = {
   en: {
     instruction:
-      "Paste a FACEIT match ID or room URL to attach CS2 proof to this match.",
-    inputLabel: "FACEIT Match ID or URL",
+      "Paste the FACEIT room URL or match ID after the FACEIT match is created.",
+    inputLabel: "FACEIT match ID or room URL",
     inputPlaceholder:
       "e.g. 1-59d69823-3169-45a8-... or faceit.com/.../room/...",
     syncButton: "Sync FACEIT proof",
     syncing: "Syncing...",
+    syncHint: "Sync after the FACEIT match is finished.",
     notSyncedYet: "Not synced yet",
     synced: "Synced",
     verified: "FACEIT verified",
@@ -79,11 +81,12 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
   },
   ar: {
     instruction:
-      "الصق معرّف مباراة FACEIT أو رابط الغرفة لإرفاق إثبات CS2 بهذه المباراة.",
-    inputLabel: "معرّف مباراة FACEIT أو الرابط",
+      "الصق رابط غرفة FACEIT أو معرف المباراة بعد إنشاء مباراة FACEIT.",
+    inputLabel: "معرّف مباراة FACEIT أو رابط الغرفة",
     inputPlaceholder: "مثال: 1-59d69823-... أو faceit.com/.../room/...",
     syncButton: "مزامنة إثبات FACEIT",
     syncing: "جارٍ المزامنة...",
+    syncHint: "قم بالمزامنة بعد انتهاء مباراة FACEIT.",
     notSyncedYet: "لم تتم المزامنة بعد",
     synced: "تمت المزامنة",
     verified: "موثق من FACEIT",
@@ -401,18 +404,23 @@ export default function FaceitMatchProofForm({
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={pending}
-            className="border px-5 py-2.5 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
-            style={{
-              borderColor: "oklch(0.50 0.20 285 / 0.4)",
-              background: "var(--asc-accent-dim)",
-              color: "var(--asc-accent)",
-            }}
-          >
-            {pending ? msgs.syncing : msgs.syncButton}
-          </button>
+          <div className="grid gap-2">
+            <button
+              type="submit"
+              disabled={pending}
+              className="border px-5 py-2.5 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
+              style={{
+                borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                background: "var(--asc-accent-dim)",
+                color: "var(--asc-accent)",
+              }}
+            >
+              {pending ? msgs.syncing : msgs.syncButton}
+            </button>
+            <p className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
+              {msgs.syncHint}
+            </p>
+          </div>
         </form>
       )}
 
