@@ -87,11 +87,6 @@ type MatchDetailMessages = {
   faceitWorkflow: {
     eyebrow: string;
     title: string;
-    step1: string;
-    step2: string;
-    step3: string;
-    step4: string;
-    step5: string;
     note: string;
     teamReadiness: string;
     faceitReady: string;
@@ -118,7 +113,7 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     cs2: {
       dedicatedMode: "Dedicated Server", manualMode: "Manual Lobby",
       serverDetailsTitle: "Server Details",
-      dedicatedDesc: "Connect using the details below. Result reporting via SRCDS log ingestion — submit manually if automation is unavailable.",
+      dedicatedDesc: "Connect using the details below. Submit the result manually via the Match Report form if it is not applied automatically.",
       manualDesc: "Connect using the details below. After the match, submit your result via the Match Report form with a screenshot as evidence.",
       warning: "After the match ends, submit your result using the Match Report form with a screenshot as evidence. Both teams must report — if they agree, the result is confirmed automatically.",
       serverAddress: "Server Address", gotvSpectator: "GOTV Spectator", logSource: "Log Source",
@@ -147,22 +142,17 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
       openRoom: "Open FACEIT room",
       matchIdLabel: "FACEIT Match ID",
       roomUnavailable:
-        "FACEIT room link is not available yet. Wait for an admin or tournament organizer to add it.",
+        "FACEIT room link not available yet.",
       scheduledTime: "Scheduled time",
       playerInstructions: "Player instructions",
       noScheduledTime: "Match time has not been set yet.",
       noInstructions:
-        "Follow the tournament organizer's instructions and check in before playing.",
+        "No instructions set.",
       checkInReminder: "Check in before joining the FACEIT room.",
     },
     faceitWorkflow: {
       eyebrow: "FACEIT CS2",
-      title: "CS2 FACEIT workflow",
-      step1: "Play the CS2 match on FACEIT with the correct teams.",
-      step2: "After the match ends, copy the FACEIT match ID or room URL.",
-      step3: "An admin or authorized participant adds the FACEIT match ID below.",
-      step4: "Ascendra syncs the score, map, stats, demo link, and match status.",
-      step5: "If auto-confirm is enabled and team mapping is verified, Ascendra can apply the official result automatically.",
+      title: "FACEIT Readiness",
       note: "When auto-confirm is disabled, FACEIT proof is stored for review and the official result remains manual.",
       teamReadiness: "Team readiness",
       faceitReady: "FACEIT ready",
@@ -187,7 +177,7 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     cs2: {
       dedicatedMode: "خادم مخصص", manualMode: "صالة يدوية",
       serverDetailsTitle: "تفاصيل الخادم",
-      dedicatedDesc: "الاتصال باستخدام التفاصيل أدناه. يتم الإبلاغ عن النتيجة عبر استيعاب سجلات SRCDS — قدّمها يدويًا إذا لم تكن الأتمتة متاحة.",
+      dedicatedDesc: "الاتصال باستخدام التفاصيل أدناه. قدّم النتيجة يدويًا عبر نموذج تقرير المباراة إذا لم تُطبَّق تلقائيًا.",
       manualDesc: "الاتصال باستخدام التفاصيل أدناه. بعد المباراة، قدّم نتيجتك عبر نموذج تقرير المباراة مع لقطة شاشة كدليل.",
       warning: "بعد انتهاء المباراة، قدّم نتيجتك باستخدام نموذج تقرير المباراة مع لقطة شاشة كدليل. يجب أن يُقدّم كلا الفريقين تقريرًا — وإذا اتفقا، تُؤكّد النتيجة تلقائيًا.",
       serverAddress: "عنوان الخادم", gotvSpectator: "مراقب GOTV", logSource: "مصدر السجلات",
@@ -216,22 +206,17 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
       openRoom: "فتح غرفة FACEIT",
       matchIdLabel: "FACEIT Match ID",
       roomUnavailable:
-        "رابط غرفة FACEIT غير متوفر بعد. انتظر حتى يضيفه المسؤول أو منظّم البطولة.",
+        "رابط غرفة FACEIT غير متوفر بعد.",
       scheduledTime: "وقت المباراة",
       playerInstructions: "تعليمات اللاعبين",
       noScheduledTime: "لم يتم تحديد وقت المباراة بعد.",
       noInstructions:
-        "اتبع تعليمات منظّم البطولة وسجّل حضورك قبل اللعب.",
+        "لا توجد تعليمات.",
       checkInReminder: "سجّل حضورك قبل الدخول إلى غرفة FACEIT.",
     },
     faceitWorkflow: {
       eyebrow: "FACEIT CS2",
-      title: "سير عمل FACEIT لـ CS2",
-      step1: "العب مباراة CS2 على FACEIT باستخدام الفرق الصحيحة.",
-      step2: "بعد انتهاء المباراة، انسخ FACEIT Match ID أو رابط الغرفة.",
-      step3: "يضيف المشرف أو اللاعب المخوّل FACEIT Match ID في الأسفل.",
-      step4: "سيقوم Ascendra بمزامنة النتيجة والخريطة والإحصائيات ورابط الديمو وحالة المباراة.",
-      step5: "إذا كان التأكيد التلقائي مفعّلًا وتم التحقق من مطابقة الفرق، يمكن اعتماد النتيجة الرسمية تلقائيًا.",
+      title: "جاهزية FACEIT",
       note: "عند تعطيل التأكيد التلقائي، يُحفظ إثبات FACEIT للمراجعة وتبقى النتيجة الرسمية يدوية.",
       teamReadiness: "جاهزية الفريق",
       faceitReady: "جاهز لـ FACEIT",
@@ -1013,31 +998,6 @@ export default async function MatchDetailPage({ params }: PageProps) {
                 title={msgs.faceitWorkflow.title}
               >
                 <div className="grid gap-5">
-                  {/* Numbered steps */}
-                  <ol className="grid gap-2">
-                    {[
-                      msgs.faceitWorkflow.step1,
-                      msgs.faceitWorkflow.step2,
-                      msgs.faceitWorkflow.step3,
-                      msgs.faceitWorkflow.step4,
-                      msgs.faceitWorkflow.step5,
-                    ].map((step, i) => (
-                      <li
-                        key={i}
-                        className="flex gap-3 text-sm leading-6"
-                        style={{ color: "var(--asc-fg-2)" }}
-                      >
-                        <span
-                          className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center border text-[10px] font-black"
-                          style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
-                        >
-                          {i + 1}
-                        </span>
-                        {step}
-                      </li>
-                    ))}
-                  </ol>
-
                   {/* Team readiness summary */}
                   {teamReadinessSummary && teamReadinessSummary.length > 0 && (
                     <div

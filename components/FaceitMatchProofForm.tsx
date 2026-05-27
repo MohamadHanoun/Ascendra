@@ -76,14 +76,14 @@ type FaceitMatchProofMessages = {
 const formMessages: Record<Locale, FaceitMatchProofMessages> = {
   en: {
     instruction:
-      "After the FACEIT match ends, paste the FACEIT match ID or room URL. Ascendra will store score, map, stats, and demo proof.",
+      "Paste the FACEIT match ID or room URL to sync score, map, and stats.",
     inputLabel: "FACEIT match ID or room URL",
     inputPlaceholder:
       "e.g. 1-59d69823-3169-45a8-... or faceit.com/.../room/...",
     syncButton: "Sync FACEIT proof",
     syncing: "Syncing...",
     syncHint:
-      "If auto-confirm is enabled and team mapping is verified, the official result may be applied automatically.",
+      "Auto-confirm applies the result when team mapping is verified.",
     roomLinkTitle: "FACEIT room link",
     roomLinkLabel: "FACEIT match link or Match ID",
     roomLinkPlaceholder:
@@ -91,7 +91,7 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
     roomLinkButton: "Save FACEIT room",
     roomLinkSaving: "Saving...",
     roomLinkHint:
-      "Visible to players only. This does not sync proof, verify the match, or apply a result.",
+      "Players see this link on the match page.",
     notSyncedYet: "No FACEIT proof synced yet.",
     synced: "Synced",
     matchIdLabel: "FACEIT match ID",
@@ -116,11 +116,11 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
     teamFallback: "FACEIT team",
     winnerLabel: "Winner",
     disclaimer:
-      "Proof will be stored for review. Auto-confirm applies the official result only when it is enabled and team mapping is verified.",
+      "Proof stored for review. Auto-confirm applies the result when team mapping is verified.",
     disclaimerApplied:
       "This FACEIT proof applied the official result automatically.",
     connectRequired:
-      "Connect your FACEIT account on your profile to sync CS2 proof.",
+      "Connect FACEIT on your profile to sync proof.",
     autoApplied: "Official result auto-applied from FACEIT.",
     mappingMethodLabel: "Mapping method",
     mappingStrict: "Strict player match",
@@ -129,13 +129,13 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
   },
   ar: {
     instruction:
-      "بعد انتهاء مباراة FACEIT، الصق FACEIT Match ID أو رابط الغرفة. سيحفظ Ascendra النتيجة والخريطة والإحصائيات وإثبات الديمو.",
+      "الصق FACEIT Match ID أو رابط الغرفة لمزامنة النتيجة والخريطة والإحصائيات.",
     inputLabel: "معرّف مباراة FACEIT أو رابط الغرفة",
     inputPlaceholder: "مثال: 1-59d69823-... أو faceit.com/.../room/...",
     syncButton: "مزامنة إثبات FACEIT",
     syncing: "جارٍ المزامنة...",
     syncHint:
-      "إذا كان التأكيد التلقائي مفعّلًا وتم التحقق من مطابقة الفرق، يمكن اعتماد النتيجة الرسمية تلقائيًا.",
+      "يطبّق التأكيد التلقائي النتيجة عند التحقق من مطابقة الفرق.",
     roomLinkTitle: "رابط غرفة FACEIT",
     roomLinkLabel: "رابط مباراة FACEIT أو Match ID",
     roomLinkPlaceholder:
@@ -143,7 +143,7 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
     roomLinkButton: "حفظ غرفة FACEIT",
     roomLinkSaving: "جارٍ الحفظ...",
     roomLinkHint:
-      "يظهر هذا الرابط للاعبين فقط. لا يقوم بمزامنة الإثبات أو التحقق من المباراة أو اعتماد النتيجة.",
+      "يظهر هذا الرابط للاعبين في صفحة المباراة.",
     notSyncedYet: "لم تتم مزامنة إثبات FACEIT بعد.",
     synced: "تمت المزامنة",
     matchIdLabel: "FACEIT Match ID",
@@ -168,10 +168,10 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
     teamFallback: "فريق FACEIT",
     winnerLabel: "الفائز",
     disclaimer:
-      "سيُحفظ الإثبات للمراجعة. يطبّق التأكيد التلقائي النتيجة الرسمية فقط عند تفعيله والتحقق من مطابقة الفرق.",
+      "الإثبات محفوظ للمراجعة. يطبّق التأكيد التلقائي النتيجة عند التحقق من مطابقة الفرق.",
     disclaimerApplied: "طبّق إثبات FACEIT هذا النتيجة الرسمية تلقائيًا.",
     connectRequired:
-      "اربط حساب FACEIT في ملفك الشخصي لمزامنة إثبات CS2.",
+      "اربط FACEIT في ملفك الشخصي لمزامنة الإثبات.",
     autoApplied: "تم اعتماد النتيجة الرسمية تلقائيًا من FACEIT.",
     mappingMethodLabel: "طريقة المطابقة",
     mappingStrict: "مطابقة اللاعبين",

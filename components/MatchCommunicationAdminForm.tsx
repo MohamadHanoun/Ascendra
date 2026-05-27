@@ -95,7 +95,7 @@ export default function MatchCommunicationAdminForm({
             className="mt-1 text-[10px]"
             style={{ color: "var(--asc-fg-3)" }}
           >
-            Time is stored and displayed in UTC. Leave blank to clear.
+            UTC · Leave blank to clear
           </p>
         </div>
 
@@ -113,7 +113,7 @@ export default function MatchCommunicationAdminForm({
             className="mt-1 text-[10px]"
             style={{ color: "var(--asc-fg-3)" }}
           >
-            Shown to players on the match page. Max 500 characters.
+            Max 500 characters
           </p>
         </div>
 
