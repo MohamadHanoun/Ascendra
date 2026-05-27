@@ -16,6 +16,11 @@ import ProfileRealtime from "@/components/ProfileRealtime";
 import ProfileTabs from "@/components/ProfileTabs";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
+import {
+  getActiveMatchesForUser,
+  getPlayerMatchStatusLabel,
+  type MatchHubCard,
+} from "@/lib/playerMatchHub";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -151,6 +156,24 @@ type ProfileMessages = {
     member: string;
     notMember: string;
   };
+  activeMatches: {
+    heading: string;
+    empty: string;
+    tournament: string;
+    yourTeam: string;
+    opponent: string;
+    scheduledTime: string;
+    faceitRoom: string;
+    available: string;
+    notAvailableYet: string;
+    checkedIn: string;
+    notCheckedIn: string;
+    openMatch: string;
+    openFaceitRoom: string;
+    tbd: string;
+    round: string;
+    match: string;
+  };
 };
 
 const profileMessages: Record<Locale, ProfileMessages> = {
@@ -276,6 +299,24 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       member: "Member",
       notMember: "Not member",
     },
+    activeMatches: {
+      heading: "My active matches",
+      empty: "You do not have active tournament matches yet.",
+      tournament: "Tournament",
+      yourTeam: "Your team",
+      opponent: "Opponent",
+      scheduledTime: "Scheduled time",
+      faceitRoom: "FACEIT room",
+      available: "Available",
+      notAvailableYet: "Not available yet",
+      checkedIn: "Checked in",
+      notCheckedIn: "Not checked in",
+      openMatch: "Open match",
+      openFaceitRoom: "Open FACEIT room",
+      tbd: "TBD",
+      round: "Round",
+      match: "Match",
+    },
   },
 
   ar: {
@@ -399,6 +440,24 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       rejected: "مرفوض",
       member: "عضو",
       notMember: "غير عضو",
+    },
+    activeMatches: {
+      heading: "مبارياتي النشطة",
+      empty: "لا توجد لديك مباريات نشطة في البطولات حاليًا.",
+      tournament: "البطولة",
+      yourTeam: "فريقك",
+      opponent: "الخصم",
+      scheduledTime: "وقت المباراة",
+      faceitRoom: "غرفة FACEIT",
+      available: "متوفرة",
+      notAvailableYet: "غير متوفرة بعد",
+      checkedIn: "تم تسجيل الحضور",
+      notCheckedIn: "لم يتم تسجيل الحضور",
+      openMatch: "فتح المباراة",
+      openFaceitRoom: "فتح غرفة FACEIT",
+      tbd: "غير محدد",
+      round: "جولة",
+      match: "مباراة",
     },
   },
 };
@@ -612,6 +671,223 @@ function StatCell({
   );
 }
 
+function formatScheduledAt(date: Date, locale: Locale): string {
+  const dateStr = date.toLocaleString(locale === "ar" ? "ar-SA" : "en-GB", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  return `${dateStr} UTC`;
+}
+
+function MatchStatusBadge({ status, locale }: { status: string; locale: Locale }) {
+  const isLive = status === "in_progress" || status === "room_created" || status === "ready";
+  const isWarning = status === "result_pending" || status === "disputed";
+
+  const style: React.CSSProperties = isLive
+    ? {
+        color: "var(--asc-accent)",
+        borderColor: "oklch(0.50 0.20 285 / 0.40)",
+        background: "oklch(0.20 0.14 285 / 0.22)",
+      }
+    : isWarning
+    ? {
+        color: "oklch(0.85 0.10 50)",
+        borderColor: "oklch(0.55 0.16 50 / 0.40)",
+        background: "oklch(0.22 0.10 50 / 0.18)",
+      }
+    : {
+        color: "var(--asc-fg-3)",
+        borderColor: "var(--asc-line-soft)",
+        background: "transparent",
+      };
+
+  return (
+    <span
+      className="inline-flex border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.10em]"
+      style={style}
+    >
+      {getPlayerMatchStatusLabel(status, locale)}
+    </span>
+  );
+}
+
+function ActiveMatchCard({
+  card,
+  msgs,
+  locale,
+}: {
+  card: MatchHubCard;
+  msgs: ProfileMessages["activeMatches"];
+  locale: Locale;
+}) {
+  return (
+    <div
+      className="relative flex flex-col gap-4 border p-4"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "var(--asc-bg-2)",
+      }}
+    >
+      {/* Eyebrow: tournament + round */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p
+            className="truncate text-[10px] font-black uppercase tracking-[0.14em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            {card.tournamentTitle}
+            {card.gameName ? ` · ${card.gameName}` : ""}
+          </p>
+          <p
+            className="mt-0.5 text-[10px]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            {msgs.round} {card.roundNumber} · {msgs.match} {card.matchNumber}
+          </p>
+        </div>
+        <MatchStatusBadge status={card.status} locale={locale} />
+      </div>
+
+      {/* Teams */}
+      <div className="grid gap-2">
+        <div className="flex items-start gap-2">
+          <span
+            className="mt-0.5 shrink-0 text-[10px] font-black uppercase tracking-[0.10em]"
+            style={{ color: "var(--asc-fg-3)", minWidth: "4.5rem" }}
+          >
+            {msgs.yourTeam}
+          </span>
+          <span
+            className="min-w-0 break-words text-sm font-black"
+            style={{ color: "var(--asc-fg-0)" }}
+          >
+            {card.playerTeamName ?? msgs.tbd}
+          </span>
+        </div>
+        <div className="flex items-start gap-2">
+          <span
+            className="mt-0.5 shrink-0 text-[10px] font-black uppercase tracking-[0.10em]"
+            style={{ color: "var(--asc-fg-3)", minWidth: "4.5rem" }}
+          >
+            {msgs.opponent}
+          </span>
+          <span
+            className="min-w-0 break-words text-sm font-black"
+            style={{ color: "var(--asc-fg-1)" }}
+          >
+            {card.opponentTeamName ?? msgs.tbd}
+          </span>
+        </div>
+      </div>
+
+      {/* Scheduled time */}
+      {card.scheduledAt && (
+        <div
+          className="border-t pt-3"
+          style={{ borderColor: "var(--asc-line-soft)" }}
+        >
+          <p
+            className="text-[10px] font-black uppercase tracking-[0.10em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            {msgs.scheduledTime}
+          </p>
+          <p
+            className="mt-1 text-xs font-black"
+            style={{ color: "var(--asc-fg-1)", direction: "ltr", textAlign: locale === "ar" ? "right" : "left" }}
+          >
+            {formatScheduledAt(card.scheduledAt, locale)}
+          </p>
+        </div>
+      )}
+
+      {/* FACEIT room (CS2 only) */}
+      {card.isCs2 && (
+        <div
+          className="border-t pt-3"
+          style={{ borderColor: "var(--asc-line-soft)" }}
+        >
+          <p
+            className="text-[10px] font-black uppercase tracking-[0.10em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            {msgs.faceitRoom}
+          </p>
+          {card.faceitMatchUrl ? (
+            <a
+              href={card.faceitMatchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-flex items-center gap-1 border px-3 py-1 text-[10px] font-black uppercase tracking-[0.10em] transition hover:opacity-80"
+              style={{
+                color: "var(--asc-green)",
+                borderColor: "oklch(0.55 0.14 150 / 0.40)",
+                background: "oklch(0.22 0.10 150 / 0.14)",
+                direction: "ltr",
+              }}
+            >
+              {msgs.available} · {msgs.openFaceitRoom}
+            </a>
+          ) : (
+            <p
+              className="mt-1 text-xs"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              {msgs.notAvailableYet}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Check-in status */}
+      <div
+        className="border-t pt-3"
+        style={{ borderColor: "var(--asc-line-soft)" }}
+      >
+        {card.userCheckedIn ? (
+          <span
+            className="inline-flex border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.10em]"
+            style={{
+              color: "var(--asc-green)",
+              borderColor: "oklch(0.55 0.14 150 / 0.45)",
+              background: "oklch(0.22 0.10 150 / 0.14)",
+            }}
+          >
+            {msgs.checkedIn}
+          </span>
+        ) : (
+          <span
+            className="text-[10px]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            {msgs.notCheckedIn}
+          </span>
+        )}
+      </div>
+
+      {/* Open match button */}
+      <a
+        href={card.matchHref}
+        className="mt-auto border px-4 py-2 text-center text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80"
+        style={{
+          borderColor: "oklch(0.50 0.20 285 / 0.45)",
+          color: "var(--asc-accent)",
+          background: "var(--asc-accent-dim)",
+          clipPath:
+            "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)",
+        }}
+      >
+        {msgs.openMatch}
+      </a>
+    </div>
+  );
+}
+
 export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const [params, locale, session] = await Promise.all([
     searchParams,
@@ -635,7 +911,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     redirect("/login");
   }
 
-  const [teams, invitations, allTournamentResults, dbGames, linkedAccounts] = await Promise.all(
+  const [teams, invitations, allTournamentResults, dbGames, linkedAccounts, activeMatches] = await Promise.all(
     [
       prisma.team.findMany({
         where: {
@@ -746,6 +1022,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           verifiedAt: true,
         },
       }),
+
+      getActiveMatchesForUser(user.id),
     ],
   );
 
@@ -984,6 +1262,54 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 teams: messages.hero.teams,
               }}
             />
+          </div>
+
+          {/* My active matches */}
+          <div className="mt-10">
+            <div
+              className="relative overflow-hidden border"
+              style={{
+                borderColor: "var(--asc-line-soft)",
+                background: "var(--asc-bg-1)",
+                clipPath:
+                  "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
+              }}
+            >
+              <CornerMark />
+              <div
+                className="border-b px-5 py-4"
+                style={{ borderColor: "var(--asc-line-soft)" }}
+              >
+                <p
+                  className="text-[10px] font-black uppercase tracking-[0.16em]"
+                  style={{ color: "var(--asc-accent)" }}
+                >
+                  ▲ {messages.activeMatches.heading}
+                </p>
+              </div>
+
+              <div className="p-5">
+                {activeMatches.length === 0 ? (
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--asc-fg-3)" }}
+                  >
+                    {messages.activeMatches.empty}
+                  </p>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {activeMatches.map((card) => (
+                      <ActiveMatchCard
+                        key={card.matchId}
+                        card={card}
+                        msgs={messages.activeMatches}
+                        locale={locale}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="mt-10">
