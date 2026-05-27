@@ -105,6 +105,14 @@ export default function AdminTabNavigation({
           </Link>
 
           <Link
+            href="/admin/riot-status"
+            className="inline-flex border px-4 py-2 text-sm font-black transition hover:opacity-90"
+            style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+          >
+            Riot Status
+          </Link>
+
+          <Link
             href="/admin/match-operations"
             className="inline-flex border px-4 py-2 text-sm font-black transition hover:opacity-90"
             style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
