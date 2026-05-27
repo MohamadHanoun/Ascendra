@@ -8,14 +8,10 @@ import { getDictionary, type HomeMessages, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { getDiscordStats, type DiscordStats } from "@/lib/discordStats";
 import { prisma } from "@/lib/prisma";
+import { aggregatePlayerLeaderboard } from "@/lib/ranking/rankingService";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
 export const dynamic = "force-dynamic";
-
-type SnapshotMember = {
-  userId?: string;
-  username?: string;
-};
 
 type LiveMatchData = {
   id: string;
@@ -43,7 +39,8 @@ type TopPlayer = {
   username: string;
   userId: string;
   points: number;
-  placement: number | null;
+  tier: string;
+  rank: number;
 };
 
 type AnnouncementData = {
@@ -75,23 +72,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-
-function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
-  if (!Array.isArray(snapshotMembers)) {
-    return [];
-  }
-
-  return snapshotMembers
-    .filter((member): member is Record<string, unknown> => {
-      return Boolean(member) && typeof member === "object";
-    })
-    .map((member) => ({
-      userId: typeof member.userId === "string" ? member.userId : undefined,
-      username:
-        typeof member.username === "string" ? member.username : undefined,
-    }))
-    .filter((member) => Boolean(member.userId));
-}
 
 function getTournamentStatusLabel(
   status: string,
@@ -1066,16 +1046,13 @@ function LeaderboardPreview({ players }: { players: TopPlayer[] }) {
     "oklch(0.62 0.22 25)",
   ];
 
-  const displayPlayers: LadderPreviewPlayer[] = players.slice(0, 5).map(
+  const displayPlayers: LadderPreviewPlayer[] = players.map(
     (player, index) => ({
       id: player.userId,
-      rank: index + 1,
+      rank: player.rank,
       name: player.username,
       initials: player.username.slice(0, 2).toUpperCase(),
-      meta:
-        player.placement !== null
-          ? `Best #${player.placement} · Tournament points`
-          : "Tournament points",
+      meta: player.tier,
       score: player.points,
       scoreLabel: "PTS",
       accent: accents[index] ?? accents[4],
@@ -1261,13 +1238,14 @@ export default async function HomePage() {
     rawTournaments,
     liveMatches,
     games,
-    allResults,
+    leaderboardEntries,
     recentAnnouncements,
     totalUsers,
     totalTeams,
     activeTournamentCount,
     publicTournamentCount,
     discordStats,
+    totalResults,
   ] = await Promise.all([
     prisma.tournament.findMany({
       orderBy: { createdAt: "desc" },
@@ -1322,22 +1300,7 @@ export default async function HomePage() {
       orderBy: { name: "asc" },
     }),
 
-    prisma.tournamentResult.findMany({
-      select: {
-        points: true,
-        placement: true,
-        snapshotMembers: true,
-        team: {
-          select: {
-            members: {
-              select: {
-                user: { select: { id: true, username: true } },
-              },
-            },
-          },
-        },
-      },
-    }),
+    aggregatePlayerLeaderboard({ limit: 5 }),
 
     prisma.announcement.findMany({
       where: { published: true },
@@ -1365,6 +1328,8 @@ export default async function HomePage() {
     }),
 
     getDiscordStats(),
+
+    prisma.tournamentResult.count(),
   ]);
 
   const tournaments = [...rawTournaments]
@@ -1389,51 +1354,13 @@ export default async function HomePage() {
     })
     .slice(0, 3);
 
-  const playerMap = new Map<
-    string,
-    { username: string; points: number; placements: number[] }
-  >();
-
-  for (const result of allResults) {
-    const snapshotMembers = parseSnapshotMembers(result.snapshotMembers);
-    const members =
-      snapshotMembers.length > 0
-        ? snapshotMembers
-            .filter((member) => Boolean(member.userId))
-            .map((member) => ({
-              id: member.userId!,
-              username: member.username ?? "Unknown",
-            }))
-        : result.team.members.map((member) => ({
-            id: member.user.id,
-            username: member.user.username,
-          }));
-
-    for (const member of members) {
-      const existing = playerMap.get(member.id) ?? {
-        username: member.username,
-        points: 0,
-        placements: [],
-      };
-
-      playerMap.set(member.id, {
-        username: existing.username,
-        points: existing.points + result.points,
-        placements: [...existing.placements, result.placement],
-      });
-    }
-  }
-
-  const topPlayers: TopPlayer[] = Array.from(playerMap.entries())
-    .map(([userId, data]) => ({
-      userId,
-      username: data.username,
-      points: data.points,
-      placement:
-        data.placements.length > 0 ? Math.min(...data.placements) : null,
-    }))
-    .sort((a, b) => b.points - a.points)
-    .slice(0, 5);
+  const topPlayers: TopPlayer[] = leaderboardEntries.map((entry) => ({
+    userId: entry.userId,
+    username: entry.user?.username ?? "Unknown",
+    points: entry.totalPoints,
+    tier: entry.tier.name,
+    rank: entry.rank,
+  }));
 
   const displayGames = games;
 
@@ -1825,7 +1752,7 @@ export default async function HomePage() {
                   />
                   <HomeMetricTile
                     label="Results"
-                    value={formatCompact(allResults.length)}
+                    value={formatCompact(totalResults)}
                     sub="Tournament results"
                   />
                 </div>

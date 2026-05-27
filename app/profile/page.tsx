@@ -33,12 +33,6 @@ type ProfilePageProps = {
   }>;
 };
 
-type SnapshotMember = {
-  userId?: string;
-  username?: string;
-  discordId?: string;
-};
-
 type ProfileMessages = {
   metadata: {
     title: string;
@@ -191,7 +185,7 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       notMember: "Not member",
       teams: "teams",
       team: "team",
-      points: "points",
+      points: "Ranking points",
       invites: "invites",
       invite: "invite",
     },
@@ -334,7 +328,7 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       notMember: "غير عضو",
       teams: "فرق",
       team: "فريق",
-      points: "نقطة",
+      points: "نقاط التصنيف",
       invites: "دعوات",
       invite: "دعوة",
     },
@@ -474,25 +468,6 @@ export async function generateMetadata(): Promise<Metadata> {
     title: messages.title,
     description: messages.description,
   };
-}
-
-function parseSnapshotMembers(snapshotMembers: unknown): SnapshotMember[] {
-  if (!Array.isArray(snapshotMembers)) {
-    return [];
-  }
-
-  return snapshotMembers
-    .filter((member): member is Record<string, unknown> => {
-      return Boolean(member) && typeof member === "object";
-    })
-    .map((member) => ({
-      userId: typeof member.userId === "string" ? member.userId : undefined,
-      username:
-        typeof member.username === "string" ? member.username : undefined,
-      discordId:
-        typeof member.discordId === "string" ? member.discordId : undefined,
-    }))
-    .filter((member) => Boolean(member.userId));
 }
 
 function getAvatarHue(username: string) {
@@ -915,7 +890,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     redirect("/login");
   }
 
-  const [teams, invitations, allTournamentResults, dbGames, linkedAccounts, activeMatches] = await Promise.all(
+  const [teams, invitations, tournamentResults, dbGames, linkedAccounts, activeMatches, rankingPointsAgg] = await Promise.all(
     [
       prisma.team.findMany({
         where: {
@@ -962,6 +937,11 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       }),
 
       prisma.tournamentResult.findMany({
+        where: {
+          team: {
+            members: { some: { userId: user.id } },
+          },
+        },
         select: {
           id: true,
           placement: true,
@@ -970,31 +950,17 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           awardedAt: true,
           snapshotTeamName: true,
           snapshotTeamGame: true,
-          snapshotMembers: true,
           team: {
             select: {
               name: true,
-              game: {
-                select: {
-                  name: true,
-                },
-              },
-              members: {
-                select: {
-                  userId: true,
-                },
-              },
+              game: { select: { name: true } },
             },
           },
           tournament: {
             select: {
               id: true,
               title: true,
-              game: {
-                select: {
-                  name: true,
-                },
-              },
+              game: { select: { name: true } },
             },
           },
         },
@@ -1028,28 +994,15 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       }),
 
       getActiveMatchesForUser(user.id),
+
+      prisma.rankingPointEvent.aggregate({
+        where: { userId: user.id },
+        _sum: { points: true },
+      }),
     ],
   );
 
-  const tournamentResults = allTournamentResults.filter((result) => {
-    const snapshotMembers = parseSnapshotMembers(result.snapshotMembers);
-
-    const resultUserIds =
-      snapshotMembers.length > 0
-        ? snapshotMembers
-            .map((member) => member.userId)
-            .filter((memberUserId): memberUserId is string =>
-              Boolean(memberUserId),
-            )
-        : result.team.members.map((member) => member.userId);
-
-    return resultUserIds.includes(user.id);
-  });
-
-  const tournamentPoints = tournamentResults.reduce(
-    (total, result) => total + result.points,
-    0,
-  );
+  const rankingPoints = rankingPointsAgg._sum.points ?? 0;
 
   const bestPlacement =
     tournamentResults.length > 0
@@ -1165,7 +1118,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               <div className="mt-10 grid gap-6 sm:grid-cols-3">
                 <HeroStat
                   label={messages.hero.points}
-                  value={tournamentPoints.toLocaleString()}
+                  value={rankingPoints.toLocaleString()}
                   accent
                 />
 
@@ -1198,7 +1151,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
               <StatCell
                 label={messages.labels.ptsLabel}
-                value={tournamentPoints.toLocaleString()}
+                value={rankingPoints.toLocaleString()}
                 accent
               />
               <StatCell
