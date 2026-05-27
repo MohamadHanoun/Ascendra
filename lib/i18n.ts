@@ -881,13 +881,13 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         memberSingular: "member",
         memberPlural: "members",
         pointsSuffix: "pts",
-        ranksLabel: "Ranks 4 – 100",
+        ranksLabel: "Rankings",
         ladderTitle: "Ascendra Ladder",
         youBadge: "YOU",
       },
       filtersLabel: "Filters",
       disclaimer:
-        "Ascendra ranks are based only on community tournament points earned within our platform. MMR, in-game ranks, and external rating systems are not reflected here.",
+        "Rankings are based on tournament points earned on Ascendra. External ratings are not reflected.",
       empty: {
         title: "No tournament points yet",
         overallDescription:
@@ -1416,13 +1416,13 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         memberSingular: "عضو",
         memberPlural: "أعضاء",
         pointsSuffix: "نقطة",
-        ranksLabel: "المراكز 4 – 100",
+        ranksLabel: "التصنيفات",
         ladderTitle: "سلّم Ascendra",
         youBadge: "أنت",
       },
       filtersLabel: "الفلاتر",
       disclaimer:
-        "يستند ترتيب Ascendra إلى نقاط البطولات المجتمعية المكتسبة داخل منصتنا فقط. لا تنعكس هنا تقييمات MMR، أو المراتب داخل اللعبة، أو أنظمة التقييم الخارجية.",
+        "يستند الترتيب إلى نقاط البطولات المكتسبة على Ascendra. لا تنعكس تقييمات اللعبة الخارجية.",
       empty: {
         title: "لا توجد نقاط بطولات حاليًا",
         overallDescription: "سيظهر الترتيب هنا عند إضافة النتائج الرسمية.",

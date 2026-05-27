@@ -15,8 +15,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      source: "rankingPointEvent",
-      rankingMethod: "competition",
       game: leaderboard.selectedGame?.slug ?? "overall",
       type: leaderboard.type,
       season: leaderboard.scope,
