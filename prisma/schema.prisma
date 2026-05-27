@@ -69,6 +69,7 @@ model User {
   matchReports       MatchReport[]       @relation("MatchReportSubmitter")
   notifications      Notification[]
   rankingPointEvents RankingPointEvent[]
+  matchCheckIns      TournamentMatchCheckIn[]
 }
 
 // ─── MODIFIED ────────────────────────────────────────────────────────────────
@@ -161,6 +162,7 @@ model Team {
   rankingPointEvents RankingPointEvent[]
   matchesAsA         Match[]                  @relation("MatchTeamA")
   matchesAsB         Match[]                  @relation("MatchTeamB")
+  matchCheckIns      TournamentMatchCheckIn[]
 
   @@unique([name, leaderId])
   @@index([gameId])
@@ -586,10 +588,29 @@ model TournamentMatch {
   reports            MatchReport[]
   room               GameRoom?
   rankingPointEvents RankingPointEvent[]
+  checkIns           TournamentMatchCheckIn[]
 
   @@unique([tournamentId, roundNumber, matchNumber])
   @@index([tournamentId])
   @@index([status])
+}
+
+model TournamentMatchCheckIn {
+  id        String   @id @default(cuid())
+  matchId   String
+  userId    String
+  teamId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  match TournamentMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team  Team?           @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@unique([matchId, userId])
+  @@index([matchId])
+  @@index([teamId])
+  @@index([userId])
 }
 
 model TournamentMatchGame {

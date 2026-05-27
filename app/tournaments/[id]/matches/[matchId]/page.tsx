@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import FaceitMatchProofForm from "@/components/FaceitMatchProofForm";
 import Footer from "@/components/Footer";
+import MatchCheckInPanel from "@/components/MatchCheckInPanel";
 import MatchAdminControls from "@/components/MatchAdminControls";
 import MatchRealtimeRefresh from "@/components/MatchRealtimeRefresh";
 import { parseCs2Metadata } from "@/lib/gameIntegrations/steamCs2Adapter";
@@ -19,6 +20,12 @@ import { getLocale } from "@/lib/i18nServer";
 import { isCs2Game } from "@/lib/isCs2Game";
 import { isFaceitAutoConfirmEnabled } from "@/lib/faceitAutoConfirm";
 import { normalizeFaceitParsedResultView } from "@/lib/faceitParsedResultView";
+import {
+  determineUserMatchTeam,
+  summarizeMatchCheckIns,
+  type MatchCheckInRecord,
+  type MatchCheckInSummary,
+} from "@/lib/matchCheckIn";
 
 export const dynamic = "force-dynamic";
 
@@ -348,11 +355,19 @@ export default async function MatchDetailPage({ params }: PageProps) {
   const teamIds = [match.teamAId, match.teamBId, match.winnerTeamId].filter(
     (x): x is string => Boolean(x),
   );
+  const matchTeamIds = [match.teamAId, match.teamBId].filter(
+    (x): x is string => Boolean(x),
+  );
   const teamRows =
     teamIds.length > 0
       ? await prisma.team.findMany({
           where: { id: { in: teamIds } },
-          select: { id: true, name: true },
+          select: {
+            id: true,
+            name: true,
+            leaderId: true,
+            members: { select: { userId: true } },
+          },
         })
       : [];
   const teamName = new Map(teamRows.map((t) => [t.id, t.name]));
@@ -373,25 +388,22 @@ export default async function MatchDetailPage({ params }: PageProps) {
   const isAdmin = Boolean(sessionUser?.isAdmin);
   const currentUserId = sessionUser?.databaseId ?? null;
 
-  let userTeamId: string | null = null;
-  if (currentUserId && (match.teamAId || match.teamBId)) {
-    const matchTeamIds = [match.teamAId, match.teamBId].filter(
-      (x): x is string => Boolean(x),
-    );
-    const membership = await prisma.teamMember.findFirst({
-      where: { userId: currentUserId, teamId: { in: matchTeamIds } },
-      select: { teamId: true },
-    });
-    if (membership) {
-      userTeamId = membership.teamId;
-    } else {
-      const leaderTeam = await prisma.team.findFirst({
-        where: { leaderId: currentUserId, id: { in: matchTeamIds } },
-        select: { id: true },
-      });
-      if (leaderTeam) userTeamId = leaderTeam.id;
-    }
-  }
+  const matchTeamSides = matchTeamIds.map((teamId) => {
+    const team = teamRows.find((row) => row.id === teamId);
+    return {
+      teamId,
+      name: teamName.get(teamId) ?? "TBD",
+      leaderUserId: team?.leaderId ?? null,
+      memberUserIds: team?.members.map((member) => member.userId) ?? [],
+    };
+  });
+
+  const userTeamId = currentUserId
+    ? determineUserMatchTeam({
+        userId: currentUserId,
+        teams: matchTeamSides,
+      })
+    : null;
 
   const isValorant =
     tournament.game?.slug?.toLowerCase().includes("valorant") ||
@@ -441,23 +453,22 @@ export default async function MatchDetailPage({ params }: PageProps) {
     total: number;
   };
   let teamReadinessSummary: TeamReadinessSummary[] | null = null;
+  let checkInSummaries: MatchCheckInSummary[] = [];
+  let currentUserCheckedIn = false;
   let faceitAutoConfirmEnabled = false;
 
   if (isCs2) {
     faceitAutoConfirmEnabled = isFaceitAutoConfirmEnabled();
 
-    const cs2TeamIds = [match.teamAId, match.teamBId].filter(
-      (x): x is string => Boolean(x),
-    );
-    if (cs2TeamIds.length > 0) {
+    if (matchTeamIds.length > 0) {
       const cs2Members = await prisma.teamMember.findMany({
-        where: { teamId: { in: cs2TeamIds } },
+        where: { teamId: { in: matchTeamIds } },
         select: {
           teamId: true,
           user: { select: { faceitPlayerId: true } },
         },
       });
-      teamReadinessSummary = cs2TeamIds.map((tid) => {
+      teamReadinessSummary = matchTeamIds.map((tid) => {
         const members = cs2Members.filter((m) => m.teamId === tid);
         return {
           teamId: tid,
@@ -466,6 +477,27 @@ export default async function MatchDetailPage({ params }: PageProps) {
           total: members.length,
         };
       });
+
+      const checkIns = await prisma.tournamentMatchCheckIn.findMany({
+        where: { matchId: match.id },
+        include: { user: { select: { username: true } } },
+        orderBy: { createdAt: "asc" },
+      });
+      const checkInRecords: MatchCheckInRecord[] = checkIns.map((checkIn) => ({
+        id: checkIn.id,
+        userId: checkIn.userId,
+        teamId: checkIn.teamId,
+        username: checkIn.user.username,
+        createdAt: checkIn.createdAt.toISOString(),
+      }));
+
+      checkInSummaries = summarizeMatchCheckIns({
+        teams: matchTeamSides,
+        checkIns: checkInRecords,
+      });
+      currentUserCheckedIn = currentUserId
+        ? checkIns.some((checkIn) => checkIn.userId === currentUserId)
+        : false;
     }
   }
 
@@ -798,6 +830,16 @@ export default async function MatchDetailPage({ params }: PageProps) {
                       {msgs.cs2PlayerMatch.roomUnavailable}
                     </div>
                   )}
+
+                  <MatchCheckInPanel
+                    matchId={match.id}
+                    locale={locale}
+                    summaries={checkInSummaries}
+                    isLoggedIn={Boolean(currentUserId)}
+                    isParticipant={userTeamId !== null}
+                    userCheckedIn={currentUserCheckedIn}
+                    showAdminDetails={isAdmin}
+                  />
                 </div>
               </Panel>
             )}

@@ -19,6 +19,7 @@ import {
   normalizeFaceitMatchLinkForDisplay,
 } from "@/lib/faceitMatchId";
 import { isCs2Game } from "@/lib/isCs2Game";
+import { determineUserMatchTeam } from "@/lib/matchCheckIn";
 import { notifyMatchConfirmed } from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
 import type { Locale } from "@/lib/i18n";
@@ -98,6 +99,12 @@ type MatchIdActionMessages = {
   faceitRoomAlreadyUsed: string;
   faceitRoomSaveFailed: string;
   faceitRoomSaved: string;
+  checkInLoginRequired: string;
+  checkInCs2Only: string;
+  checkInNotParticipant: string;
+  checkInAlready: string;
+  checkInSuccess: string;
+  checkInFailed: string;
   // Phase 4 — auto-confirm feedback
   faceitAutoApplied: string;
   faceitSyncedMappingFailed: string;
@@ -154,6 +161,12 @@ const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
     faceitRoomAlreadyUsed: "This FACEIT match is already linked to another Ascendra match.",
     faceitRoomSaveFailed: "Failed to save FACEIT room link.",
     faceitRoomSaved: "FACEIT room link saved.",
+    checkInLoginRequired: "Sign in to check in.",
+    checkInCs2Only: "Check-in is available for CS2 matches only.",
+    checkInNotParticipant: "You must be part of this match to check in.",
+    checkInAlready: "You are already checked in.",
+    checkInSuccess: "You are checked in for this match.",
+    checkInFailed: "Check-in failed. Please try again.",
     faceitAutoApplied: "FACEIT proof synced and the official result was applied automatically.",
     faceitSyncedMappingFailed: "FACEIT proof was saved, but the official result was not applied because team mapping could not be verified.",
     faceitSyncedAutoDisabled: "FACEIT proof saved for review. Auto-confirm is disabled.",
@@ -206,6 +219,12 @@ const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
     faceitRoomAlreadyUsed: "مباراة FACEIT هذه مرتبطة بمباراة أخرى في Ascendra.",
     faceitRoomSaveFailed: "تعذر حفظ رابط غرفة FACEIT.",
     faceitRoomSaved: "تم حفظ رابط غرفة FACEIT.",
+    checkInLoginRequired: "سجّل الدخول أولًا لتسجيل الحضور.",
+    checkInCs2Only: "تسجيل الحضور متاح لمباريات CS2 فقط.",
+    checkInNotParticipant: "يجب أن تكون مشاركًا في هذه المباراة لتسجيل الحضور.",
+    checkInAlready: "تم تسجيل حضورك مسبقًا.",
+    checkInSuccess: "تم تسجيل حضورك لهذه المباراة.",
+    checkInFailed: "تعذر تسجيل الحضور. حاول مرة أخرى.",
     faceitAutoApplied: "تمت مزامنة إثبات FACEIT واعتماد النتيجة الرسمية تلقائيًا.",
     faceitSyncedMappingFailed: "تم حفظ إثبات FACEIT، لكن لم يتم اعتماد النتيجة الرسمية لأن مطابقة الفرق لم يتم التحقق منها.",
     faceitSyncedAutoDisabled: "تم حفظ إثبات FACEIT للمراجعة. التأكيد التلقائي غير مفعّل.",
@@ -1012,6 +1031,102 @@ export async function setFaceitMatchLinkForPlayers(
   revalidatePath(`/tournaments/${match.tournamentId}/matches/${match.id}`);
 
   return success(messages.faceitRoomSaved);
+}
+
+// ─── Player: check in for CS2 match readiness ────────────────────────────────
+// Readiness-only: does not start matches, create lobbies, sync proof, or apply results.
+
+export async function checkInForTournamentMatch(
+  _prevState: MatchActionResult,
+  formData: FormData,
+): Promise<MatchActionResult> {
+  const messages = matchIdActionMessages[getActionLocale(formData)];
+  const sessionUser = await requireUser();
+  if (!sessionUser) return fail(messages.checkInLoginRequired);
+
+  const matchId = getValue(formData, "matchId");
+  if (!matchId) return fail(messages.matchIdMissing);
+
+  const match = await prisma.tournamentMatch.findUnique({
+    where: { id: matchId },
+    select: {
+      id: true,
+      tournamentId: true,
+      teamAId: true,
+      teamBId: true,
+      tournament: {
+        select: {
+          game: { select: { slug: true, name: true } },
+        },
+      },
+    },
+  });
+
+  if (!match) return fail(messages.matchNotFound);
+  if (!isCs2Game(match.tournament.game?.slug, match.tournament.game?.name)) {
+    return fail(messages.checkInCs2Only);
+  }
+
+  const teamIds = [match.teamAId, match.teamBId].filter(
+    (teamId): teamId is string => Boolean(teamId),
+  );
+  if (teamIds.length === 0) return fail(messages.checkInNotParticipant);
+
+  const teams = await prisma.team.findMany({
+    where: { id: { in: teamIds } },
+    select: {
+      id: true,
+      name: true,
+      leaderId: true,
+      members: { select: { userId: true } },
+    },
+  });
+
+  const userTeamId = determineUserMatchTeam({
+    userId: sessionUser.id,
+    teams: teamIds.map((teamId) => {
+      const team = teams.find((row) => row.id === teamId);
+      return {
+        teamId,
+        name: team?.name ?? "TBD",
+        leaderUserId: team?.leaderId ?? null,
+        memberUserIds: team?.members.map((member) => member.userId) ?? [],
+      };
+    }),
+  });
+
+  if (!userTeamId) return fail(messages.checkInNotParticipant);
+
+  const existing = await prisma.tournamentMatchCheckIn.findUnique({
+    where: { matchId_userId: { matchId: match.id, userId: sessionUser.id } },
+    select: { id: true },
+  });
+  if (existing) {
+    revalidatePath(`/tournaments/${match.tournamentId}/matches/${match.id}`);
+    return success(messages.checkInAlready);
+  }
+
+  try {
+    await prisma.tournamentMatchCheckIn.create({
+      data: {
+        matchId: match.id,
+        userId: sessionUser.id,
+        teamId: userTeamId,
+      },
+    });
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      return success(messages.checkInAlready);
+    }
+    return fail(messages.checkInFailed);
+  }
+
+  revalidatePath(`/tournaments/${match.tournamentId}/matches/${match.id}`);
+
+  return success(messages.checkInSuccess);
 }
 
 // ─── Sync FACEIT CS2 match proof ─────────────────────────────────────────────
