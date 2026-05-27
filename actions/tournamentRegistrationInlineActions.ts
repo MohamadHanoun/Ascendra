@@ -67,14 +67,11 @@ const actionMessages: Record<Locale, TournamentRegistrationActionMessages> = {
     alreadyRegistered: "This team is already registered for this tournament.",
     registeredSuccess:
       "Team registered successfully. Waiting for admin review.",
-    cs2SteamRequired:
-      "Connect your Steam account on your profile before registering for a CS2 tournament.",
-    cs2FaceitRequired:
-      "Connect your FACEIT account on your profile before registering for a CS2 tournament.",
+    cs2SteamRequired: "Connect Steam before registering.",
+    cs2FaceitRequired: "Connect FACEIT before registering.",
     cs2SteamFaceitMismatch:
-      "Your FACEIT account must belong to the same Steam account linked on your profile.",
-    riotAccountRequired:
-      "Connect your Riot account before registering for this tournament.",
+      "FACEIT and Steam accounts do not match. Check both accounts on your profile.",
+    riotAccountRequired: "Connect Riot before registering.",
     registrationIdMissing: "Registration ID is missing.",
     registrationNotFound: "Registration was not found.",
     onlyLeaderCanCancel: "Only the team leader can cancel this registration.",
@@ -104,14 +101,11 @@ const actionMessages: Record<Locale, TournamentRegistrationActionMessages> = {
     pendingInvites: "يرجى حل الدعوات المعلقة في الفريق قبل التسجيل.",
     alreadyRegistered: "هذا الفريق مسجل بالفعل في هذه البطولة.",
     registeredSuccess: "تم تسجيل الفريق بنجاح. بانتظار مراجعة الإدارة.",
-    cs2SteamRequired:
-      "يرجى ربط حساب Steam في ملفك الشخصي قبل التسجيل في بطولة CS2.",
-    cs2FaceitRequired:
-      "يرجى ربط حساب FACEIT في ملفك الشخصي قبل التسجيل في بطولة CS2.",
+    cs2SteamRequired: "اربط Steam قبل التسجيل.",
+    cs2FaceitRequired: "اربط FACEIT قبل التسجيل.",
     cs2SteamFaceitMismatch:
-      "يجب أن يكون حساب FACEIT مرتبطًا بنفس حساب Steam الموجود في ملفك الشخصي.",
-    riotAccountRequired:
-      "اربط حساب Riot قبل التسجيل في هذه البطولة.",
+      "حسابا FACEIT وSteam غير متطابقَين. تحقق من كلا الحسابَين في ملفك الشخصي.",
+    riotAccountRequired: "اربط Riot قبل التسجيل.",
     registrationIdMissing: "معرّف التسجيل مفقود.",
     registrationNotFound: "لم يتم العثور على التسجيل.",
     onlyLeaderCanCancel: "يمكن لقائد الفريق فقط إلغاء هذا التسجيل.",

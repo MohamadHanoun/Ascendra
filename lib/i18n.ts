@@ -451,6 +451,7 @@ export type TournamentDetailsMessages = {
     riotRequirements: string;
     riotAccountConnected: string;
     riotReady: string;
+    riotNotReady: string;
     riotConnectFromProfile: string;
   };
 };
@@ -988,19 +989,20 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         requirementAtLeast: "At least {count} player(s).",
         requirementNoPending: "No pending team invites.",
         tournamentStatus: "Tournament status",
-        cs2Requirements: "CS2 tournament registration requirements",
+        cs2Requirements: "CS2 requirements",
         cs2RequirementsDescription:
-          "Connect Steam first, then link the FACEIT account that belongs to the same Steam account.",
+          "Steam and FACEIT must be linked to the same account.",
         cs2SteamConnected: "Steam connected",
         cs2FaceitConnected: "FACEIT connected",
         cs2FaceitMatchesSteam: "Steam and FACEIT match verified",
-        cs2Ready: "You are ready to register",
+        cs2Ready: "Ready to register",
         cs2NotReady: "Complete these requirements before registering",
         cs2ConnectSteam: "Connect Steam",
         cs2ConnectFaceit: "Connect FACEIT",
         riotRequirements: "Riot account required",
         riotAccountConnected: "Riot connected",
         riotReady: "Ready to register",
+        riotNotReady: "Connect Riot before registering.",
         riotConnectFromProfile: "Connect Riot",
       },
     },
@@ -1518,19 +1520,20 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         requirementAtLeast: "يجب أن يحتوي الفريق على {count} لاعب على الأقل.",
         requirementNoPending: "يجب ألا توجد دعوات فريق معلقة.",
         tournamentStatus: "حالة البطولة",
-        cs2Requirements: "متطلبات التسجيل في بطولة CS2",
+        cs2Requirements: "متطلبات CS2",
         cs2RequirementsDescription:
-          "اربط Steam أولًا، ثم اربط حساب FACEIT المرتبط بنفس حساب Steam.",
+          "يجب أن يكون Steam وFACEIT مرتبطَين بنفس الحساب.",
         cs2SteamConnected: "Steam متصل",
         cs2FaceitConnected: "FACEIT متصل",
         cs2FaceitMatchesSteam: "تم التحقق من تطابق الحسابين",
-        cs2Ready: "أنت جاهز للتسجيل",
+        cs2Ready: "جاهز للتسجيل",
         cs2NotReady: "أكمل المتطلبات قبل التسجيل",
         cs2ConnectSteam: "ربط Steam",
         cs2ConnectFaceit: "ربط FACEIT",
         riotRequirements: "حساب Riot مطلوب",
         riotAccountConnected: "Riot متصل",
         riotReady: "جاهز للتسجيل",
+        riotNotReady: "اربط Riot قبل التسجيل.",
         riotConnectFromProfile: "ربط Riot",
       },
     },

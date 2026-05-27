@@ -687,7 +687,7 @@ function RiotRequirementsBlock({
               }
         }
       >
-        {readiness.ready ? messages.riotReady : messages.riotRequirements}
+        {readiness.ready ? messages.riotReady : messages.riotNotReady}
       </div>
     </div>
   );
