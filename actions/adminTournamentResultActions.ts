@@ -6,6 +6,7 @@ import type { AdminTournamentActionResult } from "@/actions/adminTournamentInlin
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import { awardTournamentResultsAndPoints } from "@/lib/tournamentResults";
 
 function success(message: string): AdminTournamentActionResult {
   return {
@@ -269,6 +270,14 @@ export async function saveTournamentResultInline(
       snapshotMembers,
     },
   });
+
+  // Best-effort: sync ranking point events from completed bracket results.
+  // Idempotent via dedupeKey; skips safely when bracket is not yet complete.
+  try {
+    await awardTournamentResultsAndPoints(tournamentId, { revalidateViews: false });
+  } catch {
+    // Non-blocking — point award failure must not prevent result save.
+  }
 
   await publishResultRealtimeEvents(tournamentId);
 

@@ -42,6 +42,7 @@ import {
   awardTournamentResultsAndPoints,
   buildFinalPlacements,
   getPlacementPoints,
+  getTournamentPlacementLabel,
 } from "@/lib/tournamentResults";
 
 const tournament = {
@@ -251,5 +252,32 @@ describe("awardTournamentResultsAndPoints", () => {
     expect(dedupeKeys).toContain(
       "ranking:tournament:tournament-1:team:team-a:match_win:match:final:user:user-team-a",
     );
+  });
+});
+
+describe("getTournamentPlacementLabel", () => {
+  it.each([
+    [1, "1st"],
+    [2, "2nd"],
+    [3, "3rd"],
+    [4, "4th"],
+    [5, "5th"],
+    [10, "10th"],
+    [11, "11th"],
+    [12, "12th"],
+    [13, "13th"],
+    [21, "21st"],
+    [22, "22nd"],
+    [23, "23rd"],
+    [100, "100th"],
+    [111, "111th"],
+    [121, "121st"],
+  ])("maps placement %i to label '%s'", (placement, expected) => {
+    expect(getTournamentPlacementLabel(placement)).toBe(expected);
+  });
+
+  it("clamps to 1 for invalid low values", () => {
+    expect(getTournamentPlacementLabel(0)).toBe("1st");
+    expect(getTournamentPlacementLabel(-5)).toBe("1st");
   });
 });
