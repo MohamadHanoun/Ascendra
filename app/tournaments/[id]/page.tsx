@@ -25,6 +25,9 @@ import { getTournamentImageUrl } from "@/lib/tournamentImages";
 import { isCs2Game } from "@/lib/isCs2Game";
 import { computeCs2Readiness } from "@/lib/cs2AccountReadiness";
 import type { Cs2Readiness } from "@/lib/cs2AccountReadiness";
+import { isRiotGame } from "@/lib/isRiotGame";
+import { computeRiotAccountReadiness } from "@/lib/riotAccountReadiness";
+import type { RiotAccountReadiness } from "@/lib/riotAccountReadiness";
 
 export const dynamic = "force-dynamic";
 
@@ -580,8 +583,8 @@ export default async function TournamentDetailsPage({
             },
           },
           playerGameAccounts: {
-            where: { provider: "steam" },
-            select: { externalId: true },
+            where: { provider: { in: ["steam", "riot_lol"] } },
+            select: { provider: true, externalId: true },
           },
         },
       })
@@ -739,11 +742,25 @@ export default async function TournamentDetailsPage({
   );
 
   const isCs2 = isCs2Game(tournament.game?.slug, tournament.game?.name);
+  const isRiot = isRiotGame(tournament.game?.slug, tournament.game?.name);
+
+  const steamAccount = currentUser?.playerGameAccounts?.find(
+    (a) => a.provider === "steam",
+  );
+  const riotAccount = currentUser?.playerGameAccounts?.find(
+    (a) => a.provider === "riot_lol",
+  );
 
   const cs2Readiness: Cs2Readiness = computeCs2Readiness({
-    steamId64: currentUser?.playerGameAccounts?.[0]?.externalId ?? null,
+    steamId64: steamAccount?.externalId ?? null,
     faceitPlayerId: currentUser?.faceitPlayerId ?? null,
     faceitSteamId64: currentUser?.faceitSteamId64 ?? null,
+  });
+
+  const riotReadiness: RiotAccountReadiness = computeRiotAccountReadiness({
+    gameSlug: tournament.game?.slug ?? null,
+    gameName: tournament.game?.name ?? undefined,
+    riotExternalId: riotAccount?.externalId ?? null,
   });
 
   const ownedTeamIds = currentUser?.ownedTeams.map((team) => team.id) || [];
@@ -1147,6 +1164,8 @@ export default async function TournamentDetailsPage({
                     playersLabel={messages.labels.players}
                     isCs2={isCs2}
                     cs2Readiness={cs2Readiness}
+                    isRiot={isRiot}
+                    riotReadiness={riotReadiness}
                   />
                 </div>
               </div>

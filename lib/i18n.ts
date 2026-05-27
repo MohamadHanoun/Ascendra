@@ -447,6 +447,11 @@ export type TournamentDetailsMessages = {
     cs2NotReady: string;
     cs2ConnectSteam: string;
     cs2ConnectFaceit: string;
+    // Phase 29 — Riot account gating
+    riotRequirements: string;
+    riotAccountConnected: string;
+    riotReady: string;
+    riotConnectFromProfile: string;
   };
 };
 
@@ -993,6 +998,10 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         cs2NotReady: "Complete these requirements before registering",
         cs2ConnectSteam: "Connect Steam",
         cs2ConnectFaceit: "Connect FACEIT",
+        riotRequirements: "Riot account required",
+        riotAccountConnected: "Riot connected",
+        riotReady: "Ready to register",
+        riotConnectFromProfile: "Connect Riot",
       },
     },
   },
@@ -1519,6 +1528,10 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         cs2NotReady: "أكمل المتطلبات قبل التسجيل",
         cs2ConnectSteam: "ربط Steam",
         cs2ConnectFaceit: "ربط FACEIT",
+        riotRequirements: "حساب Riot مطلوب",
+        riotAccountConnected: "Riot متصل",
+        riotReady: "جاهز للتسجيل",
+        riotConnectFromProfile: "ربط Riot",
       },
     },
   },

@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { isCs2Game } from "@/lib/isCs2Game";
+import { isRiotGame } from "@/lib/isRiotGame";
 import {
   createNotificationsOnceForUsers,
   getAdminNotificationUserIds,
@@ -37,6 +38,7 @@ type TournamentRegistrationActionMessages = {
   cs2SteamRequired: string;
   cs2FaceitRequired: string;
   cs2SteamFaceitMismatch: string;
+  riotAccountRequired: string;
   registrationIdMissing: string;
   registrationNotFound: string;
   onlyLeaderCanCancel: string;
@@ -71,6 +73,8 @@ const actionMessages: Record<Locale, TournamentRegistrationActionMessages> = {
       "Connect your FACEIT account on your profile before registering for a CS2 tournament.",
     cs2SteamFaceitMismatch:
       "Your FACEIT account must belong to the same Steam account linked on your profile.",
+    riotAccountRequired:
+      "Connect your Riot account before registering for this tournament.",
     registrationIdMissing: "Registration ID is missing.",
     registrationNotFound: "Registration was not found.",
     onlyLeaderCanCancel: "Only the team leader can cancel this registration.",
@@ -106,6 +110,8 @@ const actionMessages: Record<Locale, TournamentRegistrationActionMessages> = {
       "يرجى ربط حساب FACEIT في ملفك الشخصي قبل التسجيل في بطولة CS2.",
     cs2SteamFaceitMismatch:
       "يجب أن يكون حساب FACEIT مرتبطًا بنفس حساب Steam الموجود في ملفك الشخصي.",
+    riotAccountRequired:
+      "اربط حساب Riot قبل التسجيل في هذه البطولة.",
     registrationIdMissing: "معرّف التسجيل مفقود.",
     registrationNotFound: "لم يتم العثور على التسجيل.",
     onlyLeaderCanCancel: "يمكن لقائد الفريق فقط إلغاء هذا التسجيل.",
@@ -330,6 +336,16 @@ async function registerTeamForTournament(
     }
     if (user.faceitSteamId64 !== steamAccount.externalId) {
       return fail(messages.cs2SteamFaceitMismatch);
+    }
+  }
+
+  if (isRiotGame(tournament.game?.slug, tournament.game?.name)) {
+    const riotAccount = await prisma.playerGameAccount.findFirst({
+      where: { userId: user.id, provider: "riot_lol" },
+      select: { externalId: true },
+    });
+    if (!riotAccount?.externalId?.trim()) {
+      return fail(messages.riotAccountRequired);
     }
   }
 

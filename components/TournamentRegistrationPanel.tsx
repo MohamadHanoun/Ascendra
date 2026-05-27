@@ -19,6 +19,7 @@ import CustomSelect from "@/components/CustomSelect";
 import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
 import type { TournamentDetailsMessages } from "@/lib/i18n";
 import type { Cs2Readiness } from "@/lib/cs2AccountReadiness";
+import type { RiotAccountReadiness } from "@/lib/riotAccountReadiness";
 
 type AvailableTeam = {
   id: string;
@@ -60,6 +61,8 @@ type TournamentRegistrationPanelProps = {
   playersLabel: string;
   isCs2?: boolean;
   cs2Readiness?: Cs2Readiness;
+  isRiot?: boolean;
+  riotReadiness?: RiotAccountReadiness;
 };
 
 const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "";
@@ -635,6 +638,61 @@ function Cs2RequirementsBlock({
   );
 }
 
+function RiotRequirementsBlock({
+  readiness,
+  messages,
+}: {
+  readiness: RiotAccountReadiness;
+  messages: TournamentDetailsMessages["panel"];
+}) {
+  return (
+    <div
+      className="border p-4"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+    >
+      <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
+        {messages.riotRequirements}
+      </p>
+      <div className="mt-4 grid gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span
+              className="text-xs font-black"
+              style={{ color: readiness.riotConnected ? "var(--asc-green)" : "var(--asc-live)" }}
+            >
+              {readiness.riotConnected ? "✓" : "✗"}
+            </span>
+            <span className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
+              {messages.riotAccountConnected}
+            </span>
+          </div>
+          {!readiness.riotConnected && (
+            <NoticeLink href="/profile">{messages.riotConnectFromProfile}</NoticeLink>
+          )}
+        </div>
+      </div>
+      <div
+        className="mt-4 border px-3 py-2 text-sm font-black"
+        style={
+          readiness.ready
+            ? {
+                borderColor: "oklch(0.55 0.14 150 / 0.5)",
+                background: "oklch(0.25 0.12 150 / 0.18)",
+                color: "var(--asc-green)",
+              }
+            : {
+                borderColor: "oklch(0.50 0.20 25 / 0.5)",
+                background: "oklch(0.25 0.18 25 / 0.18)",
+                color: "var(--asc-live)",
+              }
+        }
+      >
+        {readiness.ready ? messages.riotReady : messages.riotRequirements}
+      </div>
+    </div>
+  );
+}
+
 function TournamentRegistrationPanel({
   tournamentId,
   tournamentStatus,
@@ -653,6 +711,8 @@ function TournamentRegistrationPanel({
   playersLabel,
   isCs2 = false,
   cs2Readiness,
+  isRiot = false,
+  riotReadiness,
 }: TournamentRegistrationPanelProps) {
   const hasOpenRegistration = activeRegistrations.some((registration) =>
     ["registered", "approved"].includes(registration.status),
@@ -742,7 +802,12 @@ function TournamentRegistrationPanel({
               <Cs2RequirementsBlock readiness={cs2Readiness} messages={messages} />
             )}
 
-            {isCs2 && cs2Readiness && !cs2Readiness.isReady ? null : availableTeams.length > 0 ? (
+            {isRiot && riotReadiness && (
+              <RiotRequirementsBlock readiness={riotReadiness} messages={messages} />
+            )}
+
+            {(isCs2 && cs2Readiness && !cs2Readiness.isReady) ||
+            (isRiot && riotReadiness && !riotReadiness.ready) ? null : availableTeams.length > 0 ? (
               <RegisterForm
                 tournamentId={tournamentId}
                 availableTeams={availableTeams}
