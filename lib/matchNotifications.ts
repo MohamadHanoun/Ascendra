@@ -342,6 +342,41 @@ export async function notifyMatchProcessingFailed(input: {
   }
 }
 
+export async function notifyMatchCommunicationUpdated(
+  match: MatchNotificationMatch,
+  updateKey: string,
+) {
+  const teams = await loadTeams([match.teamAId, match.teamBId]);
+  const userIds = memberIdsForTeams(teams, [match.teamAId, match.teamBId]);
+
+  if (userIds.length === 0) return;
+
+  await createMatchNotifications({
+    userIds,
+    type: "match.communication_updated",
+    title: "Match updated",
+    message: "Match schedule or instructions were updated.",
+    match,
+    dedupeKey: `match.communication.updated:${match.id}:${updateKey}`,
+  });
+}
+
+export async function notifyFaceitRoomLinked(match: MatchNotificationMatch) {
+  const teams = await loadTeams([match.teamAId, match.teamBId]);
+  const userIds = memberIdsForTeams(teams, [match.teamAId, match.teamBId]);
+
+  if (userIds.length === 0) return;
+
+  await createMatchNotifications({
+    userIds,
+    type: "match.faceit_linked",
+    title: "FACEIT room ready",
+    message: "FACEIT room link is available for your match.",
+    match,
+    dedupeKey: `match.faceit.linked:${match.id}`,
+  });
+}
+
 export async function notifyBracketAdvanced(
   match: MatchNotificationMatch,
   nextMatchId: string,

@@ -20,7 +20,11 @@ import {
 } from "@/lib/faceitMatchId";
 import { isCs2Game } from "@/lib/isCs2Game";
 import { determineUserMatchTeam } from "@/lib/matchCheckIn";
-import { notifyMatchConfirmed } from "@/lib/matchNotifications";
+import {
+  notifyMatchConfirmed,
+  notifyMatchCommunicationUpdated,
+  notifyFaceitRoomLinked,
+} from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
 import type { Locale } from "@/lib/i18n";
 import {
@@ -1006,6 +1010,8 @@ export async function setFaceitMatchLinkForPlayers(
     select: {
       id: true,
       tournamentId: true,
+      teamAId: true,
+      teamBId: true,
       tournament: {
         select: {
           game: { select: { slug: true, name: true } },
@@ -1039,6 +1045,10 @@ export async function setFaceitMatchLinkForPlayers(
 
   revalidateMatchPaths(match.tournamentId);
   revalidatePath(`/tournaments/${match.tournamentId}/matches/${match.id}`);
+
+  void notifyFaceitRoomLinked(match).catch((err) =>
+    console.error("[matchActions] notifyFaceitRoomLinked failed:", err),
+  );
 
   return success(messages.faceitRoomSaved);
 }
@@ -1333,7 +1343,7 @@ export async function updateTournamentMatchCommunication(
 
   const match = await prisma.tournamentMatch.findUnique({
     where: { id: matchId },
-    select: { id: true, tournamentId: true },
+    select: { id: true, tournamentId: true, teamAId: true, teamBId: true },
   });
   if (!match) return fail(messages.matchNotFound);
 
@@ -1347,6 +1357,10 @@ export async function updateTournamentMatchCommunication(
 
   revalidateMatchPaths(match.tournamentId);
   revalidatePath(`/tournaments/${match.tournamentId}/matches/${match.id}`);
+
+  void notifyMatchCommunicationUpdated(match, String(Date.now())).catch((err) =>
+    console.error("[matchActions] notifyMatchCommunicationUpdated failed:", err),
+  );
 
   return success(messages.communicationUpdated);
 }
