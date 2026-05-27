@@ -4,6 +4,7 @@ import {
   createNotificationsOnceForUsers,
   getAdminNotificationUserIds,
 } from "@/lib/notifications";
+import { sendDiscordNotificationsToUsers } from "@/lib/discordNotificationBridge";
 import { prisma } from "@/lib/prisma";
 
 export type MatchNotificationMatch = {
@@ -176,17 +177,19 @@ export async function notifyMatchScheduled(match: MatchNotificationMatch) {
 
   if (userIds.length === 0) return;
 
+  const title = "Match scheduled";
+  const message = `${teamName(teams, match.teamAId)} vs ${teamName(teams, match.teamBId)} is scheduled.`;
+
   await createMatchNotifications({
     userIds,
     type: "match.scheduled",
-    title: "Match scheduled",
-    message: `${teamName(teams, match.teamAId)} vs ${teamName(
-      teams,
-      match.teamBId,
-    )} is scheduled.`,
+    title,
+    message,
     match,
     dedupeKey: `match.scheduled:${match.id}`,
   });
+
+  void sendDiscordNotificationsToUsers({ userIds, title, message, href: matchHref(match) }).catch(() => {});
 }
 
 export async function notifyMatchRoomReady(match: MatchNotificationMatch) {
@@ -203,6 +206,13 @@ export async function notifyMatchRoomReady(match: MatchNotificationMatch) {
     match,
     dedupeKey: `match.room.ready:${match.id}`,
   });
+
+  void sendDiscordNotificationsToUsers({
+    userIds,
+    title: "Room ready",
+    message: "Your match room/code is ready.",
+    href: matchHref(match),
+  }).catch(() => {});
 }
 
 export async function notifyManualResultSubmitted(
@@ -288,14 +298,15 @@ export async function notifyMatchConfirmed(
 
   const resultScore = scoreLabel(score);
   const winnerName = teamName(teams, winnerTeamId);
+  const confirmedMessage = resultScore
+    ? `${winnerName} won ${resultScore}.`
+    : `${winnerName} won the match.`;
 
   await createMatchNotifications({
     userIds,
     type: "match.confirmed",
     title: "Result confirmed",
-    message: resultScore
-      ? `${winnerName} won ${resultScore}.`
-      : `${winnerName} won the match.`,
+    message: confirmedMessage,
     match,
     dedupeKey: `match.confirmed:${match.id}`,
     metadata: {
@@ -303,6 +314,13 @@ export async function notifyMatchConfirmed(
       ...(resultScore ? { score: resultScore } : {}),
     },
   });
+
+  void sendDiscordNotificationsToUsers({
+    userIds,
+    title: "Result confirmed",
+    message: confirmedMessage,
+    href: matchHref(match),
+  }).catch(() => {});
 }
 
 export async function notifyMatchProcessingFailed(input: {
@@ -359,6 +377,13 @@ export async function notifyMatchCommunicationUpdated(
     match,
     dedupeKey: `match.communication.updated:${match.id}:${updateKey}`,
   });
+
+  void sendDiscordNotificationsToUsers({
+    userIds,
+    title: "Match updated",
+    message: "Match schedule or instructions were updated.",
+    href: matchHref(match),
+  }).catch(() => {});
 }
 
 export async function notifyFaceitRoomLinked(match: MatchNotificationMatch) {
@@ -375,6 +400,13 @@ export async function notifyFaceitRoomLinked(match: MatchNotificationMatch) {
     match,
     dedupeKey: `match.faceit.linked:${match.id}`,
   });
+
+  void sendDiscordNotificationsToUsers({
+    userIds,
+    title: "FACEIT room ready",
+    message: "FACEIT room link is available for your match.",
+    href: matchHref(match),
+  }).catch(() => {});
 }
 
 export async function notifyBracketAdvanced(

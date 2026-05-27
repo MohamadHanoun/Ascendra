@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 
 import { auth } from "@/auth";
 import { createNotificationsOnceForUsers } from "@/lib/notifications";
+import { sendDiscordNotificationsToUsers } from "@/lib/discordNotificationBridge";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
 
@@ -200,6 +201,11 @@ function compactReason(reason: string) {
   return `${compacted.slice(0, 137)}...`;
 }
 
+const BRIDGED_REGISTRATION_TYPES = new Set([
+  "registration.approved",
+  "registration.rejected",
+]);
+
 async function notifyRegistrationUsers(input: {
   userIds: string[];
   type: string;
@@ -234,6 +240,15 @@ async function notifyRegistrationUsers(input: {
       "[RegistrationNotifications] Failed to create notifications:",
       error,
     );
+  }
+
+  if (BRIDGED_REGISTRATION_TYPES.has(input.type)) {
+    void sendDiscordNotificationsToUsers({
+      userIds: input.userIds,
+      title: input.title,
+      message: input.message,
+      href: input.href,
+    }).catch(() => {});
   }
 }
 
