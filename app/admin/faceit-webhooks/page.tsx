@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Prisma } from "@prisma/client";
 import type { ReactNode } from "react";
+import { MatchStatus } from "@prisma/client";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -9,6 +10,15 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { getFaceitIntegrationStatus } from "@/lib/faceitIntegrationStatus";
 import { prisma } from "@/lib/prisma";
+import { isCs2Game } from "@/lib/isCs2Game";
+import {
+  getMatchOperationState,
+  getReadinessIssues,
+} from "@/lib/adminMatchOperations";
+import {
+  getFaceitProductionWarnings,
+  getCs2ReadinessSummary,
+} from "@/lib/productionReadiness";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -403,6 +413,45 @@ export default async function AdminFaceitWebhooksPage({
     }
   }
 
+  // Active CS2 match readiness stats.
+  const activeStatuses: MatchStatus[] = [
+    MatchStatus.scheduled,
+    MatchStatus.ready,
+    MatchStatus.room_created,
+    MatchStatus.in_progress,
+    MatchStatus.result_pending,
+    MatchStatus.disputed,
+  ];
+
+  const cs2QueryRows = await prisma.tournamentMatch.findMany({
+    where: { isBye: false, status: { in: activeStatuses } },
+    select: {
+      teamAId: true,
+      teamBId: true,
+      scheduledAt: true,
+      playerInstructions: true,
+      faceitMatchId: true,
+      faceitMatchUrl: true,
+      faceitSyncedAt: true,
+      faceitAutoAppliedAt: true,
+      checkIns: { select: { teamId: true } },
+      tournament: { select: { game: { select: { slug: true, name: true } } } },
+    },
+    take: 200,
+  });
+
+  const cs2Summary = getCs2ReadinessSummary(
+    cs2QueryRows.map((m) => {
+      const gameSlug = m.tournament.game?.slug ?? null;
+      const gameName = m.tournament.game?.name ?? null;
+      const isCs2 = isCs2Game(gameSlug, gameName);
+      const state = getMatchOperationState(m);
+      return { isCs2, readinessIssues: getReadinessIssues(state, isCs2) };
+    }),
+  );
+
+  const productionWarnings = getFaceitProductionWarnings(integrationStatus);
+
   return (
     <main className="asc-ambient min-h-screen overflow-hidden text-white" style={{ background: "var(--asc-bg-0)" }}>
       <Navbar />
@@ -545,11 +594,16 @@ export default async function AdminFaceitWebhooksPage({
         >
           <p className="text-sm font-black">
             {integrationStatus.factionOrderFallbackEnabled
-              ? "Faction-order fallback is enabled. This is acceptable for testing, but should be disabled before public tournaments."
+              ? "Faction-order fallback is enabled. Disable it before public tournaments."
               : integrationStatus.autoConfirmEnabled
                 ? "Auto-confirm is using safer matching only."
                 : "Auto-confirm is disabled. FACEIT proof will not apply official results automatically."}
           </p>
+          {integrationStatus.factionOrderFallbackEnabled && (
+            <p className="mt-1 text-sm font-bold" dir="rtl">
+              الاعتماد الاحتياطي على ترتيب الفرق مفعّل. عطّله قبل البطولات العامة.
+            </p>
+          )}
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
@@ -597,6 +651,223 @@ export default async function AdminFaceitWebhooksPage({
               {MANUAL_WEBHOOK_TEST_COMMAND}
             </pre>
           </details>
+        </div>
+      </section>
+
+      {/* ── Active CS2 match readiness ──────────────────────────────────── */}
+      <section className="mx-auto grid max-w-[1440px] gap-6 px-6 pb-8 lg:px-10">
+        <div>
+          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
+            Active match readiness
+          </p>
+          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
+            CS2 match status
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
+            Counts from all active CS2 tournament matches. Open{" "}
+            <Link href="/admin/match-operations" className="underline transition hover:opacity-80" style={{ color: "var(--asc-accent)" }}>
+              Match Operations
+            </Link>{" "}
+            for the full table.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <SummaryStat label="Active CS2 matches" value={cs2Summary.totalCs2Active} />
+          <SummaryStat
+            label="Missing schedule"
+            value={cs2Summary.missingSchedule}
+            tone={cs2Summary.missingSchedule > 0 ? "red" : "neutral"}
+          />
+          <SummaryStat
+            label="Missing FACEIT room"
+            value={cs2Summary.missingRoom}
+            tone={cs2Summary.missingRoom > 0 ? "red" : "neutral"}
+          />
+          <SummaryStat
+            label="Missing proof"
+            value={cs2Summary.missingProof}
+            tone={cs2Summary.missingProof > 0 ? "red" : "neutral"}
+          />
+          <SummaryStat
+            label="Needs check-in"
+            value={cs2Summary.needsCheckin}
+            tone={cs2Summary.needsCheckin > 0 ? "red" : "neutral"}
+          />
+        </div>
+
+        {productionWarnings.length > 0 && (
+          <div className="grid gap-2">
+            {productionWarnings.map((w) => (
+              <div
+                key={w.key}
+                className="border px-5 py-3"
+                style={
+                  w.severity === "error"
+                    ? {
+                        borderColor: "oklch(0.50 0.20 25 / 0.5)",
+                        background: "oklch(0.25 0.18 25 / 0.18)",
+                        color: "var(--asc-live)",
+                      }
+                    : {
+                        borderColor: "oklch(0.55 0.18 60 / 0.5)",
+                        background: "oklch(0.22 0.12 60 / 0.18)",
+                        color: "oklch(0.78 0.16 60)",
+                      }
+                }
+              >
+                <p className="text-sm font-black">{w.message}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── Real CS2 test tournament checklist ─────────────────────────── */}
+      <section className="mx-auto grid max-w-[1440px] gap-6 px-6 pb-8 lg:px-10">
+        <div>
+          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
+            Launch checklist
+          </p>
+          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
+            Real CS2 test tournament checklist
+          </h2>
+          <p className="mt-1 text-sm font-bold" dir="rtl" style={{ color: "var(--asc-fg-3)" }}>
+            قائمة اختبار بطولة CS2 حقيقية
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div
+            className="border p-5"
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+          >
+            <p className="mb-3 text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+              English
+            </p>
+            <ol className="grid gap-2">
+              {[
+                "Create a small CS2 tournament with 2 teams.",
+                "Make sure every player links Steam and FACEIT.",
+                "Approve the test registrations.",
+                "Start the tournament and confirm matches are created.",
+                "Set match time and player instructions.",
+                "Add the FACEIT room link.",
+                "Ask players to check in.",
+                "Play the match on FACEIT.",
+                "Sync FACEIT proof or wait for webhook.",
+                "Confirm the result and bracket advancement.",
+                "Check player notifications and My active matches.",
+                "Review Match Operations for missing items.",
+              ].map((item, i) => (
+                <li key={i} className="flex gap-3 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
+                  <span className="shrink-0 font-black tabular-nums" style={{ color: "var(--asc-accent)", minWidth: "1.5rem" }}>
+                    {i + 1}.
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div
+            className="border p-5"
+            dir="rtl"
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+          >
+            <p className="mb-3 text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+              العربية
+            </p>
+            <ol className="grid gap-2">
+              {[
+                "أنشئ بطولة CS2 صغيرة بفريقين.",
+                "تأكد من ربط Steam و FACEIT لكل لاعب.",
+                "اقبل تسجيلات الاختبار.",
+                "ابدأ البطولة وتأكد من إنشاء المباريات.",
+                "حدّد وقت المباراة وتعليمات اللاعبين.",
+                "أضف رابط غرفة FACEIT.",
+                "اطلب من اللاعبين تسجيل الحضور.",
+                "العبوا المباراة على FACEIT.",
+                "زامن إثبات FACEIT أو انتظر Webhook.",
+                "تأكد من اعتماد النتيجة وتقدّم القوس.",
+                "راجع إشعارات اللاعبين ومبارياتي النشطة.",
+                "راجع Match Operations للعناصر الناقصة.",
+              ].map((item, i) => (
+                <li key={i} className="flex gap-3 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
+                  <span className="shrink-0 font-black tabular-nums" style={{ color: "var(--asc-accent)", minWidth: "1.5rem" }}>
+                    {i + 1}.
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Before public tournaments checklist ────────────────────────── */}
+      <section className="mx-auto grid max-w-[1440px] gap-6 px-6 pb-8 lg:px-10">
+        <div>
+          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
+            Production checklist
+          </p>
+          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
+            Before public tournaments
+          </h2>
+          <p className="mt-1 text-sm font-bold" dir="rtl" style={{ color: "var(--asc-fg-3)" }}>
+            قبل البطولات العامة
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div
+            className="border p-5"
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+          >
+            <p className="mb-3 text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+              English
+            </p>
+            <ul className="grid gap-2">
+              {[
+                "Set FACEIT_AUTO_CONFIRM_ALLOW_FACTION_ORDER=false.",
+                "Repeat manual webhook verification.",
+                "Test with real Steam/FACEIT-linked users.",
+                "Confirm no test data appears publicly.",
+                "Confirm Match Operations shows no critical missing items.",
+                "Confirm Arabic and English player flows are clear.",
+              ].map((item, i) => (
+                <li key={i} className="flex gap-3 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
+                  <span className="shrink-0 font-black" style={{ color: "var(--asc-accent)" }}>—</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div
+            className="border p-5"
+            dir="rtl"
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+          >
+            <p className="mb-3 text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+              العربية
+            </p>
+            <ul className="grid gap-2">
+              {[
+                "اضبط FACEIT_AUTO_CONFIRM_ALLOW_FACTION_ORDER=false.",
+                "أعد اختبار Webhook يدويًا.",
+                "اختبر باستخدام مستخدمين حقيقيين مربوطين بـ Steam و FACEIT.",
+                "تأكد من عدم ظهور بيانات اختبار للعامة.",
+                "تأكد من عدم وجود عناصر حرجة ناقصة في Match Operations.",
+                "تأكد من وضوح تجربة اللاعبين بالعربية والإنجليزية.",
+              ].map((item, i) => (
+                <li key={i} className="flex gap-3 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
+                  <span className="shrink-0 font-black" style={{ color: "var(--asc-accent)" }}>—</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
