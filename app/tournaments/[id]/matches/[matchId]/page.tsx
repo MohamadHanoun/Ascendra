@@ -8,6 +8,7 @@ import FaceitMatchProofForm from "@/components/FaceitMatchProofForm";
 import Footer from "@/components/Footer";
 import MatchCheckInPanel from "@/components/MatchCheckInPanel";
 import MatchAdminControls from "@/components/MatchAdminControls";
+import MatchCommunicationAdminForm from "@/components/MatchCommunicationAdminForm";
 import MatchRealtimeRefresh from "@/components/MatchRealtimeRefresh";
 import { parseCs2Metadata } from "@/lib/gameIntegrations/steamCs2Adapter";
 import { DisputeForm, MatchReportForm } from "@/components/MatchReportForm";
@@ -77,6 +78,11 @@ type MatchDetailMessages = {
     openRoom: string;
     matchIdLabel: string;
     roomUnavailable: string;
+    scheduledTime: string;
+    playerInstructions: string;
+    noScheduledTime: string;
+    noInstructions: string;
+    checkInReminder: string;
   };
   faceitWorkflow: {
     eyebrow: string;
@@ -142,6 +148,12 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
       matchIdLabel: "FACEIT Match ID",
       roomUnavailable:
         "FACEIT room link is not available yet. Wait for an admin or tournament organizer to add it.",
+      scheduledTime: "Scheduled time",
+      playerInstructions: "Player instructions",
+      noScheduledTime: "Match time has not been set yet.",
+      noInstructions:
+        "Follow the tournament organizer's instructions and check in before playing.",
+      checkInReminder: "Check in before joining the FACEIT room.",
     },
     faceitWorkflow: {
       eyebrow: "FACEIT CS2",
@@ -205,6 +217,12 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
       matchIdLabel: "FACEIT Match ID",
       roomUnavailable:
         "رابط غرفة FACEIT غير متوفر بعد. انتظر حتى يضيفه المسؤول أو منظّم البطولة.",
+      scheduledTime: "وقت المباراة",
+      playerInstructions: "تعليمات اللاعبين",
+      noScheduledTime: "لم يتم تحديد وقت المباراة بعد.",
+      noInstructions:
+        "اتبع تعليمات منظّم البطولة وسجّل حضورك قبل اللعب.",
+      checkInReminder: "سجّل حضورك قبل الدخول إلى غرفة FACEIT.",
     },
     faceitWorkflow: {
       eyebrow: "FACEIT CS2",
@@ -753,6 +771,82 @@ export default async function MatchDetailPage({ params }: PageProps) {
                       {teamB?.name ?? msgs.vs.teamB}
                     </p>
                   </div>
+
+                  {/* Scheduled time */}
+                  <div
+                    className="border p-3"
+                    style={{
+                      borderColor: "var(--asc-line-soft)",
+                      background: "var(--asc-bg-2)",
+                    }}
+                  >
+                    <p
+                      className="text-[10px] font-black uppercase tracking-[0.14em]"
+                      style={{ color: "var(--asc-fg-3)" }}
+                    >
+                      {msgs.cs2PlayerMatch.scheduledTime}
+                    </p>
+                    {match.scheduledAt ? (
+                      <p
+                        className="mt-1 text-sm font-black"
+                        dir="ltr"
+                        style={{ color: "var(--asc-fg-0)" }}
+                      >
+                        {match.scheduledAt.toLocaleString(dateLocale, {
+                          dateStyle: "full",
+                          timeStyle: "short",
+                          timeZone: "UTC",
+                        })}{" "}
+                        <span
+                          className="text-[10px] font-black uppercase tracking-widest"
+                          style={{ color: "var(--asc-fg-3)" }}
+                        >
+                          UTC
+                        </span>
+                      </p>
+                    ) : (
+                      <p
+                        className="mt-1 text-xs"
+                        style={{ color: "var(--asc-fg-3)" }}
+                      >
+                        {msgs.cs2PlayerMatch.noScheduledTime}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Player instructions */}
+                  <div
+                    className="border p-3"
+                    style={{
+                      borderColor: "var(--asc-line-soft)",
+                      background: "var(--asc-bg-2)",
+                    }}
+                  >
+                    <p
+                      className="text-[10px] font-black uppercase tracking-[0.14em]"
+                      style={{ color: "var(--asc-fg-3)" }}
+                    >
+                      {msgs.cs2PlayerMatch.playerInstructions}
+                    </p>
+                    <p
+                      className="mt-1 text-sm leading-6 break-words whitespace-pre-wrap"
+                      style={{
+                        color: match.playerInstructions
+                          ? "var(--asc-fg-1)"
+                          : "var(--asc-fg-3)",
+                      }}
+                    >
+                      {match.playerInstructions ?? msgs.cs2PlayerMatch.noInstructions}
+                    </p>
+                  </div>
+
+                  {/* Check-in reminder */}
+                  <p
+                    className="text-xs leading-5"
+                    style={{ color: "var(--asc-fg-3)" }}
+                  >
+                    {msgs.cs2PlayerMatch.checkInReminder}
+                  </p>
 
                   <div className="grid gap-2 text-sm leading-6">
                     {[
@@ -1370,6 +1464,20 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     teamA={teamA}
                     teamB={teamB}
                     status={match.status}
+                  />
+                </div>
+                <div
+                  className="p-5"
+                  style={{ borderTop: "1px solid oklch(0.65 0.14 75 / 0.15)" }}
+                >
+                  <MatchCommunicationAdminForm
+                    matchId={match.id}
+                    currentScheduledAt={
+                      match.scheduledAt
+                        ? match.scheduledAt.toISOString().slice(0, 16)
+                        : null
+                    }
+                    currentInstructions={match.playerInstructions ?? null}
                   />
                 </div>
               </div>

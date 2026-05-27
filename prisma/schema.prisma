@@ -555,9 +555,10 @@ model TournamentMatch {
   nextMatchId   String?
   nextMatchSlot String?
   isBye         Boolean     @default(false)
-  scheduledAt   DateTime?
-  completedAt   DateTime?
-  version       Int         @default(0)
+  scheduledAt        DateTime?
+  completedAt        DateTime?
+  playerInstructions String?
+  version            Int         @default(0)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 

@@ -111,6 +111,10 @@ type MatchIdActionMessages = {
   faceitSyncedAutoDisabled: string;
   faceitSyncedAlreadyCompleted: string;
   faceitSyncedNotFinished: string;
+  // Phase 17 — match communication
+  communicationUpdated: string;
+  communicationInvalidTime: string;
+  communicationNotAllowed: string;
 };
 
 const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
@@ -172,6 +176,9 @@ const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
     faceitSyncedAutoDisabled: "FACEIT proof saved for review. Auto-confirm is disabled.",
     faceitSyncedAlreadyCompleted: "FACEIT proof saved, but this match already has an official result.",
     faceitSyncedNotFinished: "FACEIT proof saved, but the FACEIT match is not finished yet.",
+    communicationUpdated: "Match communication updated.",
+    communicationInvalidTime: "Enter a valid match time.",
+    communicationNotAllowed: "You are not allowed to update this match.",
   },
   ar: {
     loginRequired: "يرجى تسجيل الدخول أولًا.",
@@ -230,6 +237,9 @@ const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
     faceitSyncedAutoDisabled: "تم حفظ إثبات FACEIT للمراجعة. التأكيد التلقائي غير مفعّل.",
     faceitSyncedAlreadyCompleted: "تم حفظ إثبات FACEIT، لكن هذه المباراة لديها نتيجة رسمية بالفعل.",
     faceitSyncedNotFinished: "تم حفظ إثبات FACEIT، لكن مباراة FACEIT لم تنتهِ بعد.",
+    communicationUpdated: "تم تحديث معلومات المباراة.",
+    communicationInvalidTime: "أدخل وقتًا صالحًا للمباراة.",
+    communicationNotAllowed: "لا تملك صلاحية تحديث هذه المباراة.",
   },
 };
 
@@ -1292,4 +1302,51 @@ export async function syncFaceitMatchProof(
   if (autoResult.reason === "mapping_failed") return success(messages.faceitSyncedMappingFailed);
   // missing_score, engine_error — proof is saved but auto-confirm unavailable
   return success(messages.faceitSyncSuccess);
+}
+
+// ─── Admin: set match scheduled time and player instructions ─────────────────
+// Communication-only: does not start matches, create lobbies, sync proof, apply
+// results, or advance brackets.
+
+export async function updateTournamentMatchCommunication(
+  _prevState: MatchActionResult,
+  formData: FormData,
+): Promise<MatchActionResult> {
+  const messages = matchIdActionMessages[getActionLocale(formData)];
+  const sessionUser = await requireUser();
+  if (!sessionUser) return fail(messages.loginRequired);
+  if (!sessionUser.isAdmin) return fail(messages.communicationNotAllowed);
+
+  const matchId = getValue(formData, "matchId");
+  if (!matchId) return fail(messages.matchIdMissing);
+
+  const scheduledAtRaw = getValue(formData, "scheduledAt");
+  const playerInstructions = getValue(formData, "playerInstructions") || null;
+
+  let scheduledAt: Date | null = null;
+  if (scheduledAtRaw) {
+    // datetime-local sends "YYYY-MM-DDTHH:mm" — parse as UTC by appending Z.
+    const parsed = new Date(scheduledAtRaw + ":00.000Z");
+    if (isNaN(parsed.getTime())) return fail(messages.communicationInvalidTime);
+    scheduledAt = parsed;
+  }
+
+  const match = await prisma.tournamentMatch.findUnique({
+    where: { id: matchId },
+    select: { id: true, tournamentId: true },
+  });
+  if (!match) return fail(messages.matchNotFound);
+
+  await prisma.tournamentMatch.update({
+    where: { id: match.id },
+    data: {
+      scheduledAt,
+      playerInstructions,
+    },
+  });
+
+  revalidateMatchPaths(match.tournamentId);
+  revalidatePath(`/tournaments/${match.tournamentId}/matches/${match.id}`);
+
+  return success(messages.communicationUpdated);
 }
