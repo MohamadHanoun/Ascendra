@@ -79,25 +79,6 @@ const DISPLAY_SENSITIVE_KEYS = [
   "token",
 ];
 
-const MANUAL_WEBHOOK_TEST_COMMAND = [
-  '$secret = "YOUR_FACEIT_WEBHOOK_SECRET"',
-  "$headers = @{",
-  '  Authorization = "Bearer $secret"',
-  '  "Content-Type" = "application/json"',
-  "}",
-  "$body = @{",
-  '  event = "match_status_finished"',
-  "  payload = @{",
-  '    match_id = "FACEIT_MATCH_ID_HERE"',
-  "  }",
-  "} | ConvertTo-Json -Depth 10",
-  "",
-  "Invoke-RestMethod `",
-  "  -Method Post `",
-  '  -Uri "https://www.ascendrahub.com/api/webhooks/faceit" `',
-  "  -Headers $headers `",
-  "  -Body $body",
-].join("\n");
 
 function formatAdminDate(date: Date | null): string {
   if (!date) return "-";
@@ -250,24 +231,6 @@ function StatusPanelItem({
   );
 }
 
-function ProductionSettingRow({
-  name,
-  recommendation,
-}: {
-  name: string;
-  recommendation: string;
-}) {
-  return (
-    <div className="grid gap-2 border-b py-3 last:border-b-0 md:grid-cols-[300px_minmax(0,1fr)]" style={{ borderColor: "var(--asc-line-soft)" }}>
-      <p className="font-mono text-xs font-black" style={{ color: "var(--asc-fg-1)" }}>
-        {name}
-      </p>
-      <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
-        {recommendation}
-      </p>
-    </div>
-  );
-}
 
 function StatusBadge({ status }: { status: string }) {
   const style = STATUS_STYLES[status] ?? STATUS_STYLES.skipped;
@@ -599,59 +562,8 @@ export default async function AdminFaceitWebhooksPage({
                 ? "Auto-confirm is using safer matching only."
                 : "Auto-confirm is disabled. FACEIT proof will not apply official results automatically."}
           </p>
-          {integrationStatus.factionOrderFallbackEnabled && (
-            <p className="mt-1 text-sm font-bold" dir="rtl">
-              الاعتماد الاحتياطي على ترتيب الفرق مفعّل. عطّله قبل البطولات العامة.
-            </p>
-          )}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <section
-            className="border p-5"
-            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-          >
-            <p className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-              Recommended production settings
-            </p>
-            <div className="mt-4">
-              <ProductionSettingRow
-                name="FACEIT_API_KEY"
-                recommendation="Configured. Required for FACEIT proof sync and match lookups."
-              />
-              <ProductionSettingRow
-                name="FACEIT_WEBHOOK_SECRET"
-                recommendation="Configured. Required before accepting production webhook calls."
-              />
-              <ProductionSettingRow
-                name="FACEIT_AUTO_CONFIRM_ENABLED"
-                recommendation="Set to true only when tournament operations are ready for automatic official result application."
-              />
-              <ProductionSettingRow
-                name="FACEIT_AUTO_CONFIRM_ALLOW_FACTION_ORDER"
-                recommendation="Set to false for public tournaments."
-              />
-            </div>
-          </section>
-
-          <details
-            className="border p-5"
-            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-          >
-            <summary
-              className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] transition hover:opacity-80"
-              style={{ color: "var(--asc-accent)" }}
-            >
-              Manual webhook test template
-            </summary>
-            <pre
-              className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap break-words border p-4 text-xs leading-6"
-              style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-0)", color: "var(--asc-fg-2)" }}
-            >
-              {MANUAL_WEBHOOK_TEST_COMMAND}
-            </pre>
-          </details>
-        </div>
       </section>
 
       {/* ── Active CS2 match readiness ──────────────────────────────────── */}
@@ -721,153 +633,22 @@ export default async function AdminFaceitWebhooksPage({
             ))}
           </div>
         )}
-      </section>
 
-      {/* ── Real CS2 test tournament checklist ─────────────────────────── */}
-      <section className="mx-auto grid max-w-[1440px] gap-6 px-6 pb-8 lg:px-10">
-        <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
-            Launch checklist
-          </p>
-          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-            Real CS2 test tournament checklist
-          </h2>
-          <p className="mt-1 text-sm font-bold" dir="rtl" style={{ color: "var(--asc-fg-3)" }}>
-            قائمة اختبار بطولة CS2 حقيقية
-          </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div
-            className="border p-5"
-            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/admin/match-operations"
+            className="inline-flex border px-5 py-2 text-sm font-black transition hover:opacity-90"
+            style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
           >
-            <p className="mb-3 text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-              English
-            </p>
-            <ol className="grid gap-2">
-              {[
-                "Create a small CS2 tournament with 2 teams.",
-                "Make sure every player links Steam and FACEIT.",
-                "Approve the test registrations.",
-                "Start the tournament and confirm matches are created.",
-                "Set match time and player instructions.",
-                "Add the FACEIT room link.",
-                "Ask players to check in.",
-                "Play the match on FACEIT.",
-                "Sync FACEIT proof or wait for webhook.",
-                "Confirm the result and bracket advancement.",
-                "Check player notifications and My active matches.",
-                "Review Match Operations for missing items.",
-              ].map((item, i) => (
-                <li key={i} className="flex gap-3 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
-                  <span className="shrink-0 font-black tabular-nums" style={{ color: "var(--asc-accent)", minWidth: "1.5rem" }}>
-                    {i + 1}.
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ol>
-          </div>
-
-          <div
-            className="border p-5"
-            dir="rtl"
-            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+            Match Operations →
+          </Link>
+          <a
+            href="#webhook-log"
+            className="inline-flex border px-5 py-2 text-sm font-black transition hover:opacity-90"
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-2)" }}
           >
-            <p className="mb-3 text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-              العربية
-            </p>
-            <ol className="grid gap-2">
-              {[
-                "أنشئ بطولة CS2 صغيرة بفريقين.",
-                "تأكد من ربط Steam و FACEIT لكل لاعب.",
-                "اقبل تسجيلات الاختبار.",
-                "ابدأ البطولة وتأكد من إنشاء المباريات.",
-                "حدّد وقت المباراة وتعليمات اللاعبين.",
-                "أضف رابط غرفة FACEIT.",
-                "اطلب من اللاعبين تسجيل الحضور.",
-                "العبوا المباراة على FACEIT.",
-                "زامن إثبات FACEIT أو انتظر Webhook.",
-                "تأكد من اعتماد النتيجة وتقدّم القوس.",
-                "راجع إشعارات اللاعبين ومبارياتي النشطة.",
-                "راجع Match Operations للعناصر الناقصة.",
-              ].map((item, i) => (
-                <li key={i} className="flex gap-3 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
-                  <span className="shrink-0 font-black tabular-nums" style={{ color: "var(--asc-accent)", minWidth: "1.5rem" }}>
-                    {i + 1}.
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Before public tournaments checklist ────────────────────────── */}
-      <section className="mx-auto grid max-w-[1440px] gap-6 px-6 pb-8 lg:px-10">
-        <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
-            Production checklist
-          </p>
-          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-            Before public tournaments
-          </h2>
-          <p className="mt-1 text-sm font-bold" dir="rtl" style={{ color: "var(--asc-fg-3)" }}>
-            قبل البطولات العامة
-          </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div
-            className="border p-5"
-            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-          >
-            <p className="mb-3 text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-              English
-            </p>
-            <ul className="grid gap-2">
-              {[
-                "Set FACEIT_AUTO_CONFIRM_ALLOW_FACTION_ORDER=false.",
-                "Repeat manual webhook verification.",
-                "Test with real Steam/FACEIT-linked users.",
-                "Confirm no test data appears publicly.",
-                "Confirm Match Operations shows no critical missing items.",
-                "Confirm Arabic and English player flows are clear.",
-              ].map((item, i) => (
-                <li key={i} className="flex gap-3 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
-                  <span className="shrink-0 font-black" style={{ color: "var(--asc-accent)" }}>—</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div
-            className="border p-5"
-            dir="rtl"
-            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-          >
-            <p className="mb-3 text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-              العربية
-            </p>
-            <ul className="grid gap-2">
-              {[
-                "اضبط FACEIT_AUTO_CONFIRM_ALLOW_FACTION_ORDER=false.",
-                "أعد اختبار Webhook يدويًا.",
-                "اختبر باستخدام مستخدمين حقيقيين مربوطين بـ Steam و FACEIT.",
-                "تأكد من عدم ظهور بيانات اختبار للعامة.",
-                "تأكد من عدم وجود عناصر حرجة ناقصة في Match Operations.",
-                "تأكد من وضوح تجربة اللاعبين بالعربية والإنجليزية.",
-              ].map((item, i) => (
-                <li key={i} className="flex gap-3 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
-                  <span className="shrink-0 font-black" style={{ color: "var(--asc-accent)" }}>—</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
+            Webhook Logs ↓
+          </a>
         </div>
       </section>
 
@@ -974,7 +755,7 @@ export default async function AdminFaceitWebhooksPage({
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
+      <section id="webhook-log" className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
         {logs.length === 0 ? (
           <div
             className="border px-6 py-10 text-center text-sm"
