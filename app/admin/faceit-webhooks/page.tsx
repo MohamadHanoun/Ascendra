@@ -584,29 +584,35 @@ export default async function AdminFaceitWebhooksPage({
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          <SummaryStat label="Active CS2 matches" value={cs2Summary.totalCs2Active} />
-          <SummaryStat
-            label="Missing schedule"
-            value={cs2Summary.missingSchedule}
-            tone={cs2Summary.missingSchedule > 0 ? "red" : "neutral"}
-          />
-          <SummaryStat
-            label="Missing FACEIT room"
-            value={cs2Summary.missingRoom}
-            tone={cs2Summary.missingRoom > 0 ? "red" : "neutral"}
-          />
-          <SummaryStat
-            label="Missing proof"
-            value={cs2Summary.missingProof}
-            tone={cs2Summary.missingProof > 0 ? "red" : "neutral"}
-          />
-          <SummaryStat
-            label="Needs check-in"
-            value={cs2Summary.needsCheckin}
-            tone={cs2Summary.needsCheckin > 0 ? "red" : "neutral"}
-          />
-        </div>
+        {cs2Summary.totalCs2Active === 0 ? (
+          <p className="text-sm font-black" style={{ color: "var(--asc-fg-3)" }}>
+            No active CS2 matches.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <SummaryStat label="Active CS2 matches" value={cs2Summary.totalCs2Active} />
+            <SummaryStat
+              label="Missing schedule"
+              value={cs2Summary.missingSchedule}
+              tone={cs2Summary.missingSchedule > 0 ? "red" : "neutral"}
+            />
+            <SummaryStat
+              label="Missing FACEIT room"
+              value={cs2Summary.missingRoom}
+              tone={cs2Summary.missingRoom > 0 ? "red" : "neutral"}
+            />
+            <SummaryStat
+              label="Missing proof"
+              value={cs2Summary.missingProof}
+              tone={cs2Summary.missingProof > 0 ? "red" : "neutral"}
+            />
+            <SummaryStat
+              label="Needs check-in"
+              value={cs2Summary.needsCheckin}
+              tone={cs2Summary.needsCheckin > 0 ? "red" : "neutral"}
+            />
+          </div>
+        )}
 
         {productionWarnings.length > 0 && (
           <div className="grid gap-2">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { GameProvider } from "@prisma/client";
@@ -173,6 +174,7 @@ type ProfileMessages = {
     tbd: string;
     round: string;
     match: string;
+    browseTournaments: string;
   };
 };
 
@@ -316,6 +318,7 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       tbd: "TBD",
       round: "Round",
       match: "Match",
+      browseTournaments: "Browse tournaments",
     },
   },
 
@@ -443,7 +446,7 @@ const profileMessages: Record<Locale, ProfileMessages> = {
     },
     activeMatches: {
       heading: "مبارياتي النشطة",
-      empty: "لا توجد لديك مباريات نشطة في البطولات حاليًا.",
+      empty: "لا توجد لديك مباريات نشطة حاليًا.",
       tournament: "البطولة",
       yourTeam: "فريقك",
       opponent: "الخصم",
@@ -458,6 +461,7 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       tbd: "غير محدد",
       round: "جولة",
       match: "مباراة",
+      browseTournaments: "تصفح البطولات",
     },
   },
 };
@@ -1290,12 +1294,18 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
               <div className="p-5">
                 {activeMatches.length === 0 ? (
-                  <p
-                    className="text-sm"
-                    style={{ color: "var(--asc-fg-3)" }}
-                  >
-                    {messages.activeMatches.empty}
-                  </p>
+                  <div className="flex flex-col gap-3">
+                    <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
+                      {messages.activeMatches.empty}
+                    </p>
+                    <Link
+                      href="/tournaments"
+                      className="inline-flex w-fit border px-4 py-2 text-sm font-black transition hover:opacity-90"
+                      style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+                    >
+                      {messages.activeMatches.browseTournaments}
+                    </Link>
+                  </div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2">
                     {activeMatches.map((card) => (

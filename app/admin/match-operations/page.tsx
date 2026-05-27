@@ -305,13 +305,22 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
       <main className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6 lg:px-8">
         {/* Hero */}
         <div className="mb-8">
-          <Link
-            href="/admin"
-            className="mb-4 inline-flex text-sm font-black transition hover:opacity-80"
-            style={{ color: "var(--asc-accent)" }}
-          >
-            ← Back to admin
-          </Link>
+          <div className="mb-4 flex flex-wrap items-center gap-4">
+            <Link
+              href="/admin"
+              className="inline-flex text-sm font-black transition hover:opacity-80"
+              style={{ color: "var(--asc-accent)" }}
+            >
+              ← Back to admin
+            </Link>
+            <Link
+              href="/admin/faceit-webhooks"
+              className="inline-flex text-sm font-black transition hover:opacity-80"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              FACEIT Status →
+            </Link>
+          </div>
           <h1 className="text-2xl font-black tracking-tight" style={{ color: "var(--asc-fg-0)" }}>
             Match Operations
           </h1>
@@ -438,7 +447,9 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
             style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
           >
             <p className="text-sm font-black" style={{ color: "var(--asc-fg-3)" }}>
-              No active matches match the selected filters.
+              {totalActive === 0 && statusFilter === "all" && gameFilter === "all" && readinessFilter === "all"
+                ? "No active matches need attention."
+                : "No active matches match the selected filters."}
             </p>
           </div>
         ) : (
