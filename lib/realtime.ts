@@ -32,20 +32,23 @@ export async function createRealtimeEvent({
   }
 }
 
-export async function cleanupOldRealtimeEvents(daysToKeep = 7) {
+export async function cleanupOldRealtimeEvents(daysToKeep = 7): Promise<number> {
   try {
     const deleteBefore = new Date();
 
     deleteBefore.setDate(deleteBefore.getDate() - daysToKeep);
 
-    await prisma.realtimeEvent.deleteMany({
+    const result = await prisma.realtimeEvent.deleteMany({
       where: {
         createdAt: {
           lt: deleteBefore,
         },
       },
     });
+
+    return result.count;
   } catch (error) {
     console.error("[RealtimeEvent] Failed to cleanup events:", error);
+    return 0;
   }
 }
