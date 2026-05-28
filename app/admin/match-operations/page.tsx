@@ -300,35 +300,91 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <>
+    <main className="asc-ambient min-h-screen overflow-hidden text-white" style={{ background: "var(--asc-bg-0)" }}>
       <Navbar />
 
-      <main className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6 lg:px-8">
-        {/* Hero */}
-        <div className="mb-8">
-          <div className="mb-4 flex flex-wrap items-center gap-4">
-            <Link
-              href="/admin"
-              className="inline-flex text-sm font-black transition hover:opacity-80"
-              style={{ color: "var(--asc-accent)" }}
-            >
-              ← Back to admin
-            </Link>
-            <Link
-              href="/admin/faceit-webhooks"
-              className="inline-flex text-sm font-black transition hover:opacity-80"
-              style={{ color: "var(--asc-fg-3)" }}
-            >
-              FACEIT Status →
-            </Link>
-          </div>
-          <h1 className="text-2xl font-black tracking-tight" style={{ color: "var(--asc-fg-0)" }}>
-            Match Operations
-          </h1>
-          <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-            Operational view of all active tournament matches — schedule, FACEIT room, check-in, and proof status.
+      {/* Hero */}
+      <section className="relative min-h-[430px] overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: 'url("/images/backgrounds/admin-hero.webp")' }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.66) 44%,oklch(0.06 0.03 287 / 0.82) 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-44"
+          style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }}
+        />
+
+        <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
+          <Link
+            href="/admin"
+            className="mb-6 inline-flex items-center gap-2 text-sm font-black transition hover:opacity-90"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            ← Back to admin
+          </Link>
+
+          <p
+            className="mb-4 text-sm font-black uppercase tracking-[0.22em]"
+            style={{ color: "var(--asc-accent)" }}
+          >
+            Ascendra admin panel
           </p>
+
+          <h1
+            className="max-w-5xl text-5xl font-black uppercase leading-[1.04] tracking-tight md:text-6xl"
+            style={{ color: "var(--asc-fg-0)" }}
+          >
+            Match Operations.
+          </h1>
+
+          <p className="mt-5 max-w-3xl text-base leading-7" style={{ color: "var(--asc-fg-2)" }}>
+            Live match control across schedules, rooms, check-ins, proofs, and results.
+          </p>
+
+          <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
+            <span
+              className="border px-3 py-1 font-black"
+              style={{
+                borderColor: "oklch(0.55 0.14 150 / 0.5)",
+                background: "oklch(0.25 0.12 150 / 0.18)",
+                color: "var(--asc-green)",
+              }}
+            >
+              Admin
+            </span>
+            <span
+              className="border px-3 py-1 font-bold"
+              style={{
+                borderColor: "var(--asc-line-soft)",
+                background: "var(--asc-bg-2)",
+                color: "var(--asc-fg-2)",
+              }}
+            >
+              {session.user.name}
+            </span>
+            <span
+              className="border px-3 py-1 font-bold"
+              style={{
+                borderColor: "var(--asc-line-soft)",
+                background: "var(--asc-bg-2)",
+                color: "var(--asc-fg-3)",
+              }}
+            >
+              {totalActive} active match{totalActive !== 1 ? "es" : ""}
+            </span>
+          </div>
         </div>
+      </section>
+
+      {/* Content */}
+      <section className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
 
         {/* Summary stats */}
         <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -628,10 +684,11 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
             Showing first 50 results. Use filters to narrow down.
           </p>
         )}
-      </main>
+
+      </section>
 
       <Footer />
       <AdminMatchOperationsRealtime />
-    </>
+    </main>
   );
 }

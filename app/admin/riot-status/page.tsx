@@ -160,7 +160,7 @@ export default async function AdminRiotStatusPage() {
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7" style={{ color: "var(--asc-fg-2)" }}>
-            Riot RSO and tournament API configuration status. Secret values are never displayed.
+            Riot RSO and tournament API configuration. Secrets are never displayed.
           </p>
 
           <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
@@ -254,8 +254,8 @@ export default async function AdminRiotStatusPage() {
           >
             <p className="text-sm font-black">
               {rso.riotFeatureReady
-                ? "RSO credentials are configured. Players can link their Riot accounts from their profile."
-                : `Account linking requires ${rso.missing.length} missing credential${rso.missing.length !== 1 ? "s" : ""}. Configure RIOT_RSO_CLIENT_ID, RIOT_RSO_CLIENT_SECRET, and RIOT_RSO_REDIRECT_URI.`}
+                ? "RSO credentials are configured. Players can link Riot accounts from their profile."
+                : `Account linking requires ${rso.missing.length} missing credential${rso.missing.length !== 1 ? "s" : ""}. Check the Riot RSO environment variables.`}
             </p>
           </div>
         </div>
@@ -311,7 +311,7 @@ export default async function AdminRiotStatusPage() {
           >
             <p className="text-sm font-black">
               {tournamentMode === "Stub"
-                ? "Tournament mode is set to Stub. Codes are generated but game results will not be processed. Set RIOT_TOURNAMENT_MODE=production for live tournaments."
+                ? "Tournament mode is Stub. Game results will not be processed. Enable production mode for live tournaments."
                 : "Tournament mode is Production. Live LoL game results will be processed via the callback."}
             </p>
           </div>

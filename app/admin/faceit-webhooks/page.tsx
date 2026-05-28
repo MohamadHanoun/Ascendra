@@ -24,8 +24,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "FACEIT Webhooks | Admin | Ascendra",
-  description: "Debug log of incoming FACEIT webhook events.",
+  title: "FACEIT Status | Admin | Ascendra",
+  description: "FACEIT integration status and webhook log.",
 };
 
 const STATUS_STYLES: Record<string, { color: string; border: string; bg: string }> = {
@@ -441,11 +441,11 @@ export default async function AdminFaceitWebhooksPage({
           </p>
 
           <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.04] tracking-tight md:text-6xl" style={{ color: "var(--asc-fg-0)" }}>
-            FACEIT Webhooks.
+            FACEIT Status.
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7" style={{ color: "var(--asc-fg-2)" }}>
-            Newest matching FACEIT webhook events. Sensitive fields are stripped before storage and hidden from admin previews.
+            FACEIT integration status and incoming webhook log. Secrets are never displayed.
           </p>
 
           <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
@@ -480,7 +480,7 @@ export default async function AdminFaceitWebhooksPage({
             Integration safety
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
-            Environment flags are shown as configured, missing, enabled, or disabled only. Secret values are never displayed.
+            Secrets are never displayed.
           </p>
         </div>
 
