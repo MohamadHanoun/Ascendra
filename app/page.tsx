@@ -2,13 +2,17 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 
+import LeaderboardAvatar from "@/components/LeaderboardAvatar";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { getDictionary, type HomeMessages, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { getDiscordStats, type DiscordStats } from "@/lib/discordStats";
 import { prisma } from "@/lib/prisma";
-import { aggregatePlayerLeaderboard } from "@/lib/ranking/rankingService";
+import {
+  aggregatePlayerLeaderboard,
+  getActiveRankingSeason,
+} from "@/lib/ranking/rankingService";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +45,7 @@ type TopPlayer = {
   points: number;
   tier: string;
   rank: number;
+  avatar: string | null;
 };
 
 type AnnouncementData = {
@@ -60,7 +65,12 @@ type LadderPreviewPlayer = {
   score: number;
   scoreLabel: string;
   accent: string;
+  avatar: string | null;
 };
+
+function getNavArrow(locale: Locale) {
+  return locale === "ar" ? "‹" : "›";
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -213,10 +223,13 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
 function PrimaryLink({
   href,
   children,
+  locale = "en",
 }: {
   href: string;
   children: ReactNode;
+  locale?: Locale;
 }) {
+  const arrow = getNavArrow(locale);
   return (
     <Link
       href={href}
@@ -229,7 +242,7 @@ function PrimaryLink({
       }}
     >
       {children}
-      <span className="ml-2">›</span>
+      <span className={locale === "ar" ? "mr-2" : "ml-2"}>{arrow}</span>
     </Link>
   );
 }
@@ -325,6 +338,8 @@ function FeaturedEventCard({
   featuredTournament,
   approvedSlots,
   countdown,
+  messages,
+  locale,
 }: {
   featuredTournament: {
     id: string;
@@ -334,10 +349,22 @@ function FeaturedEventCard({
     prize: string | null;
     maxTeams: number;
     registrations: { id: string; status: string }[];
+    status: string;
   } | null;
   approvedSlots: number;
   countdown: { days: string; hours: string; minutes: string };
+  messages: HomeMessages;
+  locale: Locale;
 }) {
+  const arrow = getNavArrow(locale);
+  const f = messages.featured;
+
+  const countdownItems = [
+    { value: countdown.days, label: f.days },
+    { value: countdown.hours, label: f.hours },
+    { value: countdown.minutes, label: f.minutes },
+  ];
+
   return (
     <div
       className="asc-hero-light-card relative border p-6 shadow-2xl backdrop-blur"
@@ -356,7 +383,7 @@ function FeaturedEventCard({
           className="text-xs font-black uppercase tracking-[0.14em]"
           style={{ color: "var(--asc-accent)" }}
         >
-          Featured event
+          {f.label}
         </span>
       </div>
 
@@ -364,28 +391,24 @@ function FeaturedEventCard({
         className="mt-4 text-2xl font-black uppercase leading-tight md:text-3xl"
         style={{ color: "var(--asc-fg-0)" }}
       >
-        {featuredTournament?.title ?? "No featured tournament"}
+        {featuredTournament?.title ?? f.noFeaturedTitle}
       </h2>
 
       <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-2)" }}>
         {featuredTournament?.game?.name
-          ? `${featuredTournament.game.name} · Open qualifier`
-          : "Published featured events will appear here."}
+          ? `${featuredTournament.game.name} · ${f.qualifierSuffix}`
+          : f.noFeaturedSub}
       </p>
 
       <p
         className="mt-5 text-xs font-black uppercase tracking-[0.16em]"
         style={{ color: "var(--asc-accent)" }}
       >
-        ▲ Starts in
+        ▲ {f.startsIn}
       </p>
 
       <div className="mt-2 flex gap-5">
-        {[
-          { value: countdown.days, label: "DAYS" },
-          { value: countdown.hours, label: "HRS" },
-          { value: countdown.minutes, label: "MIN" },
-        ].map((item) => (
+        {countdownItems.map((item) => (
           <div key={item.label} className="text-center">
             <p
               className="text-3xl font-black tabular-nums"
@@ -417,7 +440,7 @@ function FeaturedEventCard({
             className="text-[9px] font-black uppercase tracking-[0.14em]"
             style={{ color: "var(--asc-fg-3)" }}
           >
-            Prize
+            {f.prize}
           </p>
           <p
             className="mt-1 text-sm font-black"
@@ -432,7 +455,7 @@ function FeaturedEventCard({
             className="text-[9px] font-black uppercase tracking-[0.14em]"
             style={{ color: "var(--asc-fg-3)" }}
           >
-            Slots
+            {f.slots}
           </p>
           <p
             className="mt-1 text-sm font-black"
@@ -449,13 +472,15 @@ function FeaturedEventCard({
             className="text-[9px] font-black uppercase tracking-[0.14em]"
             style={{ color: "var(--asc-fg-3)" }}
           >
-            Status
+            {f.status}
           </p>
           <p
             className="mt-1 text-sm font-black"
             style={{ color: "var(--asc-fg-0)" }}
           >
-            {featuredTournament ? "Published" : "Pending"}
+            {featuredTournament
+              ? getTournamentStatusLabel(featuredTournament.status, messages.statuses)
+              : "—"}
           </p>
         </div>
       </div>
@@ -465,7 +490,7 @@ function FeaturedEventCard({
           <ProgressBar
             approvedSlots={approvedSlots}
             maxSlots={featuredTournament.maxTeams}
-            approvedLabel="locked"
+            approvedLabel={f.locked}
           />
         </div>
       )}
@@ -476,20 +501,26 @@ function FeaturedEventCard({
             ? `/tournaments/${featuredTournament.id}`
             : "/tournaments"
         }
-        className="mt-5 flex w-full items-center justify-center py-3 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:opacity-90"
+        className="mt-5 flex w-full items-center justify-center gap-2 py-3 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:opacity-90"
         style={{
           background: "var(--asc-accent-2)",
           clipPath:
             "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
         }}
       >
-        Register team ›
+        {f.registerButton} {arrow}
       </Link>
     </div>
   );
 }
 
-function LiveMatchCard({ match }: { match: LiveMatchData }) {
+function LiveMatchCard({
+  match,
+  messages,
+}: {
+  match: LiveMatchData;
+  messages: HomeMessages;
+}) {
   const isLive = match.status === "live";
   const teamATag = match.teamA
     ? match.teamA.name.slice(0, 2).toUpperCase()
@@ -532,7 +563,7 @@ function LiveMatchCard({ match }: { match: LiveMatchData }) {
               borderColor: "var(--asc-line-soft)",
             }}
           >
-            Completed
+            {messages.matches.completed}
           </span>
         )}
 
@@ -581,7 +612,7 @@ function LiveMatchCard({ match }: { match: LiveMatchData }) {
                 className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
                 style={{ color: "var(--asc-fg-3)" }}
               >
-                Team
+                {messages.matches.team}
               </p>
             </div>
 
@@ -734,7 +765,7 @@ function TournamentFeatureCard({
                 className="text-[9px] font-black uppercase tracking-[0.14em]"
                 style={{ color: "var(--asc-fg-3)" }}
               >
-                Prize
+                {messages.tournaments.prize}
               </p>
               <p
                 className="mt-1 text-sm font-black"
@@ -749,7 +780,7 @@ function TournamentFeatureCard({
                 className="text-[9px] font-black uppercase tracking-[0.14em]"
                 style={{ color: "var(--asc-fg-3)" }}
               >
-                Teams
+                {messages.tournaments.teamsLabel}
               </p>
               <p
                 className="mt-1 text-sm font-black"
@@ -767,7 +798,7 @@ function TournamentFeatureCard({
                 className="text-[9px] font-black uppercase tracking-[0.14em]"
                 style={{ color: "var(--asc-fg-3)" }}
               >
-                Format
+                {messages.tournaments.formatLabel}
               </p>
               <p
                 className="mt-1 text-sm font-black"
@@ -783,7 +814,7 @@ function TournamentFeatureCard({
   );
 }
 
-function GameTile({ game }: { game: GameData }) {
+function GameTile({ game, messages }: { game: GameData; messages: HomeMessages }) {
   const imageSrc = getTournamentImageUrl(game.slug, null);
 
   return (
@@ -824,7 +855,7 @@ function GameTile({ game }: { game: GameData }) {
               background: "var(--asc-card-muted)",
             }}
           >
-            {game._count.tournaments} TOURNAMENTS
+            {game._count.tournaments} {messages.games.tournamentsLabel}
           </span>
         </div>
       )}
@@ -838,7 +869,7 @@ function GameTile({ game }: { game: GameData }) {
           style={{ color: "var(--asc-fg-3)" }}
         >
           {game.defaultTeamSize}v{game.defaultTeamSize} · {game._count.teams}{" "}
-          teams
+          {messages.games.teamsLabel}
         </p>
       </div>
     </Link>
@@ -867,16 +898,23 @@ function DiscordGlyph() {
   );
 }
 
-function DiscordPreviewCard({ stats }: { stats: DiscordStats }) {
+function DiscordPreviewCard({
+  stats,
+  messages,
+}: {
+  stats: DiscordStats;
+  messages: HomeMessages;
+}) {
+  const d = messages.discord;
   const metrics = [
     stats.memberCount !== null
-      ? { label: "Members", value: formatCompact(stats.memberCount) }
+      ? { label: d.membersLabel, value: formatCompact(stats.memberCount) }
       : null,
     stats.onlineCount !== null
-      ? { label: "Online", value: formatCompact(stats.onlineCount) }
+      ? { label: d.onlineLabel, value: formatCompact(stats.onlineCount) }
       : null,
     stats.lastHeartbeatAt
-      ? { label: "Bot", value: stats.botStatusLabel }
+      ? { label: d.botLabel, value: stats.botStatusLabel }
       : null,
   ].filter(
     (metric): metric is { label: string; value: string } => Boolean(metric),
@@ -911,10 +949,10 @@ function DiscordPreviewCard({ stats }: { stats: DiscordStats }) {
               className="text-[10px] font-black uppercase tracking-[0.18em]"
               style={{ color: "oklch(0.85 0.10 270)" }}
             >
-              Community
+              {d.label}
             </p>
             <h3 className="text-xl" style={{ color: "var(--asc-fg-0)" }}>
-              The Ascendra Discord
+              {d.title}
             </h3>
           </div>
         </div>
@@ -923,8 +961,7 @@ function DiscordPreviewCard({ stats }: { stats: DiscordStats }) {
           className="mt-4 text-sm leading-6"
           style={{ color: "var(--asc-fg-1)" }}
         >
-          Open the Discord hub for live bot status, server counts, role counts,
-          slash commands, and the server invite.
+          {d.description}
         </p>
 
         {metrics.length > 0 && (
@@ -967,7 +1004,7 @@ function DiscordPreviewCard({ stats }: { stats: DiscordStats }) {
                 "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
             }}
           >
-            Open Discord Hub
+            {d.openHub}
           </Link>
 
           {stats.inviteUrl && (
@@ -983,7 +1020,7 @@ function DiscordPreviewCard({ stats }: { stats: DiscordStats }) {
                   "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
               }}
             >
-              Join server
+              {d.joinServer}
             </a>
           )}
         </div>
@@ -1037,14 +1074,17 @@ function HomeMetricTile({
   );
 }
 
-function LeaderboardPreview({ players }: { players: TopPlayer[] }) {
-  const accents = [
-    "oklch(0.62 0.22 285)",
-    "oklch(0.58 0.18 220)",
-    "oklch(0.60 0.22 320)",
-    "oklch(0.58 0.20 250)",
-    "oklch(0.62 0.22 25)",
-  ];
+function LeaderboardPreview({
+  players,
+  messages,
+  locale,
+}: {
+  players: TopPlayer[];
+  messages: HomeMessages;
+  locale: Locale;
+}) {
+  const lp = messages.leaderboardPreview;
+  const arrow = getNavArrow(locale);
 
   const displayPlayers: LadderPreviewPlayer[] = players.map(
     (player, index) => ({
@@ -1055,13 +1095,14 @@ function LeaderboardPreview({ players }: { players: TopPlayer[] }) {
       meta: player.tier,
       score: player.points,
       scoreLabel: "PTS",
-      accent: accents[index] ?? accents[4],
+      accent: "oklch(0.62 0.22 285)",
+      avatar: player.avatar,
     }),
   );
 
   return (
     <div>
-      <SectionHeader label="APEX 100" title="Top of the ladder">
+      <SectionHeader label={lp.label} title={lp.title}>
         <Link
           href="/leaderboard"
           className="border px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] transition hover:opacity-75"
@@ -1070,7 +1111,7 @@ function LeaderboardPreview({ players }: { players: TopPlayer[] }) {
             color: "var(--asc-fg-2)",
           }}
         >
-          Full ladder ›
+          {lp.viewAll} {arrow}
         </Link>
       </SectionHeader>
 
@@ -1087,10 +1128,7 @@ function LeaderboardPreview({ players }: { players: TopPlayer[] }) {
               className="text-sm font-black uppercase tracking-[0.12em]"
               style={{ color: "var(--asc-fg-0)" }}
             >
-              No ranked players yet
-            </p>
-            <p className="mt-2 text-xs" style={{ color: "var(--asc-fg-3)" }}>
-              Rankings will appear here once tournament results are recorded.
+              {lp.emptyTitle}
             </p>
           </div>
         ) : (
@@ -1116,16 +1154,7 @@ function LeaderboardPreview({ players }: { players: TopPlayer[] }) {
                 {String(player.rank).padStart(2, "0")}
               </span>
 
-              <span
-                className="grid h-9 w-9 shrink-0 place-items-center text-[11px] font-black text-white"
-                style={{
-                  background: player.accent,
-                  clipPath:
-                    "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
-                }}
-              >
-                {player.initials}
-              </span>
+              <LeaderboardAvatar name={player.name} src={player.avatar} size={36} />
 
               <span className="min-w-0 flex-1">
                 <span
@@ -1167,9 +1196,11 @@ function LeaderboardPreview({ players }: { players: TopPlayer[] }) {
 function AnnouncementCard({
   item,
   index,
+  locale = "en",
 }: {
   item: AnnouncementData;
   index: number;
+  locale?: Locale;
 }) {
   const msAgo = Date.now() - item.createdAt.getTime();
   const hoursAgo = Math.max(1, Math.round(msAgo / 3600000));
@@ -1212,19 +1243,13 @@ function AnnouncementCard({
           {item.title}
         </h3>
 
-        <p
-          className="mt-3 text-[10px] font-black uppercase tracking-[0.12em]"
-          style={{ color: "var(--asc-fg-3)" }}
-        >
-          2 min read
-        </p>
       </div>
 
       <span
         className="mt-1 shrink-0 text-lg"
         style={{ color: "var(--asc-fg-3)" }}
       >
-        ›
+        {getNavArrow(locale)}
       </span>
     </Link>
   );
@@ -1239,6 +1264,7 @@ export default async function HomePage() {
     liveMatches,
     games,
     leaderboardEntries,
+    activeSeason,
     recentAnnouncements,
     totalUsers,
     totalTeams,
@@ -1301,6 +1327,7 @@ export default async function HomePage() {
     }),
 
     aggregatePlayerLeaderboard({ limit: 5 }),
+    getActiveRankingSeason(),
 
     prisma.announcement.findMany({
       where: { published: true },
@@ -1360,6 +1387,7 @@ export default async function HomePage() {
     points: entry.totalPoints,
     tier: entry.tier.name,
     rank: entry.rank,
+    avatar: entry.user?.avatar ?? null,
   }));
 
   const displayGames = games;
@@ -1411,7 +1439,7 @@ export default async function HomePage() {
                   className="mb-5 text-xs font-black uppercase tracking-[0.22em]"
                   style={{ color: "var(--asc-accent)" }}
                 >
-                  ▲ ASCENDRA · SEASON 07 · A PREMIUM ESPORTS PLATFORM
+                  ▲ ASCENDRA · {activeSeason?.name ?? messages.hero.seasonLabel} · {messages.hero.platformTagline}
                 </p>
 
                 <h1
@@ -1441,10 +1469,12 @@ export default async function HomePage() {
                 </p>
 
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <PrimaryLink href="/tournaments">
-                    Browse tournaments
+                  <PrimaryLink href="/tournaments" locale={locale}>
+                    {messages.hero.primary}
                   </PrimaryLink>
-                  <SecondaryLink href="/discord">Join Discord</SecondaryLink>
+                  <SecondaryLink href="/discord">
+                    {messages.hero.discordButton}
+                  </SecondaryLink>
                 </div>
               </div>
 
@@ -1452,6 +1482,8 @@ export default async function HomePage() {
                 featuredTournament={featuredTournament}
                 approvedSlots={featuredApprovedSlots}
                 countdown={featuredCountdown}
+                messages={messages}
+                locale={locale}
               />
             </div>
           </div>
@@ -1510,7 +1542,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* How Ascendra Works */}
+        {/* How it works */}
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <div
@@ -1521,32 +1553,13 @@ export default async function HomePage() {
                 className="relative -top-2 bg-[var(--asc-bg-0)] pr-4 text-xs font-black uppercase tracking-[0.18em]"
                 style={{ color: "var(--asc-accent)" }}
               >
-                ▲ How Ascendra works
+                ▲ {messages.flow.label}
               </span>
             </div>
 
             <div className="grid gap-8 md:grid-cols-3">
-              {[
-                {
-                  number: "01",
-                  title: "Register your team",
-                  description:
-                    "Form your roster, choose the tournament you want in, and submit your team for review.",
-                },
-                {
-                  number: "02",
-                  title: "Climb the brackets",
-                  description:
-                    "Compete through verified matches, structured rounds, and transparent tournament progress.",
-                },
-                {
-                  number: "03",
-                  title: "Earn your rank",
-                  description:
-                    "Results feed the leaderboard and build your long-term Ascendra competitive record.",
-                },
-              ].map((step) => (
-                <article key={step.number}>
+              {messages.flow.steps.map((step, index) => (
+                <article key={index}>
                   <p
                     className="text-6xl font-black leading-none"
                     style={{
@@ -1554,7 +1567,7 @@ export default async function HomePage() {
                       fontFamily: "var(--font-display)",
                     }}
                   >
-                    {step.number}
+                    {String(index + 1).padStart(2, "0")}
                   </p>
                   <h3
                     className="mt-4 text-lg"
@@ -1578,15 +1591,15 @@ export default async function HomePage() {
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader
-              label="Broadcasts"
-              title="Live now"
+              label={messages.matches.label}
+              title={messages.matches.title}
               count={sortedMatches.length}
             >
               <Link
                 href="/tournaments"
                 className="asc-mini-button"
               >
-                All matches ›
+                {messages.matches.viewAll} {getNavArrow(locale)}
               </Link>
             </SectionHeader>
 
@@ -1604,19 +1617,19 @@ export default async function HomePage() {
                   className="text-sm font-black uppercase tracking-[0.12em]"
                   style={{ color: "var(--asc-fg-0)" }}
                 >
-                  No live matches right now
+                  {messages.matches.emptyTitle}
                 </p>
                 <p
                   className="mt-2 text-xs"
                   style={{ color: "var(--asc-fg-3)" }}
                 >
-                  Check back during tournament events.
+                  {messages.matches.emptySub}
                 </p>
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {sortedMatches.map((match) => (
-                  <LiveMatchCard key={match.id} match={match} />
+                  <LiveMatchCard key={match.id} match={match} messages={messages} />
                 ))}
               </div>
             )}
@@ -1627,14 +1640,14 @@ export default async function HomePage() {
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader
-              label="Open registration"
-              title="Compete this season"
+              label={messages.tournaments.label}
+              title={messages.tournaments.title}
             >
               <Link
                 href="/tournaments"
                 className="asc-mini-button"
               >
-                All tournaments ›
+                {messages.tournaments.viewAll} {getNavArrow(locale)}
               </Link>
             </SectionHeader>
 
@@ -1684,14 +1697,14 @@ export default async function HomePage() {
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader
-              label={`Competitive titles · ${String(displayGames.length).padStart(2, "0")}`}
-              title="Pick your arena"
+              label={`${messages.games.label} · ${String(displayGames.length).padStart(2, "0")}`}
+              title={messages.games.title}
             >
               <Link
                 href="/games"
                 className="asc-mini-button"
               >
-                Games registry ›
+                {messages.games.viewAll} {getNavArrow(locale)}
               </Link>
             </SectionHeader>
 
@@ -1709,16 +1722,13 @@ export default async function HomePage() {
                   className="text-sm font-black uppercase tracking-[0.12em]"
                   style={{ color: "var(--asc-fg-0)" }}
                 >
-                  No games configured yet
-                </p>
-                <p className="mt-2 text-xs" style={{ color: "var(--asc-fg-3)" }}>
-                  Supported titles will appear here once added to the registry.
+                  {messages.games.emptyTitle}
                 </p>
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
                 {displayGames.slice(0, 5).map((game) => (
-                  <GameTile key={game.id} game={game} />
+                  <GameTile key={game.id} game={game} messages={messages} />
                 ))}
               </div>
             )}
@@ -1729,31 +1739,31 @@ export default async function HomePage() {
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-start">
-              <LeaderboardPreview players={topPlayers} />
+              <LeaderboardPreview players={topPlayers} messages={messages} locale={locale} />
 
               <div className="grid gap-4">
-                <DiscordPreviewCard stats={discordStats} />
+                <DiscordPreviewCard stats={discordStats} messages={messages} />
 
                 <div className="grid grid-cols-2 gap-4">
                   <HomeMetricTile
-                    label="Players"
+                    label={messages.metrics.players}
                     value={formatCompact(totalUsers)}
-                    sub="Registered accounts"
+                    sub={messages.metrics.playersSub}
                   />
                   <HomeMetricTile
-                    label="Teams"
+                    label={messages.metrics.teams}
                     value={formatCompact(totalTeams)}
-                    sub="Registered teams"
+                    sub={messages.metrics.teamsSub}
                   />
                   <HomeMetricTile
-                    label="Active tournaments"
+                    label={messages.metrics.activeTournaments}
                     value={activeTournamentCount}
-                    sub={`${publicTournamentCount} public total`}
+                    sub={`${publicTournamentCount} ${messages.metrics.publicTotalSuffix}`}
                   />
                   <HomeMetricTile
-                    label="Results"
+                    label={messages.metrics.results}
                     value={formatCompact(totalResults)}
-                    sub="Tournament results"
+                    sub={messages.metrics.resultsSub}
                   />
                 </div>
               </div>
@@ -1764,7 +1774,7 @@ export default async function HomePage() {
         {/* Announcements */}
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
-            <SectionHeader label="From the desk" title="Latest announcements" />
+            <SectionHeader label={messages.announcements.label} title={messages.announcements.title} />
 
             {displayAnnouncements.length === 0 ? (
               <div
@@ -1780,23 +1790,23 @@ export default async function HomePage() {
                   className="text-sm font-black uppercase tracking-[0.12em]"
                   style={{ color: "var(--asc-fg-0)" }}
                 >
-                  No announcements yet
+                  {messages.announcements.emptyTitle}
                 </p>
                 <p className="mt-2 text-xs" style={{ color: "var(--asc-fg-3)" }}>
-                  Published announcements will appear here.
+                  {messages.announcements.emptySub}
                 </p>
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
                 {displayAnnouncements.map((item, index) => (
-                  <AnnouncementCard key={item.id} item={item} index={index} />
+                  <AnnouncementCard key={item.id} item={item} index={index} locale={locale} />
                 ))}
               </div>
             )}
 
             <div className="mt-8 flex justify-center">
               <SecondaryLink href="/announcements">
-                All announcements ›
+                {messages.announcements.viewAll} {getNavArrow(locale)}
               </SecondaryLink>
             </div>
           </div>

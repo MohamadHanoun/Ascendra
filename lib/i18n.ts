@@ -101,6 +101,9 @@ export type HomeMessages = {
     description: string;
     primary: string;
     secondary: string;
+    seasonLabel: string;
+    platformTagline: string;
+    discordButton: string;
   };
   statuses: {
     tournamentOpen: string;
@@ -121,6 +124,9 @@ export type HomeMessages = {
     approved: string;
     applicationSubmitted: string;
     applicationsSubmitted: string;
+    prize: string;
+    teamsLabel: string;
+    formatLabel: string;
   };
   flow: {
     label: string;
@@ -130,6 +136,71 @@ export type HomeMessages = {
       title: string;
       description: string;
     }[];
+  };
+  featured: {
+    label: string;
+    qualifierSuffix: string;
+    noFeaturedTitle: string;
+    noFeaturedSub: string;
+    startsIn: string;
+    days: string;
+    hours: string;
+    minutes: string;
+    prize: string;
+    slots: string;
+    status: string;
+    locked: string;
+    registerButton: string;
+  };
+  matches: {
+    label: string;
+    title: string;
+    viewAll: string;
+    emptyTitle: string;
+    emptySub: string;
+    team: string;
+    completed: string;
+  };
+  leaderboardPreview: {
+    label: string;
+    title: string;
+    viewAll: string;
+    emptyTitle: string;
+  };
+  games: {
+    label: string;
+    title: string;
+    viewAll: string;
+    emptyTitle: string;
+    tournamentsLabel: string;
+    teamsLabel: string;
+  };
+  discord: {
+    label: string;
+    title: string;
+    description: string;
+    openHub: string;
+    joinServer: string;
+    membersLabel: string;
+    onlineLabel: string;
+    botLabel: string;
+  };
+  metrics: {
+    players: string;
+    teams: string;
+    activeTournaments: string;
+    results: string;
+    playersSub: string;
+    teamsSub: string;
+    publicTotalSuffix: string;
+    resultsSub: string;
+  };
+  announcements: {
+    label: string;
+    title: string;
+    viewAll: string;
+    emptyTitle: string;
+    emptySub: string;
   };
   playerHub: {
     label: string;
@@ -565,8 +636,11 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         title: "Compete in organized tournaments.",
         description:
           "Create teams, register for events, and track official results through one clean competitive platform.",
-        primary: "Explore tournaments",
+        primary: "Browse tournaments",
         secondary: "Create a team",
+        seasonLabel: "Current season",
+        platformTagline: "A premium esports platform",
+        discordButton: "Join Discord",
       },
       statuses: {
         tournamentOpen: "Tournament open",
@@ -588,34 +662,95 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         approved: "approved",
         applicationSubmitted: "application submitted.",
         applicationsSubmitted: "applications submitted.",
+        prize: "Prize",
+        teamsLabel: "Teams",
+        formatLabel: "Format",
       },
       flow: {
-        label: "Flow",
-        title: "Simple competition workflow",
+        label: "How it works",
+        title: "Compete. Track. Advance.",
         description:
-          "From creating a team to earning official tournament points.",
+          "Three steps from team registration to leaderboard.",
         steps: [
           {
-            title: "Create team",
-            description: "Build your roster and invite players.",
-          },
-          {
-            title: "Register",
-            description: "Enter eligible teams into open tournaments.",
-          },
-          {
-            title: "Admin review",
-            description: "Applications are reviewed before approval.",
-          },
-          {
             title: "Compete",
-            description: "Play official events with confirmed teams.",
+            description: "Register your team and play in organized tournaments.",
           },
           {
-            title: "Earn points",
-            description: "Results update rankings and history.",
+            title: "Track",
+            description: "Follow your results and ranking after every event.",
+          },
+          {
+            title: "Advance",
+            description: "Earn official points and build your competitive record.",
           },
         ],
+      },
+      featured: {
+        label: "Featured event",
+        qualifierSuffix: "Open qualifier",
+        noFeaturedTitle: "No featured event",
+        noFeaturedSub: "Events will appear here when published.",
+        startsIn: "Starts in",
+        days: "Days",
+        hours: "Hrs",
+        minutes: "Min",
+        prize: "Prize",
+        slots: "Slots",
+        status: "Status",
+        locked: "confirmed",
+        registerButton: "Register team",
+      },
+      matches: {
+        label: "Broadcasts",
+        title: "Live now",
+        viewAll: "All matches",
+        emptyTitle: "No live matches right now.",
+        emptySub: "Check back during tournament events.",
+        team: "Team",
+        completed: "Completed",
+      },
+      leaderboardPreview: {
+        label: "Rankings",
+        title: "Leaderboard",
+        viewAll: "Full standings",
+        emptyTitle: "No ranked players yet.",
+      },
+      games: {
+        label: "Competitive titles",
+        title: "Pick your arena",
+        viewAll: "Games registry",
+        emptyTitle: "No games available yet.",
+        tournamentsLabel: "Tournaments",
+        teamsLabel: "teams",
+      },
+      discord: {
+        label: "Community",
+        title: "The Ascendra Discord",
+        description:
+          "Live server activity, bot status, and the community invite.",
+        openHub: "Open Discord Hub",
+        joinServer: "Join server",
+        membersLabel: "Members",
+        onlineLabel: "Online",
+        botLabel: "Bot",
+      },
+      metrics: {
+        players: "Players",
+        teams: "Teams",
+        activeTournaments: "Active tournaments",
+        results: "Results",
+        playersSub: "Registered accounts",
+        teamsSub: "Registered teams",
+        publicTotalSuffix: "public",
+        resultsSub: "Tournament results",
+      },
+      announcements: {
+        label: "Latest news",
+        title: "Announcements",
+        viewAll: "All announcements",
+        emptyTitle: "No announcements yet.",
+        emptySub: "Published announcements will appear here.",
       },
       playerHub: {
         label: "Player hub",
@@ -1105,8 +1240,11 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         title: "نافس ضمن بطولات منظّمة.",
         description:
           "أنشئ فريقك، سجّل في البطولات، وتابع النتائج الرسمية من خلال منصة تنافسية واضحة واحترافية.",
-        primary: "استكشف البطولات",
+        primary: "استعرض البطولات",
         secondary: "إنشاء فريق",
+        seasonLabel: "الموسم الحالي",
+        platformTagline: "منصة رياضات إلكترونية احترافية",
+        discordButton: "انضم إلى Discord",
       },
       statuses: {
         tournamentOpen: "البطولة مفتوحة",
@@ -1128,33 +1266,94 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         approved: "مقبول",
         applicationSubmitted: "طلب تم إرساله.",
         applicationsSubmitted: "طلبات تم إرسالها.",
+        prize: "الجائزة",
+        teamsLabel: "الفرق",
+        formatLabel: "الصيغة",
       },
       flow: {
-        label: "آلية المشاركة",
-        title: "مسار تنافسي واضح وبسيط",
-        description: "من إنشاء الفريق إلى كسب النقاط الرسمية في البطولات.",
+        label: "كيف تعمل",
+        title: "نافِس. تابع. تقدّم.",
+        description: "ثلاث خطوات من تسجيل الفريق إلى لوحة المتصدرين.",
         steps: [
           {
-            title: "إنشاء فريق",
-            description: "كوّن قائمتك وادعُ اللاعبين للانضمام إلى فريقك.",
+            title: "نافِس",
+            description: "سجّل فريقك وشارك في البطولات المنظّمة.",
           },
           {
-            title: "التسجيل",
-            description: "سجّل الفرق المؤهلة في البطولات المفتوحة.",
+            title: "تابع",
+            description: "تابع نتائجك وترتيبك بعد كل فعالية.",
           },
           {
-            title: "مراجعة الإدارة",
-            description: "تتم مراجعة طلبات المشاركة قبل الموافقة النهائية.",
-          },
-          {
-            title: "المنافسة",
-            description: "شارك في الأحداث الرسمية مع الفرق المؤكدة.",
-          },
-          {
-            title: "كسب النقاط",
-            description: "تُحدّث النتائج لوحة المتصدرين وسجل المشاركات.",
+            title: "تقدّم",
+            description: "اكسب النقاط الرسمية وابنِ سجلك التنافسي.",
           },
         ],
+      },
+      featured: {
+        label: "الحدث المميز",
+        qualifierSuffix: "تصفيات مفتوحة",
+        noFeaturedTitle: "لا يوجد حدث مميز",
+        noFeaturedSub: "ستظهر الأحداث هنا عند نشرها.",
+        startsIn: "يبدأ خلال",
+        days: "أيام",
+        hours: "ساعات",
+        minutes: "دقائق",
+        prize: "الجائزة",
+        slots: "المقاعد",
+        status: "الحالة",
+        locked: "مؤكد",
+        registerButton: "تسجيل الفريق",
+      },
+      matches: {
+        label: "المباشر",
+        title: "مباشر الآن",
+        viewAll: "جميع المباريات",
+        emptyTitle: "لا توجد مباريات مباشرة الآن.",
+        emptySub: "تابع خلال فعاليات البطولات.",
+        team: "الفريق",
+        completed: "مكتملة",
+      },
+      leaderboardPreview: {
+        label: "الترتيب",
+        title: "لوحة المتصدرين",
+        viewAll: "الترتيب الكامل",
+        emptyTitle: "لا توجد تصنيفات بعد.",
+      },
+      games: {
+        label: "العناوين التنافسية",
+        title: "اختر ساحتك",
+        viewAll: "سجل الألعاب",
+        emptyTitle: "لا توجد ألعاب متاحة حاليًا.",
+        tournamentsLabel: "بطولات",
+        teamsLabel: "فريق",
+      },
+      discord: {
+        label: "المجتمع",
+        title: "Discord Ascendra",
+        description:
+          "نشاط الخادم المباشر، حالة البوت، ودعوة المجتمع.",
+        openHub: "فتح مركز Discord",
+        joinServer: "انضم إلى الخادم",
+        membersLabel: "الأعضاء",
+        onlineLabel: "المتصلون",
+        botLabel: "البوت",
+      },
+      metrics: {
+        players: "اللاعبون",
+        teams: "الفرق",
+        activeTournaments: "البطولات النشطة",
+        results: "النتائج",
+        playersSub: "حسابات مسجلة",
+        teamsSub: "فرق مسجلة",
+        publicTotalSuffix: "عام",
+        resultsSub: "نتائج بطولات",
+      },
+      announcements: {
+        label: "آخر الأخبار",
+        title: "الإعلانات",
+        viewAll: "جميع الإعلانات",
+        emptyTitle: "لا توجد إعلانات حاليًا.",
+        emptySub: "ستظهر الإعلانات المنشورة هنا.",
       },
       playerHub: {
         label: "مركز اللاعب",
