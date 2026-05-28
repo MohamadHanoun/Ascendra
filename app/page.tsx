@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import LeaderboardAvatar from "@/components/LeaderboardAvatar";
 import Footer from "@/components/Footer";
+import HomeRealtimeRefresh from "@/components/HomeRealtimeRefresh";
 import Navbar from "@/components/Navbar";
 import { getDictionary, type HomeMessages, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
@@ -1814,6 +1815,7 @@ export default async function HomePage() {
 
         <Footer />
       </div>
+      <HomeRealtimeRefresh />
     </main>
   );
 }

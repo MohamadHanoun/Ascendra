@@ -5,6 +5,7 @@ import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import TournamentsRealtimeRefresh from "@/components/TournamentsRealtimeRefresh";
 import ProfileNotice from "@/components/ProfileNotice";
 import {
   getDictionary,
@@ -1194,6 +1195,7 @@ export default async function TournamentsPage({
 
         <Footer />
       </div>
+      <TournamentsRealtimeRefresh />
     </main>
   );
 }

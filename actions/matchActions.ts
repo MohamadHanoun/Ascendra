@@ -26,6 +26,7 @@ import {
   notifyFaceitRoomLinked,
 } from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
+import { createRealtimeEvent } from "@/lib/realtime";
 import type { Locale } from "@/lib/i18n";
 import {
   adminOverrideMatchResult as engineAdminOverride,
@@ -1050,6 +1051,14 @@ export async function setFaceitMatchLinkForPlayers(
     console.error("[matchActions] notifyFaceitRoomLinked failed:", err),
   );
 
+  void createRealtimeEvent({
+    type: "tournament.match.room_linked",
+    audience: "admin",
+    entityType: "tournamentMatch",
+    entityId: match.id,
+    payload: { matchId: match.id, tournamentId: match.tournamentId },
+  }).catch(() => {});
+
   return success(messages.faceitRoomSaved);
 }
 
@@ -1145,6 +1154,14 @@ export async function checkInForTournamentMatch(
   }
 
   revalidatePath(`/tournaments/${match.tournamentId}/matches/${match.id}`);
+
+  void createRealtimeEvent({
+    type: "tournament.match.checkin_updated",
+    audience: "admin",
+    entityType: "tournamentMatch",
+    entityId: match.id,
+    payload: { matchId: match.id, tournamentId: match.tournamentId, userId: sessionUser.id },
+  }).catch(() => {});
 
   return success(messages.checkInSuccess);
 }
@@ -1305,6 +1322,14 @@ export async function syncFaceitMatchProof(
   revalidateMatchPaths(match.tournamentId);
   revalidatePath(`/tournaments/${match.tournamentId}/matches/${matchId}`);
 
+  void createRealtimeEvent({
+    type: "tournament.match.proof_synced",
+    audience: "admin",
+    entityType: "tournamentMatch",
+    entityId: match.id,
+    payload: { matchId: match.id, tournamentId: match.tournamentId },
+  }).catch(() => {});
+
   if (autoResult.applied) return success(messages.faceitAutoApplied);
   if (autoResult.reason === "disabled") return success(messages.faceitSyncedAutoDisabled);
   if (autoResult.reason === "not_finished") return success(messages.faceitSyncedNotFinished);
@@ -1361,6 +1386,14 @@ export async function updateTournamentMatchCommunication(
   void notifyMatchCommunicationUpdated(match, String(Date.now())).catch((err) =>
     console.error("[matchActions] notifyMatchCommunicationUpdated failed:", err),
   );
+
+  void createRealtimeEvent({
+    type: "tournament.match.communication_updated",
+    audience: "admin",
+    entityType: "tournamentMatch",
+    entityId: match.id,
+    payload: { matchId: match.id, tournamentId: match.tournamentId },
+  }).catch(() => {});
 
   return success(messages.communicationUpdated);
 }

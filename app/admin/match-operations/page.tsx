@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 
 import { auth } from "@/auth";
+import AdminMatchOperationsRealtime from "@/components/AdminMatchOperationsRealtime";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { prisma } from "@/lib/prisma";
@@ -630,6 +631,7 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
       </main>
 
       <Footer />
+      <AdminMatchOperationsRealtime />
     </>
   );
 }
