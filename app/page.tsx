@@ -882,7 +882,7 @@ function DiscordGlyph() {
     <div
       className="grid h-12 w-12 shrink-0 place-items-center"
       style={{
-        background: "#5865F2",
+        background: "linear-gradient(135deg, #b8893d, #8f642f)",
         clipPath:
           "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
       }}
@@ -937,7 +937,7 @@ function DiscordPreviewCard({
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle at 82% 18%, rgb(88 101 242 / 0.24), transparent 42%)",
+            "radial-gradient(circle at 82% 18%, rgba(184, 137, 61, 0.18), transparent 42%)",
         }}
       />
 
@@ -1000,7 +1000,7 @@ function DiscordPreviewCard({
             href="/discord"
             className="inline-flex items-center justify-center px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-white transition hover:opacity-90"
             style={{
-              background: "#5865F2",
+              background: "linear-gradient(135deg, #b8893d, #8f642f)",
               clipPath:
                 "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
             }}
@@ -1452,7 +1452,7 @@ export default async function HomePage() {
                   <span
                     style={{
                       background:
-                        "linear-gradient(92deg, var(--asc-accent) 0%, oklch(0.85 0.10 245) 100%)",
+                        "linear-gradient(90deg, #b8893d, #f6eee5, #8f642f)",
                       WebkitBackgroundClip: "text",
                       WebkitTextFillColor: "transparent",
                       backgroundClip: "text",

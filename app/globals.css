@@ -965,3 +965,13 @@ article.overflow-hidden[class*="border"]::before {
 [data-asc-theme="light"] .asc-public-page .asc-navbar input::placeholder {
   color: #6b6258;
 }
+
+[data-asc-theme="light"] .asc-image-hero-content .asc-hero-light-card {
+  --asc-fg-0: #171410;
+  --asc-fg-1: #2b2823;
+  --asc-fg-2: rgba(23, 20, 16, 0.72);
+  --asc-fg-3: rgba(23, 20, 16, 0.55);
+  --asc-accent: #8f642f;
+  --asc-line-soft: rgba(23, 20, 16, 0.18);
+  --asc-card: rgba(246, 238, 229, 0.96);
+}

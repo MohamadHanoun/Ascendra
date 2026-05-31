@@ -191,10 +191,10 @@ function DiscordGlyph() {
     <div
       className="grid h-14 w-14 shrink-0 place-items-center"
       style={{
-        background: "#5865F2",
+        background: "linear-gradient(135deg, #b8893d, #8f642f)",
         clipPath:
           "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
-        boxShadow: "0 0 24px rgb(88 101 242 / 0.36)",
+        boxShadow: "0 0 24px rgba(184, 137, 61, 0.36)",
       }}
     >
       <svg

@@ -232,10 +232,10 @@ function DiscordGlyph({ size = 52 }: { size?: number }) {
       style={{
         width: size,
         height: size,
-        background: "#5865F2",
+        background: "linear-gradient(135deg, #b8893d, #8f642f)",
         clipPath:
           "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-        boxShadow: "0 0 28px rgb(88 101 242 / 0.28)",
+        boxShadow: "0 0 28px rgba(184, 137, 61, 0.32)",
       }}
     >
       <svg
@@ -302,10 +302,10 @@ function ButtonLink({
     textDecoration: "none",
     border:
       variant === "discord"
-        ? "1px solid #5865F2"
+        ? "1px solid rgba(184, 137, 61, 0.45)"
         : "1px solid var(--asc-line)",
     background:
-      variant === "discord" ? "#5865F2" : "transparent",
+      variant === "discord" ? "linear-gradient(135deg, #b8893d, #8f642f)" : "transparent",
     color: "#ffffff",
   };
 
@@ -675,7 +675,7 @@ export default async function DiscordPage() {
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(circle at 70% 50%, rgb(88 101 242 / 0.22), transparent 60%)",
+                "radial-gradient(circle at 70% 50%, rgba(184, 137, 61, 0.12), transparent 60%)",
             }}
           />
           <div
@@ -708,7 +708,7 @@ export default async function DiscordPage() {
               <span
                 style={{
                   background:
-                    "linear-gradient(92deg, #5865F2 0%, var(--asc-accent) 100%)",
+                    "linear-gradient(90deg, #b8893d, #f6eee5, #8f642f)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                 }}
@@ -757,7 +757,7 @@ export default async function DiscordPage() {
               className="p-7 md:p-8"
               style={{
                 background:
-                  "linear-gradient(135deg, rgb(88 101 242 / 0.18), var(--asc-bg-1) 62%)",
+                  "linear-gradient(135deg, rgba(184, 137, 61, 0.14), var(--asc-bg-1) 62%)",
               }}
             >
               <div className="relative z-10">

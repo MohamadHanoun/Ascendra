@@ -30,7 +30,7 @@ export default function HomeCTA() {
               target="_blank"
               rel="noopener noreferrer"
               className="px-7 py-4 font-bold transition hover:opacity-90"
-              style={{ background: "#5865F2", color: "#fff" }}
+              style={{ background: "linear-gradient(135deg, #b8893d, #8f642f)", color: "#f6eee5" }}
             >
               {currentContent.nav.joinDiscord}
             </a>

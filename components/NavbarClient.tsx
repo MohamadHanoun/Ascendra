@@ -305,8 +305,8 @@ export default function NavbarClient({
               style={{
                 display: "flex", alignItems: "center", gap: 6,
                 padding: "8px 12px",
-                background: "#5865F2",
-                color: "#ffffff",
+                background: "linear-gradient(135deg, #b8893d, #8f642f)",
+                color: "#f6eee5",
                 fontFamily: "var(--font-display, sans-serif)",
                 fontWeight: 600, fontSize: 12,
                 letterSpacing: "0.14em",
@@ -316,13 +316,13 @@ export default function NavbarClient({
                 flexShrink: 0,
                 transition: "background 120ms ease",
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#4752C4"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#5865F2"; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #8f642f, #6b4a23)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #b8893d, #8f642f)"; }}
             >
               DISCORD
             </Link>
 
-            {!isAdminPath && <PublicThemeToggle />}
+            <PublicThemeToggle />
 
             {/* Bell */}
             <NotificationsDropdown isLoggedIn={isLoggedIn} />

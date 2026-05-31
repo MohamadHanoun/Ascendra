@@ -28,7 +28,7 @@ export default function Hero() {
               target="_blank"
               rel="noreferrer"
               className="px-7 py-4 font-bold text-white transition hover:opacity-90"
-              style={{ background: "#5865F2" }}
+              style={{ background: "linear-gradient(135deg, #b8893d, #8f642f)", color: "#f6eee5" }}
             >
               Join Discord
             </a>
