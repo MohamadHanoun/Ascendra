@@ -9,7 +9,7 @@ export const serverRoles = [
     name: "Developer",
     color: "text-amber-400",
     description:
-      "Works on the Ascendra website, future Discord bot features, XP system, database tools, and technical improvements.",
+      "Works on the Ascendra website, Discord bot features, tournament systems, database tools, and technical improvements.",
   },
   {
     name: "Admin",
@@ -33,6 +33,6 @@ export const serverRoles = [
     name: "Member",
     color: "text-green-300",
     description:
-      "A regular Ascendra community member with access to public channels, events, and future XP features.",
+      "A regular Ascendra community member with access to public channels, events, and tournament features.",
   },
 ];

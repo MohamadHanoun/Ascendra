@@ -12,10 +12,10 @@ export const statDetails = [
       "Live online member activity will be added when the bot is connected.",
   },
   {
-    title: "XP Activity",
-    value: "Prepared",
+    title: "Tournament Ranking",
+    value: "Active",
     description:
-      "The future XP system will track active members, levels, and leaderboard positions.",
+      "Tournament results and ranking points are tracked across seasons to determine competitive standings.",
   },
   {
     title: "Tournament Data",

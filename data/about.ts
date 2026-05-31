@@ -12,7 +12,7 @@ export const aboutItems = [
   {
     title: "Future Plans",
     description:
-      "The website is prepared for future Discord login, XP system, live server stats, tournament registration, admin tools, and a custom Discord bot.",
+      "The website includes Discord login, live server stats, tournament registration, rankings, admin tools, and a custom Discord bot.",
   },
   {
     title: "Community Vision",

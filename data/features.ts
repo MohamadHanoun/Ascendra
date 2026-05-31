@@ -8,7 +8,7 @@ export const serverFeatures = [
     text: "The server is prepared for future tournaments, community events, game nights, and organized competitions.",
   },
   {
-    title: "Future XP System",
-    text: "A custom Discord bot will later track activity, levels, XP rewards, and community leaderboards.",
+    title: "Tournament Rankings",
+    text: "Ascendra tracks tournament results, team placements, and ranking points across seasons to reward competitive achievement.",
   },
 ];

@@ -24,7 +24,7 @@ export const siteContent = {
         "Ascendra is a gaming community for players who enjoy video games, tournaments, events, and voice chats.",
       highlightTitle: "Community Highlights",
       highlightDescription:
-        "Tournaments, live Discord stats, XP levels, leaderboards, announcements, and admin tools will be added step by step.",
+        "Tournaments, live Discord stats, rankings, leaderboards, announcements, and admin tools will be added step by step.",
     },
 
     footer: "© 2026 Ascendra. All rights reserved.",
@@ -52,10 +52,10 @@ export const siteContent = {
       label: "مجتمع ألعاب",
       title: "مكان للاعبين، البطولات، واللحظات الممتعة.",
       description:
-        "Ascendra هو مجتمع مخصص لعشّاق الألعاب الإلكترونية، البطولات، الفعاليات، الرومات الصوتية، ونظام XP مستقبلي مرتبط ببوت خاص بالسيرفر.",
+        "Ascendra هو مجتمع مخصص لعشّاق الألعاب الإلكترونية، البطولات، الفعاليات، الرومات الصوتية، والتصنيفات التنافسية.",
       highlightTitle: "مميزات المجتمع",
       highlightDescription:
-        "سيتم إضافة البطولات، إحصائيات الديسكورد الحقيقية، نظام XP، لوحة المتصدرين، الإعلانات، وأدوات الإدارة بشكل تدريجي.",
+        "سيتم إضافة البطولات، إحصائيات الديسكورد الحقيقية، التصنيفات، لوحة المتصدرين، الإعلانات، وأدوات الإدارة بشكل تدريجي.",
     },
 
     footer: "© 2026 Ascendra. جميع الحقوق محفوظة.",

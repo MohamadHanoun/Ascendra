@@ -7,7 +7,7 @@ export const staffMembers = [
   {
     name: "Developer Team",
     role: "Developers",
-    status: "Website, bot, XP system, and technical features",
+    status: "Website, bot, tournament systems, and technical features",
   },
   {
     name: "Admin Team",
