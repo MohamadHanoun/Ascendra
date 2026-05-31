@@ -371,7 +371,7 @@ export default function GlobalSearch({ labels }: GlobalSearchProps) {
                         style={{
                           borderBottom: "1px solid var(--asc-line-soft)",
                           background: isSelected
-                            ? "oklch(0.20 0.10 285 / 0.18)"
+                            ? "var(--asc-hover-soft)"
                             : "transparent",
                           textDecoration: "none",
                         }}

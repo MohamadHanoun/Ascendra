@@ -40,7 +40,7 @@ export default function ConfirmActionForm({
   const buttonStyle: React.CSSProperties =
     variant === "danger"
       ? {
-          borderColor: "oklch(0.50 0.20 25 / 0.5)",
+          borderColor: "var(--asc-live-border)",
           color: "var(--asc-live)",
           background: "transparent",
         }

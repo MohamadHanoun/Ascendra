@@ -121,14 +121,14 @@ export default function AdminRuleListClient({
                       <div className="mb-3 flex flex-wrap gap-2">
                         <span
                           className="inline-flex items-center border px-3 py-1 text-xs font-black uppercase tracking-[0.1em]"
-                          style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+                          style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
                         >
                           Rule {rule.order}
                         </span>
                         <span
                           className="inline-flex items-center border px-3 py-1 text-xs font-black uppercase tracking-[0.1em]"
                           style={rule.isActive
-                            ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
+                            ? { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }
                             : { borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-3)" }}
                         >
                           {rule.isActive ? "Active" : "Hidden"}
@@ -145,7 +145,7 @@ export default function AdminRuleListClient({
                       <button
                         type="submit"
                         className="border px-4 py-2 text-sm font-black transition hover:opacity-80"
-                        style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+                        style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
                       >
                         {rule.isActive ? "Hide" : "Show"}
                       </button>

@@ -5,7 +5,7 @@ export default function Hero() {
     <section className="relative overflow-hidden px-6 py-24 text-white md:py-32">
       <div
         className="absolute inset-0 -z-10"
-        style={{ background: "radial-gradient(circle at top,oklch(0.58 0.24 285 / 0.18),transparent 40%),linear-gradient(180deg,var(--asc-bg-0),oklch(0.08 0.03 287))" }}
+        style={{ background: "radial-gradient(circle at top,var(--asc-accent-dim),transparent 40%),linear-gradient(180deg,var(--asc-bg-0),var(--asc-bg-1))" }}
       />
 
       <div className="mx-auto max-w-7xl">

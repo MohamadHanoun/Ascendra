@@ -19,7 +19,7 @@ export default function TeamInvitationCard({ invite }: TeamInvitationCardProps) 
     return (
       <article
         className="asc-card border p-5"
-        style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.10)" }}
+        style={{ borderColor: "var(--asc-live-border)", background: "oklch(0.25 0.18 25 / 0.10)" }}
       >
         <h3 className="text-xl font-bold" style={{ color: "var(--asc-live)" }}>
           Invitation unavailable
@@ -50,7 +50,7 @@ export default function TeamInvitationCard({ invite }: TeamInvitationCardProps) 
 
         <span
           className="inline-flex border px-4 py-1 text-sm font-bold"
-          style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+          style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
         >
           {invite.team.status}
         </span>
@@ -74,7 +74,7 @@ export default function TeamInvitationCard({ invite }: TeamInvitationCardProps) 
             <button
               type="submit"
               className="w-full px-5 py-3 font-bold text-white transition hover:opacity-90 sm:w-auto"
-              style={{ background: "oklch(0.55 0.14 150)" }}
+              style={{ background: "var(--asc-green)" }}
             >
               Accept
             </button>
@@ -86,7 +86,7 @@ export default function TeamInvitationCard({ invite }: TeamInvitationCardProps) 
             <button
               type="submit"
               className="w-full border px-5 py-3 font-bold transition hover:opacity-90 sm:w-auto"
-              style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
+              style={{ borderColor: "var(--asc-live-border)", color: "var(--asc-live)", background: "transparent" }}
             >
               Reject
             </button>

@@ -55,8 +55,8 @@ function normalizeTextFilter(value?: string) {
 }
 
 function getStatusStyle(status: string): React.CSSProperties {
-  if (status === "failed") return { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" };
-  return { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" };
+  if (status === "failed") return { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" };
+  return { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" };
 }
 
 function getStatusLabel(status: string) {
@@ -150,7 +150,7 @@ export default async function AdminBotCommandLogsPanel({ statusFilter, commandFi
             <Link
               href={buildExportHref({ statusFilter: normalizedStatus, commandFilter: normalizedCommand, userFilter: normalizedUser })}
               className="border px-4 py-3 text-sm font-black transition hover:opacity-90"
-              style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+              style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
             >
               Export CSV
             </Link>
@@ -173,7 +173,7 @@ export default async function AdminBotCommandLogsPanel({ statusFilter, commandFi
                 confirmDescription="This will permanently delete all failed command logs. Use this only if you already reviewed the errors."
                 confirmLabel="Delete"
                 className="border px-4 py-3 text-sm font-black transition hover:opacity-90"
-                style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" } as React.CSSProperties}
+                style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" } as React.CSSProperties}
               />
             </form>
           </div>
@@ -184,15 +184,15 @@ export default async function AdminBotCommandLogsPanel({ statusFilter, commandFi
             <p className="text-sm font-bold" style={{ color: "var(--asc-fg-3)" }}>Total Logs</p>
             <p className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{totalCount}</p>
           </div>
-          <div className="border p-5" style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" }}>
+          <div className="border p-5" style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" }}>
             <p className="text-sm font-bold" style={{ color: "var(--asc-green)" }}>Completed</p>
             <p className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{completedCount}</p>
           </div>
-          <div className="border p-5" style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" }}>
+          <div className="border p-5" style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" }}>
             <p className="text-sm font-bold" style={{ color: "var(--asc-live)" }}>Failed</p>
             <p className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{failedCount}</p>
           </div>
-          <div className="border p-5" style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" }}>
+          <div className="border p-5" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}>
             <p className="text-sm font-bold" style={{ color: "var(--asc-accent)" }}>Filtered</p>
             <p className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{filteredLogs.length}</p>
           </div>
@@ -223,7 +223,7 @@ export default async function AdminBotCommandLogsPanel({ statusFilter, commandFi
             <input name="commandUser" defaultValue={normalizedUser} placeholder="username, user ID, channel..." className="border px-4 py-3 text-sm font-bold outline-none transition" style={inputStyle} />
           </label>
           <div className="flex items-end">
-            <button type="submit" className="w-full px-5 py-3 text-sm font-black text-white transition hover:opacity-90" style={{ background: "var(--asc-accent-2)" }}>Apply</button>
+            <button type="submit" className="w-full px-5 py-3 text-sm font-black transition hover:opacity-90" style={{ background: "var(--asc-accent-2)", color: "var(--asc-on-accent)" }}>Apply</button>
           </div>
           <div className="flex items-end">
             <Link href="/admin/bot?botSection=commands" className="w-full border px-5 py-3 text-center text-sm font-black transition hover:opacity-90" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}>Reset</Link>
@@ -259,7 +259,7 @@ export default async function AdminBotCommandLogsPanel({ statusFilter, commandFi
                 <article key={log.id} className="border p-5" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}>
                   <div className="min-w-0">
                     <div className="mb-3 flex flex-wrap items-center gap-3">
-                      <span className="border px-3 py-1 text-sm font-black" style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}>/{commandName}</span>
+                      <span className="border px-3 py-1 text-sm font-black" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}>/{commandName}</span>
                       <span className="border px-3 py-1 text-xs font-black" style={getStatusStyle(log.status)}>{getStatusLabel(log.status)}</span>
                       <span className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>{formatDate(log.createdAt)}</span>
                     </div>
@@ -283,13 +283,13 @@ export default async function AdminBotCommandLogsPanel({ statusFilter, commandFi
                       </div>
                     </div>
 
-                    <div className="mt-4 border p-4" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287 / 0.5)" }}>
+                    <div className="mt-4 border p-4" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-code-surface)" }}>
                       <p className="mb-2 text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-fg-3)" }}>Options</p>
                       <pre className="whitespace-pre-wrap break-words text-sm leading-6" style={{ color: "var(--asc-fg-0)" }}>{options}</pre>
                     </div>
 
                     {log.error && (
-                      <div className="mt-4 border p-4" style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" }}>
+                      <div className="mt-4 border p-4" style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" }}>
                         <p className="mb-2 text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-live)" }}>Error</p>
                         <p className="break-words text-sm leading-6" style={{ color: "var(--asc-live)" }}>{log.error}</p>
                       </div>
@@ -314,18 +314,18 @@ export default async function AdminBotCommandLogsPanel({ statusFilter, commandFi
                       Previous
                     </Link>
                   ) : (
-                    <span className="border px-4 py-2 text-sm font-black" style={{ borderColor: "var(--asc-line-soft)", background: "transparent", color: "oklch(0.30 0.04 285)" }}>Previous</span>
+                    <span className="border px-4 py-2 text-sm font-black" style={{ borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-3)" }}>Previous</span>
                   )}
                   {hasNextPage ? (
                     <Link
                       href={buildCommandLogsHref({ statusFilter: normalizedStatus, commandFilter: normalizedCommand, userFilter: normalizedUser, page: safeCurrentPage + 1 })}
                       className="border px-4 py-2 text-sm font-black transition hover:opacity-90"
-                      style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+                      style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
                     >
                       Next
                     </Link>
                   ) : (
-                    <span className="border px-4 py-2 text-sm font-black" style={{ borderColor: "var(--asc-line-soft)", background: "transparent", color: "oklch(0.30 0.04 285)" }}>Next</span>
+                    <span className="border px-4 py-2 text-sm font-black" style={{ borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-3)" }}>Next</span>
                   )}
                 </div>
               </div>

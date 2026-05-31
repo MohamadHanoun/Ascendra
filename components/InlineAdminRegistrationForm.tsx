@@ -27,14 +27,14 @@ function getButtonStyle(
 ): CSSProperties {
   if (variant === "success") {
     return {
-      background: "oklch(0.55 0.14 150)",
-      color: "#fff",
+      background: "var(--asc-green)",
+      color: "var(--asc-on-danger)",
     };
   }
 
   if (variant === "danger") {
     return {
-      borderColor: "oklch(0.50 0.20 25 / 0.5)",
+      borderColor: "var(--asc-live-border)",
       color: "var(--asc-live)",
       background: "transparent",
     };
@@ -155,13 +155,13 @@ export default function InlineAdminRegistrationForm({
             style={
               notice.ok
                 ? {
-                    borderColor: "oklch(0.55 0.14 150 / 0.5)",
-                    background: "oklch(0.25 0.12 150 / 0.18)",
+                    borderColor: "var(--asc-green-border)",
+                    background: "var(--asc-green-bg)",
                     color: "var(--asc-green)",
                   }
                 : {
-                    borderColor: "oklch(0.50 0.20 25 / 0.5)",
-                    background: "oklch(0.25 0.18 25 / 0.18)",
+                    borderColor: "var(--asc-live-border)",
+                    background: "var(--asc-live-bg)",
                     color: "var(--asc-live)",
                   }
             }

@@ -26,14 +26,14 @@ function ConfigBadge({
   const style =
     tone === "green"
       ? {
-          borderColor: "oklch(0.55 0.14 150 / 0.5)",
-          background: "oklch(0.25 0.12 150 / 0.18)",
+          borderColor: "var(--asc-green-border)",
+          background: "var(--asc-green-bg)",
           color: "var(--asc-green)",
         }
       : tone === "red"
         ? {
-            borderColor: "oklch(0.50 0.20 25 / 0.5)",
-            background: "oklch(0.25 0.18 25 / 0.18)",
+            borderColor: "var(--asc-live-border)",
+            background: "var(--asc-live-bg)",
             color: "var(--asc-live)",
           }
         : {
@@ -114,7 +114,7 @@ export default async function AdminRiotStatusPage() {
 
   return (
     <main
-      className="asc-ambient min-h-screen overflow-hidden text-white"
+      className="asc-admin-page asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)" }}
     >
       <Navbar />
@@ -128,12 +128,12 @@ export default async function AdminRiotStatusPage() {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.66) 44%,oklch(0.06 0.03 287 / 0.82) 100%)",
+              "var(--asc-admin-hero-overlay)",
           }}
         />
         <div
           className="absolute inset-x-0 bottom-0 h-44"
-          style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }}
+          style={{ background: "var(--asc-admin-hero-bottom)" }}
         />
 
         <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
@@ -167,8 +167,8 @@ export default async function AdminRiotStatusPage() {
             <span
               className="border px-3 py-1 font-black"
               style={{
-                borderColor: "oklch(0.55 0.14 150 / 0.5)",
-                background: "oklch(0.25 0.12 150 / 0.18)",
+                borderColor: "var(--asc-green-border)",
+                background: "var(--asc-green-bg)",
                 color: "var(--asc-green)",
               }}
             >
@@ -241,8 +241,8 @@ export default async function AdminRiotStatusPage() {
             style={
               rso.riotFeatureReady
                 ? {
-                    borderColor: "oklch(0.55 0.14 150 / 0.5)",
-                    background: "oklch(0.25 0.12 150 / 0.18)",
+                    borderColor: "var(--asc-green-border)",
+                    background: "var(--asc-green-bg)",
                     color: "var(--asc-green)",
                   }
                 : {
@@ -303,8 +303,8 @@ export default async function AdminRiotStatusPage() {
                     color: "var(--asc-fg-3)",
                   }
                 : {
-                    borderColor: "oklch(0.55 0.14 150 / 0.5)",
-                    background: "oklch(0.25 0.12 150 / 0.18)",
+                    borderColor: "var(--asc-green-border)",
+                    background: "var(--asc-green-bg)",
                     color: "var(--asc-green)",
                   }
             }

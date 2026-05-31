@@ -25,7 +25,7 @@ export default function AdminRuleForm() {
         >
           <label className="grid gap-2">
             <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Rule text</span>
-            <textarea name="text" required placeholder="Write the rule text..." className="min-h-24 resize-y border px-4 py-3 text-sm leading-6 text-white outline-none transition" style={inputStyle} />
+            <textarea name="text" required placeholder="Write the rule text..." className="min-h-24 resize-y border px-4 py-3 text-sm leading-6 outline-none transition" style={inputStyle} />
           </label>
         </InlineAdminRuleForm>
       </div>

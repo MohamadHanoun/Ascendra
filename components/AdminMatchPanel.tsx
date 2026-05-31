@@ -47,12 +47,12 @@ const inputStyle: React.CSSProperties = {
 };
 
 const pillStyleMap: Record<string, React.CSSProperties> = {
-  green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
-  yellow: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
-  red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
-  blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
+  green: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
+  yellow: { color: "var(--asc-amber)", borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" },
+  red: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
+  blue: { color: "var(--asc-blue)", borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" },
   gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
-  violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+  violet: { color: "var(--asc-accent)", borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" },
 };
 
 function Pill({
@@ -77,8 +77,8 @@ function Notice({ result }: { result: AdminMatchActionResult | null }) {
       className="border px-3 py-2 text-sm font-bold"
       style={
         result.ok
-          ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
-          : { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }
+          ? { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }
+          : { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }
       }
     >
       {result.message}
@@ -138,19 +138,19 @@ function AddMatchForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1.5">
           <span className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Round</span>
-          <input name="round" type="number" min="1" required placeholder="1" className="border px-4 py-3 text-sm text-white outline-none transition" style={inputStyle} />
+          <input name="round" type="number" min="1" required placeholder="1" className="border px-4 py-3 text-sm outline-none transition" style={inputStyle} />
         </label>
 
         <label className="grid gap-1.5">
           <span className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Match #</span>
-          <input name="matchNumber" type="number" min="1" required placeholder="1" className="border px-4 py-3 text-sm text-white outline-none transition" style={inputStyle} />
+          <input name="matchNumber" type="number" min="1" required placeholder="1" className="border px-4 py-3 text-sm outline-none transition" style={inputStyle} />
         </label>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1.5">
           <span className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Team A</span>
-          <select name="teamAId" className="border px-4 py-3 text-sm text-white outline-none transition" style={inputStyle}>
+          <select name="teamAId" className="border px-4 py-3 text-sm outline-none transition" style={inputStyle}>
             <option value="">— BYE / TBD —</option>
             {registeredTeams.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>
@@ -160,7 +160,7 @@ function AddMatchForm({
 
         <label className="grid gap-1.5">
           <span className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Team B</span>
-          <select name="teamBId" className="border px-4 py-3 text-sm text-white outline-none transition" style={inputStyle}>
+          <select name="teamBId" className="border px-4 py-3 text-sm outline-none transition" style={inputStyle}>
             <option value="">— BYE / TBD —</option>
             {registeredTeams.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>
@@ -172,12 +172,12 @@ function AddMatchForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1.5">
           <span className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Scheduled at</span>
-          <input name="scheduledAt" type="datetime-local" className="border px-4 py-3 text-sm text-white outline-none transition" style={inputStyle} />
+          <input name="scheduledAt" type="datetime-local" className="border px-4 py-3 text-sm outline-none transition" style={inputStyle} />
         </label>
 
         <label className="grid gap-1.5">
           <span className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Best of</span>
-          <select name="bestOf" defaultValue="1" className="border px-4 py-3 text-sm text-white outline-none transition" style={inputStyle}>
+          <select name="bestOf" defaultValue="1" className="border px-4 py-3 text-sm outline-none transition" style={inputStyle}>
             {[1, 3, 5, 7].map((n) => (
               <option key={n} value={n}>BO{n}</option>
             ))}
@@ -187,15 +187,15 @@ function AddMatchForm({
 
       <label className="grid gap-1.5">
         <span className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Notes (optional)</span>
-        <input name="notes" placeholder="Optional match notes" className="border px-4 py-3 text-sm text-white outline-none transition" style={inputStyle} />
+        <input name="notes" placeholder="Optional match notes" className="border px-4 py-3 text-sm outline-none transition" style={inputStyle} />
       </label>
 
       <div className="flex items-center gap-3">
         <button
           type="submit"
           disabled={pending}
-          className="px-4 py-2 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-          style={{ background: "var(--asc-accent-2)" }}
+          className="px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          style={{ background: "var(--asc-accent-2)", color: "var(--asc-on-accent)" }}
         >
           {pending ? "Adding..." : "Add match"}
         </button>
@@ -279,7 +279,7 @@ function MatchCard({
 
   return (
     <>
-      <details className="group overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}>
+      <details className="group overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-table-head-bg)" }}>
         <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 transition hover:bg-white/[0.035]">
           <span className="w-10 shrink-0 text-center text-xs font-black uppercase tracking-[0.1em]" style={{ color: "var(--asc-fg-3)" }}>
             M{match.matchNumber}
@@ -303,7 +303,7 @@ function MatchCard({
 
           <span
             className="grid h-7 w-7 shrink-0 place-items-center text-sm font-black transition group-open:rotate-45"
-            style={{ border: "1px solid var(--asc-line-soft)", background: "oklch(0.09 0.02 287)", color: "var(--asc-fg-3)" }}
+            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
           >
             +
           </span>
@@ -326,21 +326,21 @@ function MatchCard({
                 <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
                   <label className="grid gap-1.5">
                     <span className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>{teamAName}</span>
-                    <input name="scoreA" type="number" min="0" defaultValue={match.scoreA} className="border px-4 py-3 text-sm text-white outline-none transition" style={inputStyle} />
+                    <input name="scoreA" type="number" min="0" defaultValue={match.scoreA} className="border px-4 py-3 text-sm outline-none transition" style={inputStyle} />
                   </label>
 
                   <span className="pb-3 text-center text-sm font-bold" style={{ color: "var(--asc-fg-3)" }}>vs</span>
 
                   <label className="grid gap-1.5">
                     <span className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>{teamBName}</span>
-                    <input name="scoreB" type="number" min="0" defaultValue={match.scoreB} className="border px-4 py-3 text-sm text-white outline-none transition" style={inputStyle} />
+                    <input name="scoreB" type="number" min="0" defaultValue={match.scoreB} className="border px-4 py-3 text-sm outline-none transition" style={inputStyle} />
                   </label>
                 </div>
 
                 {winnerOptions.length > 0 && (
                   <label className="grid gap-1.5">
                     <span className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>Winner</span>
-                    <select name="winnerTeamId" defaultValue={match.winnerTeamId ?? ""} className="border px-4 py-3 text-sm text-white outline-none transition" style={inputStyle}>
+                    <select name="winnerTeamId" defaultValue={match.winnerTeamId ?? ""} className="border px-4 py-3 text-sm outline-none transition" style={inputStyle}>
                       <option value="">No winner set</option>
                       {winnerOptions.map((t) => (
                         <option key={t.id} value={t.id}>{t.name}</option>
@@ -353,8 +353,8 @@ function MatchCard({
                   <button
                     type="submit"
                     disabled={pending}
-                    className="px-4 py-2 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                    style={{ background: "var(--asc-accent-2)" }}
+                    className="px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{ background: "var(--asc-accent-2)", color: "var(--asc-on-accent)" }}
                   >
                     {pending ? "Saving..." : "Update score"}
                   </button>
@@ -365,7 +365,7 @@ function MatchCard({
                       disabled={pending}
                       onClick={runConfirm}
                       className="border px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                      style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", color: "var(--asc-green)", background: "transparent" }}
+                      style={{ borderColor: "var(--asc-green-border)", color: "var(--asc-green)", background: "transparent" }}
                     >
                       Confirm result
                     </button>
@@ -386,7 +386,7 @@ function MatchCard({
               >
                 <input type="hidden" name="matchId" value={match.id} />
 
-                <select name="status" defaultValue={match.status} className="w-auto border px-4 py-3 text-sm text-white outline-none transition" style={inputStyle}>
+                <select name="status" defaultValue={match.status} className="w-auto border px-4 py-3 text-sm outline-none transition" style={inputStyle}>
                   {["pending", "scheduled", "live", "completed", "cancelled"].map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
@@ -405,13 +405,13 @@ function MatchCard({
               </form>
             </div>
 
-            <div className="pt-4" style={{ borderTop: "1px solid oklch(0.50 0.20 25 / 0.2)" }}>
+            <div className="pt-4" style={{ borderTop: "1px solid var(--asc-live-border)" }}>
               <button
                 type="button"
                 onClick={() => setConfirmDeleteOpen(true)}
                 disabled={pending}
                 className="border px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
+                style={{ borderColor: "var(--asc-live-border)", color: "var(--asc-live)", background: "transparent" }}
               >
                 Delete match
               </button>
@@ -423,7 +423,7 @@ function MatchCard({
       </details>
 
       {confirmDeleteOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 px-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 grid place-items-center px-4 backdrop-blur-sm" style={{ background: "var(--asc-modal-backdrop)" }}>
           <div className="w-full max-w-md overflow-hidden border shadow-2xl shadow-black/40" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
             <div className="px-6 py-5" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
               <p className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-live)" }}>Danger</p>
@@ -447,8 +447,8 @@ function MatchCard({
                 type="button"
                 onClick={runDelete}
                 disabled={pending}
-                className="px-5 py-3 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                style={{ background: "oklch(0.50 0.20 25)" }}
+                className="px-5 py-3 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ background: "var(--asc-live)", color: "var(--asc-on-danger)" }}
               >
                 {pending ? "Deleting..." : "Delete permanently"}
               </button>
@@ -475,12 +475,12 @@ export default function AdminMatchPanel({
 
   return (
     <div className="grid gap-5">
-      <details className="group overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}>
+      <details className="group overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-table-head-bg)" }}>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 transition hover:bg-white/[0.035]">
           <p className="text-sm font-black" style={{ color: "var(--asc-fg-3)" }}>Add match</p>
           <span
             className="grid h-7 w-7 place-items-center text-sm font-black transition group-open:rotate-45"
-            style={{ border: "1px solid var(--asc-line-soft)", background: "oklch(0.09 0.02 287)", color: "var(--asc-fg-3)" }}
+            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
           >
             +
           </span>

@@ -47,7 +47,7 @@ export default function AnnouncementCard({
         <div className="flex flex-wrap items-center gap-2">
           <span
             className="inline-flex border px-3 py-1 text-xs font-black"
-            style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+            style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
           >
             {announcement.category}
           </span>

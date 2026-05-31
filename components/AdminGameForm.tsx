@@ -36,24 +36,24 @@ export default function AdminGameForm() {
           <div className="grid gap-4 lg:grid-cols-2">
             <label className="grid gap-2">
               <FieldLabel>Name</FieldLabel>
-              <input name="name" required placeholder="Example: Valorant" className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+              <input name="name" required placeholder="Example: Valorant" className="border px-4 py-3 outline-none transition" style={inputStyle} />
             </label>
 
             <label className="grid gap-2">
               <FieldLabel>Slug</FieldLabel>
-              <input name="slug" required placeholder="Example: valorant" className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+              <input name="slug" required placeholder="Example: valorant" className="border px-4 py-3 outline-none transition" style={inputStyle} />
             </label>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_200px_160px_160px]">
             <label className="grid gap-2">
               <FieldLabel>Short name</FieldLabel>
-              <input name="shortName" placeholder="Example: VAL" className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+              <input name="shortName" placeholder="Example: VAL" className="border px-4 py-3 outline-none transition" style={inputStyle} />
             </label>
 
             <label className="grid gap-2">
               <FieldLabel>Platform</FieldLabel>
-              <select name="platform" defaultValue="" className="border px-4 py-3 text-white outline-none transition" style={inputStyle}>
+              <select name="platform" defaultValue="" className="border px-4 py-3 outline-none transition" style={inputStyle}>
                 <option value="">Select platform</option>
                 {platforms.map((platform) => (
                   <option key={platform} value={platform}>{platform}</option>
@@ -63,12 +63,12 @@ export default function AdminGameForm() {
 
             <label className="grid gap-2">
               <FieldLabel>Team size</FieldLabel>
-              <input name="defaultTeamSize" type="number" min={1} max={20} defaultValue={5} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+              <input name="defaultTeamSize" type="number" min={1} max={20} defaultValue={5} className="border px-4 py-3 outline-none transition" style={inputStyle} />
             </label>
 
             <label className="grid gap-2">
               <FieldLabel>Substitutes</FieldLabel>
-              <input name="defaultSubstitutes" type="number" min={0} max={10} defaultValue={0} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+              <input name="defaultSubstitutes" type="number" min={0} max={10} defaultValue={0} className="border px-4 py-3 outline-none transition" style={inputStyle} />
             </label>
           </div>
         </InlineAdminGameForm>

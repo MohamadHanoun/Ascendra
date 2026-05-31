@@ -226,18 +226,18 @@ function Pill({
   const styleMap: Record<string, CSSProperties> = {
     green: {
       color: "var(--asc-green)",
-      borderColor: "oklch(0.55 0.14 150 / 0.5)",
-      background: "oklch(0.25 0.12 150 / 0.18)",
+      borderColor: "var(--asc-green-border)",
+      background: "var(--asc-green-bg)",
     },
     red: {
       color: "var(--asc-live)",
-      borderColor: "oklch(0.50 0.20 25 / 0.5)",
-      background: "oklch(0.25 0.18 25 / 0.18)",
+      borderColor: "var(--asc-live-border)",
+      background: "var(--asc-live-bg)",
     },
     blue: {
       color: "var(--asc-blue)",
-      borderColor: "oklch(0.55 0.12 220 / 0.5)",
-      background: "oklch(0.25 0.10 220 / 0.18)",
+      borderColor: "var(--asc-blue-border)",
+      background: "var(--asc-blue-bg)",
     },
     gray: {
       color: "var(--asc-fg-3)",
@@ -246,7 +246,7 @@ function Pill({
     },
     violet: {
       color: "var(--asc-accent)",
-      borderColor: "oklch(0.50 0.20 285 / 0.4)",
+      borderColor: "var(--asc-accent-border)",
       background: "var(--asc-accent-dim)",
     },
   };
@@ -878,7 +878,7 @@ export default async function TournamentDetailsPage({
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(90deg, oklch(0.06 0.03 287 / 0.96) 0%, oklch(0.06 0.03 287 / 0.76) 44%, oklch(0.06 0.03 287 / 0.28) 100%)",
+                "linear-gradient(90deg, rgb(12 11 9 / 0.96) 0%, rgb(12 11 9 / 0.76) 44%, rgb(12 11 9 / 0.28) 100%)",
             }}
           />
 

@@ -162,7 +162,7 @@ export default function CustomSelect({
             data-select-menu
             className="fixed z-[99999] border p-2 shadow-2xl shadow-black/80"
             style={{
-              borderColor: "oklch(0.50 0.20 285 / 0.4)",
+              borderColor: "var(--asc-accent-border)",
               background: "var(--asc-bg-1)",
               top: position.top,
               left: position.left,
@@ -194,7 +194,7 @@ export default function CustomSelect({
                       className="grid w-full gap-1 px-4 py-3 text-left transition"
                       style={
                         active
-                          ? { border: "1px solid oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }
+                          ? { border: "1px solid var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }
                           : { color: "var(--asc-fg-2)" }
                       }
                     >

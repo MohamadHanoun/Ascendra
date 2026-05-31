@@ -44,7 +44,7 @@ export default function ConfirmDeleteForm({
         disabled={isPending}
         className="w-full border px-4 py-2 font-bold transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         style={{
-          borderColor: "oklch(0.50 0.20 25 / 0.5)",
+          borderColor: "var(--asc-live-border)",
           color: "var(--asc-live)",
           background: "transparent",
           clipPath:

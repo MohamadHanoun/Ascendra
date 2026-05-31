@@ -120,8 +120,8 @@ export default function MatchCheckInPanel({
               className="border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.10em]"
               style={{
                 color: "var(--asc-green)",
-                borderColor: "oklch(0.55 0.14 150 / 0.45)",
-                background: "oklch(0.25 0.12 150 / 0.14)",
+                borderColor: "var(--asc-green-border)",
+                background: "var(--asc-green-bg)",
               }}
             >
               {msgs.checkedIn}
@@ -135,7 +135,7 @@ export default function MatchCheckInPanel({
                 disabled={pending}
                 className="border px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
                 style={{
-                  borderColor: "oklch(0.50 0.20 285 / 0.45)",
+                  borderColor: "var(--asc-accent-border-strong)",
                   background: "var(--asc-accent-dim)",
                   color: "var(--asc-accent)",
                 }}
@@ -190,11 +190,11 @@ export default function MatchCheckInPanel({
           className="mt-3 border px-3 py-2 text-xs"
           style={{
             borderColor: state.ok
-              ? "oklch(0.55 0.14 150 / 0.4)"
-              : "oklch(0.50 0.20 25 / 0.4)",
+              ? "var(--asc-green-border)"
+              : "var(--asc-live-border)",
             background: state.ok
-              ? "oklch(0.25 0.12 150 / 0.12)"
-              : "oklch(0.25 0.18 25 / 0.12)",
+              ? "var(--asc-green-bg)"
+              : "var(--asc-live-bg)",
           }}
         >
           <p

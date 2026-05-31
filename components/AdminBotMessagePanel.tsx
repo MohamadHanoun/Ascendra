@@ -107,8 +107,8 @@ export default async function AdminBotMessagePanel() {
 
         <button
           type="submit"
-          className="w-fit px-5 py-3 text-sm font-black text-white transition hover:opacity-90"
-          style={{ background: "var(--asc-accent-2)" }}
+          className="w-fit px-5 py-3 text-sm font-black transition hover:opacity-90"
+          style={{ background: "var(--asc-accent-2)", color: "var(--asc-on-accent)" }}
         >
           Queue message
         </button>

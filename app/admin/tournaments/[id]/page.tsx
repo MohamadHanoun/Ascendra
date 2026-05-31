@@ -71,7 +71,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 function inputClass() {
-  return "border px-4 py-3 text-white outline-none transition";
+  return "border px-4 py-3 outline-none transition";
 }
 
 function FieldLabel({ children }: { children: ReactNode }) {
@@ -86,12 +86,12 @@ function Pill({
   tone?: "green" | "yellow" | "red" | "blue" | "gray" | "violet";
 }) {
   const styleMap: Record<string, React.CSSProperties> = {
-    green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
-    yellow: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
-    red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
-    blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
+    green: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
+    yellow: { color: "var(--asc-amber)", borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" },
+    red: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
+    blue: { color: "var(--asc-blue)", borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" },
     gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
-    violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+    violet: { color: "var(--asc-accent)", borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" },
   };
 
   return (
@@ -366,7 +366,7 @@ export default async function ManageTournamentPage({
 
   return (
     <main
-      className="asc-ambient min-h-screen overflow-hidden text-white"
+      className="asc-admin-page asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)" }}
     >
       <Navbar />
@@ -390,14 +390,14 @@ export default async function ManageTournamentPage({
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.62) 48%,oklch(0.06 0.03 287 / 0.82) 100%)",
+              "var(--asc-admin-hero-overlay)",
           }}
         />
         <div
           className="absolute inset-x-0 bottom-0 h-52"
           style={{
             background:
-              "linear-gradient(to bottom, transparent, var(--asc-bg-0))",
+              "var(--asc-admin-hero-bottom)",
           }}
         />
 
@@ -418,7 +418,7 @@ export default async function ManageTournamentPage({
             className="border p-6 shadow-2xl backdrop-blur"
             style={{
               borderColor: "var(--asc-line-soft)",
-              background: "oklch(0.09 0.035 287 / 0.75)",
+              background: "var(--asc-card-muted)",
             }}
           >
             <div className="grid gap-8 lg:grid-cols-[1fr_420px] lg:items-end">
@@ -963,8 +963,8 @@ export default async function ManageTournamentPage({
           <details
             className="group overflow-hidden border shadow-2xl"
             style={{
-              borderColor: "oklch(0.50 0.20 25 / 0.3)",
-              background: "oklch(0.10 0.05 25 / 0.05)",
+              borderColor: "var(--asc-live-border)",
+              background: "var(--asc-live-bg)",
             }}
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition">
@@ -987,8 +987,8 @@ export default async function ManageTournamentPage({
               <span
                 className="grid h-10 w-10 shrink-0 place-items-center border text-lg font-black transition group-open:rotate-45"
                 style={{
-                  borderColor: "oklch(0.50 0.20 25 / 0.4)",
-                  background: "oklch(0.25 0.18 25 / 0.15)",
+                  borderColor: "var(--asc-live-border)",
+                  background: "var(--asc-live-bg)",
                   color: "var(--asc-live)",
                 }}
               >
@@ -998,7 +998,7 @@ export default async function ManageTournamentPage({
 
             <div
               className="p-5"
-              style={{ borderTop: "1px solid oklch(0.50 0.20 25 / 0.3)" }}
+              style={{ borderTop: "1px solid var(--asc-live-border)" }}
             >
               <InlineAdminTournamentForm
                 action={deleteTournamentInline}

@@ -8,7 +8,7 @@ function getStatusStyle(status: string): React.CSSProperties {
   const normalizedStatus = status.toLowerCase();
 
   if (normalizedStatus === "active" || normalizedStatus === "available") {
-    return { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" };
+    return { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" };
   }
 
   if (normalizedStatus === "busy") {
@@ -32,7 +32,7 @@ export default function StaffCard({ name, role, status }: StaffCardProps) {
     >
       <div
         className="relative grid h-12 w-12 place-items-center text-sm font-black"
-        style={{ border: "1px solid oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+        style={{ border: "1px solid var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
       >
         <span>{initials}</span>
       </div>

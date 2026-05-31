@@ -38,35 +38,35 @@ function getStatusInfo(status: string): StatusInfo {
   const map: Record<string, StatusInfo> = {
     scheduled: {
       label: "Scheduled",
-      style: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
+      style: { color: "var(--asc-blue)", borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" },
     },
     ready: {
       label: "Ready",
-      style: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+      style: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
     },
     room_created: {
       label: "Room Created",
-      style: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
+      style: { color: "var(--asc-blue)", borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" },
     },
     in_progress: {
       label: "Live",
-      style: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+      style: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
     },
     result_pending: {
       label: "Result Pending",
-      style: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.14 75 / 0.5)", background: "oklch(0.25 0.12 75 / 0.18)" },
+      style: { color: "var(--asc-amber)", borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" },
     },
     disputed: {
       label: "Disputed",
-      style: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+      style: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
     },
     confirmed: {
       label: "Confirmed",
-      style: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
+      style: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
     },
     completed: {
       label: "Completed",
-      style: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+      style: { color: "var(--asc-accent)", borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" },
     },
     cancelled: {
       label: "Cancelled",
@@ -74,7 +74,7 @@ function getStatusInfo(status: string): StatusInfo {
     },
     forfeit: {
       label: "Forfeit",
-      style: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+      style: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
     },
     bye: {
       label: "Bye",
@@ -105,8 +105,8 @@ function Notice({ result }: { result: { ok: boolean; message: string } | null })
       className="border px-3 py-2 text-sm font-bold"
       style={
         result.ok
-          ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
-          : { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }
+          ? { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }
+          : { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }
       }
     >
       {result.message}
@@ -183,7 +183,7 @@ function MatchRow({
         href={`/tournaments/${tournamentId}/matches/${match.id}`}
         className="inline-flex items-center justify-center border px-3 py-1.5 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-90"
         style={{
-          borderColor: "oklch(0.50 0.20 285 / 0.4)",
+          borderColor: "var(--asc-accent-border)",
           color: "var(--asc-accent)",
           background: "var(--asc-accent-dim)",
         }}
@@ -237,7 +237,7 @@ export default function AdminTournamentMatchPanel({
       {!hasMatches && (
         <div
           className="border p-5"
-          style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}
+          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-table-head-bg)" }}
         >
           <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
             No matches generated yet
@@ -254,9 +254,10 @@ export default function AdminTournamentMatchPanel({
                 type="button"
                 disabled={pending}
                 onClick={() => setConfirmOpen(true)}
-                className="w-fit px-5 py-3 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-fit px-5 py-3 text-sm font-black uppercase tracking-[0.08em] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 style={{
                   background: "var(--asc-accent-2)",
+                  color: "var(--asc-on-accent)",
                   clipPath:
                     "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
                 }}
@@ -285,7 +286,7 @@ export default function AdminTournamentMatchPanel({
           <div
             className="grid items-center gap-3 px-4 py-2.5 md:grid-cols-[72px_minmax(0,1fr)_130px_52px_110px]"
             style={{
-              background: "oklch(0.10 0.03 287 / 0.5)",
+              background: "var(--asc-card-muted)",
               borderBottom: "1px solid var(--asc-line-soft)",
             }}
           >
@@ -312,7 +313,7 @@ export default function AdminTournamentMatchPanel({
               <div
                 className="px-4 py-2"
                 style={{
-                  background: "oklch(0.09 0.025 287 / 0.6)",
+                  background: "var(--asc-card-muted)",
                   borderBottom: "1px solid var(--asc-line-soft)",
                 }}
               >

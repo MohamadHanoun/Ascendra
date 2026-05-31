@@ -49,12 +49,12 @@ export default function AdminConfirmSubmitButton({
   }
 
   const defaultStyle: React.CSSProperties = danger
-    ? { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }
-    : { background: "var(--asc-accent-2)", color: "#fff", boxShadow: "0 0 20px var(--asc-accent-glow)" };
+    ? { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }
+    : { background: "var(--asc-accent-2)", color: "var(--asc-on-accent)", boxShadow: "0 0 20px var(--asc-accent-glow)" };
 
   const confirmBtnStyle: React.CSSProperties = danger
-    ? { background: "oklch(0.50 0.20 25)", color: "#fff" }
-    : { background: "var(--asc-accent-2)", color: "#fff" };
+    ? { background: "var(--asc-live)", color: "var(--asc-on-danger)" }
+    : { background: "var(--asc-accent-2)", color: "var(--asc-on-accent)" };
 
   return (
     <>
@@ -69,7 +69,7 @@ export default function AdminConfirmSubmitButton({
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 px-6">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center px-6" style={{ background: "var(--asc-modal-backdrop)" }}>
           <div className="w-full max-w-md border p-6 shadow-2xl shadow-black/40" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
             <h2 className="text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{confirmTitle}</h2>
             <p className="mt-3 text-sm leading-7" style={{ color: "var(--asc-fg-3)" }}>{confirmDescription}</p>

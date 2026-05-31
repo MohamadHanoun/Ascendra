@@ -145,14 +145,14 @@ function ActionFeedback({ result }: { result: MatchActionResult }) {
       style={
         result.ok
           ? {
-              background: "oklch(0.74 0.16 150 / 0.10)",
-              border: "1px solid oklch(0.74 0.16 150 / 0.25)",
-              color: "oklch(0.88 0.10 150)",
+              background: "var(--asc-green-bg)",
+              border: "1px solid var(--asc-green-border)",
+              color: "var(--asc-green)",
             }
           : {
-              background: "oklch(0.65 0.22 25 / 0.10)",
-              border: "1px solid oklch(0.65 0.22 25 / 0.25)",
-              color: "oklch(0.88 0.10 25)",
+              background: "var(--asc-live-bg)",
+              border: "1px solid var(--asc-live-border)",
+              color: "var(--asc-live)",
             }
       }
     >
@@ -207,7 +207,7 @@ export function MatchReportForm({
           className="px-4 py-3 text-xs font-bold"
           style={{
             background: "oklch(0.82 0.16 75 / 0.08)",
-            border: "1px solid oklch(0.65 0.14 75 / 0.3)",
+            border: "1px solid var(--asc-amber-border)",
             color: "var(--asc-amber)",
           }}
         >
@@ -392,7 +392,7 @@ export function DisputeForm({ matchId, locale }: DisputeFormProps) {
             disabled={pending}
             className="border px-5 py-2.5 text-sm font-black uppercase tracking-[0.08em] transition disabled:cursor-not-allowed disabled:opacity-60"
             style={{
-              borderColor: "oklch(0.50 0.20 25 / 0.5)",
+              borderColor: "var(--asc-live-border)",
               color: "var(--asc-live)",
               background: "transparent",
               clipPath:

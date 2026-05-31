@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -257,7 +257,7 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       connectedGameAccounts: "Connected Game Accounts",
       riotAccount: "Riot Account",
       steamAccount: "Steam Account",
-      steamSubtitle: "Dota 2 · CS2 · and more",
+      steamSubtitle: "Dota 2 Â· CS2 Â· and more",
       linked: "Linked",
       connected: "Connected",
       connect: "Connect",
@@ -318,144 +318,144 @@ const profileMessages: Record<Locale, ProfileMessages> = {
 
   ar: {
     metadata: {
-      title: "الملف الشخصي | Ascendra",
-      description: "إدارة ملفك في Ascendra والدعوات والفرق.",
+      title: "Ø§Ù„Ù…Ù„Ù Ø§Ù„Ø´Ø®ØµÙŠ | Ascendra",
+      description: "Ø¥Ø¯Ø§Ø±Ø© Ù…Ù„ÙÙƒ ÙÙŠ Ascendra ÙˆØ§Ù„Ø¯Ø¹ÙˆØ§Øª ÙˆØ§Ù„ÙØ±Ù‚.",
     },
     hero: {
-      label: "الملف الشخصي للاعب",
-      discordId: "معرّف Discord",
-      member: "عضو",
-      notMember: "غير عضو",
-      teams: "فرق",
-      team: "فريق",
-      points: "نقاط التصنيف",
-      invites: "دعوات",
-      invite: "دعوة",
+      label: "Ø§Ù„Ù…Ù„Ù Ø§Ù„Ø´Ø®ØµÙŠ Ù„Ù„Ø§Ø¹Ø¨",
+      discordId: "Ù…Ø¹Ø±Ù‘Ù Discord",
+      member: "Ø¹Ø¶Ùˆ",
+      notMember: "ØºÙŠØ± Ø¹Ø¶Ùˆ",
+      teams: "ÙØ±Ù‚",
+      team: "ÙØ±ÙŠÙ‚",
+      points: "Ù†Ù‚Ø§Ø· Ø§Ù„ØªØµÙ†ÙŠÙ",
+      invites: "Ø¯Ø¹ÙˆØ§Øª",
+      invite: "Ø¯Ø¹ÙˆØ©",
     },
     tabLabels: {
-      stats: "الإحصاءات",
-      teams: "الفرق",
-      history: "السجل",
-      achievements: "الإنجازات",
+      stats: "Ø§Ù„Ø¥Ø­ØµØ§Ø¡Ø§Øª",
+      teams: "Ø§Ù„ÙØ±Ù‚",
+      history: "Ø§Ù„Ø³Ø¬Ù„",
+      achievements: "Ø§Ù„Ø¥Ù†Ø¬Ø§Ø²Ø§Øª",
     },
     sections: {
-      invitations: "الدعوات",
-      teamInvitations: "دعوات الفرق",
-      pendingInvitation: "دعوة معلقة",
-      pendingInvitations: "دعوات معلقة",
-      noPendingInvitations: "لا توجد دعوات معلقة.",
-      myTeams: "فرقي",
-      teamOverview: "نظرة عامة على الفرق",
-      noTeamsTitle: "لا توجد فرق بعد",
-      noTeamsDescription: "أنشئ فريقك الأول من القسم الموجود بالأسفل.",
-      createTeam: "إنشاء فريق",
-      startNewTeam: "بدء فريق جديد",
-      createTeamMeta: "أنشئ فريقًا للعبة محددة.",
-      discordRequiredMeta: "عضوية Discord مطلوبة.",
-      progress: "التقدم",
-      tournamentHistory: "سجل البطولات",
-      noTournamentResults: "لا توجد نتائج بطولات حاليًا.",
-      performanceEyebrow: "الأداء",
-      pointHistoryTitle: "سجل النقاط",
-      noTournamentData: "لا توجد بيانات بطولات بعد.",
-      recentMatchesEyebrow: "المباريات الأخيرة",
-      matchHistoryTitle: "سجل المباريات",
-      noResultsYet: "لا توجد نتائج بعد.",
-      fullRecordEyebrow: "السجل الكامل",
-      tournamentHistoryTitle: "سجل البطولات",
-      achievementsEyebrow: "إنجازات اللاعب",
-      achievementsTitle: "الإنجازات",
-      comingSoon: "قريبًا",
-      comingSoonDesc: "ستُفتح الإنجازات مع مشاركتك في البطولات.",
-      tableColTournament: "البطولة",
-      tableColTeam: "الفريق",
-      tableColPlace: "المركز",
-      tableColPts: "النقاط",
-      tableColDate: "التاريخ",
+      invitations: "Ø§Ù„Ø¯Ø¹ÙˆØ§Øª",
+      teamInvitations: "Ø¯Ø¹ÙˆØ§Øª Ø§Ù„ÙØ±Ù‚",
+      pendingInvitation: "Ø¯Ø¹ÙˆØ© Ù…Ø¹Ù„Ù‚Ø©",
+      pendingInvitations: "Ø¯Ø¹ÙˆØ§Øª Ù…Ø¹Ù„Ù‚Ø©",
+      noPendingInvitations: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¯Ø¹ÙˆØ§Øª Ù…Ø¹Ù„Ù‚Ø©.",
+      myTeams: "ÙØ±Ù‚ÙŠ",
+      teamOverview: "Ù†Ø¸Ø±Ø© Ø¹Ø§Ù…Ø© Ø¹Ù„Ù‰ Ø§Ù„ÙØ±Ù‚",
+      noTeamsTitle: "Ù„Ø§ ØªÙˆØ¬Ø¯ ÙØ±Ù‚ Ø¨Ø¹Ø¯",
+      noTeamsDescription: "Ø£Ù†Ø´Ø¦ ÙØ±ÙŠÙ‚Ùƒ Ø§Ù„Ø£ÙˆÙ„ Ù…Ù† Ø§Ù„Ù‚Ø³Ù… Ø§Ù„Ù…ÙˆØ¬ÙˆØ¯ Ø¨Ø§Ù„Ø£Ø³ÙÙ„.",
+      createTeam: "Ø¥Ù†Ø´Ø§Ø¡ ÙØ±ÙŠÙ‚",
+      startNewTeam: "Ø¨Ø¯Ø¡ ÙØ±ÙŠÙ‚ Ø¬Ø¯ÙŠØ¯",
+      createTeamMeta: "Ø£Ù†Ø´Ø¦ ÙØ±ÙŠÙ‚Ù‹Ø§ Ù„Ù„Ø¹Ø¨Ø© Ù…Ø­Ø¯Ø¯Ø©.",
+      discordRequiredMeta: "Ø¹Ø¶ÙˆÙŠØ© Discord Ù…Ø·Ù„ÙˆØ¨Ø©.",
+      progress: "Ø§Ù„ØªÙ‚Ø¯Ù…",
+      tournamentHistory: "Ø³Ø¬Ù„ Ø§Ù„Ø¨Ø·ÙˆÙ„Ø§Øª",
+      noTournamentResults: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ù†ØªØ§Ø¦Ø¬ Ø¨Ø·ÙˆÙ„Ø§Øª Ø­Ø§Ù„ÙŠÙ‹Ø§.",
+      performanceEyebrow: "Ø§Ù„Ø£Ø¯Ø§Ø¡",
+      pointHistoryTitle: "Ø³Ø¬Ù„ Ø§Ù„Ù†Ù‚Ø§Ø·",
+      noTournamentData: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª Ø¨Ø·ÙˆÙ„Ø§Øª Ø¨Ø¹Ø¯.",
+      recentMatchesEyebrow: "Ø§Ù„Ù…Ø¨Ø§Ø±ÙŠØ§Øª Ø§Ù„Ø£Ø®ÙŠØ±Ø©",
+      matchHistoryTitle: "Ø³Ø¬Ù„ Ø§Ù„Ù…Ø¨Ø§Ø±ÙŠØ§Øª",
+      noResultsYet: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ù†ØªØ§Ø¦Ø¬ Ø¨Ø¹Ø¯.",
+      fullRecordEyebrow: "Ø§Ù„Ø³Ø¬Ù„ Ø§Ù„ÙƒØ§Ù…Ù„",
+      tournamentHistoryTitle: "Ø³Ø¬Ù„ Ø§Ù„Ø¨Ø·ÙˆÙ„Ø§Øª",
+      achievementsEyebrow: "Ø¥Ù†Ø¬Ø§Ø²Ø§Øª Ø§Ù„Ù„Ø§Ø¹Ø¨",
+      achievementsTitle: "Ø§Ù„Ø¥Ù†Ø¬Ø§Ø²Ø§Øª",
+      comingSoon: "Ù‚Ø±ÙŠØ¨Ù‹Ø§",
+      comingSoonDesc: "Ø³ØªÙÙØªØ­ Ø§Ù„Ø¥Ù†Ø¬Ø§Ø²Ø§Øª Ù…Ø¹ Ù…Ø´Ø§Ø±ÙƒØªÙƒ ÙÙŠ Ø§Ù„Ø¨Ø·ÙˆÙ„Ø§Øª.",
+      tableColTournament: "Ø§Ù„Ø¨Ø·ÙˆÙ„Ø©",
+      tableColTeam: "Ø§Ù„ÙØ±ÙŠÙ‚",
+      tableColPlace: "Ø§Ù„Ù…Ø±ÙƒØ²",
+      tableColPts: "Ø§Ù„Ù†Ù‚Ø§Ø·",
+      tableColDate: "Ø§Ù„ØªØ§Ø±ÙŠØ®",
     },
     labels: {
-      by: "بواسطة",
-      members: "أعضاء",
-      member: "عضو",
-      leader: "القائد",
-      open: "فتح",
-      accept: "قبول",
-      decline: "رفض",
-      teamName: "اسم الفريق",
-      teamNamePlaceholder: "مثال: Ascendra Wolves",
-      game: "اللعبة",
-      selectGame: "اختر اللعبة",
-      teamGame: "لعبة الفريق",
-      createTeam: "إنشاء فريق",
-      ascendraDiscordRequired: "Discord الخاص بـ Ascendra مطلوب",
+      by: "Ø¨ÙˆØ§Ø³Ø·Ø©",
+      members: "Ø£Ø¹Ø¶Ø§Ø¡",
+      member: "Ø¹Ø¶Ùˆ",
+      leader: "Ø§Ù„Ù‚Ø§Ø¦Ø¯",
+      open: "ÙØªØ­",
+      accept: "Ù‚Ø¨ÙˆÙ„",
+      decline: "Ø±ÙØ¶",
+      teamName: "Ø§Ø³Ù… Ø§Ù„ÙØ±ÙŠÙ‚",
+      teamNamePlaceholder: "Ù…Ø«Ø§Ù„: Ascendra Wolves",
+      game: "Ø§Ù„Ù„Ø¹Ø¨Ø©",
+      selectGame: "Ø§Ø®ØªØ± Ø§Ù„Ù„Ø¹Ø¨Ø©",
+      teamGame: "Ù„Ø¹Ø¨Ø© Ø§Ù„ÙØ±ÙŠÙ‚",
+      createTeam: "Ø¥Ù†Ø´Ø§Ø¡ ÙØ±ÙŠÙ‚",
+      ascendraDiscordRequired: "Discord Ø§Ù„Ø®Ø§Øµ Ø¨Ù€ Ascendra Ù…Ø·Ù„ÙˆØ¨",
       discordRequiredDescription:
-        "انضم إلى خادم Discord ثم حدّث تسجيل الدخول لإنشاء الفرق أو الانضمام إليها.",
-      results: "النتائج",
-      result: "نتيجة",
-      best: "أفضل مركز",
-      pts: "نقطة",
-      ptsLabel: "نقطة",
+        "Ø§Ù†Ø¶Ù… Ø¥Ù„Ù‰ Ø®Ø§Ø¯Ù… Discord Ø«Ù… Ø­Ø¯Ù‘Ø« ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ù„Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„ÙØ±Ù‚ Ø£Ùˆ Ø§Ù„Ø§Ù†Ø¶Ù…Ø§Ù… Ø¥Ù„ÙŠÙ‡Ø§.",
+      results: "Ø§Ù„Ù†ØªØ§Ø¦Ø¬",
+      result: "Ù†ØªÙŠØ¬Ø©",
+      best: "Ø£ÙØ¶Ù„ Ù…Ø±ÙƒØ²",
+      pts: "Ù†Ù‚Ø·Ø©",
+      ptsLabel: "Ù†Ù‚Ø·Ø©",
       discord: "Discord",
-      linkedAccounts: "الحسابات المرتبطة",
-      connectedGameAccounts: "حسابات الألعاب المرتبطة",
-      riotAccount: "حساب Riot",
-      steamAccount: "حساب Steam",
-      steamSubtitle: "Dota 2 · CS2 · والمزيد",
-      linked: "تم الربط",
-      connected: "مرتبط",
-      connect: "ربط",
-      unlink: "إلغاء الربط",
-      unlinking: "جارٍ إلغاء الربط...",
-      unlinkAccountConfirmTitle: "إلغاء ربط الحساب؟",
+      linkedAccounts: "Ø§Ù„Ø­Ø³Ø§Ø¨Ø§Øª Ø§Ù„Ù…Ø±ØªØ¨Ø·Ø©",
+      connectedGameAccounts: "Ø­Ø³Ø§Ø¨Ø§Øª Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨ Ø§Ù„Ù…Ø±ØªØ¨Ø·Ø©",
+      riotAccount: "Ø­Ø³Ø§Ø¨ Riot",
+      steamAccount: "Ø­Ø³Ø§Ø¨ Steam",
+      steamSubtitle: "Dota 2 Â· CS2 Â· ÙˆØ§Ù„Ù…Ø²ÙŠØ¯",
+      linked: "ØªÙ… Ø§Ù„Ø±Ø¨Ø·",
+      connected: "Ù…Ø±ØªØ¨Ø·",
+      connect: "Ø±Ø¨Ø·",
+      unlink: "Ø¥Ù„ØºØ§Ø¡ Ø§Ù„Ø±Ø¨Ø·",
+      unlinking: "Ø¬Ø§Ø±Ù Ø¥Ù„ØºØ§Ø¡ Ø§Ù„Ø±Ø¨Ø·...",
+      unlinkAccountConfirmTitle: "Ø¥Ù„ØºØ§Ø¡ Ø±Ø¨Ø· Ø§Ù„Ø­Ø³Ø§Ø¨ØŸ",
       unlinkAccountConfirmDescription:
-        "هل أنت متأكد من إلغاء ربط حساب {provider}؟",
-      unlinkAccountConfirmButton: "إلغاء الربط",
-      confirmationEyebrow: "تأكيد",
-      cancelLabel: "إلغاء",
-      faceitAccount: "حساب FACEIT",
-      faceitSubtitle: "التحقق من حساب CS2",
+        "Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø¥Ù„ØºØ§Ø¡ Ø±Ø¨Ø· Ø­Ø³Ø§Ø¨ {provider}ØŸ",
+      unlinkAccountConfirmButton: "Ø¥Ù„ØºØ§Ø¡ Ø§Ù„Ø±Ø¨Ø·",
+      confirmationEyebrow: "ØªØ£ÙƒÙŠØ¯",
+      cancelLabel: "Ø¥Ù„ØºØ§Ø¡",
+      faceitAccount: "Ø­Ø³Ø§Ø¨ FACEIT",
+      faceitSubtitle: "Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ø­Ø³Ø§Ø¨ CS2",
       faceitHelp:
-        "اربط Steam أولًا قبل ربط FACEIT. يجب أن يكون حساب FACEIT مرتبطًا بنفس حساب Steam.",
+        "Ø§Ø±Ø¨Ø· Steam Ø£ÙˆÙ„Ù‹Ø§ Ù‚Ø¨Ù„ Ø±Ø¨Ø· FACEIT. ÙŠØ¬Ø¨ Ø£Ù† ÙŠÙƒÙˆÙ† Ø­Ø³Ø§Ø¨ FACEIT Ù…Ø±ØªØ¨Ø·Ù‹Ø§ Ø¨Ù†ÙØ³ Ø­Ø³Ø§Ø¨ Steam.",
       faceitConnectedHelp:
-        "تم ربط FACEIT والتحقق من مطابقته مع حساب Steam.",
-      faceitConnecting: "جارٍ الربط...",
-      faceitSkillLevel: "المستوى",
-      faceitNicknamePlaceholder: "اسم مستخدم FACEIT",
-      acceptTitle: "قبول دعوة الفريق؟",
-      declineTitle: "رفض دعوة الفريق؟",
-      joinTeamTemplate: "الانضمام إلى {team}؟ ستصبح عضوًا في هذا الفريق.",
-      declineTeamTemplate: "رفض دعوة الانضمام إلى {team}؟",
-      acceptingLabel: "جارٍ القبول...",
-      decliningLabel: "جارٍ الرفض...",
-      creatingLabel: "جارٍ الإنشاء...",
-      createTeamDialogTitle: "إنشاء فريق؟",
-      createTeamDialogDesc: "إنشاء هذا الفريق مع اللعبة المختارة. ستصبح قائد الفريق.",
+        "ØªÙ… Ø±Ø¨Ø· FACEIT ÙˆØ§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ù…Ø·Ø§Ø¨Ù‚ØªÙ‡ Ù…Ø¹ Ø­Ø³Ø§Ø¨ Steam.",
+      faceitConnecting: "Ø¬Ø§Ø±Ù Ø§Ù„Ø±Ø¨Ø·...",
+      faceitSkillLevel: "Ø§Ù„Ù…Ø³ØªÙˆÙ‰",
+      faceitNicknamePlaceholder: "Ø§Ø³Ù… Ù…Ø³ØªØ®Ø¯Ù… FACEIT",
+      acceptTitle: "Ù‚Ø¨ÙˆÙ„ Ø¯Ø¹ÙˆØ© Ø§Ù„ÙØ±ÙŠÙ‚ØŸ",
+      declineTitle: "Ø±ÙØ¶ Ø¯Ø¹ÙˆØ© Ø§Ù„ÙØ±ÙŠÙ‚ØŸ",
+      joinTeamTemplate: "Ø§Ù„Ø§Ù†Ø¶Ù…Ø§Ù… Ø¥Ù„Ù‰ {team}ØŸ Ø³ØªØµØ¨Ø­ Ø¹Ø¶ÙˆÙ‹Ø§ ÙÙŠ Ù‡Ø°Ø§ Ø§Ù„ÙØ±ÙŠÙ‚.",
+      declineTeamTemplate: "Ø±ÙØ¶ Ø¯Ø¹ÙˆØ© Ø§Ù„Ø§Ù†Ø¶Ù…Ø§Ù… Ø¥Ù„Ù‰ {team}ØŸ",
+      acceptingLabel: "Ø¬Ø§Ø±Ù Ø§Ù„Ù‚Ø¨ÙˆÙ„...",
+      decliningLabel: "Ø¬Ø§Ø±Ù Ø§Ù„Ø±ÙØ¶...",
+      creatingLabel: "Ø¬Ø§Ø±Ù Ø§Ù„Ø¥Ù†Ø´Ø§Ø¡...",
+      createTeamDialogTitle: "Ø¥Ù†Ø´Ø§Ø¡ ÙØ±ÙŠÙ‚ØŸ",
+      createTeamDialogDesc: "Ø¥Ù†Ø´Ø§Ø¡ Ù‡Ø°Ø§ Ø§Ù„ÙØ±ÙŠÙ‚ Ù…Ø¹ Ø§Ù„Ù„Ø¹Ø¨Ø© Ø§Ù„Ù…Ø®ØªØ§Ø±Ø©. Ø³ØªØµØ¨Ø­ Ù‚Ø§Ø¦Ø¯ Ø§Ù„ÙØ±ÙŠÙ‚.",
     },
     statuses: {
-      active: "نشط",
-      pending: "قيد المراجعة",
-      rejected: "مرفوض",
-      member: "عضو",
-      notMember: "غير عضو",
+      active: "Ù†Ø´Ø·",
+      pending: "Ù‚ÙŠØ¯ Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©",
+      rejected: "Ù…Ø±ÙÙˆØ¶",
+      member: "Ø¹Ø¶Ùˆ",
+      notMember: "ØºÙŠØ± Ø¹Ø¶Ùˆ",
     },
     activeMatches: {
-      heading: "مبارياتي النشطة",
-      empty: "لا توجد لديك مباريات نشطة حاليًا.",
-      tournament: "البطولة",
-      yourTeam: "فريقك",
-      opponent: "الخصم",
-      scheduledTime: "وقت المباراة",
-      faceitRoom: "غرفة FACEIT",
-      available: "متوفرة",
-      notAvailableYet: "غير متوفرة بعد",
-      checkedIn: "تم تسجيل الحضور",
-      notCheckedIn: "لم يتم تسجيل الحضور",
-      openMatch: "فتح المباراة",
-      openFaceitRoom: "فتح غرفة FACEIT",
-      tbd: "غير محدد",
-      round: "جولة",
-      match: "مباراة",
-      browseTournaments: "تصفح البطولات",
+      heading: "Ù…Ø¨Ø§Ø±ÙŠØ§ØªÙŠ Ø§Ù„Ù†Ø´Ø·Ø©",
+      empty: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ù„Ø¯ÙŠÙƒ Ù…Ø¨Ø§Ø±ÙŠØ§Øª Ù†Ø´Ø·Ø© Ø­Ø§Ù„ÙŠÙ‹Ø§.",
+      tournament: "Ø§Ù„Ø¨Ø·ÙˆÙ„Ø©",
+      yourTeam: "ÙØ±ÙŠÙ‚Ùƒ",
+      opponent: "Ø§Ù„Ø®ØµÙ…",
+      scheduledTime: "ÙˆÙ‚Øª Ø§Ù„Ù…Ø¨Ø§Ø±Ø§Ø©",
+      faceitRoom: "ØºØ±ÙØ© FACEIT",
+      available: "Ù…ØªÙˆÙØ±Ø©",
+      notAvailableYet: "ØºÙŠØ± Ù…ØªÙˆÙØ±Ø© Ø¨Ø¹Ø¯",
+      checkedIn: "ØªÙ… ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø­Ø¶ÙˆØ±",
+      notCheckedIn: "Ù„Ù… ÙŠØªÙ… ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø­Ø¶ÙˆØ±",
+      openMatch: "ÙØªØ­ Ø§Ù„Ù…Ø¨Ø§Ø±Ø§Ø©",
+      openFaceitRoom: "ÙØªØ­ ØºØ±ÙØ© FACEIT",
+      tbd: "ØºÙŠØ± Ù…Ø­Ø¯Ø¯",
+      round: "Ø¬ÙˆÙ„Ø©",
+      match: "Ù…Ø¨Ø§Ø±Ø§Ø©",
+      browseTournaments: "ØªØµÙØ­ Ø§Ù„Ø¨Ø·ÙˆÙ„Ø§Øª",
     },
   },
 };
@@ -562,8 +562,8 @@ function GuildBadge({
   const style: CSSProperties = isMember
     ? {
         color: "var(--asc-green)",
-        borderColor: "oklch(0.55 0.14 150 / 0.5)",
-        background: "oklch(0.25 0.12 150 / 0.18)",
+        borderColor: "var(--asc-green-border)",
+        background: "var(--asc-green-bg)",
       }
     : {
         color: "var(--asc-fg-3)",
@@ -670,8 +670,8 @@ function MatchStatusBadge({ status, locale }: { status: string; locale: Locale }
   const style: React.CSSProperties = isLive
     ? {
         color: "var(--asc-accent)",
-        borderColor: "oklch(0.50 0.20 285 / 0.40)",
-        background: "oklch(0.20 0.14 285 / 0.22)",
+        borderColor: "var(--asc-accent-border)",
+        background: "var(--asc-accent-dim)",
       }
     : isWarning
     ? {
@@ -720,13 +720,13 @@ function ActiveMatchCard({
             style={{ color: "var(--asc-fg-3)" }}
           >
             {card.tournamentTitle}
-            {card.gameName ? ` · ${card.gameName}` : ""}
+            {card.gameName ? ` Â· ${card.gameName}` : ""}
           </p>
           <p
             className="mt-0.5 text-[10px]"
             style={{ color: "var(--asc-fg-3)" }}
           >
-            {msgs.round} {card.roundNumber} · {msgs.match} {card.matchNumber}
+            {msgs.round} {card.roundNumber} Â· {msgs.match} {card.matchNumber}
           </p>
         </div>
         <MatchStatusBadge status={card.status} locale={locale} />
@@ -810,7 +810,7 @@ function ActiveMatchCard({
                 direction: "ltr",
               }}
             >
-              {msgs.available} · {msgs.openFaceitRoom}
+              {msgs.available} Â· {msgs.openFaceitRoom}
             </a>
           ) : (
             <p
@@ -833,7 +833,7 @@ function ActiveMatchCard({
             className="inline-flex border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.10em]"
             style={{
               color: "var(--asc-green)",
-              borderColor: "oklch(0.55 0.14 150 / 0.45)",
+              borderColor: "var(--asc-green-border)",
               background: "oklch(0.22 0.10 150 / 0.14)",
             }}
           >
@@ -854,7 +854,7 @@ function ActiveMatchCard({
         href={card.matchHref}
         className="mt-auto border px-4 py-2 text-center text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80"
         style={{
-          borderColor: "oklch(0.50 0.20 285 / 0.45)",
+          borderColor: "var(--asc-accent-border-strong)",
           color: "var(--asc-accent)",
           background: "var(--asc-accent-dim)",
           clipPath:
@@ -1029,13 +1029,12 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               backgroundImage: 'url("/images/backgrounds/profile-hero.webp")',
             }}
           />
-
           <div
             className="absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.30) 0%, oklch(0.07 0.025 285 / 0.64) 54%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.45) 40%, transparent 72%)",
+                "linear-gradient(180deg, rgb(12 11 9 / 0.30) 0%, rgb(12 11 9 / 0.64) 54%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.45) 40%, transparent 72%)",
               ].join(", "),
             }}
           />
@@ -1073,7 +1072,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                       className="text-xs font-black uppercase tracking-[0.2em]"
                       style={{ color: "var(--asc-accent)" }}
                     >
-                      ▲ {messages.hero.label}
+                      â–² {messages.hero.label}
                     </p>
 
                     <h1
@@ -1129,7 +1128,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
                 <HeroStat
                   label={messages.labels.best}
-                  value={bestPlacement ? `#${bestPlacement}` : "—"}
+                  value={bestPlacement ? `#${bestPlacement}` : "â€”"}
                 />
               </div>
             </section>
@@ -1160,7 +1159,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               />
               <StatCell
                 label={messages.labels.best}
-                value={bestPlacement ? `#${bestPlacement}` : "—"}
+                value={bestPlacement ? `#${bestPlacement}` : "â€”"}
               />
               <StatCell label={messages.hero.teams} value={teams.length} />
               <StatCell
@@ -1241,7 +1240,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   className="text-[10px] font-black uppercase tracking-[0.16em]"
                   style={{ color: "var(--asc-accent)" }}
                 >
-                  ▲ {messages.activeMatches.heading}
+                  â–² {messages.activeMatches.heading}
                 </p>
               </div>
 
@@ -1254,7 +1253,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     <Link
                       href="/tournaments"
                       className="inline-flex w-fit border px-4 py-2 text-sm font-black transition hover:opacity-90"
-                      style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+                      style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
                     >
                       {messages.activeMatches.browseTournaments}
                     </Link>
@@ -1279,7 +1278,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             <div className="relative overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
               <CornerMark />
               <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
-                <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ {messages.labels.linkedAccounts}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>â–² {messages.labels.linkedAccounts}</p>
                 <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>{messages.labels.connectedGameAccounts}</h2>
               </div>
 
@@ -1293,11 +1292,11 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                       icon="R"
                       title={messages.labels.riotAccount}
                       providerName="Riot"
-                      subtitle="League of Legends · VALORANT"
+                      subtitle="League of Legends Â· VALORANT"
                       connected={Boolean(riotAccount)}
                       displayName={
                         riotAccount?.displayName ??
-                        (riotAccount ? riotAccount.externalId.slice(0, 8) + "…" : null)
+                        (riotAccount ? riotAccount.externalId.slice(0, 8) + "â€¦" : null)
                       }
                       linkedDate={
                         riotAccount?.verifiedAt
@@ -1338,7 +1337,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                       connected={Boolean(steamAccount)}
                       displayName={
                         steamAccount?.displayName ??
-                        (steamAccount ? steamAccount.externalId.slice(0, 8) + "…" : null)
+                        (steamAccount ? steamAccount.externalId.slice(0, 8) + "â€¦" : null)
                       }
                       linkedDate={
                         steamAccount?.verifiedAt

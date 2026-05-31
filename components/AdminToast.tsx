@@ -48,8 +48,8 @@ export default function AdminToast({
 
   const style: React.CSSProperties =
     type === "error"
-      ? { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }
-      : { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" };
+      ? { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }
+      : { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" };
 
   return (
     <div className="fixed right-6 top-6 z-50 w-[calc(100%-3rem)] max-w-sm">

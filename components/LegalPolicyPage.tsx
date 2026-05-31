@@ -71,7 +71,7 @@ function LegalPageTabs({ pages }: { pages: LegalPolicyMessages["pages"] }) {
           key={page.href}
           href={page.href}
           className="border px-4 py-2 text-sm font-bold transition"
-          style={{ border: "1px solid var(--asc-line)", background: "oklch(0.20 0.02 287 / 0.035)", color: "var(--asc-fg-2)" }}
+          style={{ border: "1px solid var(--asc-line)", background: "var(--asc-card-muted)", color: "var(--asc-fg-2)" }}
         >
           {page.label}
         </a>
@@ -173,7 +173,7 @@ function LegalSectionBlock({
           {section.note && (
             <p
               className="mt-6 px-5 py-4 text-sm leading-8"
-              style={{ borderLeft: "2px solid oklch(0.70 0.22 285 / 0.60)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }}
+              style={{ borderLeft: "2px solid var(--asc-accent-border-strong)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }}
             >
               {section.note}
             </p>

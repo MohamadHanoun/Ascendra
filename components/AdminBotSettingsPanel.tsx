@@ -111,7 +111,8 @@ export default async function AdminBotSettingsPanel() {
                   type="checkbox"
                   name={setting.name}
                   defaultChecked={checked}
-                  className="mt-1 h-4 w-4 accent-violet-500"
+                  className="mt-1 h-4 w-4"
+                  style={{ accentColor: "var(--asc-accent)" }}
                 />
                 <span>
                   <span className="block text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>{setting.label}</span>
@@ -124,8 +125,8 @@ export default async function AdminBotSettingsPanel() {
 
         <button
           type="submit"
-          className="w-fit px-5 py-3 text-sm font-black text-white transition hover:opacity-90"
-          style={{ background: "var(--asc-accent-2)" }}
+          className="w-fit px-5 py-3 text-sm font-black transition hover:opacity-90"
+          style={{ background: "var(--asc-accent-2)", color: "var(--asc-on-accent)" }}
         >
           Save bot settings
         </button>

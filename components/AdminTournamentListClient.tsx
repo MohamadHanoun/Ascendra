@@ -41,9 +41,9 @@ const inputStyle: React.CSSProperties = {
 
 function registrationBadgeStyle(status: string): React.CSSProperties {
   if (status === "open") {
-    return { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" };
+    return { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" };
   }
-  return { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" };
+  return { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" };
 }
 
 export default function AdminTournamentListClient({
@@ -85,7 +85,7 @@ export default function AdminTournamentListClient({
           </p>
         </div>
 
-        <div className="mb-8 border p-5" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}>
+        <div className="mb-8 border p-5" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-table-head-bg)" }}>
           <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
             <label className="grid gap-2">
               <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Search tournaments</span>
@@ -93,7 +93,7 @@ export default function AdminTournamentListClient({
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search by title, game, prize, date..."
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               />
             </label>
@@ -113,7 +113,7 @@ export default function AdminTournamentListClient({
                       className="border px-4 py-3 font-bold transition"
                       style={
                         isActive
-                          ? { borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }
+                          ? { borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }
                           : { borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-3)" }
                       }
                     >
@@ -131,7 +131,7 @@ export default function AdminTournamentListClient({
         </div>
 
         {filteredTournaments.length === 0 ? (
-          <div className="border p-6" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)", color: "var(--asc-fg-3)" }}>
+          <div className="border p-6" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-table-head-bg)", color: "var(--asc-fg-3)" }}>
             No tournaments found.
           </div>
         ) : (
@@ -140,7 +140,7 @@ export default function AdminTournamentListClient({
               <article
                 key={tournament.id}
                 className="border p-5"
-                style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}
+                style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-table-head-bg)" }}
               >
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -151,7 +151,7 @@ export default function AdminTournamentListClient({
                   <div className="flex flex-wrap gap-2">
                     <span
                       className="border px-4 py-1 text-sm font-bold"
-                      style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+                      style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
                     >
                       {tournament.status}
                     </span>
@@ -168,7 +168,7 @@ export default function AdminTournamentListClient({
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2">
                       <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Title</span>
-                      <input name="title" defaultValue={tournament.title} required className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+                      <input name="title" defaultValue={tournament.title} required className="border px-4 py-3 outline-none transition" style={inputStyle} />
                     </label>
 
                     <label className="grid gap-2">
@@ -182,24 +182,24 @@ export default function AdminTournamentListClient({
                   <div className="grid gap-4 md:grid-cols-3">
                     <label className="grid gap-2">
                       <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Prize</span>
-                      <input name="prize" defaultValue={tournament.prize ?? ""} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+                      <input name="prize" defaultValue={tournament.prize ?? ""} className="border px-4 py-3 outline-none transition" style={inputStyle} />
                     </label>
 
                     <label className="grid gap-2">
                       <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Max Teams</span>
-                      <input name="maxTeams" type="number" min="1" defaultValue={tournament.maxTeams} required className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+                      <input name="maxTeams" type="number" min="1" defaultValue={tournament.maxTeams} required className="border px-4 py-3 outline-none transition" style={inputStyle} />
                     </label>
 
                     <label className="grid gap-2">
                       <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Team Size</span>
-                      <input name="teamSize" type="number" min="1" defaultValue={tournament.teamSize} required className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+                      <input name="teamSize" type="number" min="1" defaultValue={tournament.teamSize} required className="border px-4 py-3 outline-none transition" style={inputStyle} />
                     </label>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2">
                       <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Tournament Status</span>
-                      <select name="status" defaultValue={tournament.status} className="border px-4 py-3 text-white outline-none transition" style={inputStyle}>
+                      <select name="status" defaultValue={tournament.status} className="border px-4 py-3 outline-none transition" style={inputStyle}>
                         <option value="open">Open</option>
                         <option value="upcoming">Upcoming</option>
                         <option value="closed">Closed</option>
@@ -208,7 +208,7 @@ export default function AdminTournamentListClient({
 
                     <label className="grid gap-2">
                       <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Registration Status</span>
-                      <select name="registrationStatus" defaultValue={tournament.registrationStatus} className="border px-4 py-3 text-white outline-none transition" style={inputStyle}>
+                      <select name="registrationStatus" defaultValue={tournament.registrationStatus} className="border px-4 py-3 outline-none transition" style={inputStyle}>
                         <option value="open">Open</option>
                         <option value="closed">Closed</option>
                       </select>
@@ -222,7 +222,7 @@ export default function AdminTournamentListClient({
                       defaultValue={tournament.description}
                       required
                       rows={4}
-                      className="resize-none border px-4 py-3 text-white outline-none transition"
+                      className="resize-none border px-4 py-3 outline-none transition"
                       style={inputStyle}
                     />
                   </label>
@@ -231,7 +231,7 @@ export default function AdminTournamentListClient({
                     <button
                       type="submit"
                       className="w-full border px-4 py-2 font-bold transition hover:opacity-90 sm:w-auto"
-                      style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
+                      style={{ borderColor: "var(--asc-accent-border)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
                     >
                       Save Changes
                     </button>

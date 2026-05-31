@@ -124,9 +124,9 @@ function Pill({
   tone?: "green" | "violet" | "gray";
 }) {
   const styles: Record<string, React.CSSProperties> = {
-    green: { borderColor: "oklch(0.74 0.16 150 / 0.25)", background: "oklch(0.74 0.16 150 / 0.10)", color: "oklch(0.74 0.16 150)" },
-    violet: { borderColor: "oklch(0.70 0.22 285 / 0.25)", background: "oklch(0.70 0.22 285 / 0.10)", color: "oklch(0.88 0.10 285)" },
-    gray: { borderColor: "oklch(0.32 0.06 290 / 0.18)", background: "oklch(0.20 0.02 287 / 0.05)", color: "var(--asc-fg-1)" },
+    green: { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "oklch(0.74 0.16 150)" },
+    violet: { borderColor: "var(--asc-accent-glow)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
+    gray: { borderColor: "var(--asc-line-soft)", background: "var(--asc-card-muted)", color: "var(--asc-fg-1)" },
   };
 
   return (
@@ -236,7 +236,7 @@ export default async function StatsPage() {
             }}
           />
 
-          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.62) 44%,oklch(0.06 0.03 287 / 0.80) 100%)" }} />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,rgb(12 11 9 / 0.92) 0%,rgb(12 11 9 / 0.62) 44%,rgb(12 11 9 / 0.80) 100%)" }} />
           <div className="absolute inset-x-0 bottom-0 h-40" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">

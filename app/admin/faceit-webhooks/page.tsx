@@ -29,11 +29,11 @@ export const metadata: Metadata = {
 };
 
 const STATUS_STYLES: Record<string, { color: string; border: string; bg: string }> = {
-  processed:    { color: "var(--asc-green)",  border: "oklch(0.55 0.14 150 / 0.5)", bg: "oklch(0.25 0.12 150 / 0.18)" },
+  processed:    { color: "var(--asc-green)",  border: "var(--asc-green-border)", bg: "var(--asc-green-bg)" },
   skipped:      { color: "var(--asc-fg-3)",   border: "var(--asc-line-soft)",        bg: "var(--asc-bg-2)" },
-  failed:       { color: "var(--asc-live)",   border: "oklch(0.50 0.20 25 / 0.5)",  bg: "oklch(0.25 0.18 25 / 0.18)" },
-  received:     { color: "var(--asc-accent)", border: "oklch(0.50 0.20 285 / 0.4)", bg: "var(--asc-accent-dim)" },
-  unauthorized: { color: "var(--asc-live)",   border: "oklch(0.50 0.20 25 / 0.5)",  bg: "oklch(0.25 0.18 25 / 0.18)" },
+  failed:       { color: "var(--asc-live)",   border: "var(--asc-live-border)",  bg: "var(--asc-live-bg)" },
+  received:     { color: "var(--asc-accent)", border: "var(--asc-accent-border)", bg: "var(--asc-accent-dim)" },
+  unauthorized: { color: "var(--asc-live)",   border: "var(--asc-live-border)",  bg: "var(--asc-live-bg)" },
 };
 
 type AdminFaceitWebhooksPageProps = {
@@ -179,14 +179,14 @@ function ConfigBadge({
   const style =
     tone === "green"
       ? {
-          borderColor: "oklch(0.55 0.14 150 / 0.5)",
-          background: "oklch(0.25 0.12 150 / 0.18)",
+          borderColor: "var(--asc-green-border)",
+          background: "var(--asc-green-bg)",
           color: "var(--asc-green)",
         }
       : tone === "red"
         ? {
-            borderColor: "oklch(0.50 0.20 25 / 0.5)",
-            background: "oklch(0.25 0.18 25 / 0.18)",
+            borderColor: "var(--asc-live-border)",
+            background: "var(--asc-live-bg)",
             color: "var(--asc-live)",
           }
         : {
@@ -416,7 +416,7 @@ export default async function AdminFaceitWebhooksPage({
   const productionWarnings = getFaceitProductionWarnings(integrationStatus);
 
   return (
-    <main className="asc-ambient min-h-screen overflow-hidden text-white" style={{ background: "var(--asc-bg-0)" }}>
+    <main className="asc-admin-page asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)" }}>
       <Navbar />
 
       <section className="relative min-h-[430px] overflow-hidden">
@@ -424,8 +424,8 @@ export default async function AdminFaceitWebhooksPage({
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: 'url("/images/backgrounds/admin-hero.webp")' }}
         />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.66) 44%,oklch(0.06 0.03 287 / 0.82) 100%)" }} />
-        <div className="absolute inset-x-0 bottom-0 h-44" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
+        <div className="absolute inset-0" style={{ background: "var(--asc-admin-hero-overlay)" }} />
+        <div className="absolute inset-x-0 bottom-0 h-44" style={{ background: "var(--asc-admin-hero-bottom)" }} />
 
         <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
           <Link
@@ -451,7 +451,7 @@ export default async function AdminFaceitWebhooksPage({
           <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
             <span
               className="border px-3 py-1 font-black"
-              style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}
+              style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}
             >
               Admin
             </span>
@@ -538,14 +538,14 @@ export default async function AdminFaceitWebhooksPage({
           style={
             integrationStatus.factionOrderFallbackEnabled
               ? {
-                  borderColor: "oklch(0.50 0.20 25 / 0.5)",
-                  background: "oklch(0.25 0.18 25 / 0.18)",
+                  borderColor: "var(--asc-live-border)",
+                  background: "var(--asc-live-bg)",
                   color: "var(--asc-live)",
                 }
               : integrationStatus.autoConfirmEnabled
                 ? {
-                    borderColor: "oklch(0.55 0.14 150 / 0.5)",
-                    background: "oklch(0.25 0.12 150 / 0.18)",
+                    borderColor: "var(--asc-green-border)",
+                    background: "var(--asc-green-bg)",
                     color: "var(--asc-green)",
                   }
                 : {
@@ -623,14 +623,14 @@ export default async function AdminFaceitWebhooksPage({
                 style={
                   w.severity === "error"
                     ? {
-                        borderColor: "oklch(0.50 0.20 25 / 0.5)",
-                        background: "oklch(0.25 0.18 25 / 0.18)",
+                        borderColor: "var(--asc-live-border)",
+                        background: "var(--asc-live-bg)",
                         color: "var(--asc-live)",
                       }
                     : {
-                        borderColor: "oklch(0.55 0.18 60 / 0.5)",
-                        background: "oklch(0.22 0.12 60 / 0.18)",
-                        color: "oklch(0.78 0.16 60)",
+                        borderColor: "var(--asc-amber-border)",
+                        background: "var(--asc-amber-bg)",
+                        color: "var(--asc-amber)",
                       }
                 }
               >
@@ -644,7 +644,7 @@ export default async function AdminFaceitWebhooksPage({
           <Link
             href="/admin/match-operations"
             className="inline-flex border px-5 py-2 text-sm font-black transition hover:opacity-90"
-            style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+            style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
           >
             Match Operations →
           </Link>
@@ -737,7 +737,7 @@ export default async function AdminFaceitWebhooksPage({
             <button
               type="submit"
               className="border px-5 py-3 text-sm font-black transition hover:opacity-90"
-              style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+              style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
             >
               Apply filters
             </button>
@@ -753,7 +753,7 @@ export default async function AdminFaceitWebhooksPage({
             <a
               href={currentHref}
               className="border px-5 py-3 text-center text-sm font-black transition hover:opacity-90"
-              style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}
+              style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}
             >
               Refresh logs
             </a>
@@ -800,7 +800,7 @@ export default async function AdminFaceitWebhooksPage({
                       key={log.id}
                       style={{
                         borderBottom: "1px solid var(--asc-line-soft)",
-                        background: isEven ? "transparent" : "oklch(1 0 0 / 0.025)",
+                        background: isEven ? "transparent" : "var(--asc-row-alt)",
                       }}
                     >
                       {/* Created */}

@@ -45,7 +45,7 @@ export default function AdminBotDashboardTabs({
   return (
     <nav
       className="relative z-[9999] border p-2 shadow-2xl shadow-black/30 backdrop-blur-xl"
-      style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.09 0.02 287 / 0.95)" }}
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-nav-bg)" }}
     >
       <div className="flex flex-wrap gap-2">
         {tabs.map((tab) => {
@@ -59,7 +59,7 @@ export default function AdminBotDashboardTabs({
               className="relative z-[9999] inline-flex cursor-pointer px-4 py-3 text-sm font-black transition hover:opacity-90"
               style={
                 active
-                  ? { background: "var(--asc-accent-2)", color: "var(--asc-fg-0)" }
+                  ? { background: "var(--asc-accent-2)", color: "var(--asc-on-accent)" }
                   : { color: "var(--asc-fg-3)" }
               }
             >

@@ -56,13 +56,13 @@ function StatusBadge({ active, status }: { active: boolean; status: string }) {
   const statusStyles: Record<string, React.CSSProperties> = {
     active: {
       color: "var(--asc-green)",
-      borderColor: "oklch(0.55 0.14 150 / 0.5)",
-      background: "oklch(0.25 0.12 150 / 0.18)",
+      borderColor: "var(--asc-green-border)",
+      background: "var(--asc-green-bg)",
     },
     available: {
       color: "var(--asc-green)",
-      borderColor: "oklch(0.55 0.14 150 / 0.5)",
-      background: "oklch(0.25 0.12 150 / 0.18)",
+      borderColor: "var(--asc-green-border)",
+      background: "var(--asc-green-bg)",
     },
     busy: {
       color: "var(--asc-fg-2)",
@@ -101,13 +101,13 @@ function Notice({ notice }: { notice: AdminStaffActionResult | null }) {
       style={
         notice.ok
           ? {
-              borderColor: "oklch(0.55 0.14 150 / 0.5)",
-              background: "oklch(0.25 0.12 150 / 0.18)",
+              borderColor: "var(--asc-green-border)",
+              background: "var(--asc-green-bg)",
               color: "var(--asc-green)",
             }
           : {
-              borderColor: "oklch(0.50 0.20 25 / 0.5)",
-              background: "oklch(0.25 0.18 25 / 0.18)",
+              borderColor: "var(--asc-live-border)",
+              background: "var(--asc-live-bg)",
               color: "var(--asc-live)",
             }
       }
@@ -250,7 +250,7 @@ export default function AdminStaffDragList({
             <div
               className="border px-4 py-3 text-sm font-bold"
               style={{
-                borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                borderColor: "var(--asc-accent-border)",
                 background: "var(--asc-accent-dim)",
                 color: "var(--asc-accent)",
               }}
@@ -274,7 +274,7 @@ export default function AdminStaffDragList({
           className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] lg:grid lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:gap-5"
           style={{
             borderBottom: "1px solid var(--asc-line-soft)",
-            background: "oklch(0.08 0.02 287)",
+            background: "var(--asc-table-head-bg)",
             color: "var(--asc-fg-3)",
           }}
         >
@@ -303,14 +303,14 @@ export default function AdminStaffDragList({
                 onDragEnd={handleDragEnd}
                 className={`grid gap-4 px-5 py-4 transition lg:grid-cols-[90px_minmax(0,1fr)_120px_220px] lg:items-start lg:gap-5 ${
                   isDragging ? "opacity-50" : ""
-                } ${isDragTarget ? "bg-violet-500/10" : "hover:bg-white/[0.035]"}`}
+                } ${isDragTarget ? "bg-[var(--asc-accent-dim)]" : "hover:bg-white/[0.035]"}`}
                 style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
               >
                 <div className="flex items-center justify-between gap-3 lg:justify-start">
                   <span
                     className="grid h-10 w-10 place-items-center text-sm font-black"
                     style={{
-                      border: "1px solid oklch(0.50 0.20 285 / 0.4)",
+                      border: "1px solid var(--asc-accent-border)",
                       background: "var(--asc-accent-dim)",
                       color: "var(--asc-accent)",
                     }}
@@ -324,7 +324,7 @@ export default function AdminStaffDragList({
                     className="grid h-10 w-10 cursor-grab place-items-center text-lg font-black transition active:cursor-grabbing lg:hidden"
                     style={{
                       border: "1px solid var(--asc-line-soft)",
-                      background: "oklch(0.09 0.02 287)",
+                      background: "var(--asc-bg-2)",
                       color: "var(--asc-fg-3)",
                     }}
                   >
@@ -356,7 +356,7 @@ export default function AdminStaffDragList({
                         name="name"
                         required
                         defaultValue={staffMember.name}
-                        className="border px-4 py-3 text-white outline-none transition"
+                        className="border px-4 py-3 outline-none transition"
                         style={inputStyle}
                       />
                     </label>
@@ -372,7 +372,7 @@ export default function AdminStaffDragList({
                         name="role"
                         required
                         defaultValue={staffMember.role}
-                        className="border px-4 py-3 text-white outline-none transition"
+                        className="border px-4 py-3 outline-none transition"
                         style={inputStyle}
                       />
                     </label>
@@ -388,7 +388,7 @@ export default function AdminStaffDragList({
                         name="status"
                         required
                         defaultValue={staffMember.status}
-                        className="border px-4 py-3 text-white outline-none transition"
+                        className="border px-4 py-3 outline-none transition"
                         style={inputStyle}
                       >
                         {staffStatuses.map((status) => (
@@ -413,7 +413,7 @@ export default function AdminStaffDragList({
                     className="hidden h-10 w-10 cursor-grab place-items-center text-lg font-black transition active:cursor-grabbing lg:mt-4 lg:grid"
                     style={{
                       border: "1px solid var(--asc-line-soft)",
-                      background: "oklch(0.09 0.02 287)",
+                      background: "var(--asc-bg-2)",
                       color: "var(--asc-fg-3)",
                     }}
                   >

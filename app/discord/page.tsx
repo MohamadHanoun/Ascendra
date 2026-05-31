@@ -232,10 +232,10 @@ function DiscordGlyph({ size = 52 }: { size?: number }) {
       style={{
         width: size,
         height: size,
-        background: "oklch(0.62 0.18 270)",
+        background: "#5865F2",
         clipPath:
           "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-        boxShadow: "0 0 28px oklch(0.62 0.18 270 / 0.28)",
+        boxShadow: "0 0 28px rgb(88 101 242 / 0.28)",
       }}
     >
       <svg
@@ -243,7 +243,7 @@ function DiscordGlyph({ size = 52 }: { size?: number }) {
         width={iconWidth}
         height={iconHeight}
         viewBox="0 0 24 18"
-        fill="oklch(0.98 0.01 290)"
+        fill="#ffffff"
       >
         <path d="M20.3 1.8a18 18 0 0 0-4.5-1.4l-.2.4c1.6.3 3 .9 4.3 1.7-1.6-.9-3.4-1.4-5.3-1.4S10.9.6 9.3 1.5c1.3-.8 2.7-1.4 4.3-1.7l-.2-.4A18 18 0 0 0 8.9 1.8C5.7 6.7 4.9 11.4 5.3 16c1.8 1.3 3.6 2 5.4 2.5l.4-.6a11 11 0 0 1-2.2-1.1c.2-.1.4-.2.5-.3 4.1 1.9 8.5 1.9 12.5 0 .2.1.4.2.5.3-.7.4-1.4.8-2.2 1.1l.4.6c1.8-.5 3.6-1.2 5.4-2.5.5-5.4-.8-10-2.7-14.2zM9.7 13.5c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2zm6.6 0c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2z" />
       </svg>
@@ -302,11 +302,11 @@ function ButtonLink({
     textDecoration: "none",
     border:
       variant === "discord"
-        ? "1px solid oklch(0.62 0.18 270)"
+        ? "1px solid #5865F2"
         : "1px solid var(--asc-line)",
     background:
-      variant === "discord" ? "oklch(0.62 0.18 270)" : "transparent",
-    color: "oklch(0.98 0.01 290)",
+      variant === "discord" ? "#5865F2" : "transparent",
+    color: "#ffffff",
   };
 
   if (external) {
@@ -675,15 +675,15 @@ export default async function DiscordPage() {
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(circle at 70% 50%, oklch(0.42 0.20 270 / 0.30), transparent 60%)",
+                "radial-gradient(circle at 70% 50%, rgb(88 101 242 / 0.22), transparent 60%)",
             }}
           />
           <div
             className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.34) 0%, oklch(0.07 0.025 285 / 0.58) 45%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.42) 35%, transparent 70%)",
+                "linear-gradient(180deg, rgb(12 11 9 / 0.34) 0%, rgb(12 11 9 / 0.58) 45%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.42) 35%, transparent 70%)",
               ].join(", "),
             }}
           />
@@ -708,7 +708,7 @@ export default async function DiscordPage() {
               <span
                 style={{
                   background:
-                    "linear-gradient(92deg, oklch(0.72 0.20 270) 0%, var(--asc-accent) 100%)",
+                    "linear-gradient(92deg, #5865F2 0%, var(--asc-accent) 100%)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                 }}
@@ -757,7 +757,7 @@ export default async function DiscordPage() {
               className="p-7 md:p-8"
               style={{
                 background:
-                  "linear-gradient(135deg, oklch(0.25 0.15 270 / 0.62), var(--asc-bg-1) 62%)",
+                  "linear-gradient(135deg, rgb(88 101 242 / 0.18), var(--asc-bg-1) 62%)",
               }}
             >
               <div className="relative z-10">

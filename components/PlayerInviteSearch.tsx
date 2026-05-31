@@ -116,7 +116,7 @@ export default function PlayerInviteSearch({ teamId }: PlayerInviteSearchProps) 
       {selectedPlayer && (
         <div
           className="border p-4"
-          style={{ borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" }}
+          style={{ borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" }}
         >
           <p className="text-sm" style={{ color: "var(--asc-blue)" }}>Selected player</p>
           <p className="mt-1 font-bold" style={{ color: "var(--asc-fg-0)" }}>{selectedPlayer.username}</p>

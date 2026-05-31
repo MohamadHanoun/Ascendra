@@ -24,11 +24,11 @@ const inputStyle: React.CSSProperties = {
 };
 
 const pillStyleMap: Record<string, React.CSSProperties> = {
-  green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
-  red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+  green: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
+  red: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
   gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
-  violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
-  blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
+  violet: { color: "var(--asc-accent)", borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" },
+  blue: { color: "var(--asc-blue)", borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" },
 };
 
 function FieldLabel({ children }: { children: ReactNode }) {
@@ -124,7 +124,7 @@ export default async function AdminGameList() {
         <section className="overflow-hidden border shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
           <div
             className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[minmax(0,1fr)_140px_120px_100px_100px] xl:gap-5"
-            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "oklch(0.08 0.02 287)", color: "var(--asc-fg-3)" }}
+            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-table-head-bg)", color: "var(--asc-fg-3)" }}
           >
             <span>Game</span>
             <span>Platform</span>
@@ -165,7 +165,7 @@ export default async function AdminGameList() {
                   </p>
                 </div>
 
-                <details className="border" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}>
+                <details className="border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-table-head-bg)" }}>
                   <summary
                     className="cursor-pointer px-4 py-3 text-sm font-black transition"
                     style={{ color: "var(--asc-fg-3)" }}
@@ -188,24 +188,24 @@ export default async function AdminGameList() {
                       <div className="grid gap-4 lg:grid-cols-2">
                         <label className="grid gap-2">
                           <FieldLabel>Name</FieldLabel>
-                          <input name="name" required defaultValue={game.name} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+                          <input name="name" required defaultValue={game.name} className="border px-4 py-3 outline-none transition" style={inputStyle} />
                         </label>
 
                         <label className="grid gap-2">
                           <FieldLabel>Slug</FieldLabel>
-                          <input name="slug" required defaultValue={game.slug} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+                          <input name="slug" required defaultValue={game.slug} className="border px-4 py-3 outline-none transition" style={inputStyle} />
                         </label>
                       </div>
 
                       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_140px_140px]">
                         <label className="grid gap-2">
                           <FieldLabel>Short name</FieldLabel>
-                          <input name="shortName" defaultValue={game.shortName ?? ""} placeholder="e.g. VAL" className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+                          <input name="shortName" defaultValue={game.shortName ?? ""} placeholder="e.g. VAL" className="border px-4 py-3 outline-none transition" style={inputStyle} />
                         </label>
 
                         <label className="grid gap-2">
                           <FieldLabel>Platform</FieldLabel>
-                          <select name="platform" defaultValue={game.platform ?? ""} className="border px-4 py-3 text-white outline-none transition" style={inputStyle}>
+                          <select name="platform" defaultValue={game.platform ?? ""} className="border px-4 py-3 outline-none transition" style={inputStyle}>
                             <option value="">No platform</option>
                             {platforms.map((platform) => (
                               <option key={platform} value={platform}>{platform}</option>
@@ -215,12 +215,12 @@ export default async function AdminGameList() {
 
                         <label className="grid gap-2">
                           <FieldLabel>Team size</FieldLabel>
-                          <input name="defaultTeamSize" type="number" min={1} max={20} defaultValue={game.defaultTeamSize} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+                          <input name="defaultTeamSize" type="number" min={1} max={20} defaultValue={game.defaultTeamSize} className="border px-4 py-3 outline-none transition" style={inputStyle} />
                         </label>
 
                         <label className="grid gap-2">
                           <FieldLabel>Substitutes</FieldLabel>
-                          <input name="defaultSubstitutes" type="number" min={0} max={10} defaultValue={game.defaultSubstitutes} className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+                          <input name="defaultSubstitutes" type="number" min={0} max={10} defaultValue={game.defaultSubstitutes} className="border px-4 py-3 outline-none transition" style={inputStyle} />
                         </label>
                       </div>
                     </InlineAdminGameForm>

@@ -37,10 +37,10 @@ function buildEventTypeStats(events: Array<{ type: string; status: string }>) {
 
 const toneStyles: Record<string, React.CSSProperties> = {
   default: { borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" },
-  success: { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" },
-  danger: { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" },
-  info: { borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
-  blue: { borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)", color: "var(--asc-blue)" },
+  success: { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" },
+  danger: { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" },
+  info: { borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
+  blue: { borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)", color: "var(--asc-blue)" },
 };
 
 function StatCard({ label, value, description, tone = "default" }: {
@@ -149,11 +149,11 @@ export default async function AdminBotEventInsightsPanel() {
             <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>Event types with the highest number of recent failures.</p>
           </div>
           {failingEventTypes.length === 0 ? (
-            <div className="border p-5 text-sm" style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}>No failing event types found.</div>
+            <div className="border p-5 text-sm" style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}>No failing event types found.</div>
           ) : (
             <div className="grid gap-3">
               {failingEventTypes.map((eventType) => (
-                <div key={eventType.type} className="border p-4" style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" }}>
+                <div key={eventType.type} className="border p-4" style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" }}>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="break-words text-sm font-black" style={{ color: "var(--asc-live)" }}>{eventType.type}</p>
@@ -177,16 +177,16 @@ export default async function AdminBotEventInsightsPanel() {
           <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>Latest failed bot events with error preview.</p>
         </div>
         {recentFailures.length === 0 ? (
-          <div className="border p-5 text-sm" style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}>No failed bot events found.</div>
+          <div className="border p-5 text-sm" style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}>No failed bot events found.</div>
         ) : (
           <div className="grid gap-3">
             {recentFailures.map((event) => (
-              <article key={event.id} className="border p-4" style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" }}>
+              <article key={event.id} className="border p-4" style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" }}>
                 <div className="mb-3 flex flex-wrap items-center gap-3">
-                  <span className="border px-3 py-1 text-sm font-black" style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.30 0.18 25 / 0.30)", color: "var(--asc-live)" }}>
+                  <span className="border px-3 py-1 text-sm font-black" style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }}>
                     {event.type}
                   </span>
-                  <span className="border px-3 py-1 text-xs font-black" style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "transparent", color: "var(--asc-live)" }}>
+                  <span className="border px-3 py-1 text-xs font-black" style={{ borderColor: "var(--asc-live-border)", background: "transparent", color: "var(--asc-live)" }}>
                     {event.attempts}/{event.maxAttempts} attempts
                   </span>
                   <span className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>{formatDate(event.updatedAt)}</span>

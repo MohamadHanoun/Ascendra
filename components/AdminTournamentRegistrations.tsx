@@ -13,12 +13,12 @@ type AdminTournamentRegistrationsProps = {
 
 function statusStyle(status: string): React.CSSProperties {
   if (status === "approved") {
-    return { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" };
+    return { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" };
   }
   if (status === "cancelled") {
-    return { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" };
+    return { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" };
   }
-  return { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" };
+  return { color: "var(--asc-amber)", borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" };
 }
 
 function statusLabel(status: string) {
@@ -59,25 +59,25 @@ export default async function AdminTournamentRegistrations({
       </div>
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="border p-5" style={{ borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" }}>
+        <div className="border p-5" style={{ borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" }}>
           <p className="text-sm font-semibold uppercase tracking-[0.2em]" style={{ color: "var(--asc-amber)" }}>Waiting</p>
           <p className="mt-3 text-4xl font-black" style={{ color: "var(--asc-fg-0)" }}>{waitingRegistrations.length}</p>
           <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>Need admin approval</p>
         </div>
 
-        <div className="border p-5" style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" }}>
+        <div className="border p-5" style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" }}>
           <p className="text-sm font-semibold uppercase tracking-[0.2em]" style={{ color: "var(--asc-green)" }}>Approved</p>
           <p className="mt-3 text-4xl font-black" style={{ color: "var(--asc-fg-0)" }}>{approvedRegistrations.length}</p>
           <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>Confirmed teams</p>
         </div>
 
-        <div className="border p-5" style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" }}>
+        <div className="border p-5" style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" }}>
           <p className="text-sm font-semibold uppercase tracking-[0.2em]" style={{ color: "var(--asc-live)" }}>Cancelled</p>
           <p className="mt-3 text-4xl font-black" style={{ color: "var(--asc-fg-0)" }}>{cancelledRegistrations.length}</p>
           <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>Rejected or cancelled</p>
         </div>
 
-        <div className="border p-5" style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" }}>
+        <div className="border p-5" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}>
           <p className="text-sm font-semibold uppercase tracking-[0.2em]" style={{ color: "var(--asc-accent)" }}>Total</p>
           <p className="mt-3 text-4xl font-black" style={{ color: "var(--asc-fg-0)" }}>{registrations.length}</p>
           <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>All registrations</p>
@@ -106,7 +106,7 @@ export default async function AdminTournamentRegistrations({
 
                     <span
                       className="border px-4 py-1 text-sm font-bold"
-                      style={{ color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" }}
+                      style={{ color: "var(--asc-blue)", borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" }}
                     >
                       {registration.tournament.game?.name ?? "—"}
                     </span>
@@ -124,7 +124,7 @@ export default async function AdminTournamentRegistrations({
                 </div>
               </div>
 
-              <div className="border p-5" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}>
+              <div className="border p-5" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-table-head-bg)" }}>
                 <h4 className="mb-4 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>Members</h4>
 
                 <div className="grid gap-3 md:grid-cols-2">
@@ -147,8 +147,8 @@ export default async function AdminTournamentRegistrations({
                     <input type="hidden" name="registrationId" value={registration.id} />
                     <button
                       type="submit"
-                      className="px-5 py-3 font-bold text-white transition hover:opacity-90"
-                      style={{ background: "oklch(0.55 0.14 150)" }}
+                      className="px-5 py-3 font-bold transition hover:opacity-90"
+                      style={{ background: "var(--asc-green)", color: "var(--asc-on-danger)" }}
                     >
                       Approve Registration
                     </button>
@@ -161,7 +161,7 @@ export default async function AdminTournamentRegistrations({
                     <button
                       type="submit"
                       className="border px-5 py-3 font-bold transition hover:opacity-90"
-                      style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
+                      style={{ borderColor: "var(--asc-live-border)", color: "var(--asc-live)", background: "transparent" }}
                     >
                       Cancel Registration
                     </button>

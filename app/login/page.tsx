@@ -143,8 +143,8 @@ function Pill({ children }: { children: ReactNode }) {
     <span
       className="inline-flex w-fit border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
       style={{
-        borderColor: "oklch(0.70 0.22 285 / 0.34)",
-        background: "oklch(0.70 0.22 285 / 0.10)",
+        borderColor: "var(--asc-accent-border)",
+        background: "var(--asc-accent-dim)",
         color: "var(--asc-fg-1)",
         clipPath: buttonClip,
       }}
@@ -160,7 +160,7 @@ function FeatureCard({ number, title }: { number: string; title: string }) {
       className="relative overflow-hidden border p-4"
       style={{
         borderColor: "var(--asc-line-soft)",
-        background: "oklch(0.09 0.035 287 / 0.74)",
+        background: "var(--asc-card-muted)",
         clipPath: panelClip,
       }}
     >
@@ -191,17 +191,17 @@ function DiscordGlyph() {
     <div
       className="grid h-14 w-14 shrink-0 place-items-center"
       style={{
-        background: "oklch(0.62 0.18 270)",
+        background: "#5865F2",
         clipPath:
           "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
-        boxShadow: "0 0 24px oklch(0.62 0.18 270 / 0.36)",
+        boxShadow: "0 0 24px rgb(88 101 242 / 0.36)",
       }}
     >
       <svg
         width="28"
         height="22"
         viewBox="0 0 24 18"
-        fill="oklch(0.98 0.01 290)"
+        fill="#ffffff"
         aria-hidden="true"
       >
         <path d="M20.3 1.8a18 18 0 0 0-4.5-1.4l-.2.4c1.6.3 3 .9 4.3 1.7-1.6-.9-3.4-1.4-5.3-1.4S10.9.6 9.3 1.5c1.3-.8 2.7-1.4 4.3-1.7l-.2-.4A18 18 0 0 0 8.9 1.8C5.7 6.7 4.9 11.4 5.3 16c1.8 1.3 3.6 2 5.4 2.5l.4-.6a11 11 0 0 1-2.2-1.1c.2-.1.4-.2.5-.3 4.1 1.9 8.5 1.9 12.5 0 .2.1.4.2.5.3-.7.4-1.4.8-2.2 1.1l.4.6c1.8-.5 3.6-1.2 5.4-2.5.5-5.4-.8-10-2.7-14.2zM9.7 13.5c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2zm6.6 0c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2z" />
@@ -220,7 +220,7 @@ export default async function LoginPage() {
 
   return (
     <main
-      className="asc-ambient min-h-screen overflow-hidden"
+      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
     >
       <div className="relative z-10">
@@ -238,8 +238,8 @@ export default async function LoginPage() {
             className="absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.26) 0%, oklch(0.07 0.025 285 / 0.64) 54%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.42) 42%, transparent 74%)",
+                "linear-gradient(180deg, rgb(12 11 9 / 0.26) 0%, rgb(12 11 9 / 0.64) 54%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.42) 42%, transparent 74%)",
               ].join(", "),
             }}
           />
@@ -296,7 +296,7 @@ export default async function LoginPage() {
               className="p-6 backdrop-blur md:p-7"
               style={{
                 background:
-                  "linear-gradient(135deg, oklch(0.18 0.10 285 / 0.72), oklch(0.09 0.035 287 / 0.94))",
+                  "linear-gradient(135deg, var(--asc-card-muted), var(--asc-bg-1))",
               }}
             >
               <div className="relative z-10">
@@ -335,7 +335,7 @@ export default async function LoginPage() {
                   className="mt-6 border p-4"
                   style={{
                     borderColor: "var(--asc-line-soft)",
-                    background: "oklch(0.08 0.03 285 / 0.62)",
+                    background: "var(--asc-card-muted)",
                     clipPath: panelClip,
                   }}
                 >

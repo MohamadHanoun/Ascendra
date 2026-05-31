@@ -184,26 +184,26 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
     normalized === "open" || normalized === "approved"
       ? {
           color: "var(--asc-green)",
-          borderColor: "oklch(0.55 0.14 150 / 0.5)",
-          background: "oklch(0.25 0.12 150 / 0.18)",
+          borderColor: "var(--asc-green-border)",
+          background: "var(--asc-green-bg)",
         }
       : normalized === "upcoming" || normalized === "registered"
         ? {
             color: "var(--asc-blue)",
-            borderColor: "oklch(0.55 0.12 220 / 0.5)",
-            background: "oklch(0.25 0.10 220 / 0.18)",
+            borderColor: "var(--asc-blue-border)",
+            background: "var(--asc-blue-bg)",
           }
         : normalized === "closed" || normalized === "rejected"
           ? {
               color: "var(--asc-live)",
-              borderColor: "oklch(0.50 0.20 25 / 0.5)",
-              background: "oklch(0.25 0.18 25 / 0.18)",
+              borderColor: "var(--asc-live-border)",
+              background: "var(--asc-live-bg)",
             }
           : normalized === "ended"
             ? {
                 color: "var(--asc-blue)",
-                borderColor: "oklch(0.55 0.12 220 / 0.5)",
-                background: "oklch(0.25 0.10 220 / 0.18)",
+                borderColor: "var(--asc-blue-border)",
+                background: "var(--asc-blue-bg)",
               }
             : {
                 color: "var(--asc-fg-3)",
@@ -549,8 +549,8 @@ function LiveMatchCard({
             className="inline-flex items-center gap-2 border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
             style={{
               color: "var(--asc-live)",
-              borderColor: "oklch(0.50 0.20 25 / 0.5)",
-              background: "oklch(0.25 0.18 25 / 0.18)",
+              borderColor: "var(--asc-live-border)",
+              background: "var(--asc-live-bg)",
             }}
           >
             <span className="asc-live-dot" />
@@ -594,7 +594,7 @@ function LiveMatchCard({
               className="grid h-9 w-9 shrink-0 place-items-center text-[11px] font-black text-white"
               style={{
                 background:
-                  index === 0 ? "var(--asc-accent-2)" : "oklch(0.45 0.14 220)",
+                  index === 0 ? "var(--asc-accent-2)" : "var(--asc-blue)",
                 clipPath:
                   "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
               }}
@@ -634,7 +634,7 @@ function LiveMatchCard({
         className="flex items-center gap-3 px-4 py-3"
         style={{
           borderTop: "1px solid var(--asc-line-soft)",
-          background: "oklch(0.09 0.03 285)",
+          background: "var(--asc-bg-2)",
         }}
       >
         <span
@@ -723,7 +723,7 @@ function TournamentFeatureCard({
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.06 0.03 287 / 0.22) 0%, oklch(0.06 0.03 287 / 0.96) 100%)",
+            "linear-gradient(180deg, rgb(12 11 9 / 0.22) 0%, rgb(12 11 9 / 0.96) 100%)",
         }}
       />
 
@@ -840,7 +840,7 @@ function GameTile({ game, messages }: { game: GameData; messages: HomeMessages }
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(180deg, transparent 25%, oklch(0.07 0.025 285 / 0.96) 100%)",
+            "linear-gradient(180deg, transparent 25%, rgb(12 11 9 / 0.96) 100%)",
         }}
       />
 
@@ -882,7 +882,7 @@ function DiscordGlyph() {
     <div
       className="grid h-12 w-12 shrink-0 place-items-center"
       style={{
-        background: "oklch(0.62 0.18 270)",
+        background: "#5865F2",
         clipPath:
           "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
       }}
@@ -891,7 +891,7 @@ function DiscordGlyph() {
         width="24"
         height="18"
         viewBox="0 0 24 18"
-        fill="oklch(0.98 0.01 290)"
+        fill="#ffffff"
       >
         <path d="M20.3 1.8a18 18 0 0 0-4.5-1.4l-.2.4c1.6.3 3 .9 4.3 1.7-1.6-.9-3.4-1.4-5.3-1.4S10.9.6 9.3 1.5c1.3-.8 2.7-1.4 4.3-1.7l-.2-.4A18 18 0 0 0 8.9 1.8C5.7 6.7 4.9 11.4 5.3 16c1.8 1.3 3.6 2 5.4 2.5l.4-.6a11 11 0 0 1-2.2-1.1c.2-.1.4-.2.5-.3 4.1 1.9 8.5 1.9 12.5 0 .2.1.4.2.5.3-.7.4-1.4.8-2.2 1.1l.4.6c1.8-.5 3.6-1.2 5.4-2.5.5-5.4-.8-10-2.7-14.2zM9.7 13.5c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2zm6.6 0c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2z" />
       </svg>
@@ -937,7 +937,7 @@ function DiscordPreviewCard({
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle at 82% 18%, oklch(0.62 0.18 270 / 0.24), transparent 42%)",
+            "radial-gradient(circle at 82% 18%, rgb(88 101 242 / 0.24), transparent 42%)",
         }}
       />
 
@@ -948,7 +948,7 @@ function DiscordPreviewCard({
           <div>
             <p
               className="text-[10px] font-black uppercase tracking-[0.18em]"
-              style={{ color: "oklch(0.85 0.10 270)" }}
+              style={{ color: "var(--asc-fg-2)" }}
             >
               {d.label}
             </p>
@@ -1000,7 +1000,7 @@ function DiscordPreviewCard({
             href="/discord"
             className="inline-flex items-center justify-center px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-white transition hover:opacity-90"
             style={{
-              background: "oklch(0.62 0.18 270)",
+              background: "#5865F2",
               clipPath:
                 "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
             }}
@@ -1096,7 +1096,7 @@ function LeaderboardPreview({
       meta: player.tier,
       score: player.points,
       scoreLabel: "PTS",
-      accent: "oklch(0.62 0.22 285)",
+      accent: "var(--asc-accent)",
       avatar: player.avatar,
     }),
   );
@@ -1142,7 +1142,7 @@ function LeaderboardPreview({
                 borderTop: index ? "1px solid var(--asc-line-soft)" : "0",
                 background:
                   index === 0
-                    ? "oklch(0.20 0.12 285 / 0.08)"
+                    ? "var(--asc-hover-soft)"
                     : "transparent",
               }}
             >
@@ -1427,8 +1427,8 @@ export default async function HomePage() {
             className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.20) 0%, oklch(0.07 0.025 285 / 0.55) 55%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.30) 40%, transparent 65%)",
+                "linear-gradient(180deg, rgb(12 11 9 / 0.20) 0%, rgb(12 11 9 / 0.55) 55%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.30) 40%, transparent 65%)",
               ].join(", "),
             }}
           />

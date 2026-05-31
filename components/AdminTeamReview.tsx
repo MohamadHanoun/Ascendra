@@ -9,11 +9,11 @@ type AdminTeamReviewProps = {
 };
 
 const pillStyleMap: Record<string, React.CSSProperties> = {
-  green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
-  yellow: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
-  red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+  green: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
+  yellow: { color: "var(--asc-amber)", borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" },
+  red: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
   gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
-  violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+  violet: { color: "var(--asc-accent)", borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" },
 };
 
 function Pill({
@@ -451,7 +451,7 @@ export default async function AdminTeamReview({
                         )}
                       </section>
 
-                      <section className="pt-5" style={{ borderTop: "1px solid oklch(0.50 0.20 25 / 0.3)" }}>
+                      <section className="pt-5" style={{ borderTop: "1px solid var(--asc-live-border)" }}>
                         <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-live)" }}>
                           Danger zone
                         </p>

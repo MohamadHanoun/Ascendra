@@ -50,7 +50,7 @@ function TabLink({ tab, activeTab }: { tab: AdminTab; activeTab: string }) {
       className="whitespace-nowrap border px-4 py-2 text-sm font-black transition"
       style={
         isActive
-          ? { borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }
+          ? { borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }
           : { borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-2)" }
       }
     >
@@ -91,7 +91,7 @@ export default function AdminTabNavigation({
           <Link
             href="/admin/games"
             className="inline-flex border px-4 py-2 text-sm font-black transition hover:opacity-90"
-            style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+            style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
           >
             Games
           </Link>
@@ -99,7 +99,7 @@ export default function AdminTabNavigation({
           <Link
             href="/admin/faceit-webhooks"
             className="inline-flex border px-4 py-2 text-sm font-black transition hover:opacity-90"
-            style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+            style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
           >
             FACEIT Status
           </Link>
@@ -107,7 +107,7 @@ export default function AdminTabNavigation({
           <Link
             href="/admin/riot-status"
             className="inline-flex border px-4 py-2 text-sm font-black transition hover:opacity-90"
-            style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+            style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
           >
             Riot Status
           </Link>
@@ -115,7 +115,7 @@ export default function AdminTabNavigation({
           <Link
             href="/admin/match-operations"
             className="inline-flex border px-4 py-2 text-sm font-black transition hover:opacity-90"
-            style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+            style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
           >
             Match Operations
           </Link>
@@ -123,7 +123,7 @@ export default function AdminTabNavigation({
           <Link
             href="/admin/bot"
             className="inline-flex border px-4 py-2 text-sm font-black transition hover:opacity-90"
-            style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}
+            style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}
           >
             Bot Dashboard
           </Link>

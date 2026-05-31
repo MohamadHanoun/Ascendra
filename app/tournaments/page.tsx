@@ -219,37 +219,37 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
   const styleMap: Record<string, CSSProperties> = {
     open: {
       color: "var(--asc-green)",
-      borderColor: "oklch(0.55 0.14 150 / 0.5)",
-      background: "oklch(0.25 0.12 150 / 0.18)",
+      borderColor: "var(--asc-green-border)",
+      background: "var(--asc-green-bg)",
     },
     approved: {
       color: "var(--asc-green)",
-      borderColor: "oklch(0.55 0.14 150 / 0.5)",
-      background: "oklch(0.25 0.12 150 / 0.18)",
+      borderColor: "var(--asc-green-border)",
+      background: "var(--asc-green-bg)",
     },
     upcoming: {
       color: "var(--asc-blue)",
-      borderColor: "oklch(0.55 0.12 220 / 0.5)",
-      background: "oklch(0.25 0.10 220 / 0.18)",
+      borderColor: "var(--asc-blue-border)",
+      background: "var(--asc-blue-bg)",
     },
     pending: {
       color: "var(--asc-blue)",
-      borderColor: "oklch(0.55 0.12 220 / 0.5)",
-      background: "oklch(0.25 0.10 220 / 0.18)",
+      borderColor: "var(--asc-blue-border)",
+      background: "var(--asc-blue-bg)",
     },
     closed: {
       color: "var(--asc-live)",
-      borderColor: "oklch(0.50 0.20 25 / 0.5)",
-      background: "oklch(0.25 0.18 25 / 0.18)",
+      borderColor: "var(--asc-live-border)",
+      background: "var(--asc-live-bg)",
     },
     rejected: {
       color: "var(--asc-live)",
-      borderColor: "oklch(0.50 0.20 25 / 0.5)",
-      background: "oklch(0.25 0.18 25 / 0.18)",
+      borderColor: "var(--asc-live-border)",
+      background: "var(--asc-live-bg)",
     },
     registered: {
       color: "var(--asc-accent)",
-      borderColor: "oklch(0.50 0.20 285 / 0.4)",
+      borderColor: "var(--asc-accent-border)",
       background: "var(--asc-accent-dim)",
     },
     cancelled: {
@@ -259,8 +259,8 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
     },
     ended: {
       color: "var(--asc-blue)",
-      borderColor: "oklch(0.55 0.12 220 / 0.5)",
-      background: "oklch(0.25 0.10 220 / 0.18)",
+      borderColor: "var(--asc-blue-border)",
+      background: "var(--asc-blue-bg)",
     },
   };
 
@@ -445,7 +445,7 @@ function FeaturedTournament({
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(90deg, oklch(0.06 0.025 285 / 0.98) 0%, oklch(0.06 0.025 285 / 0.72) 48%, oklch(0.06 0.025 285 / 0.18) 100%)",
+            "linear-gradient(90deg, rgb(12 11 9 / 0.98) 0%, rgb(12 11 9 / 0.72) 48%, rgb(12 11 9 / 0.18) 100%)",
         }}
       />
 
@@ -473,7 +473,7 @@ function FeaturedTournament({
                 className="border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
                 style={{
                   color: "var(--asc-accent)",
-                  borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                  borderColor: "var(--asc-accent-border)",
                   background: "var(--asc-accent-dim)",
                 }}
               >
@@ -607,7 +607,7 @@ function TournamentDesktopRow({
   return (
     <Link
       href={`/tournaments/${tournament.id}`}
-      className="group hidden grid-cols-[2fr_1fr_0.8fr_0.8fr_0.9fr_0.9fr_1fr_0.4fr] items-center gap-4 px-5 py-4 transition hover:bg-[oklch(0.20_0.10_285_/_0.08)] lg:grid"
+      className="group hidden grid-cols-[2fr_1fr_0.8fr_0.8fr_0.9fr_0.9fr_1fr_0.4fr] items-center gap-4 px-5 py-4 transition hover:bg-[var(--asc-hover-soft)] lg:grid"
       style={{ borderTop: "1px solid var(--asc-line-soft)" }}
     >
       <div className="flex min-w-0 items-center gap-3">
@@ -615,7 +615,7 @@ function TournamentDesktopRow({
           className="h-12 w-12 shrink-0 border bg-cover bg-center"
           style={{
             borderColor: "var(--asc-line-soft)",
-            backgroundImage: `linear-gradient(to bottom, oklch(0.06 0.03 287 / 0.05), oklch(0.06 0.03 287 / 0.55)), url("${tournamentImage}")`,
+            backgroundImage: `linear-gradient(to bottom, rgb(12 11 9 / 0.05), rgb(12 11 9 / 0.55)), url("${tournamentImage}")`,
             clipPath:
               "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
           }}
@@ -722,7 +722,7 @@ function TournamentMobileCard({
       <div
         className="h-40 bg-cover bg-center"
         style={{
-          backgroundImage: `linear-gradient(to bottom, oklch(0.06 0.03 287 / 0.08), oklch(0.06 0.03 287 / 0.86)), url("${tournamentImage}")`,
+          backgroundImage: `linear-gradient(to bottom, rgb(12 11 9 / 0.08), rgb(12 11 9 / 0.86)), url("${tournamentImage}")`,
         }}
       />
 
@@ -1044,8 +1044,8 @@ export default async function TournamentsPage({
             className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.36) 0%, oklch(0.07 0.025 285 / 0.70) 58%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.46) 38%, transparent 72%)",
+                "linear-gradient(180deg, rgb(12 11 9 / 0.36) 0%, rgb(12 11 9 / 0.70) 58%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.46) 38%, transparent 72%)",
               ].join(", "),
             }}
           />

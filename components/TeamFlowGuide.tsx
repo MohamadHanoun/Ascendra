@@ -7,7 +7,7 @@ const steps = [
 
 export default function TeamFlowGuide() {
   return (
-    <section className="border p-6 md:p-8" style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" }}>
+    <section className="border p-6 md:p-8" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}>
       <p className="mb-3 text-sm font-black uppercase tracking-[0.25em]" style={{ color: "var(--asc-accent)" }}>
         Team System
       </p>

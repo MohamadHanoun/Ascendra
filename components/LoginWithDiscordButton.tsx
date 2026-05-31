@@ -19,7 +19,7 @@ export default function LoginWithDiscordButton({
     >
       <button
         type="submit"
-        className="w-full px-6 py-4 text-sm font-black text-white shadow-lg shadow-violet-950/30 transition"
+        className="w-full px-6 py-4 text-sm font-black text-white shadow-lg shadow-black/30 transition"
         style={{ background: "var(--asc-accent-2)" }}
       >
         {label}

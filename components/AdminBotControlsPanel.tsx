@@ -33,10 +33,10 @@ async function restartBotFormAction() {
 }
 
 const controlButtonStyles: Record<string, React.CSSProperties> = {
-  default: { borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
-  success: { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" },
-  danger: { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" },
-  blue: { borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)", color: "var(--asc-blue)" },
+  default: { borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
+  success: { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" },
+  danger: { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" },
+  blue: { borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)", color: "var(--asc-blue)" },
 };
 
 function ControlButton({ label, tone = "default" }: { label: string; tone?: "default" | "success" | "danger" | "blue" }) {
@@ -87,8 +87,8 @@ export default async function AdminBotControlsPanel() {
         <span
           className="inline-flex w-fit border px-3 py-1 text-xs font-black"
           style={queuePaused
-            ? { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }
-            : { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}
+            ? { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }
+            : { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}
         >
           {queuePaused ? "Queue paused" : "Queue running"}
         </span>

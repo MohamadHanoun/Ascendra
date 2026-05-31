@@ -142,10 +142,10 @@ const teamCardMessages: Record<Locale, TeamCardMessages> = {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const statusStyleMap: Record<string, React.CSSProperties> = {
-  approved: { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" },
+  approved: { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" },
   pending: { borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)", color: "var(--asc-amber)" },
-  rejected: { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" },
-  default: { borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
+  rejected: { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" },
+  default: { borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
 };
 
 function getStatusStyle(status: string): React.CSSProperties {
@@ -199,7 +199,7 @@ export default async function TeamManagementCard({ team }: TeamManagementCardPro
               </span>
               <span
                 className="inline-flex border px-4 py-1 text-sm font-bold"
-                style={{ borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)", color: "var(--asc-blue)" }}
+                style={{ borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)", color: "var(--asc-blue)" }}
               >
                 {team.game}
               </span>
@@ -283,14 +283,14 @@ export default async function TeamManagementCard({ team }: TeamManagementCardPro
                 <button
                   type="submit"
                   className="w-fit border px-4 py-3 font-bold transition hover:opacity-90 sm:w-fit"
-                  style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
+                  style={{ borderColor: "var(--asc-accent-border)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
                 >
                   {msgs.settings.saveChanges}
                 </button>
               ) : (
                 <p
                   className="p-4 text-sm leading-6"
-                  style={{ borderLeft: "2px solid oklch(0.55 0.14 150 / 0.6)", background: "oklch(0.25 0.12 150 / 0.12)", color: "var(--asc-green)" }}
+                  style={{ borderLeft: "2px solid oklch(0.55 0.14 150 / 0.6)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}
                 >
                   {msgs.settings.approvedLock}
                 </p>
@@ -334,7 +334,7 @@ export default async function TeamManagementCard({ team }: TeamManagementCardPro
                         <button
                           type="submit"
                           className="border px-4 py-2 text-sm font-bold transition hover:opacity-90"
-                          style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
+                          style={{ borderColor: "var(--asc-live-border)", color: "var(--asc-live)", background: "transparent" }}
                         >
                           {msgs.invite.cancel}
                         </button>
@@ -357,12 +357,12 @@ export default async function TeamManagementCard({ team }: TeamManagementCardPro
 
             <div className="grid gap-3">
               {leader && (
-                <div className="p-4" style={{ border: "1px solid oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" }}>
+                <div className="p-4" style={{ border: "1px solid var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}>
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <div
                         className="grid h-10 w-10 shrink-0 place-items-center text-sm font-black"
-                        style={{ background: "oklch(0.30 0.10 285 / 0.4)", color: "var(--asc-accent)" }}
+                        style={{ background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
                       >
                         {getInitials(leader.user.username)}
                       </div>
@@ -405,7 +405,7 @@ export default async function TeamManagementCard({ team }: TeamManagementCardPro
                           <button
                             type="submit"
                             className="border px-4 py-2 text-sm font-bold transition hover:opacity-90"
-                            style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
+                            style={{ borderColor: "var(--asc-live-border)", color: "var(--asc-live)", background: "transparent" }}
                           >
                             {msgs.members.remove}
                           </button>
@@ -430,7 +430,7 @@ export default async function TeamManagementCard({ team }: TeamManagementCardPro
                   <button
                     type="submit"
                     className="w-full px-5 py-3 font-bold text-white transition hover:opacity-90"
-                    style={{ background: "oklch(0.55 0.14 150)" }}
+                    style={{ background: "var(--asc-green)" }}
                   >
                     {msgs.actions.submitReview}
                   </button>
@@ -457,7 +457,7 @@ export default async function TeamManagementCard({ team }: TeamManagementCardPro
               {team.status === "approved" && (
                 <p
                   className="p-4 text-sm leading-6"
-                  style={{ border: "1px solid oklch(0.55 0.14 150 / 0.4)", background: "oklch(0.25 0.12 150 / 0.12)", color: "var(--asc-green)" }}
+                  style={{ border: "1px solid var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}
                 >
                   {msgs.actions.approvedCannotDelete}
                 </p>

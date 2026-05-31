@@ -33,17 +33,17 @@ export default function AdminStaffForm() {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_180px]">
             <label className="grid gap-2">
               <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Name</span>
-              <input name="name" required placeholder="Example: Abu 3Day" className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+              <input name="name" required placeholder="Example: Abu 3Day" className="border px-4 py-3 outline-none transition" style={inputStyle} />
             </label>
 
             <label className="grid gap-2">
               <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Role</span>
-              <input name="role" required placeholder="Example: Tournament Manager" className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+              <input name="role" required placeholder="Example: Tournament Manager" className="border px-4 py-3 outline-none transition" style={inputStyle} />
             </label>
 
             <label className="grid gap-2">
               <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Status</span>
-              <select name="status" required defaultValue="active" className="border px-4 py-3 text-white outline-none transition" style={inputStyle}>
+              <select name="status" required defaultValue="active" className="border px-4 py-3 outline-none transition" style={inputStyle}>
                 {staffStatuses.map((status) => (
                   <option key={status.value} value={status.value}>{status.label}</option>
                 ))}

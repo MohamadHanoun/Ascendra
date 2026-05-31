@@ -34,7 +34,7 @@ export default async function EmptyState({
     >
       <div
         className="relative mx-auto mb-6 grid h-20 w-20 place-items-center shadow-2xl"
-        style={{ border: "1px solid oklch(0.70 0.22 285 / 0.25)", background: "radial-gradient(circle at center,oklch(0.70 0.22 285 / 0.22),oklch(0.20 0.02 287 / 0.04))" }}
+        style={{ border: "1px solid var(--asc-accent-border)", background: "radial-gradient(circle at center,var(--asc-accent-glow),transparent)" }}
       >
         <div className="absolute inset-0 opacity-20 blur-2xl" style={{ background: "var(--asc-accent)" }} />
 

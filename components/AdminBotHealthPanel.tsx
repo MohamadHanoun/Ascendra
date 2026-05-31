@@ -52,8 +52,8 @@ function HealthBadge({ label, ok }: { label: string; ok: boolean }) {
     <span
       className="inline-flex w-fit border px-3 py-1 text-xs font-black"
       style={ok
-        ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
-        : { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }}
+        ? { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }
+        : { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }}
     >
       {label}
     </span>

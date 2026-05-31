@@ -140,15 +140,15 @@ export default async function AdminBotCommandInsightsPanel() {
             <p className="text-sm font-bold" style={{ color: "var(--asc-fg-3)" }}>Last 24 Hours</p>
             <p className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{last24HoursCount}</p>
           </div>
-          <div className="border p-5" style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" }}>
+          <div className="border p-5" style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" }}>
             <p className="text-sm font-bold" style={{ color: "var(--asc-live)" }}>Failed 24 Hours</p>
             <p className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{last24HoursFailedCount}</p>
           </div>
-          <div className="border p-5" style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" }}>
+          <div className="border p-5" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}>
             <p className="text-sm font-bold" style={{ color: "var(--asc-accent)" }}>Last 7 Days</p>
             <p className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{last7DaysCount}</p>
           </div>
-          <div className="border p-5" style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" }}>
+          <div className="border p-5" style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" }}>
             <p className="text-sm font-bold" style={{ color: "var(--asc-live)" }}>Failed 7 Days</p>
             <p className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{last7DaysFailedCount}</p>
           </div>
@@ -189,11 +189,11 @@ export default async function AdminBotCommandInsightsPanel() {
             <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>Commands with the highest number of failures.</p>
           </div>
           {failingCommands.length === 0 ? (
-            <div className="border p-5 text-sm" style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}>No failing commands found.</div>
+            <div className="border p-5 text-sm" style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}>No failing commands found.</div>
           ) : (
             <div className="grid gap-3">
               {failingCommands.map((command) => (
-                <div key={command.commandName} className="border p-4" style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" }}>
+                <div key={command.commandName} className="border p-4" style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" }}>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-black" style={{ color: "var(--asc-live)" }}>/{command.commandName}</p>
@@ -235,7 +235,7 @@ export default async function AdminBotCommandInsightsPanel() {
                     <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-fg-3)" }}>Location</p>
                     <p className="mt-1 break-words text-sm font-bold" style={{ color: "var(--asc-fg-0)" }}>{command.location}</p>
                   </div>
-                  <div className="border px-4 py-2 text-right" style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" }}>
+                  <div className="border px-4 py-2 text-right" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}>
                     <p className="text-sm font-black" style={{ color: "var(--asc-accent)" }}>{formatLatency(command.latencyMs)}</p>
                   </div>
                 </div>

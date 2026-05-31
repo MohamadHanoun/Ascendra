@@ -28,7 +28,7 @@ export default async function AdminGamesPage() {
   }
 
   return (
-    <main className="asc-ambient min-h-screen overflow-hidden text-white" style={{ background: "var(--asc-bg-0)" }}>
+    <main className="asc-admin-page asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)" }}>
       <Navbar />
 
       <section className="relative min-h-[430px] overflow-hidden">
@@ -36,8 +36,8 @@ export default async function AdminGamesPage() {
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: 'url("/images/backgrounds/admin-hero.webp")' }}
         />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.66) 44%,oklch(0.06 0.03 287 / 0.82) 100%)" }} />
-        <div className="absolute inset-x-0 bottom-0 h-44" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
+        <div className="absolute inset-0" style={{ background: "var(--asc-admin-hero-overlay)" }} />
+        <div className="absolute inset-x-0 bottom-0 h-44" style={{ background: "var(--asc-admin-hero-bottom)" }} />
 
         <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
           <Link
@@ -64,7 +64,7 @@ export default async function AdminGamesPage() {
           <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
             <span
               className="border px-3 py-1 font-black"
-              style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}
+              style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}
             >
               Admin
             </span>

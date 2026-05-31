@@ -500,18 +500,18 @@ function Pill({
   const styleMap: Record<string, CSSProperties> = {
     green: {
       color: "var(--asc-green)",
-      borderColor: "oklch(0.55 0.14 150 / 0.5)",
-      background: "oklch(0.25 0.12 150 / 0.18)",
+      borderColor: "var(--asc-green-border)",
+      background: "var(--asc-green-bg)",
     },
     blue: {
       color: "var(--asc-blue)",
-      borderColor: "oklch(0.55 0.12 220 / 0.5)",
-      background: "oklch(0.25 0.10 220 / 0.18)",
+      borderColor: "var(--asc-blue-border)",
+      background: "var(--asc-blue-bg)",
     },
     red: {
       color: "var(--asc-live)",
-      borderColor: "oklch(0.50 0.20 25 / 0.5)",
-      background: "oklch(0.25 0.18 25 / 0.18)",
+      borderColor: "var(--asc-live-border)",
+      background: "var(--asc-live-bg)",
     },
     gray: {
       color: "var(--asc-fg-3)",
@@ -520,7 +520,7 @@ function Pill({
     },
     violet: {
       color: "var(--asc-accent)",
-      borderColor: "oklch(0.50 0.20 285 / 0.4)",
+      borderColor: "var(--asc-accent-border)",
       background: "var(--asc-accent-dim)",
     },
   };
@@ -870,8 +870,8 @@ export default async function TeamDetailsPage({
             className="absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.28) 0%, oklch(0.07 0.025 285 / 0.68) 54%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.45) 42%, transparent 74%)",
+                "linear-gradient(180deg, rgb(12 11 9 / 0.28) 0%, rgb(12 11 9 / 0.68) 54%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.45) 42%, transparent 74%)",
               ].join(", "),
             }}
           />

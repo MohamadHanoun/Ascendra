@@ -54,14 +54,14 @@ function Feedback({ result }: { result: MatchActionResult }) {
       style={
         result.ok
           ? {
-              background: "oklch(0.74 0.16 150 / 0.10)",
-              border: "1px solid oklch(0.74 0.16 150 / 0.25)",
-              color: "oklch(0.88 0.10 150)",
+              background: "var(--asc-green-bg)",
+              border: "1px solid var(--asc-green-border)",
+              color: "var(--asc-green)",
             }
           : {
-              background: "oklch(0.65 0.22 25 / 0.10)",
-              border: "1px solid oklch(0.65 0.22 25 / 0.25)",
-              color: "oklch(0.88 0.10 25)",
+              background: "var(--asc-live-bg)",
+              border: "1px solid var(--asc-live-border)",
+              color: "var(--asc-live)",
             }
       }
     >
@@ -255,7 +255,7 @@ export default function MatchAdminControls({
                 disabled={overridePending}
                 className="border px-5 py-2.5 text-sm font-black uppercase tracking-[0.08em] transition disabled:cursor-not-allowed disabled:opacity-60"
                 style={{
-                  borderColor: "oklch(0.65 0.14 75 / 0.5)",
+                  borderColor: "var(--asc-amber-border)",
                   color: "var(--asc-amber)",
                   background: "oklch(0.25 0.12 75 / 0.10)",
                   clipPath:

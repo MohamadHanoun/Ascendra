@@ -32,18 +32,18 @@ function Pill({
   const styleMap: Record<string, React.CSSProperties> = {
     green: {
       color: "var(--asc-green)",
-      borderColor: "oklch(0.55 0.14 150 / 0.5)",
-      background: "oklch(0.25 0.12 150 / 0.18)",
+      borderColor: "var(--asc-green-border)",
+      background: "var(--asc-green-bg)",
     },
     blue: {
       color: "var(--asc-blue)",
-      borderColor: "oklch(0.55 0.12 220 / 0.5)",
-      background: "oklch(0.25 0.10 220 / 0.18)",
+      borderColor: "var(--asc-blue-border)",
+      background: "var(--asc-blue-bg)",
     },
     red: {
       color: "var(--asc-live)",
-      borderColor: "oklch(0.50 0.20 25 / 0.5)",
-      background: "oklch(0.25 0.18 25 / 0.18)",
+      borderColor: "var(--asc-live-border)",
+      background: "var(--asc-live-bg)",
     },
     gray: {
       color: "var(--asc-fg-3)",
@@ -52,7 +52,7 @@ function Pill({
     },
     violet: {
       color: "var(--asc-accent)",
-      borderColor: "oklch(0.50 0.20 285 / 0.4)",
+      borderColor: "var(--asc-accent-border)",
       background: "var(--asc-accent-dim)",
     },
   };
@@ -263,7 +263,7 @@ export default async function AdminMatchesPanel() {
                       className="grid h-8 w-8 place-items-center text-sm font-black transition group-open:rotate-45"
                       style={{
                         border: "1px solid var(--asc-line-soft)",
-                        background: "oklch(0.09 0.02 287)",
+                        background: "var(--asc-bg-2)",
                         color: "var(--asc-fg-3)",
                       }}
                     >
@@ -285,7 +285,7 @@ export default async function AdminMatchesPanel() {
                         href={`/admin/tournaments/${tournament.id}`}
                         className="inline-flex items-center border px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-90"
                         style={{
-                          borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                          borderColor: "var(--asc-accent-border)",
                           color: "var(--asc-accent)",
                           background: "var(--asc-accent-dim)",
                         }}
@@ -299,7 +299,7 @@ export default async function AdminMatchesPanel() {
                       <div
                         className="grid items-center gap-3 px-3 py-2 md:grid-cols-[60px_minmax(0,1fr)_110px_44px_100px]"
                         style={{
-                          background: "oklch(0.10 0.03 287 / 0.5)",
+                          background: "var(--asc-card-muted)",
                           border: "1px solid var(--asc-line-soft)",
                         }}
                       >
@@ -412,7 +412,7 @@ export default async function AdminMatchesPanel() {
                               href={`/tournaments/${tournament.id}/matches/${match.id}`}
                               className="inline-flex items-center justify-center border px-3 py-1.5 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-90"
                               style={{
-                                borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                                borderColor: "var(--asc-accent-border)",
                                 color: "var(--asc-accent)",
                                 background: "var(--asc-accent-dim)",
                               }}

@@ -27,23 +27,23 @@ function getConfirmButtonStyle(
 ): CSSProperties {
   if (variant === "danger") {
     return {
-      background: "oklch(0.50 0.20 25)",
-      color: "#fff",
-      boxShadow: "0 0 18px oklch(0.50 0.20 25 / 0.35)",
+      background: "var(--asc-live)",
+      color: "var(--asc-on-danger)",
+      boxShadow: "0 0 18px var(--asc-live-border)",
     };
   }
 
   if (variant === "success") {
     return {
-      background: "oklch(0.55 0.14 150)",
-      color: "#fff",
-      boxShadow: "0 0 18px oklch(0.55 0.14 150 / 0.28)",
+      background: "var(--asc-green)",
+      color: "var(--asc-on-danger)",
+      boxShadow: "0 0 18px var(--asc-green-border)",
     };
   }
 
   return {
     background: "var(--asc-accent-2)",
-    color: "#fff",
+    color: "var(--asc-on-accent)",
     boxShadow: "0 0 18px var(--asc-accent-glow)",
   };
 }
@@ -102,7 +102,7 @@ export default function ConfirmDialogPortal({
       style={{
         zIndex: 9999,
         background:
-          "radial-gradient(circle at 50% 35%, oklch(0.25 0.16 285 / 0.28), transparent 38%), oklch(0.015 0.02 287 / 0.86)",
+          "radial-gradient(circle at 50% 35%, var(--asc-accent-glow), transparent 38%), var(--asc-modal-backdrop)",
         backdropFilter: "blur(14px)",
       }}
       onMouseDown={(event) => {

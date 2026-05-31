@@ -65,14 +65,14 @@ export default function MatchCommunicationAdminForm({
           style={
             state.ok
               ? {
-                  background: "oklch(0.74 0.16 150 / 0.10)",
-                  border: "1px solid oklch(0.74 0.16 150 / 0.25)",
-                  color: "oklch(0.88 0.10 150)",
+                  background: "var(--asc-green-bg)",
+                  border: "1px solid var(--asc-green-border)",
+                  color: "var(--asc-green)",
                 }
               : {
-                  background: "oklch(0.65 0.22 25 / 0.10)",
-                  border: "1px solid oklch(0.65 0.22 25 / 0.25)",
-                  color: "oklch(0.88 0.10 25)",
+                  background: "var(--asc-live-bg)",
+                  border: "1px solid var(--asc-live-border)",
+                  color: "var(--asc-live)",
                 }
           }
         >
@@ -122,7 +122,7 @@ export default function MatchCommunicationAdminForm({
           disabled={pending}
           className="border px-5 py-2.5 text-sm font-black uppercase tracking-[0.08em] transition disabled:cursor-not-allowed disabled:opacity-60"
           style={{
-            borderColor: "oklch(0.50 0.20 285 / 0.45)",
+            borderColor: "var(--asc-accent-border-strong)",
             color: "var(--asc-accent)",
             background: "var(--asc-accent-dim)",
             clipPath:

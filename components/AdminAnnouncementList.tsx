@@ -26,11 +26,11 @@ const inputStyle: React.CSSProperties = {
 };
 
 const pillStyleMap: Record<string, React.CSSProperties> = {
-  green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
-  yellow: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
-  red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+  green: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
+  yellow: { color: "var(--asc-amber)", borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" },
+  red: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
   gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
-  violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+  violet: { color: "var(--asc-accent)", borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" },
 };
 
 function FieldLabel({ children }: { children: ReactNode }) {
@@ -170,7 +170,7 @@ export default async function AdminAnnouncementList() {
             className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[minmax(0,1fr)_150px_150px_160px] xl:gap-5"
             style={{
               borderBottom: "1px solid var(--asc-line-soft)",
-              background: "oklch(0.08 0.02 287)",
+              background: "var(--asc-table-head-bg)",
               color: "var(--asc-fg-3)",
             }}
           >
@@ -221,7 +221,7 @@ export default async function AdminAnnouncementList() {
                   className="border"
                   style={{
                     borderColor: "var(--asc-line-soft)",
-                    background: "oklch(0.08 0.02 287)",
+                    background: "var(--asc-table-head-bg)",
                   }}
                 >
                   <summary
@@ -267,7 +267,7 @@ export default async function AdminAnnouncementList() {
                             name="title"
                             required
                             defaultValue={announcement.title}
-                            className="border px-4 py-3 text-white outline-none transition"
+                            className="border px-4 py-3 outline-none transition"
                             style={inputStyle}
                           />
                         </label>
@@ -278,7 +278,7 @@ export default async function AdminAnnouncementList() {
                             name="category"
                             required
                             defaultValue={announcement.category}
-                            className="border px-4 py-3 text-white outline-none transition"
+                            className="border px-4 py-3 outline-none transition"
                             style={inputStyle}
                           >
                             {categories.map((category) => (
@@ -296,7 +296,7 @@ export default async function AdminAnnouncementList() {
                           name="description"
                           required
                           defaultValue={announcement.description}
-                          className="min-h-24 resize-y border px-4 py-3 text-sm leading-6 text-white outline-none transition"
+                          className="min-h-24 resize-y border px-4 py-3 text-sm leading-6 outline-none transition"
                           style={inputStyle}
                         />
                       </label>

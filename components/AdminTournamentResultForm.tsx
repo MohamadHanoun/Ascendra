@@ -191,8 +191,8 @@ export default function AdminTournamentResultForm({
                 style={
                   isActive
                     ? {
-                        borderColor: "oklch(0.55 0.14 150 / 0.5)",
-                        background: "oklch(0.25 0.12 150 / 0.18)",
+                        borderColor: "var(--asc-green-border)",
+                        background: "var(--asc-green-bg)",
                         color: "var(--asc-green)",
                       }
                     : {
@@ -221,7 +221,7 @@ export default function AdminTournamentResultForm({
         onClick={applyNextAvailablePlacement}
         className="w-fit border px-4 py-2 text-sm font-black transition hover:opacity-90"
         style={{
-          borderColor: "oklch(0.50 0.20 285 / 0.4)",
+          borderColor: "var(--asc-accent-border)",
           background: "var(--asc-accent-dim)",
           color: "var(--asc-accent)",
           clipPath:
@@ -244,7 +244,7 @@ export default function AdminTournamentResultForm({
             onChange={(event) =>
               handlePlacementChange(Number(event.target.value))
             }
-            className="w-full border px-4 py-3 text-white outline-none transition"
+            className="w-full border px-4 py-3 outline-none transition"
             style={inputStyle}
           />
         </label>
@@ -259,7 +259,7 @@ export default function AdminTournamentResultForm({
             required
             value={points}
             onChange={(event) => setPoints(Number(event.target.value))}
-            className="w-full border px-4 py-3 text-white outline-none transition"
+            className="w-full border px-4 py-3 outline-none transition"
             style={inputStyle}
           />
         </label>
@@ -273,7 +273,7 @@ export default function AdminTournamentResultForm({
           value={note}
           onChange={(event) => setNote(event.target.value)}
           placeholder="Optional note"
-          className="w-full border px-4 py-3 text-white outline-none transition"
+          className="w-full border px-4 py-3 outline-none transition"
           style={inputStyle}
         />
       </label>

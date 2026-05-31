@@ -55,63 +55,63 @@ function getStatusEntry(
       label: statuses.scheduled,
       style: {
         color: "var(--asc-blue)",
-        borderColor: "oklch(0.55 0.12 220 / 0.5)",
-        background: "oklch(0.25 0.10 220 / 0.18)",
+        borderColor: "var(--asc-blue-border)",
+        background: "var(--asc-blue-bg)",
       },
     },
     ready: {
       label: statuses.ready,
       style: {
         color: "var(--asc-green)",
-        borderColor: "oklch(0.55 0.14 150 / 0.5)",
-        background: "oklch(0.25 0.12 150 / 0.18)",
+        borderColor: "var(--asc-green-border)",
+        background: "var(--asc-green-bg)",
       },
     },
     room_created: {
       label: statuses.room_created,
       style: {
         color: "var(--asc-blue)",
-        borderColor: "oklch(0.55 0.12 220 / 0.5)",
-        background: "oklch(0.25 0.10 220 / 0.18)",
+        borderColor: "var(--asc-blue-border)",
+        background: "var(--asc-blue-bg)",
       },
     },
     in_progress: {
       label: statuses.in_progress,
       style: {
         color: "var(--asc-live)",
-        borderColor: "oklch(0.50 0.20 25 / 0.5)",
-        background: "oklch(0.25 0.18 25 / 0.18)",
+        borderColor: "var(--asc-live-border)",
+        background: "var(--asc-live-bg)",
       },
     },
     result_pending: {
       label: statuses.result_pending,
       style: {
         color: "var(--asc-amber)",
-        borderColor: "oklch(0.65 0.14 75 / 0.5)",
-        background: "oklch(0.25 0.12 75 / 0.18)",
+        borderColor: "var(--asc-amber-border)",
+        background: "var(--asc-amber-bg)",
       },
     },
     disputed: {
       label: statuses.disputed,
       style: {
         color: "var(--asc-live)",
-        borderColor: "oklch(0.50 0.20 25 / 0.5)",
-        background: "oklch(0.25 0.18 25 / 0.18)",
+        borderColor: "var(--asc-live-border)",
+        background: "var(--asc-live-bg)",
       },
     },
     confirmed: {
       label: statuses.confirmed,
       style: {
         color: "var(--asc-green)",
-        borderColor: "oklch(0.55 0.14 150 / 0.5)",
-        background: "oklch(0.25 0.12 150 / 0.18)",
+        borderColor: "var(--asc-green-border)",
+        background: "var(--asc-green-bg)",
       },
     },
     completed: {
       label: statuses.completed,
       style: {
         color: "var(--asc-accent)",
-        borderColor: "oklch(0.50 0.20 285 / 0.4)",
+        borderColor: "var(--asc-accent-border)",
         background: "var(--asc-accent-dim)",
       },
     },
@@ -119,16 +119,16 @@ function getStatusEntry(
       label: statuses.cancelled,
       style: {
         color: "var(--asc-live)",
-        borderColor: "oklch(0.50 0.20 25 / 0.5)",
-        background: "oklch(0.25 0.18 25 / 0.18)",
+        borderColor: "var(--asc-live-border)",
+        background: "var(--asc-live-bg)",
       },
     },
     forfeit: {
       label: statuses.forfeit,
       style: {
         color: "var(--asc-live)",
-        borderColor: "oklch(0.50 0.20 25 / 0.5)",
-        background: "oklch(0.25 0.18 25 / 0.18)",
+        borderColor: "var(--asc-live-border)",
+        background: "var(--asc-live-bg)",
       },
     },
     bye: {

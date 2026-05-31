@@ -89,7 +89,7 @@ function NavAvatarPill({
           display: "grid", placeItems: "center",
           width: 28, height: 28, flexShrink: 0,
           background: "linear-gradient(135deg, var(--asc-accent), var(--asc-accent-2))",
-          color: "oklch(0.97 0.01 290)",
+          color: "#ffffff",
           fontFamily: "var(--font-display, sans-serif)",
           fontWeight: 700, fontSize: 11, letterSpacing: "0.04em",
           clipPath: "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)",
@@ -282,7 +282,7 @@ export default function NavbarClient({
         className="sticky top-0 z-40"
         style={{
           borderBottom: "1px solid var(--asc-line-soft)",
-          background: "var(--asc-nav-bg, oklch(0.06 0.03 287 / 0.92))",
+          background: "var(--asc-nav-bg, rgb(12 11 9 / 0.92))",
           backdropFilter: "blur(18px) saturate(140%)",
         }}
       >
@@ -305,8 +305,8 @@ export default function NavbarClient({
               style={{
                 display: "flex", alignItems: "center", gap: 6,
                 padding: "8px 12px",
-                background: "oklch(0.62 0.18 270)",
-                color: "oklch(0.98 0.01 290)",
+                background: "#5865F2",
+                color: "#ffffff",
                 fontFamily: "var(--font-display, sans-serif)",
                 fontWeight: 600, fontSize: 12,
                 letterSpacing: "0.14em",
@@ -316,8 +316,8 @@ export default function NavbarClient({
                 flexShrink: 0,
                 transition: "background 120ms ease",
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.55 0.20 270)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.62 0.18 270)"; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#4752C4"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#5865F2"; }}
             >
               DISCORD
             </Link>
@@ -440,7 +440,7 @@ export default function NavbarClient({
                       className="w-full px-4 py-2.5 text-left text-sm font-bold transition rtl:text-right"
                       style={{ color: "var(--asc-live)" }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "oklch(0.25 0.18 25 / 0.18)";
+                        e.currentTarget.style.background = "var(--asc-live-bg)";
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = "";
@@ -547,8 +547,8 @@ export default function NavbarClient({
                           onClick={() => setIsMenuOpen(false)}
                           className="px-4 py-3 text-center text-sm font-bold transition"
                           style={{
-                            border: "1px solid oklch(0.55 0.14 150 / 0.4)",
-                            background: "oklch(0.25 0.12 150 / 0.15)",
+                            border: "1px solid var(--asc-green-border)",
+                            background: "var(--asc-green-bg)",
                             color: "var(--asc-green)",
                           }}
                         >
@@ -562,7 +562,7 @@ export default function NavbarClient({
                       onClick={confirmLogout}
                       className="px-4 py-3 text-center text-sm font-bold transition"
                       style={{
-                        border: "1px solid oklch(0.50 0.20 25 / 0.4)",
+                        border: "1px solid var(--asc-live-border)",
                         color: "var(--asc-live)",
                       }}
                     >

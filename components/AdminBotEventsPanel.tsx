@@ -23,13 +23,13 @@ const allowedBotStatuses = ["queued", "processing", "completed", "failed", "canc
 type BotStatusFilter = (typeof allowedBotStatuses)[number] | "all";
 
 const statusStyleMap: Record<string, React.CSSProperties> = {
-  queued: { borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
-  processing: { borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)", color: "var(--asc-blue)" },
-  completed: { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" },
-  failed: { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" },
+  queued: { borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
+  processing: { borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)", color: "var(--asc-blue)" },
+  completed: { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" },
+  failed: { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" },
   cancelled: { borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-3)" },
-  online: { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" },
-  offline: { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" },
+  online: { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" },
+  offline: { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" },
 };
 
 function normalizeStatusFilter(value?: string): BotStatusFilter {
@@ -151,7 +151,7 @@ function FilterPill({ href, label, active }: { href: string; label: string; acti
       scroll={false}
       className="border px-4 py-2 text-xs font-black transition hover:opacity-90"
       style={active
-        ? { borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }
+        ? { borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }
         : { borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
     >
       {label}
@@ -204,7 +204,7 @@ function RetryButton({ eventId, status }: { eventId: string; status: string }) {
         confirmDescription="This will move the selected bot event back to the queue and allow the bot to process it again."
         confirmLabel="Retry"
         className="border px-4 py-2 text-xs font-black transition hover:opacity-90"
-        style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" } as React.CSSProperties}
+        style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" } as React.CSSProperties}
       />
     </form>
   );
@@ -222,7 +222,7 @@ function CancelButton({ eventId, status }: { eventId: string; status: string }) 
         confirmDescription="This will cancel the selected bot event. The bot will not process it unless you retry it later."
         confirmLabel="Cancel event"
         className="border px-4 py-2 text-xs font-black transition hover:opacity-90"
-        style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" } as React.CSSProperties}
+        style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" } as React.CSSProperties}
       />
     </form>
   );
@@ -244,12 +244,12 @@ function EventsPagination({ currentPage, totalPages, eventCount, statusFilter, t
         {hasPreviousPage ? (
           <Link href={buildBotEventsPageHref({ statusFilter, typeFilter, searchFilter, page: currentPage - 1 })} scroll={false} className="border px-4 py-2 text-sm font-black transition hover:opacity-90" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}>Previous</Link>
         ) : (
-          <span className="border px-4 py-2 text-sm font-black" style={{ borderColor: "var(--asc-line-soft)", background: "transparent", color: "oklch(0.30 0.04 285)" }}>Previous</span>
+          <span className="border px-4 py-2 text-sm font-black" style={{ borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-3)" }}>Previous</span>
         )}
         {hasNextPage ? (
-          <Link href={buildBotEventsPageHref({ statusFilter, typeFilter, searchFilter, page: currentPage + 1 })} scroll={false} className="border px-4 py-2 text-sm font-black transition hover:opacity-90" style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}>Next</Link>
+          <Link href={buildBotEventsPageHref({ statusFilter, typeFilter, searchFilter, page: currentPage + 1 })} scroll={false} className="border px-4 py-2 text-sm font-black transition hover:opacity-90" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}>Next</Link>
         ) : (
-          <span className="border px-4 py-2 text-sm font-black" style={{ borderColor: "var(--asc-line-soft)", background: "transparent", color: "oklch(0.30 0.04 285)" }}>Next</span>
+          <span className="border px-4 py-2 text-sm font-black" style={{ borderColor: "var(--asc-line-soft)", background: "transparent", color: "var(--asc-fg-3)" }}>Next</span>
         )}
       </div>
     </div>
@@ -328,7 +328,7 @@ export default async function AdminBotEventsPanel({ statusFilter, eventTypeFilte
         </div>
       </div>
 
-      <section className="grid gap-4 border p-5 shadow-2xl shadow-black/20 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center" style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" }}>
+      <section className="grid gap-4 border p-5 shadow-2xl shadow-black/20 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}>
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>Bot controls</p>
           <h3 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>Queue recovery tools</h3>
@@ -344,7 +344,7 @@ export default async function AdminBotEventsPanel({ statusFilter, eventTypeFilte
               confirmDescription="This will move all currently processing bot events back to the queue. Use it only if the bot was stuck or restarted while processing."
               confirmLabel="Reset"
               className="border px-4 py-3 text-sm font-black transition hover:opacity-90"
-              style={{ borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)", color: "var(--asc-blue)" } as React.CSSProperties}
+              style={{ borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)", color: "var(--asc-blue)" } as React.CSSProperties}
             />
           </form>
           <form action={cancelPendingBotEventsFormAction}>
@@ -355,7 +355,7 @@ export default async function AdminBotEventsPanel({ statusFilter, eventTypeFilte
               confirmDescription="This will cancel all queued, failed, and processing bot events. Use this only when you want to clear the current queue before restarting or recovering the bot."
               confirmLabel="Cancel queue"
               className="border px-4 py-3 text-sm font-black transition hover:opacity-90"
-              style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" } as React.CSSProperties}
+              style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" } as React.CSSProperties}
             />
           </form>
         </div>
@@ -376,7 +376,7 @@ export default async function AdminBotEventsPanel({ statusFilter, eventTypeFilte
               <input name="botEventSearch" defaultValue={activeSearchFilter} placeholder="event type, id, entity, error..." className="border px-4 py-3 text-sm font-bold outline-none transition" style={inputStyle} />
             </label>
             <div className="flex items-end">
-              <button type="submit" className="w-full px-5 py-3 text-sm font-black text-white transition hover:opacity-90" style={{ background: "var(--asc-accent-2)" }}>Search</button>
+              <button type="submit" className="w-full px-5 py-3 text-sm font-black transition hover:opacity-90" style={{ background: "var(--asc-accent-2)", color: "var(--asc-on-accent)" }}>Search</button>
             </div>
             <div className="flex items-end">
               <Link href={buildBotFilterHref(activeStatusFilter, activeTypeFilter, "")} className="w-full border px-5 py-3 text-center text-sm font-black transition hover:opacity-90" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}>Clear</Link>
@@ -425,7 +425,7 @@ export default async function AdminBotEventsPanel({ statusFilter, eventTypeFilte
           <Link
             href={buildBotEventsExportHref({ statusFilter: activeStatusFilter, typeFilter: activeTypeFilter, searchFilter: activeSearchFilter })}
             className="w-fit border px-4 py-2 text-sm font-black transition hover:opacity-90"
-            style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+            style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
           >
             Export CSV
           </Link>
@@ -441,7 +441,7 @@ export default async function AdminBotEventsPanel({ statusFilter, eventTypeFilte
         <section className="overflow-hidden border shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
           <div
             className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[160px_minmax(0,1fr)_120px_130px_160px] xl:gap-5"
-            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "oklch(0.08 0.02 287)", color: "var(--asc-fg-3)" }}
+            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-table-head-bg)", color: "var(--asc-fg-3)" }}
           >
             <span>Status</span>
             <span>Event</span>
@@ -472,7 +472,7 @@ export default async function AdminBotEventsPanel({ statusFilter, eventTypeFilte
                 </div>
 
                 {event.error && (
-                  <p className="border px-4 py-3 text-sm leading-6" style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }}>
+                  <p className="border px-4 py-3 text-sm leading-6" style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }}>
                     {event.error}
                   </p>
                 )}

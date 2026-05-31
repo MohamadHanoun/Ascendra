@@ -43,13 +43,13 @@ function Pill({
   const styleMap: Record<string, React.CSSProperties> = {
     green: {
       color: "var(--asc-green)",
-      borderColor: "oklch(0.55 0.14 150 / 0.5)",
-      background: "oklch(0.25 0.12 150 / 0.18)",
+      borderColor: "var(--asc-green-border)",
+      background: "var(--asc-green-bg)",
     },
     blue: {
       color: "var(--asc-blue)",
-      borderColor: "oklch(0.55 0.12 220 / 0.5)",
-      background: "oklch(0.25 0.10 220 / 0.18)",
+      borderColor: "var(--asc-blue-border)",
+      background: "var(--asc-blue-bg)",
     },
     gray: {
       color: "var(--asc-fg-3)",
@@ -58,7 +58,7 @@ function Pill({
     },
     violet: {
       color: "var(--asc-accent)",
-      borderColor: "oklch(0.50 0.20 285 / 0.4)",
+      borderColor: "var(--asc-accent-border)",
       background: "var(--asc-accent-dim)",
     },
   };
@@ -79,7 +79,7 @@ function TierBadge({ tier }: { tier: string }) {
       className="inline-flex w-fit border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
       style={{
         color: "var(--asc-accent)",
-        borderColor: "oklch(0.50 0.20 285 / 0.4)",
+        borderColor: "var(--asc-accent-border)",
         background: "var(--asc-accent-dim)",
       }}
     >
@@ -182,10 +182,10 @@ function PodiumCard({
 }) {
   const isFirst = visualPlace === 1;
   const rankTone = isFirst
-    ? "oklch(0.84 0.14 85)"
+    ? "var(--asc-accent)"
     : visualPlace === 2
-      ? "oklch(0.78 0.04 290)"
-      : "oklch(0.72 0.05 285)";
+      ? "var(--asc-fg-2)"
+      : "var(--asc-fg-3)";
   const ghostSize = isFirst ? 200 : 140;
 
   return (
@@ -194,7 +194,7 @@ function PodiumCard({
       style={{
         overflow: "hidden",
         borderColor: isFirst
-          ? "oklch(0.50 0.20 285 / 0.45)"
+          ? "var(--asc-accent-border-strong)"
           : "var(--asc-line-soft)",
         background: isFirst
           ? "linear-gradient(180deg, var(--asc-accent-dim) 0%, var(--asc-bg-1) 100%)"

@@ -263,8 +263,8 @@ export default function AdminTournamentWizard({
             <span
               className="border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em]"
               style={{
-                borderColor: "oklch(0.65 0.16 75 / 0.5)",
-                background: "oklch(0.25 0.14 75 / 0.18)",
+                borderColor: "var(--asc-amber-border)",
+                background: "var(--asc-amber-bg)",
                 color: "var(--asc-amber)",
               }}
             >
@@ -365,7 +365,7 @@ export default function AdminTournamentWizard({
               required
               defaultValue={defaultValues?.title ?? ""}
               placeholder="Example: Ascendra Valorant Cup"
-              className="border px-4 py-3 text-white outline-none transition"
+              className="border px-4 py-3 outline-none transition"
               style={inputStyle}
             />
           </label>
@@ -384,7 +384,7 @@ export default function AdminTournamentWizard({
               required
               defaultValue={defaultValues?.description ?? ""}
               placeholder="Write a clear tournament description..."
-              className="min-h-24 resize-y border px-4 py-3 text-sm leading-6 text-white outline-none transition"
+              className="min-h-24 resize-y border px-4 py-3 text-sm leading-6 outline-none transition"
               style={inputStyle}
             />
           </label>
@@ -395,7 +395,7 @@ export default function AdminTournamentWizard({
               name="prize"
               defaultValue={defaultValues?.prize ?? ""}
               placeholder="Example: $1,250"
-              className="border px-4 py-3 text-white outline-none transition"
+              className="border px-4 py-3 outline-none transition"
               style={inputStyle}
             />
           </label>
@@ -414,7 +414,7 @@ export default function AdminTournamentWizard({
               <select
                 name="format"
                 defaultValue={defaultValues?.format ?? "single_elimination"}
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               >
                 {tournamentFormats.map((f) => (
@@ -430,7 +430,7 @@ export default function AdminTournamentWizard({
               <select
                 name="bestOf"
                 defaultValue={String(defaultValues?.bestOf ?? 1)}
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               >
                 {[1, 3, 5, 7].map((n) => (
@@ -456,7 +456,7 @@ export default function AdminTournamentWizard({
                     : undefined
                 }
                 placeholder="16"
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               />
             </label>
@@ -468,7 +468,7 @@ export default function AdminTournamentWizard({
                 type="number"
                 min="1"
                 defaultValue={String(defaultValues?.minTeams ?? 2)}
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               />
             </label>
@@ -486,7 +486,7 @@ export default function AdminTournamentWizard({
                 onChange={(e) =>
                   setTeamSize(Math.max(1, Number(e.target.value) || 1))
                 }
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               />
             </label>
@@ -501,7 +501,7 @@ export default function AdminTournamentWizard({
                 onChange={(e) =>
                   setSubstitutes(Math.max(0, Number(e.target.value) || 0))
                 }
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               />
             </label>
@@ -514,7 +514,7 @@ export default function AdminTournamentWizard({
                 name="region"
                 defaultValue={defaultValues?.region ?? ""}
                 placeholder="e.g. MENA, EU, NA"
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               />
             </label>
@@ -524,7 +524,7 @@ export default function AdminTournamentWizard({
               <select
                 name="platform"
                 defaultValue={defaultValues?.platform ?? ""}
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               >
                 <option value="">No platform</option>
@@ -541,7 +541,7 @@ export default function AdminTournamentWizard({
               <select
                 name="visibility"
                 defaultValue={defaultValues?.visibility ?? "public"}
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               >
                 <option value="public">Public</option>
@@ -557,7 +557,7 @@ export default function AdminTournamentWizard({
                 name="status"
                 required
                 defaultValue="upcoming"
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               >
                 {tournamentStatuses.map((s) => (
@@ -574,7 +574,7 @@ export default function AdminTournamentWizard({
                 name="registrationStatus"
                 required
                 defaultValue="closed"
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               >
                 {registrationStatuses.map((s) => (
@@ -600,7 +600,7 @@ export default function AdminTournamentWizard({
               <input
                 name="startsAt"
                 type="datetime-local"
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               />
             </label>
@@ -610,7 +610,7 @@ export default function AdminTournamentWizard({
               <input
                 name="endsAt"
                 type="datetime-local"
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               />
             </label>
@@ -622,7 +622,7 @@ export default function AdminTournamentWizard({
               <input
                 name="registrationOpensAt"
                 type="datetime-local"
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               />
             </label>
@@ -632,7 +632,7 @@ export default function AdminTournamentWizard({
               <input
                 name="registrationClosesAt"
                 type="datetime-local"
-                className="border px-4 py-3 text-white outline-none transition"
+                className="border px-4 py-3 outline-none transition"
                 style={inputStyle}
               />
             </label>
@@ -644,7 +644,7 @@ export default function AdminTournamentWizard({
               className="border p-4"
               style={{
                 borderColor: "var(--asc-line-soft)",
-                background: "oklch(0.08 0.02 287)",
+                background: "var(--asc-table-head-bg)",
               }}
             >
               <p
@@ -708,7 +708,7 @@ export default function AdminTournamentWizard({
                 className="px-4 py-2 text-sm font-black transition hover:opacity-90"
                 style={{
                   background: "var(--asc-accent-2)",
-                  color: "#fff",
+                  color: "var(--asc-on-accent)",
                   boxShadow: "0 0 20px var(--asc-accent-glow)",
                   clipPath: btnClipPath,
                 }}
@@ -723,7 +723,7 @@ export default function AdminTournamentWizard({
                 className="px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 style={{
                   background: "var(--asc-accent-2)",
-                  color: "#fff",
+                  color: "var(--asc-on-accent)",
                   boxShadow: "0 0 20px var(--asc-accent-glow)",
                   clipPath: btnClipPath,
                 }}
@@ -747,13 +747,13 @@ export default function AdminTournamentWizard({
             style={
               notice.ok
                 ? {
-                    borderColor: "oklch(0.55 0.14 150 / 0.5)",
-                    background: "oklch(0.25 0.12 150 / 0.18)",
+                    borderColor: "var(--asc-green-border)",
+                    background: "var(--asc-green-bg)",
                     color: "var(--asc-green)",
                   }
                 : {
-                    borderColor: "oklch(0.50 0.20 25 / 0.5)",
-                    background: "oklch(0.25 0.18 25 / 0.18)",
+                    borderColor: "var(--asc-live-border)",
+                    background: "var(--asc-live-bg)",
                     color: "var(--asc-live)",
                   }
             }

@@ -14,7 +14,7 @@ export default function ProfileLogoutButton() {
       <button
         type="submit"
         className="border px-5 py-3 font-bold transition hover:opacity-90"
-        style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }}
+        style={{ borderColor: "var(--asc-live-border)", color: "var(--asc-live)", background: "transparent" }}
       >
         Logout
       </button>

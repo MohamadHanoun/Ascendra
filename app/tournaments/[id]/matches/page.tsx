@@ -170,32 +170,32 @@ function tonedStyle(tone: MatchStatusTone): CSSProperties {
   const styles: Record<MatchStatusTone, CSSProperties> = {
     blue: {
       color: "var(--asc-blue)",
-      borderColor: "oklch(0.55 0.12 220 / 0.5)",
-      background: "oklch(0.25 0.10 220 / 0.18)",
+      borderColor: "var(--asc-blue-border)",
+      background: "var(--asc-blue-bg)",
     },
     green: {
       color: "var(--asc-green)",
-      borderColor: "oklch(0.55 0.14 150 / 0.5)",
-      background: "oklch(0.25 0.12 150 / 0.18)",
+      borderColor: "var(--asc-green-border)",
+      background: "var(--asc-green-bg)",
     },
     live: {
       color: "var(--asc-live)",
-      borderColor: "oklch(0.50 0.20 25 / 0.5)",
-      background: "oklch(0.25 0.18 25 / 0.18)",
+      borderColor: "var(--asc-live-border)",
+      background: "var(--asc-live-bg)",
     },
     amber: {
       color: "var(--asc-amber)",
-      borderColor: "oklch(0.65 0.14 75 / 0.5)",
-      background: "oklch(0.25 0.12 75 / 0.18)",
+      borderColor: "var(--asc-amber-border)",
+      background: "var(--asc-amber-bg)",
     },
     red: {
       color: "var(--asc-live)",
-      borderColor: "oklch(0.50 0.20 25 / 0.5)",
-      background: "oklch(0.25 0.18 25 / 0.18)",
+      borderColor: "var(--asc-live-border)",
+      background: "var(--asc-live-bg)",
     },
     violet: {
       color: "var(--asc-accent)",
-      borderColor: "oklch(0.50 0.20 285 / 0.4)",
+      borderColor: "var(--asc-accent-border)",
       background: "var(--asc-accent-dim)",
     },
     gray: {

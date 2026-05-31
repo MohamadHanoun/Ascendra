@@ -254,8 +254,8 @@ export default async function RulesPage() {
             className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.28) 0%, oklch(0.07 0.025 285 / 0.65) 54%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.45) 42%, transparent 74%)",
+                "linear-gradient(180deg, rgb(12 11 9 / 0.28) 0%, rgb(12 11 9 / 0.65) 54%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.45) 42%, transparent 74%)",
               ].join(", "),
             }}
           />

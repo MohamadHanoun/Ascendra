@@ -220,7 +220,7 @@ export default async function AboutPage() {
             }}
           />
 
-          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.62) 44%,oklch(0.06 0.03 287 / 0.82) 100%)" }} />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,rgb(12 11 9 / 0.92) 0%,rgb(12 11 9 / 0.62) 44%,rgb(12 11 9 / 0.82) 100%)" }} />
           <div className="absolute inset-x-0 bottom-0 h-40" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">

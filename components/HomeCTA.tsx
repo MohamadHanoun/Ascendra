@@ -6,7 +6,7 @@ export default function HomeCTA() {
     <section className="mx-auto max-w-7xl px-6 pb-24">
       <div
         className="relative overflow-hidden border p-10 text-center shadow-2xl"
-        style={{ borderColor: "var(--asc-line)", background: "oklch(0.09 0.03 287)", boxShadow: "0 0 60px oklch(0.58 0.24 285 / 0.08)" }}
+        style={{ borderColor: "var(--asc-line)", background: "var(--asc-bg-2)", boxShadow: "0 0 60px var(--asc-accent-dim)" }}
       >
         <div className="absolute left-10 top-10 h-32 w-32 opacity-20 blur-3xl" style={{ background: "var(--asc-accent)" }} />
         <div className="absolute bottom-10 right-10 h-32 w-32 opacity-10 blur-3xl" style={{ background: "var(--asc-blue)" }} />

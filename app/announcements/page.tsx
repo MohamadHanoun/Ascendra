@@ -97,18 +97,18 @@ function Pill({
 }) {
   const styles: Record<string, CSSProperties> = {
     violet: {
-      borderColor: "oklch(0.70 0.22 285 / 0.34)",
-      background: "oklch(0.70 0.22 285 / 0.10)",
+      borderColor: "var(--asc-accent-border)",
+      background: "var(--asc-accent-dim)",
       color: "var(--asc-accent)",
     },
     green: {
       borderColor: "oklch(0.74 0.16 150 / 0.30)",
-      background: "oklch(0.74 0.16 150 / 0.10)",
+      background: "var(--asc-green-bg)",
       color: "var(--asc-green)",
     },
     blue: {
-      borderColor: "oklch(0.75 0.14 220 / 0.30)",
-      background: "oklch(0.75 0.14 220 / 0.10)",
+      borderColor: "var(--asc-blue-border)",
+      background: "var(--asc-blue-bg)",
       color: "var(--asc-blue)",
     },
     gray: {
@@ -390,8 +390,8 @@ export default async function AnnouncementsPage() {
             className="absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.28) 0%, oklch(0.07 0.025 285 / 0.62) 52%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.42) 38%, transparent 72%)",
+                "linear-gradient(180deg, rgb(12 11 9 / 0.28) 0%, rgb(12 11 9 / 0.62) 52%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.42) 38%, transparent 72%)",
               ].join(", "),
             }}
           />

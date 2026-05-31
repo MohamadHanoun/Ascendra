@@ -144,11 +144,11 @@ function Pill({
   tone?: "green" | "blue" | "red" | "gray" | "violet";
 }) {
   const styleMap: Record<string, React.CSSProperties> = {
-    green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
-    blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
-    red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+    green: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
+    blue: { color: "var(--asc-blue)", borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" },
+    red: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
     gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
-    violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+    violet: { color: "var(--asc-accent)", borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" },
   };
   return (
     <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={styleMap[tone]}>
@@ -363,8 +363,8 @@ function InviteResponseButton({
         className={`px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${isAccept ? "" : "border"}`}
         style={{
           ...(isAccept
-            ? { background: "oklch(0.55 0.14 150)", color: "#fff" }
-            : { borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }),
+            ? { background: "var(--asc-green)", color: "#fff" }
+            : { borderColor: "var(--asc-live-border)", color: "var(--asc-live)", background: "transparent" }),
           clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
         }}
       >
@@ -590,7 +590,7 @@ function TeamsTab({
           <CreateTeamForm dbGames={dbGames} labels={labels} />
         ) : (
           <div className="p-5">
-            <div className="border p-4" style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" }}>
+            <div className="border p-4" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}>
               <p className="font-black" style={{ color: "var(--asc-accent)" }}>{labels.ascendraDiscordRequired}</p>
               <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>{labels.discordRequiredDescription}</p>
             </div>

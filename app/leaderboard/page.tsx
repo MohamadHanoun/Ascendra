@@ -221,8 +221,8 @@ export default async function LeaderboardPage({
             className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.35) 0%, oklch(0.07 0.025 285 / 0.58) 45%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.42) 35%, transparent 70%)",
+                "linear-gradient(180deg, rgb(12 11 9 / 0.35) 0%, rgb(12 11 9 / 0.58) 45%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.42) 35%, transparent 70%)",
               ].join(", "),
             }}
           />

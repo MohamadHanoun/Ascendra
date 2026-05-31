@@ -90,11 +90,11 @@ function Pill({
   tone?: "green" | "blue" | "red" | "gray" | "violet";
 }) {
   const styleMap: Record<string, React.CSSProperties> = {
-    green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
-    blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
-    red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+    green: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
+    blue: { color: "var(--asc-blue)", borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" },
+    red: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
     gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
-    violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+    violet: { color: "var(--asc-accent)", borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" },
   };
 
   return (
@@ -142,8 +142,8 @@ function ActionNotice({
   }
 
   const style: React.CSSProperties = result.ok
-    ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
-    : { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" };
+    ? { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }
+    : { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" };
 
   return (
     <div className="border px-4 py-3 text-sm font-bold" style={style}>
@@ -164,10 +164,10 @@ function PanelNotice({
   children?: ReactNode;
 }) {
   const styleMap: Record<string, React.CSSProperties> = {
-    violet: { borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
-    red: { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" },
+    violet: { borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
+    red: { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" },
     gray: { borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-0)" },
-    green: { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" },
+    green: { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" },
   };
 
   return (
@@ -391,7 +391,7 @@ function CancelRegistrationForm({
           disabled={pending}
           className="w-fit border px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           style={{
-            borderColor: "oklch(0.50 0.20 25 / 0.5)",
+            borderColor: "var(--asc-live-border)",
             color: "var(--asc-live)",
             background: "transparent",
             clipPath:
@@ -451,7 +451,7 @@ function ActiveRegistrationCard({
       {registration.rejectionReason && (
         <p
           className="border px-4 py-3 text-sm leading-6"
-          style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }}
+          style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }}
         >
           {registration.rejectionReason}
         </p>
@@ -621,13 +621,13 @@ function Cs2RequirementsBlock({
         style={
           readiness.isReady
             ? {
-                borderColor: "oklch(0.55 0.14 150 / 0.5)",
-                background: "oklch(0.25 0.12 150 / 0.18)",
+                borderColor: "var(--asc-green-border)",
+                background: "var(--asc-green-bg)",
                 color: "var(--asc-green)",
               }
             : {
-                borderColor: "oklch(0.50 0.20 25 / 0.5)",
-                background: "oklch(0.25 0.18 25 / 0.18)",
+                borderColor: "var(--asc-live-border)",
+                background: "var(--asc-live-bg)",
                 color: "var(--asc-live)",
               }
         }
@@ -676,13 +676,13 @@ function RiotRequirementsBlock({
         style={
           readiness.ready
             ? {
-                borderColor: "oklch(0.55 0.14 150 / 0.5)",
-                background: "oklch(0.25 0.12 150 / 0.18)",
+                borderColor: "var(--asc-green-border)",
+                background: "var(--asc-green-bg)",
                 color: "var(--asc-green)",
               }
             : {
-                borderColor: "oklch(0.50 0.20 25 / 0.5)",
-                background: "oklch(0.25 0.18 25 / 0.18)",
+                borderColor: "var(--asc-live-border)",
+                background: "var(--asc-live-bg)",
                 color: "var(--asc-live)",
               }
         }

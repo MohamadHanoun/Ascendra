@@ -6,12 +6,12 @@ import { getTournamentImageUrl } from "@/lib/tournamentImages";
 type Tone = "green" | "yellow" | "red" | "blue" | "gray" | "violet";
 
 const toneStyleMap: Record<Tone, React.CSSProperties> = {
-  green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
-  yellow: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
-  red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
-  blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
+  green: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
+  yellow: { color: "var(--asc-amber)", borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" },
+  red: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
+  blue: { color: "var(--asc-blue)", borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" },
   gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
-  violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+  violet: { color: "var(--asc-accent)", borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -150,7 +150,7 @@ export default async function AdminTournamentList() {
         <section className="overflow-hidden border shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
           <div
             className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[90px_minmax(0,1fr)_170px_220px_150px_120px] xl:gap-5"
-            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "oklch(0.08 0.02 287)", color: "var(--asc-fg-3)" }}
+            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-table-head-bg)", color: "var(--asc-fg-3)" }}
           >
             <span>Image</span>
             <span>Tournament</span>
@@ -180,7 +180,7 @@ export default async function AdminTournamentList() {
                     className="h-16 border bg-cover bg-center xl:w-[90px]"
                     style={{
                       borderColor: "var(--asc-line-soft)",
-                      backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.06), rgba(7,8,17,0.62)), url("${tournamentImage}")`,
+                      backgroundImage: `var(--asc-image-scrim), url("${tournamentImage}")`,
                     }}
                   />
 
@@ -221,8 +221,8 @@ export default async function AdminTournamentList() {
                   <div className="grid gap-2">
                     <Link
                       href={`/admin/tournaments/${tournament.id}`}
-                      className="px-5 py-3 text-center text-sm font-black text-white transition hover:opacity-90"
-                      style={{ background: "var(--asc-accent-2)" }}
+                      className="px-5 py-3 text-center text-sm font-black transition hover:opacity-90"
+                      style={{ background: "var(--asc-accent-2)", color: "var(--asc-on-accent)" }}
                     >
                       Manage
                     </Link>

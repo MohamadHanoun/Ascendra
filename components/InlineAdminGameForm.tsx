@@ -18,16 +18,16 @@ type InlineAdminGameFormProps = {
 };
 
 function getButtonStyle(variant: InlineAdminGameFormProps["variant"]): React.CSSProperties {
-  if (variant === "danger") return { borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" };
-  if (variant === "success") return { background: "oklch(0.55 0.14 150)", color: "#fff" };
+  if (variant === "danger") return { borderColor: "var(--asc-live-border)", color: "var(--asc-live)", background: "transparent" };
+  if (variant === "success") return { background: "var(--asc-green)", color: "var(--asc-on-danger)" };
   if (variant === "secondary") return { borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" };
-  return { background: "var(--asc-accent-2)", color: "#fff", boxShadow: "0 0 16px var(--asc-accent-glow)" };
+  return { background: "var(--asc-accent-2)", color: "var(--asc-on-accent)", boxShadow: "0 0 16px var(--asc-accent-glow)" };
 }
 
 function getConfirmButtonStyle(variant: InlineAdminGameFormProps["variant"]): React.CSSProperties {
-  if (variant === "danger") return { background: "oklch(0.50 0.20 25)", color: "#fff" };
-  if (variant === "success") return { background: "oklch(0.55 0.14 150)", color: "#fff" };
-  return { background: "var(--asc-accent-2)", color: "#fff" };
+  if (variant === "danger") return { background: "var(--asc-live)", color: "var(--asc-on-danger)" };
+  if (variant === "success") return { background: "var(--asc-green)", color: "var(--asc-on-danger)" };
+  return { background: "var(--asc-accent-2)", color: "var(--asc-on-accent)" };
 }
 
 export default function InlineAdminGameForm({
@@ -80,7 +80,7 @@ export default function InlineAdminGameForm({
           {pending ? pendingLabel : buttonLabel}
         </button>
         {notice && (
-          <div className="border px-4 py-3 text-sm font-bold" style={notice.ok ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" } : { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }}>
+          <div className="border px-4 py-3 text-sm font-bold" style={notice.ok ? { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" } : { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }}>
             {notice.message}
           </div>
         )}

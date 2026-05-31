@@ -187,25 +187,37 @@ function AdminAccessShell({
   const labelStyle: React.CSSProperties = { color: tone === "red" ? "var(--asc-live)" : "var(--asc-accent)" };
 
   return (
-    <main className="asc-ambient min-h-screen overflow-hidden text-white" style={{ background: "var(--asc-bg-0)" }}>
+    <main
+      className="asc-admin-page asc-ambient min-h-screen overflow-hidden"
+      style={{ background: "var(--asc-bg-0)" }}
+    >
       <Navbar />
 
       <section className="relative min-h-[520px] overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: 'url("/images/backgrounds/admin-hero.webp")' }}
+          style={{
+            backgroundImage: 'url("/images/backgrounds/admin-hero.webp")',
+          }}
         />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.70) 48%,oklch(0.06 0.03 287 / 0.86) 100%)" }} />
-        <div className="absolute inset-x-0 bottom-0 h-44" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
 
         <div className="relative z-10 mx-auto flex min-h-[520px] max-w-[820px] flex-col items-center justify-center px-6 pb-24 pt-20 text-center lg:px-10">
-          <p className="mb-4 text-sm font-black uppercase tracking-[0.24em]" style={labelStyle}>
+          <p
+            className="mb-4 text-sm font-black uppercase tracking-[0.24em]"
+            style={labelStyle}
+          >
             {label}
           </p>
-          <h1 className="text-5xl font-black uppercase leading-[1.04] tracking-tight md:text-6xl" style={{ color: "var(--asc-fg-0)" }}>
+          <h1
+            className="text-5xl font-black uppercase leading-[1.04] tracking-tight md:text-6xl"
+            style={{ color: "var(--asc-fg-0)" }}
+          >
             {title}
           </h1>
-          <p className="mt-5 max-w-xl leading-7" style={{ color: "var(--asc-fg-2)" }}>
+          <p
+            className="mt-5 max-w-xl leading-7"
+            style={{ color: "var(--asc-fg-2)" }}
+          >
             {description}
           </p>
           <div className="mt-8">{children}</div>
@@ -479,27 +491,39 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   );
 
   return (
-    <main className="asc-ambient min-h-screen overflow-hidden text-white" style={{ background: "var(--asc-bg-0)" }}>
+    <main
+      className="asc-admin-page asc-ambient min-h-screen overflow-hidden"
+      style={{ background: "var(--asc-bg-0)" }}
+    >
       <Navbar />
 
       <section className="relative min-h-[430px] overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: 'url("/images/backgrounds/admin-hero.webp")' }}
+          style={{
+            backgroundImage: 'url("/images/backgrounds/admin-hero.webp")',
+          }}
         />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.66) 44%,oklch(0.06 0.03 287 / 0.82) 100%)" }} />
-        <div className="absolute inset-x-0 bottom-0 h-44" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
 
         <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
-          <p className="mb-4 text-sm font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
+          <p
+            className="mb-4 text-sm font-black uppercase tracking-[0.22em]"
+            style={{ color: "var(--asc-accent)" }}
+          >
             Ascendra admin panel
           </p>
 
-          <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.04] tracking-tight md:text-6xl" style={{ color: "var(--asc-fg-0)" }}>
+          <h1
+            className="max-w-5xl text-5xl font-black uppercase leading-[1.04] tracking-tight md:text-6xl"
+            style={{ color: "var(--asc-fg-0)" }}
+          >
             Manage Ascendra.
           </h1>
 
-          <p className="mt-5 max-w-3xl text-base leading-7" style={{ color: "var(--asc-fg-2)" }}>
+          <p
+            className="mt-5 max-w-3xl text-base leading-7"
+            style={{ color: "var(--asc-fg-2)" }}
+          >
             Control tournaments, registrations, teams, players, content, and
             community tools from one protected dashboard.
           </p>
@@ -507,14 +531,22 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
             <span
               className="border px-3 py-1 font-black"
-              style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}
+              style={{
+                borderColor: "var(--asc-green-border)",
+                background: "var(--asc-green-bg)",
+                color: "var(--asc-green)",
+              }}
             >
               Admin
             </span>
 
             <span
               className="border px-3 py-1 font-bold"
-              style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-2)" }}
+              style={{
+                borderColor: "var(--asc-line-soft)",
+                background: "var(--asc-bg-2)",
+                color: "var(--asc-fg-2)",
+              }}
             >
               {session.user.name}
             </span>

@@ -30,11 +30,11 @@ type AdminTournamentResultsPanelProps = {
 };
 
 const pillStyleMap: Record<string, React.CSSProperties> = {
-  green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
-  yellow: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)" },
-  red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
+  green: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
+  yellow: { color: "var(--asc-amber)", borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" },
+  red: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
   gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
-  violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+  violet: { color: "var(--asc-accent)", borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" },
 };
 
 function Pill({
@@ -97,7 +97,7 @@ export default function AdminTournamentResultsPanel({
     <section className="grid gap-5">
       <div
         className="grid gap-5 border p-4 sm:grid-cols-3"
-        style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}
+        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-table-head-bg)" }}
       >
         <Stat label="Approved" value={approvedRegistrations.length} />
         <Stat label="Saved" value={results.length} />
@@ -109,13 +109,13 @@ export default function AdminTournamentResultsPanel({
       {remainingResults > 0 && (
         <p
           className="border px-4 py-3 text-sm font-bold"
-          style={{ borderColor: "oklch(0.65 0.16 75 / 0.5)", background: "oklch(0.25 0.14 75 / 0.18)", color: "var(--asc-amber)" }}
+          style={{ borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)", color: "var(--asc-amber)" }}
         >
           {remainingResults} approved team{remainingResults === 1 ? "" : "s"} still missing results.
         </p>
       )}
 
-      <details className="group overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}>
+      <details className="group overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-table-head-bg)" }}>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 transition hover:bg-white/[0.035]">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-accent)" }}>Add or edit</p>
@@ -124,7 +124,7 @@ export default function AdminTournamentResultsPanel({
 
           <span
             className="grid h-9 w-9 place-items-center text-lg font-black transition group-open:rotate-45"
-            style={{ border: "1px solid var(--asc-line-soft)", background: "oklch(0.09 0.02 287)", color: "var(--asc-fg-3)" }}
+            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
           >
             +
           </span>
@@ -143,7 +143,7 @@ export default function AdminTournamentResultsPanel({
         </div>
       </details>
 
-      <section className="overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}>
+      <section className="overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-table-head-bg)" }}>
         <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
           <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>Saved standings</p>
         </div>

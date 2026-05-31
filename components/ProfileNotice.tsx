@@ -33,8 +33,8 @@ export default async function ProfileNotice({
       className="mb-8 p-5 shadow-2xl shadow-black/20"
       style={
         isError
-          ? { border: "1px solid oklch(0.65 0.22 25 / 0.25)", background: "oklch(0.65 0.22 25 / 0.10)", color: "oklch(0.88 0.10 25)" }
-          : { border: "1px solid oklch(0.74 0.16 150 / 0.25)", background: "oklch(0.74 0.16 150 / 0.10)", color: "oklch(0.88 0.10 150)" }
+          ? { border: "1px solid var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }
+          : { border: "1px solid var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }
       }
     >
       <p

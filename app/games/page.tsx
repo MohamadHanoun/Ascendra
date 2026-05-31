@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+﻿import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -81,7 +81,7 @@ const gamesMessages: Record<Locale, GamesMessages> = {
       description: "Browse the competitive titles configured for Ascendra.",
     },
     hero: {
-      eyebrowLeft: "Competitive Titles ·",
+      eyebrowLeft: "Competitive Titles Â·",
       eyebrowRight: "Supported",
       title: "Games Registry",
       description:
@@ -100,7 +100,7 @@ const gamesMessages: Record<Locale, GamesMessages> = {
       notAvailable: "Not available",
       active: "Active",
       inactive: "Inactive",
-      registrationOpenLabel: "Registration open ·",
+      registrationOpenLabel: "Registration open Â·",
       viewTournaments: "View tournaments",
       leaderboard: "Leaderboard",
       integration: {
@@ -118,43 +118,43 @@ const gamesMessages: Record<Locale, GamesMessages> = {
   },
   ar: {
     metadata: {
-      title: "سجل الألعاب | Ascendra",
-      description: "استعرض الألعاب التنافسية المُعدَّة لبطولات Ascendra.",
+      title: "Ø³Ø¬Ù„ Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨ | Ascendra",
+      description: "Ø§Ø³ØªØ¹Ø±Ø¶ Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨ Ø§Ù„ØªÙ†Ø§ÙØ³ÙŠØ© Ø§Ù„Ù…ÙØ¹Ø¯ÙŽÙ‘Ø© Ù„Ø¨Ø·ÙˆÙ„Ø§Øª Ascendra.",
     },
     hero: {
-      eyebrowLeft: "ألعاب تنافسية ·",
-      eyebrowRight: "مدعوم",
-      title: "سجل الألعاب",
+      eyebrowLeft: "Ø£Ù„Ø¹Ø§Ø¨ ØªÙ†Ø§ÙØ³ÙŠØ© Â·",
+      eyebrowRight: "Ù…Ø¯Ø¹ÙˆÙ…",
+      title: "Ø³Ø¬Ù„ Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨",
       description:
-        "استعرض الألعاب التنافسية المُعدَّة لبطولات Ascendra، تشكيلات الفرق، وفلاتر لوحة المتصدرين.",
+        "Ø§Ø³ØªØ¹Ø±Ø¶ Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨ Ø§Ù„ØªÙ†Ø§ÙØ³ÙŠØ© Ø§Ù„Ù…ÙØ¹Ø¯ÙŽÙ‘Ø© Ù„Ø¨Ø·ÙˆÙ„Ø§Øª AscendraØŒ ØªØ´ÙƒÙŠÙ„Ø§Øª Ø§Ù„ÙØ±Ù‚ØŒ ÙˆÙÙ„Ø§ØªØ± Ù„ÙˆØ­Ø© Ø§Ù„Ù…ØªØµØ¯Ø±ÙŠÙ†.",
     },
-    section: { eyebrow: "السجل", title: "الألعاب المدعومة" },
+    section: { eyebrow: "Ø§Ù„Ø³Ø¬Ù„", title: "Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨ Ø§Ù„Ù…Ø¯Ø¹ÙˆÙ…Ø©" },
     stats: {
-      games: "الألعاب",
-      active: "نشط",
-      tournaments: "البطولات",
-      total: "الإجمالي",
-      upcoming: "قادم",
-      teams: "الفرق",
+      games: "Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨",
+      active: "Ù†Ø´Ø·",
+      tournaments: "Ø§Ù„Ø¨Ø·ÙˆÙ„Ø§Øª",
+      total: "Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ",
+      upcoming: "Ù‚Ø§Ø¯Ù…",
+      teams: "Ø§Ù„ÙØ±Ù‚",
     },
     card: {
-      notAvailable: "غير متاح",
-      active: "نشط",
-      inactive: "غير نشط",
-      registrationOpenLabel: "التسجيل مفتوح ·",
-      viewTournaments: "عرض البطولات",
-      leaderboard: "لوحة المتصدرين",
+      notAvailable: "ØºÙŠØ± Ù…ØªØ§Ø­",
+      active: "Ù†Ø´Ø·",
+      inactive: "ØºÙŠØ± Ù†Ø´Ø·",
+      registrationOpenLabel: "Ø§Ù„ØªØ³Ø¬ÙŠÙ„ Ù…ÙØªÙˆØ­ Â·",
+      viewTournaments: "Ø¹Ø±Ø¶ Ø§Ù„Ø¨Ø·ÙˆÙ„Ø§Øª",
+      leaderboard: "Ù„ÙˆØ­Ø© Ø§Ù„Ù…ØªØµØ¯Ø±ÙŠÙ†",
       integration: {
-        configured: "مُكوَّن",
-        manual: "يدوي",
-        notConfigured: "غير مُكوَّن",
+        configured: "Ù…ÙÙƒÙˆÙŽÙ‘Ù†",
+        manual: "ÙŠØ¯ÙˆÙŠ",
+        notConfigured: "ØºÙŠØ± Ù…ÙÙƒÙˆÙŽÙ‘Ù†",
       },
     },
     empty: {
-      eyebrow: "السجل فارغ",
-      title: "لا توجد ألعاب متاحة بعد.",
+      eyebrow: "Ø§Ù„Ø³Ø¬Ù„ ÙØ§Ø±Øº",
+      title: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø£Ù„Ø¹Ø§Ø¨ Ù…ØªØ§Ø­Ø© Ø¨Ø¹Ø¯.",
       description:
-        "ستظهر الألعاب المدعومة هنا بعد إضافتها في سجل الألعاب.",
+        "Ø³ØªØ¸Ù‡Ø± Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨ Ø§Ù„Ù…Ø¯Ø¹ÙˆÙ…Ø© Ù‡Ù†Ø§ Ø¨Ø¹Ø¯ Ø¥Ø¶Ø§ÙØªÙ‡Ø§ ÙÙŠ Ø³Ø¬Ù„ Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨.",
     },
   },
 };
@@ -272,10 +272,10 @@ function StatusPill({
       style={{
         ...monoStyle,
         border: active
-          ? "1px solid oklch(0.55 0.14 150 / 0.5)"
+          ? "1px solid var(--asc-green-border)"
           : "1px solid var(--asc-line-soft)",
         background: active
-          ? "oklch(0.25 0.12 150 / 0.18)"
+          ? "var(--asc-green-bg)"
           : "transparent",
         color: active ? "var(--asc-green)" : "var(--asc-fg-3)",
       }}
@@ -385,8 +385,7 @@ function GameRow({
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: cssUrl(artUrl) }}
-          />
-          <div
+          />          <div
             className="absolute inset-0"
             style={{
               background:
@@ -403,7 +402,7 @@ function GameRow({
                 backdropFilter: "blur(8px)",
               }}
             >
-              {String(index).padStart(2, "0")} ·{" "}
+              {String(index).padStart(2, "0")} Â·{" "}
               {game.isActive
                 ? messages.card.active.toUpperCase()
                 : messages.card.inactive.toUpperCase()}
@@ -419,7 +418,7 @@ function GameRow({
                   className="text-[10px] uppercase tracking-[0.18em]"
                   style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
                 >
-                  {(game.platform ?? messages.card.notAvailable).toUpperCase()} ·{" "}
+                  {(game.platform ?? messages.card.notAvailable).toUpperCase()} Â·{" "}
                   {formatRoster(game).toUpperCase()}
                 </span>
 
@@ -463,7 +462,7 @@ function GameRow({
                 className="mt-4 text-[11px] uppercase tracking-[0.12em]"
                 style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
               >
-                {game.shortName ? `${game.shortName} · ` : ""}
+                {game.shortName ? `${game.shortName} Â· ` : ""}
                 {game.slug}
               </p>
             </div>
@@ -489,7 +488,7 @@ function GameRow({
           >
             <ActionLink href="/tournaments">
               {messages.card.viewTournaments}{" "}
-              <span aria-hidden="true">›</span>
+              <span aria-hidden="true">â€º</span>
             </ActionLink>
             <ActionLink href={leaderboardHref} variant="ghost">
               {messages.card.leaderboard}
@@ -606,8 +605,8 @@ export default async function GamesPage() {
             className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.35) 0%, oklch(0.07 0.025 285 / 0.56) 45%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.42) 35%, transparent 70%)",
+                "linear-gradient(180deg, rgb(12 11 9 / 0.35) 0%, rgb(12 11 9 / 0.56) 45%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.42) 35%, transparent 70%)",
               ].join(", "),
             }}
           />
@@ -616,7 +615,7 @@ export default async function GamesPage() {
             <p
               className="asc-section-label mb-[18px]"
             >
-              <span style={{ color: "var(--asc-accent)" }}>▲</span>{" "}
+              <span style={{ color: "var(--asc-accent)" }}>â–²</span>{" "}
               {messages.hero.eyebrowLeft} {activeGamesCount} {messages.hero.eyebrowRight}
             </p>
             <h1
@@ -640,7 +639,7 @@ export default async function GamesPage() {
               <p
                 className="asc-section-label"
               >
-                ▲ {messages.section.eyebrow}
+                â–² {messages.section.eyebrow}
               </p>
               <h2 className="mt-2 text-2xl" style={{ color: "var(--asc-fg-0)" }}>
                 {messages.section.title}

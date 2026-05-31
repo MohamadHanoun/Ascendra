@@ -43,7 +43,7 @@ export default function ProfileDiscordId({ discordId }: ProfileDiscordIdProps) {
           type="button"
           onClick={copyDiscordId}
           className="border px-3 py-2 text-sm font-bold transition hover:opacity-90"
-          style={{ borderColor: "oklch(0.50 0.20 285 / 0.4)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
+          style={{ borderColor: "var(--asc-accent-border)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
           title="Copy Discord ID"
         >
           {copied ? "Copied" : "Copy"}

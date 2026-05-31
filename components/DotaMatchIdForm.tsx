@@ -120,20 +120,20 @@ function ConfidenceBadge({
     high: {
       label: labels.high,
       color: "var(--asc-green)",
-      border: "oklch(0.55 0.14 150 / 0.5)",
-      bg: "oklch(0.25 0.12 150 / 0.18)",
+      border: "var(--asc-green-border)",
+      bg: "var(--asc-green-bg)",
     },
     medium: {
       label: labels.medium,
       color: "var(--asc-amber)",
-      border: "oklch(0.65 0.14 75 / 0.5)",
-      bg: "oklch(0.25 0.12 75 / 0.18)",
+      border: "var(--asc-amber-border)",
+      bg: "var(--asc-amber-bg)",
     },
     rejected: {
       label: labels.rejected,
       color: "var(--asc-live)",
-      border: "oklch(0.50 0.20 25 / 0.5)",
-      bg: "oklch(0.25 0.18 25 / 0.18)",
+      border: "var(--asc-live-border)",
+      bg: "var(--asc-live-bg)",
     },
   };
   const s = styles[confidence];
@@ -273,11 +273,11 @@ export default function DotaMatchIdForm({
           className="border px-3 py-2 text-xs"
           style={{
             borderColor: findState.ok
-              ? "oklch(0.55 0.14 150 / 0.4)"
-              : "oklch(0.50 0.20 25 / 0.4)",
+              ? "var(--asc-green-border)"
+              : "var(--asc-live-border)",
             background: findState.ok
-              ? "oklch(0.25 0.12 150 / 0.12)"
-              : "oklch(0.25 0.18 25 / 0.12)",
+              ? "var(--asc-green-bg)"
+              : "var(--asc-live-bg)",
           }}
         >
           <p
@@ -299,7 +299,7 @@ export default function DotaMatchIdForm({
                   style={{
                     borderColor:
                       selectedCandidate === c.dotaMatchId
-                        ? "oklch(0.50 0.20 285 / 0.5)"
+                        ? "var(--asc-accent-border-strong)"
                         : "var(--asc-line-soft)",
                     background:
                       selectedCandidate === c.dotaMatchId
@@ -367,7 +367,7 @@ export default function DotaMatchIdForm({
             disabled={verifyPending}
             className="border px-5 py-2.5 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
             style={{
-              borderColor: "oklch(0.50 0.20 285 / 0.4)",
+              borderColor: "var(--asc-accent-border)",
               background: "var(--asc-accent-dim)",
               color: "var(--asc-accent)",
             }}
@@ -384,16 +384,16 @@ export default function DotaMatchIdForm({
           style={{
             borderColor:
               verifyState.confidence === "rejected" || !verifyState.ok
-                ? "oklch(0.50 0.20 25 / 0.4)"
+                ? "var(--asc-live-border)"
                 : verifyState.confidence === "medium"
                   ? "oklch(0.65 0.14 75 / 0.4)"
-                  : "oklch(0.55 0.14 150 / 0.4)",
+                  : "var(--asc-green-border)",
             background:
               verifyState.confidence === "rejected" || !verifyState.ok
                 ? "oklch(0.25 0.18 25 / 0.10)"
                 : verifyState.confidence === "medium"
                   ? "oklch(0.25 0.12 75 / 0.10)"
-                  : "oklch(0.25 0.12 150 / 0.10)",
+                  : "var(--asc-green-bg)",
           }}
         >
           <div className="flex flex-wrap items-center gap-2">

@@ -316,8 +316,8 @@ function StaffCard({
           <span
             className="mt-5 inline-flex w-fit border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
             style={{
-              borderColor: "oklch(0.74 0.16 150 / 0.25)",
-              background: "oklch(0.74 0.16 150 / 0.10)",
+              borderColor: "var(--asc-green-border)",
+              background: "var(--asc-green-bg)",
               color: "var(--asc-green)",
             }}
           >
@@ -357,8 +357,8 @@ export default async function StaffPage() {
             className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, oklch(0.07 0.025 285 / 0.28) 0%, oklch(0.07 0.025 285 / 0.65) 54%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, oklch(0.07 0.025 285 / 0.45) 42%, transparent 74%)",
+                "linear-gradient(180deg, rgb(12 11 9 / 0.28) 0%, rgb(12 11 9 / 0.65) 54%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.45) 42%, transparent 74%)",
               ].join(", "),
             }}
           />

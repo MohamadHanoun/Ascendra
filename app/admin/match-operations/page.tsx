@@ -118,8 +118,8 @@ function IssueBadge({ issue }: { issue: ReadinessIssue }) {
     <span
       className="inline-flex border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em]"
       style={{
-        borderColor: "oklch(0.50 0.20 25 / 0.5)",
-        background: "oklch(0.25 0.18 25 / 0.18)",
+        borderColor: "var(--asc-live-border)",
+        background: "var(--asc-live-bg)",
         color: "var(--asc-live)",
       }}
     >
@@ -132,19 +132,19 @@ function StatusBadge({ status }: { status: string }) {
   const style =
     status === "disputed"
       ? {
-          borderColor: "oklch(0.50 0.20 25 / 0.5)",
-          background: "oklch(0.25 0.18 25 / 0.18)",
+          borderColor: "var(--asc-live-border)",
+          background: "var(--asc-live-bg)",
           color: "var(--asc-live)",
         }
       : status === "in_progress"
         ? {
-            borderColor: "oklch(0.55 0.14 150 / 0.5)",
-            background: "oklch(0.25 0.12 150 / 0.18)",
+            borderColor: "var(--asc-green-border)",
+            background: "var(--asc-green-bg)",
             color: "var(--asc-green)",
           }
         : status === "room_created"
           ? {
-              borderColor: "oklch(0.50 0.20 285 / 0.4)",
+              borderColor: "var(--asc-accent-border)",
               background: "var(--asc-accent-dim)",
               color: "var(--asc-accent)",
             }
@@ -300,26 +300,12 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <main className="asc-ambient min-h-screen overflow-hidden text-white" style={{ background: "var(--asc-bg-0)" }}>
+    <main className="asc-admin-page asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)" }}>
       <Navbar />
 
       {/* Hero */}
       <section className="relative min-h-[430px] overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: 'url("/images/backgrounds/admin-hero.webp")' }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.92) 0%,oklch(0.06 0.03 287 / 0.66) 44%,oklch(0.06 0.03 287 / 0.82) 100%)",
-          }}
-        />
-        <div
-          className="absolute inset-x-0 bottom-0 h-44"
-          style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }}
-        />
+        
 
         <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
           <Link
@@ -352,8 +338,8 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
             <span
               className="border px-3 py-1 font-black"
               style={{
-                borderColor: "oklch(0.55 0.14 150 / 0.5)",
-                background: "oklch(0.25 0.12 150 / 0.18)",
+                borderColor: "var(--asc-green-border)",
+                background: "var(--asc-green-bg)",
                 color: "var(--asc-green)",
               }}
             >
@@ -487,7 +473,7 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
               type="submit"
               className="border px-5 py-2 text-sm font-black transition hover:opacity-90"
               style={{
-                borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                borderColor: "var(--asc-accent-border)",
                 background: "var(--asc-accent-dim)",
                 color: "var(--asc-accent)",
               }}
@@ -557,7 +543,7 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
                           <span
                             className="ml-1.5 border px-1 py-0.5 text-[9px] font-black uppercase"
                             style={{
-                              borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                              borderColor: "var(--asc-accent-border)",
                               background: "var(--asc-accent-dim)",
                               color: "var(--asc-accent)",
                             }}

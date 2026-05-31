@@ -26,7 +26,7 @@ export default function AdminRoleForm() {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px]">
             <label className="grid gap-2">
               <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Role name</span>
-              <input name="name" required placeholder="Example: Tournament Admin" className="border px-4 py-3 text-white outline-none transition" style={inputStyle} />
+              <input name="name" required placeholder="Example: Tournament Admin" className="border px-4 py-3 outline-none transition" style={inputStyle} />
             </label>
 
             <label className="grid gap-2">
@@ -37,7 +37,7 @@ export default function AdminRoleForm() {
 
           <label className="grid gap-2">
             <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Description</span>
-            <textarea name="description" required placeholder="Describe what this role means..." className="min-h-24 resize-y border px-4 py-3 text-sm leading-6 text-white outline-none transition" style={inputStyle} />
+            <textarea name="description" required placeholder="Describe what this role means..." className="min-h-24 resize-y border px-4 py-3 text-sm leading-6 outline-none transition" style={inputStyle} />
           </label>
         </InlineAdminRoleForm>
       </div>

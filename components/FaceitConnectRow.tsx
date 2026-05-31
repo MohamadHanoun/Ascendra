@@ -72,10 +72,10 @@ export default function FaceitConnectRow({
           className="grid h-10 w-10 shrink-0 place-items-center border text-xs font-black"
           style={{
             borderColor: connected
-              ? "oklch(0.55 0.14 150 / 0.5)"
+              ? "var(--asc-green-border)"
               : "var(--asc-line-soft)",
             background: connected
-              ? "oklch(0.25 0.12 150 / 0.18)"
+              ? "var(--asc-green-bg)"
               : "transparent",
             color: connected ? "var(--asc-green)" : "var(--asc-fg-3)",
           }}
@@ -131,8 +131,8 @@ export default function FaceitConnectRow({
           <span
             className="border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
             style={{
-              borderColor: "oklch(0.55 0.14 150 / 0.5)",
-              background: "oklch(0.25 0.12 150 / 0.18)",
+              borderColor: "var(--asc-green-border)",
+              background: "var(--asc-green-bg)",
               color: "var(--asc-green)",
             }}
           >
@@ -145,7 +145,7 @@ export default function FaceitConnectRow({
               onClick={() => setConfirmOpen(true)}
               className="border px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
               style={{
-                borderColor: "oklch(0.50 0.20 25 / 0.4)",
+                borderColor: "var(--asc-live-border)",
                 background: "transparent",
                 color: "var(--asc-live)",
               }}
@@ -201,7 +201,7 @@ export default function FaceitConnectRow({
               disabled={connectPending}
               className="whitespace-nowrap border px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
               style={{
-                borderColor: "oklch(0.50 0.20 285 / 0.4)",
+                borderColor: "var(--asc-accent-border)",
                 background: "var(--asc-accent-dim)",
                 color: "var(--asc-accent)",
               }}

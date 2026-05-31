@@ -105,8 +105,8 @@ function ActionNotice({ result }: { result: ProfileInvitationActionResult | null
       className="border px-4 py-3 text-sm font-bold"
       style={
         result.ok
-          ? { borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }
-          : { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }
+          ? { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }
+          : { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }
       }
     >
       {result.message}
@@ -175,8 +175,8 @@ function InvitationActionForm({
           className="border px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           style={
             isReject
-              ? { borderColor: "oklch(0.50 0.20 25 / 0.5)", color: "var(--asc-live)", background: "transparent" }
-              : { background: "oklch(0.55 0.14 150)", color: "#fff", border: "none" }
+              ? { borderColor: "var(--asc-live-border)", color: "var(--asc-live)", background: "transparent" }
+              : { background: "var(--asc-green)", color: "#fff", border: "none" }
           }
         >
           {pending
@@ -220,7 +220,7 @@ function InvitationActionForm({
                 onClick={runAction}
                 disabled={pending}
                 className="px-5 py-3 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                style={{ background: "oklch(0.50 0.20 25)" }}
+                style={{ background: "var(--asc-live)" }}
               >
                 {pending ? labels.rejecting : labels.rejectButton}
               </button>
@@ -265,7 +265,7 @@ function ProfileInvitationsPanel({ invitations, receivedInvitations, locale = "e
 
                     <span
                       className="inline-flex border px-3 py-1 text-xs font-bold"
-                      style={{ borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)", color: "var(--asc-blue)" }}
+                      style={{ borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)", color: "var(--asc-blue)" }}
                     >
                       {invite.team.game}
                     </span>

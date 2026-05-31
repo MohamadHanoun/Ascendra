@@ -69,7 +69,7 @@ export default function AdminTournamentImageFields({
               setGameSlug(slug);
               onGameChange?.(games.find((g) => g.slug === slug));
             }}
-            className="border px-4 py-3 text-white outline-none transition"
+            className="border px-4 py-3 outline-none transition"
             style={inputStyle}
           >
             <option value="" disabled>Select game</option>
@@ -86,7 +86,7 @@ export default function AdminTournamentImageFields({
             value={imageUrl}
             onChange={(event) => setImageUrl(event.target.value)}
             placeholder="Optional custom image URL"
-            className="border px-4 py-3 text-white outline-none transition"
+            className="border px-4 py-3 outline-none transition"
             style={inputStyle}
           />
         </label>
@@ -94,13 +94,13 @@ export default function AdminTournamentImageFields({
 
       <div
         className="grid gap-3 border p-4 lg:grid-cols-[180px_minmax(0,1fr)] lg:items-center"
-        style={{ borderColor: "var(--asc-line-soft)", background: "oklch(0.08 0.02 287)" }}
+        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-table-head-bg)" }}
       >
         <div
           className="h-28 border bg-cover bg-center"
           style={{
             borderColor: "var(--asc-line-soft)",
-            backgroundImage: `linear-gradient(to bottom, rgba(7,8,17,0.08), rgba(7,8,17,0.62)), url("${previewImageUrl}")`,
+            backgroundImage: `var(--asc-image-scrim), url("${previewImageUrl}")`,
           }}
         />
 
@@ -118,7 +118,7 @@ export default function AdminTournamentImageFields({
       {hasInvalidImageUrl && (
         <p
           className="border px-4 py-3 text-sm font-bold"
-          style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }}
+          style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }}
         >
           Image URL must start with http://, https://, or /.
         </p>

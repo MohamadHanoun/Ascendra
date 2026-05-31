@@ -251,12 +251,12 @@ function matchStatusInfo(status: string, statuses: MatchStatuses): { label: stri
 
 function tonedStyle(tone: Tone): CSSProperties {
   const styles: Record<Tone, CSSProperties> = {
-    blue: { color: "var(--asc-blue)", borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)" },
-    green: { color: "var(--asc-green)", borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)" },
-    live: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
-    amber: { color: "var(--asc-amber)", borderColor: "oklch(0.65 0.14 75 / 0.5)", background: "oklch(0.25 0.12 75 / 0.18)" },
-    red: { color: "var(--asc-live)", borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)" },
-    violet: { color: "var(--asc-accent)", borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)" },
+    blue: { color: "var(--asc-blue)", borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" },
+    green: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
+    live: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
+    amber: { color: "var(--asc-amber)", borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" },
+    red: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
+    violet: { color: "var(--asc-accent)", borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" },
     gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
   };
   return styles[tone];
@@ -856,7 +856,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                         rel="noopener noreferrer"
                         className="inline-flex max-w-full items-center justify-center border px-5 py-3 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80"
                         style={{
-                          borderColor: "oklch(0.50 0.20 285 / 0.45)",
+                          borderColor: "var(--asc-accent-border-strong)",
                           background: "var(--asc-accent-dim)",
                           color: "var(--asc-accent)",
                           clipPath:
@@ -878,7 +878,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     <div
                       className="border p-3"
                       style={{
-                        borderColor: "oklch(0.50 0.20 285 / 0.35)",
+                        borderColor: "var(--asc-accent-border)",
                         background: "var(--asc-accent-dim)",
                       }}
                     >
@@ -901,7 +901,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     <div
                       className="border px-3 py-2 text-xs leading-5"
                       style={{
-                        borderColor: "oklch(0.50 0.20 285 / 0.35)",
+                        borderColor: "var(--asc-accent-border)",
                         background: "var(--asc-accent-dim)",
                         color: "var(--asc-accent)",
                       }}
@@ -1050,7 +1050,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                   <div
                     className="border px-3 py-2 text-xs leading-5"
                     style={{
-                      borderColor: "oklch(0.50 0.20 285 / 0.3)",
+                      borderColor: "var(--asc-accent-border)",
                       background: "var(--asc-accent-dim)",
                       color: "var(--asc-accent)",
                     }}
@@ -1402,11 +1402,11 @@ export default async function MatchDetailPage({ params }: PageProps) {
             {isAdmin && teamA && teamB && (
               <div
                 className="relative overflow-hidden border"
-                style={{ borderColor: "oklch(0.65 0.14 75 / 0.3)", background: "oklch(0.25 0.12 75 / 0.06)" }}
+                style={{ borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" }}
               >
                 <div
                   className="flex items-center gap-3 px-5 py-3"
-                  style={{ borderBottom: "1px solid oklch(0.65 0.14 75 / 0.2)" }}
+                  style={{ borderBottom: "1px solid var(--asc-amber-border)" }}
                 >
                   <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-amber)" }}>
                     ▲ Admin Controls
@@ -1428,7 +1428,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                 </div>
                 <div
                   className="p-5"
-                  style={{ borderTop: "1px solid oklch(0.65 0.14 75 / 0.15)" }}
+                  style={{ borderTop: "1px solid var(--asc-amber-border)" }}
                 >
                   <MatchCommunicationAdminForm
                     matchId={match.id}

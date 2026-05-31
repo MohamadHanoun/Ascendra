@@ -30,14 +30,14 @@ function formatDate(date: Date | string | null) {
 function StatusBadge({ linked, error }: { linked: boolean; error?: string | null }) {
   if (error) {
     return (
-      <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }}>
+      <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }}>
         Error
       </span>
     );
   }
   if (linked) {
     return (
-      <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={{ borderColor: "oklch(0.55 0.14 150 / 0.5)", background: "oklch(0.25 0.12 150 / 0.18)", color: "var(--asc-green)" }}>
+      <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}>
         Linked
       </span>
     );
@@ -50,9 +50,9 @@ function StatusBadge({ linked, error }: { linked: boolean; error?: string | null
 }
 
 const actionButtonStyles: Record<string, React.CSSProperties> = {
-  default: { borderColor: "oklch(0.50 0.20 285 / 0.4)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
-  danger: { borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" },
-  blue: { borderColor: "oklch(0.55 0.12 220 / 0.5)", background: "oklch(0.25 0.10 220 / 0.18)", color: "var(--asc-blue)" },
+  default: { borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
+  danger: { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" },
+  blue: { borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)", color: "var(--asc-blue)" },
 };
 
 function ActionButton({ label, tone = "default", disabled = false }: { label: string; tone?: "default" | "danger" | "blue"; disabled?: boolean }) {
@@ -155,7 +155,7 @@ export default async function AdminBotTournamentMessagesPanel() {
                 {hasError && (
                   <p
                     className="border px-4 py-3 text-sm leading-6"
-                    style={{ borderColor: "oklch(0.50 0.20 25 / 0.5)", background: "oklch(0.25 0.18 25 / 0.18)", color: "var(--asc-live)" }}
+                    style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }}
                   >
                     {tournament.discordAnnouncementLastError}
                   </p>

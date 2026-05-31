@@ -95,7 +95,7 @@ export default async function NotFound() {
             }}
           />
 
-          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,oklch(0.06 0.03 287 / 0.94) 0%,oklch(0.06 0.03 287 / 0.72) 48%,oklch(0.06 0.03 287 / 0.88) 100%)" }} />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,rgb(12 11 9 / 0.94) 0%,rgb(12 11 9 / 0.72) 48%,rgb(12 11 9 / 0.88) 100%)" }} />
           <div className="absolute inset-x-0 bottom-0 h-52" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
 
           <div className="relative z-10 mx-auto flex min-h-[620px] max-w-[900px] flex-col items-center justify-center px-6 pb-28 pt-20 text-center lg:px-10">

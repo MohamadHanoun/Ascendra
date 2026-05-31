@@ -113,8 +113,8 @@ function StatusChip({
           letterSpacing: "0.16em",
           textTransform: "uppercase",
           color: "var(--asc-live)",
-          border: "1px solid oklch(0.50 0.20 25 / 0.5)",
-          background: "oklch(0.25 0.18 25 / 0.18)",
+          border: "1px solid var(--asc-live-border)",
+          background: "var(--asc-live-bg)",
         }}
       >
         <span
@@ -140,8 +140,8 @@ function StatusChip({
           letterSpacing: "0.16em",
           textTransform: "uppercase",
           color: "var(--asc-green)",
-          border: "1px solid oklch(0.55 0.14 150 / 0.5)",
-          background: "oklch(0.25 0.12 150 / 0.18)",
+          border: "1px solid var(--asc-green-border)",
+          background: "var(--asc-green-bg)",
         }}
       >
         {statusLabels.registrationOpen}
@@ -193,8 +193,8 @@ function StatusChip({
         letterSpacing: "0.16em",
         textTransform: "uppercase",
         color: "var(--asc-blue)",
-        border: "1px solid oklch(0.55 0.12 220 / 0.5)",
-        background: "oklch(0.25 0.10 220 / 0.18)",
+        border: "1px solid var(--asc-blue-border)",
+        background: "var(--asc-blue-bg)",
       }}
     >
       {statusLabels.upcoming}
@@ -237,7 +237,7 @@ function FilterGroup({
                 value === o.value ? "var(--asc-accent)" : "var(--asc-bg-2)",
               color:
                 value === o.value
-                  ? "oklch(0.10 0.02 285)"
+                  ? "var(--asc-on-accent)"
                   : "var(--asc-fg-2)",
               border: `1px solid ${value === o.value ? "var(--asc-accent)" : "var(--asc-line-soft)"}`,
               fontFamily: "var(--font-mono, monospace)",
@@ -302,7 +302,7 @@ function FeaturedCard({
           position: "absolute",
           inset: 0,
           background:
-            "linear-gradient(90deg, oklch(0.06 0.02 285 / 0.96) 0%, oklch(0.06 0.02 285 / 0.6) 50%, transparent 100%)",
+            "linear-gradient(90deg, rgb(12 11 9 / 0.96) 0%, rgb(12 11 9 / 0.6) 50%, transparent 100%)",
         }}
       />
       <div
@@ -375,7 +375,7 @@ function FeaturedCard({
                 letterSpacing: "0.10em",
                 textTransform: "uppercase",
                 background: "var(--asc-accent)",
-                color: "oklch(0.10 0.02 285)",
+                color: "var(--asc-on-accent)",
                 textDecoration: "none",
                 clipPath:
                   "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
@@ -430,7 +430,7 @@ function FeaturedCard({
               key={stat.k}
               style={{
                 padding: "14px 18px",
-                background: "oklch(0.10 0.04 285 / 0.7)",
+                background: "var(--asc-card-muted)",
                 borderLeft: "1px solid var(--asc-line-soft)",
               }}
             >
@@ -496,7 +496,7 @@ function TournamentTableRow({
       }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLDivElement).style.background =
-          "oklch(0.20 0.10 285 / 0.06)";
+          "var(--asc-hover-soft)";
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLDivElement).style.background = "transparent";

@@ -63,7 +63,7 @@ export default function LeaderboardAvatar({
         <div
           className="grid h-full w-full place-items-center font-black uppercase"
           style={{
-            color: "oklch(0.97 0.01 290)",
+            color: "#ffffff",
             fontFamily: "var(--font-display)",
             fontSize: Math.round(size * 0.36),
           }}
