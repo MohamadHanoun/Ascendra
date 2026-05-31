@@ -129,10 +129,10 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     login: { participate: "Participate", signInDesc: "Sign in to submit your team's match result or open a dispute.", signIn: "Sign In ›" },
     verif: { title: "Game Status", submitMatchId: "Submit Match ID" },
     matchInfo: { title: "Match Info", round: "Round", match: "Match", format: "Best of", status: "Status", type: "Type", byeValue: "Bye (Auto-advance)", completed: "Completed" },
-    faceit: { eyebrow: "FACEIT CS2", title: "FACEIT CS2 Proof" },
+    faceit: { eyebrow: "FACEIT Counter-Strike 2", title: "FACEIT Counter-Strike 2 Proof" },
     cs2PlayerMatch: {
-      eyebrow: "FACEIT CS2",
-      title: "Your CS2 match",
+      eyebrow: "FACEIT Counter-Strike 2",
+      title: "Your Counter-Strike 2 match",
       matchup: "Matchup",
       playedOnFaceit: "This match is played on FACEIT.",
       joinWhenAvailable: "Join the FACEIT room when the link is available.",
@@ -151,7 +151,7 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
       checkInReminder: "Check in before joining the FACEIT room.",
     },
     faceitWorkflow: {
-      eyebrow: "FACEIT CS2",
+      eyebrow: "FACEIT Counter-Strike 2",
       title: "FACEIT Readiness",
       note: "When auto-confirm is disabled, FACEIT proof is stored for review and the official result remains manual.",
       teamReadiness: "Team readiness",
@@ -193,10 +193,10 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     login: { participate: "المشاركة", signInDesc: "سجّل دخولك لتقديم نتيجة فريقك أو تقديم اعتراض.", signIn: "تسجيل الدخول ←" },
     verif: { title: "حالة اللعبة", submitMatchId: "تقديم معرف المباراة" },
     matchInfo: { title: "معلومات المباراة", round: "الجولة", match: "المباراة", format: "الأفضل من", status: "الحالة", type: "النوع", byeValue: "تأهل تلقائي", completed: "اكتملت" },
-    faceit: { eyebrow: "FACEIT CS2", title: "إثبات FACEIT لـ CS2" },
+    faceit: { eyebrow: "FACEIT Counter-Strike 2", title: "إثبات FACEIT لـ Counter-Strike 2" },
     cs2PlayerMatch: {
-      eyebrow: "FACEIT CS2",
-      title: "مباراتك في CS2",
+      eyebrow: "FACEIT Counter-Strike 2",
+      title: "مباراتك في Counter-Strike 2",
       matchup: "المواجهة",
       playedOnFaceit: "تُلعب هذه المباراة على FACEIT.",
       joinWhenAvailable: "ادخل إلى غرفة FACEIT عند توفر الرابط.",
@@ -215,7 +215,7 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
       checkInReminder: "سجّل حضورك قبل الدخول إلى غرفة FACEIT.",
     },
     faceitWorkflow: {
-      eyebrow: "FACEIT CS2",
+      eyebrow: "FACEIT Counter-Strike 2",
       title: "جاهزية FACEIT",
       note: "عند تعطيل التأكيد التلقائي، يُحفظ إثبات FACEIT للمراجعة وتبقى النتيجة الرسمية يدوية.",
       teamReadiness: "جاهزية الفريق",
@@ -926,7 +926,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
             {/* CS2 server details */}
             {cs2Meta && (
               <Panel
-                eyebrow={`CS2 · ${cs2Meta.mode === "dedicated_server" ? msgs.cs2.dedicatedMode : msgs.cs2.manualMode}`}
+                eyebrow={`Counter-Strike 2 · ${cs2Meta.mode === "dedicated_server" ? msgs.cs2.dedicatedMode : msgs.cs2.manualMode}`}
                 title={msgs.cs2.serverDetailsTitle}
               >
                 <div className="grid gap-4">

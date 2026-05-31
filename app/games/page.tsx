@@ -81,7 +81,7 @@ const gamesMessages: Record<Locale, GamesMessages> = {
       description: "Browse the competitive titles configured for Ascendra.",
     },
     hero: {
-      eyebrowLeft: "Competitive Titles Â·",
+      eyebrowLeft: "Competitive Titles ·",
       eyebrowRight: "Supported",
       title: "Games Registry",
       description:
@@ -100,7 +100,7 @@ const gamesMessages: Record<Locale, GamesMessages> = {
       notAvailable: "Not available",
       active: "Active",
       inactive: "Inactive",
-      registrationOpenLabel: "Registration open Â·",
+      registrationOpenLabel: "Registration open ·",
       viewTournaments: "View tournaments",
       leaderboard: "Leaderboard",
       integration: {
@@ -118,43 +118,43 @@ const gamesMessages: Record<Locale, GamesMessages> = {
   },
   ar: {
     metadata: {
-      title: "Ø³Ø¬Ù„ Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨ | Ascendra",
-      description: "Ø§Ø³ØªØ¹Ø±Ø¶ Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨ Ø§Ù„ØªÙ†Ø§ÙØ³ÙŠØ© Ø§Ù„Ù…ÙØ¹Ø¯ÙŽÙ‘Ø© Ù„Ø¨Ø·ÙˆÙ„Ø§Øª Ascendra.",
+      title: "سجل الألعاب | Ascendra",
+      description: "استعرض الألعاب التنافسية المُعدَّة لبطولات Ascendra.",
     },
     hero: {
-      eyebrowLeft: "Ø£Ù„Ø¹Ø§Ø¨ ØªÙ†Ø§ÙØ³ÙŠØ© Â·",
-      eyebrowRight: "Ù…Ø¯Ø¹ÙˆÙ…",
-      title: "Ø³Ø¬Ù„ Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨",
+      eyebrowLeft: "ألعاب تنافسية ·",
+      eyebrowRight: "مدعوم",
+      title: "سجل الألعاب",
       description:
-        "Ø§Ø³ØªØ¹Ø±Ø¶ Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨ Ø§Ù„ØªÙ†Ø§ÙØ³ÙŠØ© Ø§Ù„Ù…ÙØ¹Ø¯ÙŽÙ‘Ø© Ù„Ø¨Ø·ÙˆÙ„Ø§Øª AscendraØŒ ØªØ´ÙƒÙŠÙ„Ø§Øª Ø§Ù„ÙØ±Ù‚ØŒ ÙˆÙÙ„Ø§ØªØ± Ù„ÙˆØ­Ø© Ø§Ù„Ù…ØªØµØ¯Ø±ÙŠÙ†.",
+        "استعرض الألعاب التنافسية المُعدَّة لبطولات Ascendra، تشكيلات الفرق، وفلاتر لوحة المتصدرين.",
     },
-    section: { eyebrow: "Ø§Ù„Ø³Ø¬Ù„", title: "Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨ Ø§Ù„Ù…Ø¯Ø¹ÙˆÙ…Ø©" },
+    section: { eyebrow: "السجل", title: "الألعاب المدعومة" },
     stats: {
-      games: "Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨",
-      active: "Ù†Ø´Ø·",
-      tournaments: "Ø§Ù„Ø¨Ø·ÙˆÙ„Ø§Øª",
-      total: "Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ",
-      upcoming: "Ù‚Ø§Ø¯Ù…",
-      teams: "Ø§Ù„ÙØ±Ù‚",
+      games: "الألعاب",
+      active: "نشط",
+      tournaments: "البطولات",
+      total: "الإجمالي",
+      upcoming: "قادم",
+      teams: "الفرق",
     },
     card: {
-      notAvailable: "ØºÙŠØ± Ù…ØªØ§Ø­",
-      active: "Ù†Ø´Ø·",
-      inactive: "ØºÙŠØ± Ù†Ø´Ø·",
-      registrationOpenLabel: "Ø§Ù„ØªØ³Ø¬ÙŠÙ„ Ù…ÙØªÙˆØ­ Â·",
-      viewTournaments: "Ø¹Ø±Ø¶ Ø§Ù„Ø¨Ø·ÙˆÙ„Ø§Øª",
-      leaderboard: "Ù„ÙˆØ­Ø© Ø§Ù„Ù…ØªØµØ¯Ø±ÙŠÙ†",
+      notAvailable: "غير متاح",
+      active: "نشط",
+      inactive: "غير نشط",
+      registrationOpenLabel: "التسجيل مفتوح ·",
+      viewTournaments: "عرض البطولات",
+      leaderboard: "لوحة المتصدرين",
       integration: {
-        configured: "Ù…ÙÙƒÙˆÙŽÙ‘Ù†",
-        manual: "ÙŠØ¯ÙˆÙŠ",
-        notConfigured: "ØºÙŠØ± Ù…ÙÙƒÙˆÙŽÙ‘Ù†",
+        configured: "مُكوَّن",
+        manual: "يدوي",
+        notConfigured: "غير مُكوَّن",
       },
     },
     empty: {
-      eyebrow: "Ø§Ù„Ø³Ø¬Ù„ ÙØ§Ø±Øº",
-      title: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø£Ù„Ø¹Ø§Ø¨ Ù…ØªØ§Ø­Ø© Ø¨Ø¹Ø¯.",
+      eyebrow: "السجل فارغ",
+      title: "لا توجد ألعاب متاحة بعد.",
       description:
-        "Ø³ØªØ¸Ù‡Ø± Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨ Ø§Ù„Ù…Ø¯Ø¹ÙˆÙ…Ø© Ù‡Ù†Ø§ Ø¨Ø¹Ø¯ Ø¥Ø¶Ø§ÙØªÙ‡Ø§ ÙÙŠ Ø³Ø¬Ù„ Ø§Ù„Ø£Ù„Ø¹Ø§Ø¨.",
+        "ستظهر الألعاب المدعومة هنا بعد إضافتها في سجل الألعاب.",
     },
   },
 };
@@ -402,7 +402,7 @@ function GameRow({
                 backdropFilter: "blur(8px)",
               }}
             >
-              {String(index).padStart(2, "0")} Â·{" "}
+              {String(index).padStart(2, "0")} ·{" "}
               {game.isActive
                 ? messages.card.active.toUpperCase()
                 : messages.card.inactive.toUpperCase()}
@@ -418,7 +418,7 @@ function GameRow({
                   className="text-[10px] uppercase tracking-[0.18em]"
                   style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
                 >
-                  {(game.platform ?? messages.card.notAvailable).toUpperCase()} Â·{" "}
+                  {(game.platform ?? messages.card.notAvailable).toUpperCase()} ·{" "}
                   {formatRoster(game).toUpperCase()}
                 </span>
 
@@ -462,7 +462,7 @@ function GameRow({
                 className="mt-4 text-[11px] uppercase tracking-[0.12em]"
                 style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
               >
-                {game.shortName ? `${game.shortName} Â· ` : ""}
+                {game.shortName ? `${game.shortName} · ` : ""}
                 {game.slug}
               </p>
             </div>
@@ -488,7 +488,7 @@ function GameRow({
           >
             <ActionLink href="/tournaments">
               {messages.card.viewTournaments}{" "}
-              <span aria-hidden="true">â€º</span>
+              <span aria-hidden="true">›</span>
             </ActionLink>
             <ActionLink href={leaderboardHref} variant="ghost">
               {messages.card.leaderboard}
@@ -615,7 +615,7 @@ export default async function GamesPage() {
             <p
               className="asc-section-label mb-[18px]"
             >
-              <span style={{ color: "var(--asc-accent)" }}>â–²</span>{" "}
+              <span style={{ color: "var(--asc-accent)" }}>▲</span>{" "}
               {messages.hero.eyebrowLeft} {activeGamesCount} {messages.hero.eyebrowRight}
             </p>
             <h1
@@ -639,7 +639,7 @@ export default async function GamesPage() {
               <p
                 className="asc-section-label"
               >
-                â–² {messages.section.eyebrow}
+                ▲ {messages.section.eyebrow}
               </p>
               <h2 className="mt-2 text-2xl" style={{ color: "var(--asc-fg-0)" }}>
                 {messages.section.title}

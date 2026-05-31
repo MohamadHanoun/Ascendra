@@ -1124,7 +1124,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         requirementAtLeast: "At least {count} player(s).",
         requirementNoPending: "No pending team invites.",
         tournamentStatus: "Tournament status",
-        cs2Requirements: "CS2 requirements",
+        cs2Requirements: "Counter-Strike 2 requirements",
         cs2RequirementsDescription:
           "Steam and FACEIT must be linked to the same account.",
         cs2SteamConnected: "Steam connected",
@@ -1719,7 +1719,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         requirementAtLeast: "يجب أن يحتوي الفريق على {count} لاعب على الأقل.",
         requirementNoPending: "يجب ألا توجد دعوات فريق معلقة.",
         tournamentStatus: "حالة البطولة",
-        cs2Requirements: "متطلبات CS2",
+        cs2Requirements: "متطلبات Counter-Strike 2",
         cs2RequirementsDescription:
           "يجب أن يكون Steam وFACEIT مرتبطَين بنفس الحساب.",
         cs2SteamConnected: "Steam متصل",
