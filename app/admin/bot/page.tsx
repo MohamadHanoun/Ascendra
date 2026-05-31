@@ -4,18 +4,16 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import AdminBotAutoRefresh from "@/components/AdminBotAutoRefresh";
-import AdminBotCommandInsightsPanel from "@/components/AdminBotCommandInsightsPanel";
 import AdminBotCommandLogsPanel from "@/components/AdminBotCommandLogsPanel";
-import AdminBotControlsPanel from "@/components/AdminBotControlsPanel";
 import AdminBotDashboardTabs, {
   type AdminBotDashboardSection,
 } from "@/components/AdminBotDashboardTabs";
-import AdminBotEventInsightsPanel from "@/components/AdminBotEventInsightsPanel";
 import AdminBotEventsPanel from "@/components/AdminBotEventsPanel";
-import AdminBotHealthPanel from "@/components/AdminBotHealthPanel";
 import AdminBotInvitePanel from "@/components/AdminBotInvitePanel";
 import AdminBotMaintenancePanel from "@/components/AdminBotMaintenancePanel";
 import AdminBotMessagePanel from "@/components/AdminBotMessagePanel";
+import AdminBotOverviewPanel from "@/components/AdminBotOverviewPanel";
+import AdminBotQueuePanel from "@/components/AdminBotQueuePanel";
 import AdminBotSettingsPanel from "@/components/AdminBotSettingsPanel";
 import AdminBotTournamentMessagesPanel from "@/components/AdminBotTournamentMessagesPanel";
 import AdminToast from "@/components/AdminToast";
@@ -48,13 +46,13 @@ type AdminBotPageProps = {
 
 const sections: AdminBotDashboardSection[] = [
   "overview",
-  "messages",
-  "tournaments",
+  "queue",
   "events",
   "commands",
-  "maintenance",
+  "messages",
+  "tournaments",
   "settings",
-  "invite",
+  "maintenance",
 ];
 
 function getActiveSection(value?: string): AdminBotDashboardSection {
@@ -147,53 +145,47 @@ export default async function AdminBotPage({
           <AdminToast message={params.message} type={toastType} />
         )}
 
-        <section className="relative z-[999] mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 pt-8 lg:px-10">
+        <section className="relative z-[999] mx-auto grid max-w-[1440px] gap-6 px-6 pb-16 pt-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:px-10">
           <AdminBotDashboardTabs activeSection={activeSection} />
 
-          {activeSection === "overview" && (
-            <>
-              <AdminBotHealthPanel />
-              <AdminBotControlsPanel />
-            </>
-          )}
+          <div className="grid min-w-0 gap-6">
+            {activeSection === "overview" && <AdminBotOverviewPanel />}
 
-          {activeSection === "messages" && <AdminBotMessagePanel />}
+            {activeSection === "queue" && <AdminBotQueuePanel />}
 
-          {activeSection === "tournaments" && (
-            <AdminBotTournamentMessagesPanel />
-          )}
-
-          {activeSection === "events" && (
-            <>
-              <AdminBotEventInsightsPanel />
-
+            {activeSection === "events" && (
               <AdminBotEventsPanel
                 statusFilter={params.botStatus}
                 eventTypeFilter={params.botType}
                 searchFilter={params.botEventSearch}
                 page={params.botEventPage}
               />
-            </>
-          )}
+            )}
 
-          {activeSection === "commands" && (
-            <>
-              <AdminBotCommandInsightsPanel />
-
+            {activeSection === "commands" && (
               <AdminBotCommandLogsPanel
                 statusFilter={params.commandStatus}
                 commandFilter={params.commandName}
                 userFilter={params.commandUser}
                 page={params.commandPage}
               />
-            </>
-          )}
+            )}
 
-          {activeSection === "maintenance" && <AdminBotMaintenancePanel />}
+            {activeSection === "messages" && <AdminBotMessagePanel />}
 
-          {activeSection === "settings" && <AdminBotSettingsPanel />}
+            {activeSection === "tournaments" && (
+              <AdminBotTournamentMessagesPanel />
+            )}
 
-          {activeSection === "invite" && <AdminBotInvitePanel />}
+            {activeSection === "settings" && (
+              <>
+                <AdminBotSettingsPanel />
+                <AdminBotInvitePanel />
+              </>
+            )}
+
+            {activeSection === "maintenance" && <AdminBotMaintenancePanel />}
+          </div>
         </section>
 
         <Footer />

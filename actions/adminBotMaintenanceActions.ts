@@ -207,3 +207,28 @@ export async function cleanupOldFailedBotEventsMaintenanceInline(
 
   redirectWithResult(`${result.count} old failed bot event(s) deleted.`);
 }
+
+export async function cleanupFailedCommandLogsMaintenanceInline() {
+  await requireAdmin();
+
+  const result = await prisma.botEvent.deleteMany({
+    where: {
+      AND: [
+        commandLogWhere,
+        {
+          status: "failed",
+        },
+      ],
+    },
+  });
+
+  await publishMaintenanceEvent({
+    action: "cleanup_failed_command_logs",
+    deletedCount: result.count,
+    days: 0,
+  });
+
+  revalidateBotViews();
+
+  redirectWithResult(`${result.count} failed command log(s) deleted.`);
+}

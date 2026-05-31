@@ -3,9 +3,6 @@ import Link from "next/link";
 
 import {
   cancelBotEventInline,
-  cancelPendingBotEventsInline,
-  cleanupCompletedBotEventsInline,
-  resetProcessingBotEventsInline,
   retryBotEventInline,
 } from "@/actions/adminBotEventInlineActions";
 import AdminConfirmSubmitButton from "@/components/AdminConfirmSubmitButton";
@@ -101,16 +98,6 @@ function formatDate(date: Date | null) {
   return new Intl.DateTimeFormat("en-SE", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
-function formatUptime(value: string | undefined) {
-  const uptimeMs = Number(value || 0);
-  if (!Number.isFinite(uptimeMs) || uptimeMs <= 0) return "-";
-  const totalSeconds = Math.floor(uptimeMs / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
-}
-
 function formatJsonPreview(value: unknown) {
   if (!value) return "-";
   try { return JSON.stringify(value, null, 2); } catch { return "Unable to display data."; }
@@ -120,19 +107,6 @@ function shortenId(value: string | null | undefined) {
   if (!value) return "-";
   if (value.length <= 16) return value;
   return `${value.slice(0, 8)}...${value.slice(-6)}`;
-}
-
-function getSettingValue(settings: Array<{ key: string; value: string }>, key: string) {
-  return settings.find((setting) => setting.key === key)?.value;
-}
-
-function getBotStatus(lastHeartbeatAt?: string) {
-  if (!lastHeartbeatAt) return { label: "Offline", description: "No heartbeat received yet.", online: false, date: null as Date | null };
-  const heartbeatDate = new Date(lastHeartbeatAt);
-  if (Number.isNaN(heartbeatDate.getTime())) return { label: "Offline", description: "Invalid heartbeat timestamp.", online: false, date: null as Date | null };
-  const diffMs = Date.now() - heartbeatDate.getTime();
-  const online = diffMs <= 120000;
-  return { label: online ? "Online" : "Offline", description: online ? "Heartbeat received within the last 2 minutes." : "No recent heartbeat from the bot.", online, date: heartbeatDate };
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -159,15 +133,6 @@ function FilterPill({ href, label, active }: { href: string; label: string; acti
   );
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>{label}</p>
-      <p className="mt-1 truncate text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
-    </div>
-  );
-}
-
 async function retryBotEventFormAction(formData: FormData) {
   "use server";
   await retryBotEventInline(formData);
@@ -176,21 +141,6 @@ async function retryBotEventFormAction(formData: FormData) {
 async function cancelBotEventFormAction(formData: FormData) {
   "use server";
   await cancelBotEventInline(formData);
-}
-
-async function cleanupBotEventsFormAction(formData: FormData) {
-  "use server";
-  await cleanupCompletedBotEventsInline(formData);
-}
-
-async function resetProcessingBotEventsFormAction() {
-  "use server";
-  await resetProcessingBotEventsInline();
-}
-
-async function cancelPendingBotEventsFormAction() {
-  "use server";
-  await cancelPendingBotEventsInline();
 }
 
 function RetryButton({ eventId, status }: { eventId: string; status: string }) {
@@ -238,7 +188,7 @@ function EventsPagination({ currentPage, totalPages, eventCount, statusFilter, t
   return (
     <div className="mt-6 flex flex-col gap-3 px-5 pb-5 pt-5 sm:flex-row sm:items-center sm:justify-between" style={{ borderTop: "1px solid var(--asc-line-soft)" }}>
       <p className="text-sm font-bold" style={{ color: "var(--asc-fg-3)" }}>
-        Page {currentPage} of {totalPages} · {eventCount} event{eventCount === 1 ? "" : "s"}
+        Page {currentPage} of {totalPages} - {eventCount} event{eventCount === 1 ? "" : "s"}
       </p>
       <div className="flex flex-wrap gap-3">
         {hasPreviousPage ? (
@@ -265,17 +215,10 @@ export default async function AdminBotEventsPanel({ statusFilter, eventTypeFilte
   const requestedPage = normalizePage(page);
   const pageSize = 30;
 
-  const typeWhere: Prisma.BotEventWhereInput = activeTypeFilter !== "all" ? { type: activeTypeFilter } : {};
   const eventWhere = buildEventWhere({ statusFilter: activeStatusFilter, typeFilter: activeTypeFilter, searchFilter: activeSearchFilter });
 
-  const [queuedCount, processingCount, completedCount, failedCount, eventCount, settings, lastProcessedEvent, eventTypes] = await Promise.all([
-    prisma.botEvent.count({ where: { ...typeWhere, status: "queued" } }),
-    prisma.botEvent.count({ where: { ...typeWhere, status: "processing" } }),
-    prisma.botEvent.count({ where: { ...typeWhere, status: "completed" } }),
-    prisma.botEvent.count({ where: { ...typeWhere, status: "failed" } }),
+  const [eventCount, eventTypes] = await Promise.all([
     prisma.botEvent.count({ where: eventWhere }),
-    prisma.serverSetting.findMany({ where: { key: { in: ["bot.lastHeartbeatAt", "bot.tag", "bot.guildId", "bot.uptimeMs"] } } }),
-    prisma.botEvent.findFirst({ where: { processedAt: { not: null } }, orderBy: { processedAt: "desc" } }),
     prisma.botEvent.findMany({ select: { type: true }, distinct: ["type"], orderBy: { type: "asc" } }),
   ]);
 
@@ -285,82 +228,8 @@ export default async function AdminBotEventsPanel({ statusFilter, eventTypeFilte
 
   const events = await prisma.botEvent.findMany({ where: eventWhere, orderBy: { createdAt: "desc" }, skip: offset, take: pageSize });
 
-  const botTag = getSettingValue(settings, "bot.tag") || "Unknown";
-  const guildId = getSettingValue(settings, "bot.guildId") || "-";
-  const uptime = formatUptime(getSettingValue(settings, "bot.uptimeMs"));
-  const lastHeartbeatAt = getSettingValue(settings, "bot.lastHeartbeatAt");
-  const botStatus = getBotStatus(lastHeartbeatAt);
-
   return (
     <section className="grid gap-6">
-      <div className="overflow-hidden border shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
-        <div className="grid gap-5 px-5 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>Bot events</p>
-            <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>Operations queue</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>Monitor Discord operations, failed work, and queue status.</p>
-          </div>
-          <div className="grid gap-2 justify-items-start lg:justify-items-end">
-            <StatusBadge status={botStatus.label.toLowerCase()} />
-            <p className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>{botStatus.description}</p>
-          </div>
-        </div>
-
-        <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-          <Stat label="Queued" value={queuedCount} />
-          <Stat label="Processing" value={processingCount} />
-          <Stat label="Completed" value={completedCount} />
-          <Stat label="Failed" value={failedCount} />
-        </div>
-
-        <div className="grid gap-5 p-5 md:grid-cols-2 xl:grid-cols-4">
-          <Stat label="Bot account" value={botTag} />
-          <Stat label="Guild" value={shortenId(guildId)} />
-          <Stat label="Heartbeat" value={formatDate(botStatus.date)} />
-          <Stat label="Uptime" value={uptime} />
-        </div>
-
-        <div className="px-5 py-4" style={{ borderTop: "1px solid var(--asc-line-soft)" }}>
-          <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
-            Last processed: <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>{lastProcessedEvent?.type || "-"}</span>{" "}
-            · {formatDate(lastProcessedEvent?.processedAt || null)} · {shortenId(lastProcessedEvent?.id)}
-          </p>
-        </div>
-      </div>
-
-      <section className="grid gap-4 border p-5 shadow-2xl shadow-black/20 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}>
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>Bot controls</p>
-          <h3 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>Queue recovery tools</h3>
-          <p className="mt-2 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
-            Use these controls when the bot is stuck, when processing events are frozen, or when you want to clear pending work before restarting the bot.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <form action={resetProcessingBotEventsFormAction}>
-            <AdminConfirmSubmitButton
-              label="Reset processing"
-              confirmTitle="Reset processing events?"
-              confirmDescription="This will move all currently processing bot events back to the queue. Use it only if the bot was stuck or restarted while processing."
-              confirmLabel="Reset"
-              className="border px-4 py-3 text-sm font-black transition hover:opacity-90"
-              style={{ borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)", color: "var(--asc-blue)" } as React.CSSProperties}
-            />
-          </form>
-          <form action={cancelPendingBotEventsFormAction}>
-            <AdminConfirmSubmitButton
-              label="Cancel pending queue"
-              danger
-              confirmTitle="Cancel pending queue?"
-              confirmDescription="This will cancel all queued, failed, and processing bot events. Use this only when you want to clear the current queue before restarting or recovering the bot."
-              confirmLabel="Cancel queue"
-              className="border px-4 py-3 text-sm font-black transition hover:opacity-90"
-              style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" } as React.CSSProperties}
-            />
-          </form>
-        </div>
-      </section>
-
       <section className="overflow-hidden border shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
         <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
           <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>Filters</p>
@@ -398,24 +267,6 @@ export default async function AdminBotEventsPanel({ statusFilter, eventTypeFilte
         </div>
       </section>
 
-      <section className="flex flex-col justify-between gap-4 border p-5 shadow-2xl shadow-black/20 lg:flex-row lg:items-center" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>Cleanup</p>
-          <p className="mt-1 text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>Remove completed or cancelled bot events older than 30 days.</p>
-        </div>
-        <form action={cleanupBotEventsFormAction}>
-          <input type="hidden" name="days" value="30" />
-          <AdminConfirmSubmitButton
-            label="Clean old events"
-            confirmTitle="Clean old bot events?"
-            confirmDescription="This will permanently delete completed and cancelled bot events older than 30 days. Failed, queued, and processing events will remain."
-            confirmLabel="Clean"
-            className="border px-4 py-2 text-sm font-black transition hover:opacity-90"
-            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" } as React.CSSProperties}
-          />
-        </form>
-      </section>
-
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>Recent operations</p>
@@ -430,7 +281,7 @@ export default async function AdminBotEventsPanel({ statusFilter, eventTypeFilte
             Export CSV
           </Link>
           <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
-            Showing {events.length} of {eventCount} event{eventCount === 1 ? "" : "s"} · Page {currentPage} of {totalPages}
+            Showing {events.length} of {eventCount} event{eventCount === 1 ? "" : "s"} - Page {currentPage} of {totalPages}
           </p>
         </div>
       </div>
@@ -461,7 +312,7 @@ export default async function AdminBotEventsPanel({ statusFilter, eventTypeFilte
                   <StatusBadge status={event.status} />
                   <div className="min-w-0">
                     <p className="truncate font-black" style={{ color: "var(--asc-fg-0)" }}>{event.type}</p>
-                    <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>{event.entityType || "event"} · {shortenId(event.entityId)}</p>
+                    <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>{event.entityType || "event"} - {shortenId(event.entityId)}</p>
                   </div>
                   <p className="text-sm" style={{ color: "var(--asc-fg-0)" }}>{event.attempts}/{event.maxAttempts}</p>
                   <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>{formatDate(event.createdAt)}</p>

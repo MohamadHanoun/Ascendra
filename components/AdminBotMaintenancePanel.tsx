@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import AdminConfirmSubmitButton from "@/components/AdminConfirmSubmitButton";
 import {
+  cleanupFailedCommandLogsMaintenanceInline,
   cleanupOldBotEventsMaintenanceInline,
   cleanupOldCommandLogsMaintenanceInline,
   cleanupOldFailedBotEventsMaintenanceInline,
@@ -22,18 +23,23 @@ function getCutoffDate(days: number) {
   return cutoffDate;
 }
 
-const toneStyleMap: Record<string, React.CSSProperties> = {
-  default: { borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" },
-  success: { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" },
-  danger: { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" },
-  info: { borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
-};
+function SummaryRow({ label, value, tone = "default" }: { label: string; value: number | string; tone?: "default" | "success" | "danger" | "info" }) {
+  const color =
+    tone === "success"
+      ? "var(--asc-green)"
+      : tone === "danger"
+        ? "var(--asc-live)"
+        : tone === "info"
+          ? "var(--asc-accent)"
+          : "var(--asc-fg-0)";
 
-function StatCard({ label, value, tone = "default" }: { label: string; value: number | string; tone?: "default" | "success" | "danger" | "info" }) {
   return (
-    <div className="border p-5" style={toneStyleMap[tone]}>
-      <p className="text-sm font-bold">{label}</p>
-      <p className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
+    <div
+      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-3"
+      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+    >
+      <p className="text-sm font-bold" style={{ color: "var(--asc-fg-3)" }}>{label}</p>
+      <p className="text-sm font-black tabular-nums" style={{ color }}>{value}</p>
     </div>
   );
 }
@@ -58,36 +64,55 @@ function DaysSelect({ name = "days", defaultValue = 30 }: { name?: string; defau
 }
 
 function MaintenanceActionCard({
-  title, description, defaultDays, buttonLabel, action, danger = false,
+  title,
+  description,
+  defaultDays = 30,
+  buttonLabel,
+  action,
+  danger = false,
+  showDays = true,
+  confirmTitle,
+  confirmDescription,
+  confirmLabel,
 }: {
-  title: string; description: string; defaultDays: number; buttonLabel: string;
-  action: (formData: FormData) => Promise<void>; danger?: boolean;
+  title: string;
+  description: string;
+  defaultDays?: number;
+  buttonLabel: string;
+  action: (formData: FormData) => Promise<void>;
+  danger?: boolean;
+  showDays?: boolean;
+  confirmTitle?: string;
+  confirmDescription?: string;
+  confirmLabel?: string;
 }) {
   return (
     <form
       action={action}
-      className="border p-6 shadow-2xl shadow-black/20"
-      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+      className="grid gap-4 border p-5 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-end"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
     >
-      <div className="mb-5">
+      <div>
         <h3 className="text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>{title}</h3>
         <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>{description}</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
-        <label className="grid gap-2">
-          <span className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-fg-3)" }}>Older than</span>
-          <DaysSelect defaultValue={defaultDays} />
-        </label>
+      <div className={showDays ? "grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end" : "flex items-end lg:justify-end"}>
+        {showDays && (
+          <label className="grid gap-2">
+            <span className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-fg-3)" }}>Older than</span>
+            <DaysSelect defaultValue={defaultDays} />
+          </label>
+        )}
 
         <AdminConfirmSubmitButton
           label={buttonLabel}
           danger={danger}
-          confirmTitle={danger ? "Delete old failed events?" : "Run maintenance cleanup?"}
-          confirmDescription={danger
+          confirmTitle={confirmTitle || (danger ? "Delete old failed events?" : "Run maintenance cleanup?")}
+          confirmDescription={confirmDescription || (danger
             ? "This will permanently delete old failed bot events based on the selected number of days. Use this only after reviewing old errors."
-            : "This will permanently delete old maintenance data based on the selected number of days. This action cannot be undone."}
-          confirmLabel={danger ? "Delete" : "Clean"}
+            : "This will permanently delete old maintenance data based on the selected number of days. This action cannot be undone.")}
+          confirmLabel={confirmLabel || (danger ? "Delete" : "Clean")}
         />
       </div>
     </form>
@@ -121,35 +146,43 @@ export default async function AdminBotMaintenancePanel() {
   return (
     <section className="grid gap-6">
       <div
-        className="border p-6 shadow-2xl shadow-black/20"
+        className="overflow-hidden border shadow-2xl shadow-black/20"
         style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
       >
-        <div className="mb-6">
-          <p className="mb-2 text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>Bot Maintenance</p>
-          <h2 className="text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>Database Maintenance</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
-            Clean old bot logs, command logs, and realtime events to keep the dashboard fast and the database lightweight.
-          </p>
+        <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>Bot maintenance</p>
+          <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>Cleanup status</h2>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <StatCard label="Bot Events" value={totalBotEvents} />
-          <StatCard label="Command Logs" value={totalCommandLogs} tone="info" />
-          <StatCard label="Realtime Events" value={totalRealtimeEvents} />
-          <StatCard label="Failed Events" value={failedBotEvents} tone="danger" />
+        <div className="grid lg:grid-cols-2">
+          <div>
+            <SummaryRow label="Bot events" value={totalBotEvents} />
+            <SummaryRow label="Queued" value={queuedBotEvents} tone="info" />
+            <SummaryRow label="Processing" value={processingBotEvents} tone="info" />
+            <SummaryRow label="Completed" value={completedBotEvents} tone="success" />
+            <SummaryRow label="Cancelled" value={cancelledBotEvents} />
+            <SummaryRow label="Failed" value={failedBotEvents} tone="danger" />
+          </div>
+          <div className="lg:border-l" style={{ borderColor: "var(--asc-line-soft)" }}>
+            <SummaryRow label="Old completed/cancelled events" value={oldCompletedBotEvents} />
+            <SummaryRow label="Old failed events" value={oldFailedBotEvents} tone="danger" />
+            <SummaryRow label="Command logs" value={totalCommandLogs} tone="info" />
+            <SummaryRow label="Old command logs" value={oldCommandLogs} />
+            <SummaryRow label="Realtime events" value={totalRealtimeEvents} />
+            <SummaryRow label="Old realtime events" value={oldRealtimeEvents} />
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Queued" value={queuedBotEvents} tone="info" />
-        <StatCard label="Processing" value={processingBotEvents} tone="info" />
-        <StatCard label="Completed" value={completedBotEvents} tone="success" />
-        <StatCard label="Cancelled" value={cancelledBotEvents} />
-        <StatCard label="Old Bot Events" value={oldCompletedBotEvents} />
-        <StatCard label="Old Failed" value={oldFailedBotEvents} tone="danger" />
-      </div>
+      <div
+        className="grid gap-4 border p-5 shadow-2xl shadow-black/20"
+        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+      >
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>Operations</p>
+          <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>Cleanup actions</h2>
+        </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
         <MaintenanceActionCard
           title="Clean old bot events"
           description="Deletes completed and cancelled bot events older than the selected number of days. Failed, queued, and processing events are preserved."
@@ -163,6 +196,17 @@ export default async function AdminBotMaintenancePanel() {
           defaultDays={30}
           buttonLabel="Clean command logs"
           action={cleanupOldCommandLogsMaintenanceInline}
+        />
+        <MaintenanceActionCard
+          title="Delete failed command logs"
+          description="Deletes failed Discord slash command logs after review."
+          buttonLabel="Delete failed logs"
+          action={cleanupFailedCommandLogsMaintenanceInline}
+          danger
+          showDays={false}
+          confirmTitle="Delete failed command logs?"
+          confirmDescription="This will permanently delete all failed command logs. Use this only after reviewing the errors."
+          confirmLabel="Delete"
         />
         <MaintenanceActionCard
           title="Clean old realtime events"

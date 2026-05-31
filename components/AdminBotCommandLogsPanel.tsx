@@ -1,10 +1,5 @@
 import type { Prisma } from "@prisma/client";
 import Link from "next/link";
-import AdminConfirmSubmitButton from "@/components/AdminConfirmSubmitButton";
-import {
-  deleteFailedSlashCommandLogsInline,
-  deleteOldSlashCommandLogsInline,
-} from "@/actions/adminBotCommandLogActions";
 import { prisma } from "@/lib/prisma";
 
 type AdminBotCommandLogsPanelProps = {
@@ -122,12 +117,7 @@ export default async function AdminBotCommandLogsPanel({ statusFilter, commandFi
 
   const filteredWhere = buildWhere({ statusFilter: normalizedStatus, commandFilter: normalizedCommand });
 
-  const [rawLogs, totalCount, completedCount, failedCount] = await Promise.all([
-    prisma.botEvent.findMany({ where: filteredWhere, orderBy: { createdAt: "desc" }, take: 500 }),
-    prisma.botEvent.count({ where: commandLogWhere }),
-    prisma.botEvent.count({ where: { AND: [commandLogWhere, { status: "completed" }] } }),
-    prisma.botEvent.count({ where: { AND: [commandLogWhere, { status: "failed" }] } }),
-  ]);
+  const rawLogs = await prisma.botEvent.findMany({ where: filteredWhere, orderBy: { createdAt: "desc" }, take: 500 });
 
   const filteredLogs = rawLogs.filter((log) => matchesUserFilter(log, normalizedUser));
   const totalFilteredPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
@@ -146,56 +136,13 @@ export default async function AdminBotCommandLogsPanel({ statusFilter, commandFi
             <h2 className="text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>Slash Command Logs</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>Review command usage, failures, location, options, and response time.</p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href={buildExportHref({ statusFilter: normalizedStatus, commandFilter: normalizedCommand, userFilter: normalizedUser })}
-              className="border px-4 py-3 text-sm font-black transition hover:opacity-90"
-              style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
-            >
-              Export CSV
-            </Link>
-            <form action={deleteOldSlashCommandLogsInline}>
-              <input type="hidden" name="days" value="30" />
-              <AdminConfirmSubmitButton
-                label="Clean 30+ days"
-                confirmTitle="Clean old command logs?"
-                confirmDescription="This will permanently delete command logs older than 30 days. Recent logs will remain available."
-                confirmLabel="Clean"
-                className="border px-4 py-3 text-sm font-black transition hover:opacity-90"
-                style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" } as React.CSSProperties}
-              />
-            </form>
-            <form action={deleteFailedSlashCommandLogsInline}>
-              <AdminConfirmSubmitButton
-                label="Delete failed logs"
-                danger
-                confirmTitle="Delete failed command logs?"
-                confirmDescription="This will permanently delete all failed command logs. Use this only if you already reviewed the errors."
-                confirmLabel="Delete"
-                className="border px-4 py-3 text-sm font-black transition hover:opacity-90"
-                style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" } as React.CSSProperties}
-              />
-            </form>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-4">
-          <div className="border p-5" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}>
-            <p className="text-sm font-bold" style={{ color: "var(--asc-fg-3)" }}>Total Logs</p>
-            <p className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{totalCount}</p>
-          </div>
-          <div className="border p-5" style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" }}>
-            <p className="text-sm font-bold" style={{ color: "var(--asc-green)" }}>Completed</p>
-            <p className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{completedCount}</p>
-          </div>
-          <div className="border p-5" style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" }}>
-            <p className="text-sm font-bold" style={{ color: "var(--asc-live)" }}>Failed</p>
-            <p className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{failedCount}</p>
-          </div>
-          <div className="border p-5" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}>
-            <p className="text-sm font-bold" style={{ color: "var(--asc-accent)" }}>Filtered</p>
-            <p className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>{filteredLogs.length}</p>
-          </div>
+          <Link
+            href={buildExportHref({ statusFilter: normalizedStatus, commandFilter: normalizedCommand, userFilter: normalizedUser })}
+            className="w-fit border px-4 py-3 text-sm font-black transition hover:opacity-90"
+            style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+          >
+            Export CSV
+          </Link>
         </div>
       </div>
 
@@ -302,7 +249,7 @@ export default async function AdminBotCommandLogsPanel({ statusFilter, commandFi
             {filteredLogs.length > pageSize && (
               <div className="mt-6 flex flex-col gap-3 pt-5 sm:flex-row sm:items-center sm:justify-between" style={{ borderTop: "1px solid var(--asc-line-soft)" }}>
                 <p className="text-sm font-bold" style={{ color: "var(--asc-fg-3)" }}>
-                  Page {safeCurrentPage} of {totalFilteredPages} · {filteredLogs.length} filtered logs
+                  Page {safeCurrentPage} of {totalFilteredPages} - {filteredLogs.length} filtered logs
                 </p>
                 <div className="flex flex-wrap gap-3">
                   {hasPreviousPage ? (

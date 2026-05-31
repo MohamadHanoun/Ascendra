@@ -1,32 +1,30 @@
-"use client";
-
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export type AdminBotDashboardSection =
   | "overview"
-  | "messages"
-  | "tournaments"
+  | "queue"
   | "events"
   | "commands"
-  | "maintenance"
+  | "messages"
+  | "tournaments"
   | "settings"
-  | "invite";
+  | "maintenance";
 
-const tabs: Array<{
+const sections: Array<{
   id: AdminBotDashboardSection;
   label: string;
 }> = [
   { id: "overview", label: "Overview" },
-  { id: "messages", label: "Messages" },
-  { id: "tournaments", label: "Tournaments" },
+  { id: "queue", label: "Queue" },
   { id: "events", label: "Events" },
   { id: "commands", label: "Commands" },
-  { id: "maintenance", label: "Maintenance" },
+  { id: "messages", label: "Messages" },
+  { id: "tournaments", label: "Tournaments" },
   { id: "settings", label: "Settings" },
-  { id: "invite", label: "Invite" },
+  { id: "maintenance", label: "Maintenance" },
 ];
 
-function getTabHref(section: AdminBotDashboardSection) {
+function getSectionHref(section: AdminBotDashboardSection) {
   if (section === "overview") return "/admin/bot";
   return `/admin/bot?botSection=${section}`;
 }
@@ -36,38 +34,41 @@ export default function AdminBotDashboardTabs({
 }: {
   activeSection: AdminBotDashboardSection;
 }) {
-  const router = useRouter();
-
-  function goToSection(section: AdminBotDashboardSection) {
-    router.push(getTabHref(section));
-  }
-
   return (
-    <nav
-      className="relative z-[9999] border p-2 shadow-2xl shadow-black/30 backdrop-blur-xl"
+    <aside
+      className="relative z-[9999] border shadow-2xl shadow-black/30 backdrop-blur-xl lg:sticky lg:top-24"
       style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-nav-bg)" }}
     >
-      <div className="flex flex-wrap gap-2">
-        {tabs.map((tab) => {
-          const active = activeSection === tab.id;
+      <div className="px-4 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+        <p
+          className="text-xs font-black uppercase tracking-[0.16em]"
+          style={{ color: "var(--asc-accent)" }}
+        >
+          Control center
+        </p>
+      </div>
 
+      <nav className="grid gap-1 p-2" aria-label="Bot dashboard sections">
+        {sections.map((section) => {
+          const active = activeSection === section.id;
           return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => goToSection(tab.id)}
-              className="relative z-[9999] inline-flex cursor-pointer px-4 py-3 text-sm font-black transition hover:opacity-90"
+            <Link
+              key={section.id}
+              href={getSectionHref(section.id)}
+              scroll={false}
+              aria-current={active ? "page" : undefined}
+              className="relative z-[9999] flex px-4 py-3 text-sm font-black transition hover:opacity-90"
               style={
                 active
                   ? { background: "var(--asc-accent-2)", color: "var(--asc-on-accent)" }
                   : { color: "var(--asc-fg-3)" }
               }
             >
-              {tab.label}
-            </button>
+              {section.label}
+            </Link>
           );
         })}
-      </div>
-    </nav>
+      </nav>
+    </aside>
   );
 }
