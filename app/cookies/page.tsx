@@ -333,6 +333,7 @@ export default async function CookiesPage() {
       lastUpdated={messages.page.lastUpdated}
       effectiveDate={messages.page.effectiveDate}
       sections={messages.sections}
+      activePath="/cookies"
     />
   );
 }

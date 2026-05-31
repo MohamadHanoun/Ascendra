@@ -552,6 +552,7 @@ export default async function PrivacyPage() {
       lastUpdated={messages.page.lastUpdated}
       effectiveDate={messages.page.effectiveDate}
       sections={messages.sections}
+      activePath="/privacy"
     />
   );
 }

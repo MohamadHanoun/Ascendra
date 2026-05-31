@@ -18,6 +18,7 @@ type LegalPolicyPageProps = {
   lastUpdated: string;
   effectiveDate: string;
   sections: LegalSection[];
+  activePath?: string;
 };
 
 type LegalPolicyMessages = {
@@ -63,20 +64,53 @@ const legalPolicyMessages: Record<Locale, LegalPolicyMessages> = {
   },
 };
 
-function LegalPageTabs({ pages }: { pages: LegalPolicyMessages["pages"] }) {
+function LegalPageTabs({
+  pages,
+  activePath = "",
+}: {
+  pages: LegalPolicyMessages["pages"];
+  activePath?: string;
+}) {
   return (
-    <nav className="flex flex-wrap gap-2 pb-5" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-      {pages.map((page) => (
-        <a
-          key={page.href}
-          href={page.href}
-          className="border px-4 py-2 text-sm font-bold transition"
-          style={{ border: "1px solid var(--asc-line)", background: "var(--asc-card-muted)", color: "var(--asc-fg-2)" }}
-        >
-          {page.label}
-        </a>
-      ))}
-    </nav>
+    <div className="mb-8 pb-5" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
+      <nav
+        className="inline-flex flex-wrap overflow-hidden"
+        style={{
+          border: "1px solid var(--asc-line-soft)",
+          background: "var(--asc-bg-1)",
+        }}
+      >
+        {pages.map((page, index) => {
+          const isActive = activePath === page.href;
+          return (
+            <a
+              key={page.href}
+              href={page.href}
+              aria-current={isActive ? "page" : undefined}
+              className="px-5 py-2.5 text-xs font-black uppercase tracking-[0.1em] transition"
+              style={{
+                ...(index > 0
+                  ? { borderLeft: "1px solid var(--asc-line-soft)" }
+                  : {}),
+                ...(isActive
+                  ? {
+                      background: "var(--asc-accent)",
+                      color: "#0f0e0c",
+                      fontWeight: 900,
+                      opacity: 1,
+                    }
+                  : {
+                      background: "transparent",
+                      color: "var(--asc-fg-2)",
+                    }),
+              }}
+            >
+              {page.label}
+            </a>
+          );
+        })}
+      </nav>
+    </div>
   );
 }
 
@@ -190,6 +224,7 @@ export default async function LegalPolicyPage({
   lastUpdated,
   effectiveDate,
   sections,
+  activePath,
 }: LegalPolicyPageProps) {
   const locale = await getLocale();
   const messages = legalPolicyMessages[locale];
@@ -258,7 +293,7 @@ export default async function LegalPolicyPage({
           <TableOfContents sections={sections} label={messages.contents} />
 
           <article className="mx-auto w-full max-w-[980px]">
-            <LegalPageTabs pages={messages.pages} />
+            <LegalPageTabs pages={messages.pages} activePath={activePath} />
 
             <div className="mt-4">
               {sections.map((section, index) => (

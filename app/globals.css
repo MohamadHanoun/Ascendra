@@ -946,8 +946,6 @@ article.overflow-hidden[class*="border"]::before {
   color: #151412;
 }
 
-[data-asc-theme="light"] .asc-public-page nav [aria-current="page"],
-[data-asc-theme="light"] .asc-public-page nav [data-active="true"],
 [data-asc-theme="light"] .asc-public-page .asc-navbar [aria-current="page"],
 [data-asc-theme="light"] .asc-public-page .asc-navbar [data-active="true"] {
   color: #9a6a38 !important;

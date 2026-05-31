@@ -590,6 +590,7 @@ export default async function TermsPage() {
       lastUpdated={messages.page.lastUpdated}
       effectiveDate={messages.page.effectiveDate}
       sections={messages.sections}
+      activePath="/terms"
     />
   );
 }
