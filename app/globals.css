@@ -517,8 +517,8 @@ article.overflow-hidden[class*="border"]::before {
   --asc-code-surface: rgba(189, 180, 166, 0.38);
   --asc-modal-backdrop: rgba(21, 20, 18, 0.55);
   --asc-admin-ambient: radial-gradient(circle at top left, rgba(154, 106, 56, 0.12) 0%, transparent 32%), radial-gradient(circle at top right, rgba(31, 36, 40, 0.08) 0%, transparent 32%);
-  --asc-admin-hero-overlay: linear-gradient(90deg, rgba(216, 210, 196, 0.80) 0%, rgba(216, 210, 196, 0.62) 24%, rgba(216, 210, 196, 0.22) 48%, rgba(216, 210, 196, 0.00) 76%, rgba(216, 210, 196, 0.00) 100%);
-  --asc-admin-hero-bottom: linear-gradient(to bottom, rgba(216, 210, 196, 0) 0%, rgba(216, 210, 196, 0.22) 100%);
+  --asc-admin-hero-overlay: linear-gradient(90deg, rgba(216, 210, 196, 0.96) 0%, rgba(216, 210, 196, 0.88) 26%, rgba(216, 210, 196, 0.60) 48%, rgba(216, 210, 196, 0.24) 72%, rgba(216, 210, 196, 0.10) 100%);
+  --asc-admin-hero-bottom: linear-gradient(to bottom, rgba(216, 210, 196, 0) 0%, var(--asc-bg-0) 100%);
   --asc-image-scrim: linear-gradient(to bottom, rgba(21, 20, 18, 0.03), rgba(21, 20, 18, 0.18));
   --asc-bg: #d8d2c4;
   --asc-bg-soft: #e6dfd2;
@@ -762,6 +762,35 @@ article.overflow-hidden[class*="border"]::before {
   color: var(--asc-fg-1);
 }
 
+.asc-admin-page.asc-ambient::before,
+.asc-admin-page > .pointer-events-none.fixed.inset-0 {
+  background: var(--asc-admin-ambient);
+}
+
+.asc-admin-hero {
+  background:
+    linear-gradient(180deg, var(--asc-bg-1) 0%, var(--asc-bg-0) 100%);
+  isolation: isolate;
+}
+
+.asc-admin-hero-image {
+  opacity: 0.58;
+  filter: saturate(0.95) contrast(1.06) brightness(0.72);
+  mix-blend-mode: normal;
+  transform: scale(1.01);
+  transform-origin: center;
+}
+
+.asc-admin-hero-overlay {
+  background: var(--asc-admin-hero-overlay);
+  z-index: 1;
+}
+
+.asc-admin-hero-bottom {
+  background: var(--asc-admin-hero-bottom);
+  z-index: 2;
+}
+
 [data-asc-theme="light"] .asc-admin-page.asc-ambient::before,
 [data-asc-theme="light"] .asc-admin-page > .pointer-events-none.fixed.inset-0 {
   background: var(--asc-admin-ambient) !important;
@@ -769,29 +798,23 @@ article.overflow-hidden[class*="border"]::before {
   opacity: 0.42 !important;
 }
 
-[data-asc-theme="light"] .asc-admin-page [style*="admin-hero.webp"] {
-  opacity: 1 !important;
-  filter: saturate(1.08) contrast(1.08) brightness(0.96) !important;
-  mix-blend-mode: normal !important;
+[data-asc-theme="light"] .asc-admin-hero {
+  background:
+    linear-gradient(180deg, #d8d2c4 0%, var(--asc-bg-0) 100%);
 }
 
-[data-asc-theme="light"] .asc-admin-page [style*="admin-hero.webp"] + div {
-  background: linear-gradient(
-    90deg,
-    rgba(216, 210, 196, 0.80) 0%,
-    rgba(216, 210, 196, 0.62) 24%,
-    rgba(216, 210, 196, 0.22) 48%,
-    rgba(216, 210, 196, 0.00) 76%,
-    rgba(216, 210, 196, 0.00) 100%
-  ) !important;
+[data-asc-theme="light"] .asc-admin-hero-image {
+  opacity: 0.46 !important;
+  filter: grayscale(0.42) sepia(0.12) saturate(0.58) contrast(1.06) brightness(1.02) !important;
+  mix-blend-mode: multiply !important;
 }
 
-[data-asc-theme="light"] .asc-admin-page [style*="admin-hero.webp"] + div + div {
-  background: linear-gradient(
-    180deg,
-    rgba(216, 210, 196, 0) 0%,
-    rgba(216, 210, 196, 0.22) 100%
-  ) !important;
+[data-asc-theme="light"] .asc-admin-hero-overlay {
+  background: var(--asc-admin-hero-overlay) !important;
+}
+
+[data-asc-theme="light"] .asc-admin-hero-bottom {
+  background: var(--asc-admin-hero-bottom) !important;
 }
 
 [data-asc-theme="light"] .asc-admin-page section[class*="min-h"] h1,

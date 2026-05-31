@@ -19,7 +19,9 @@ import AdminTabNavigation from "@/components/AdminTabNavigation";
 import AdminMatchesPanel from "@/components/AdminMatchesPanel";
 import AdminTeamReview from "@/components/AdminTeamReview";
 import AdminToast from "@/components/AdminToast";
-import AdminTournamentWizard, { type TournamentDefaultValues } from "@/components/AdminTournamentWizard";
+import AdminTournamentWizard, {
+  type TournamentDefaultValues,
+} from "@/components/AdminTournamentWizard";
 import AdminTournamentList from "@/components/AdminTournamentList";
 import { DiscordLoginButton, LogoutButton } from "@/components/AuthButtons";
 import Footer from "@/components/Footer";
@@ -162,11 +164,19 @@ async function getAdminOverview(): Promise<AdminOverviewItem[]> {
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+      <p
+        className="text-[11px] font-black uppercase tracking-[0.14em]"
+        style={{ color: "var(--asc-fg-3)" }}
+      >
         {label}
       </p>
 
-      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
+      <p
+        className="mt-1 text-2xl font-black"
+        style={{ color: "var(--asc-fg-0)" }}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -184,7 +194,9 @@ function AdminAccessShell({
   description: string;
   children: ReactNode;
 }) {
-  const labelStyle: React.CSSProperties = { color: tone === "red" ? "var(--asc-live)" : "var(--asc-accent)" };
+  const labelStyle: React.CSSProperties = {
+    color: tone === "red" ? "var(--asc-live)" : "var(--asc-accent)",
+  };
 
   return (
     <main
@@ -193,13 +205,15 @@ function AdminAccessShell({
     >
       <Navbar />
 
-      <section className="relative min-h-[520px] overflow-hidden">
+      <section className="asc-admin-hero relative min-h-[520px] overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="asc-admin-hero-image absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage: 'url("/images/backgrounds/admin-hero.webp")',
           }}
         />
+        <div className="asc-admin-hero-overlay pointer-events-none absolute inset-0" />
+        <div className="asc-admin-hero-bottom pointer-events-none absolute inset-x-0 bottom-0 h-32" />
 
         <div className="relative z-10 mx-auto flex min-h-[520px] max-w-[820px] flex-col items-center justify-center px-6 pb-24 pt-20 text-center lg:px-10">
           <p
@@ -392,13 +406,24 @@ async function renderAdminTab(
     <section className="mx-auto grid max-w-[1440px] gap-6 px-6 pb-16 lg:px-10">
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
+          <p
+            className="text-sm font-black uppercase tracking-[0.18em]"
+            style={{ color: "var(--asc-accent)" }}
+          >
             Modules
           </p>
 
-          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>Admin modules</h2>
+          <h2
+            className="mt-2 text-3xl font-black"
+            style={{ color: "var(--asc-fg-0)" }}
+          >
+            Admin modules
+          </h2>
 
-          <p className="mt-3 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
+          <p
+            className="mt-3 max-w-3xl text-sm leading-6"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
             Connected admin tools currently available in Ascendra.
           </p>
         </div>
@@ -412,7 +437,10 @@ async function renderAdminTab(
 
       <section
         className="overflow-hidden border shadow-2xl"
-        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+        style={{
+          borderColor: "var(--asc-line-soft)",
+          background: "var(--asc-bg-1)",
+        }}
       >
         <div>
           {adminModules.map((module) => (
@@ -497,13 +525,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     >
       <Navbar />
 
-      <section className="relative min-h-[430px] overflow-hidden">
+      <section className="asc-admin-hero relative min-h-[430px] overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="asc-admin-hero-image absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage: 'url("/images/backgrounds/admin-hero.webp")',
           }}
         />
+        <div className="asc-admin-hero-overlay pointer-events-none absolute inset-0" />
+        <div className="asc-admin-hero-bottom pointer-events-none absolute inset-x-0 bottom-0 h-32" />
 
         <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
           <p
