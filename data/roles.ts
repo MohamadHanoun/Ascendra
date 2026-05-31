@@ -7,19 +7,19 @@ export const serverRoles = [
   },
   {
     name: "Developer",
-    color: "text-cyan-300",
+    color: "text-amber-400",
     description:
       "Works on the Ascendra website, future Discord bot features, XP system, database tools, and technical improvements.",
   },
   {
     name: "Admin",
-    color: "text-purple-300",
+    color: "text-amber-300",
     description:
       "Manages the server, supports the staff team, handles important decisions, and keeps the community organized.",
   },
   {
     name: "Moderator",
-    color: "text-blue-300",
+    color: "text-stone-300",
     description:
       "Helps keep the server safe, answers members, and makes sure the rules are followed.",
   },

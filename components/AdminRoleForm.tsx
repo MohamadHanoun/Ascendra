@@ -31,7 +31,7 @@ export default function AdminRoleForm() {
 
             <label className="grid gap-2">
               <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>Color</span>
-              <input name="color" type="color" required defaultValue="#8b5cf6" className="h-[50px] w-full cursor-pointer border p-2 outline-none transition" style={inputStyle} />
+              <input name="color" type="color" required defaultValue="#b8893d" className="h-[50px] w-full cursor-pointer border p-2 outline-none transition" style={inputStyle} />
             </label>
           </div>
 

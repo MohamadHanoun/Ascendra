@@ -154,11 +154,11 @@ export default function AdminRoleListClient({
                         style={inputStyle}
                       >
                         <option value="text-red-300">Red</option>
-                        <option value="text-purple-300">Purple</option>
-                        <option value="text-blue-300">Blue</option>
-                        <option value="text-cyan-300">Cyan</option>
+                        <option value="text-amber-300">Bronze</option>
+                        <option value="text-amber-400">Amber</option>
                         <option value="text-yellow-300">Yellow</option>
                         <option value="text-green-300">Green</option>
+                        <option value="text-stone-300">Sand</option>
                         <option value="text-gray-300">Gray</option>
                       </select>
                     </div>

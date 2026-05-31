@@ -78,7 +78,7 @@ function Notice({ notice }: { notice: AdminRoleActionResult | null }) {
 
 function normalizeColor(color: string) {
   if (/^#[0-9a-fA-F]{6}$/.test(color)) return color;
-  return "#8b5cf6";
+  return "#b8893d";
 }
 
 function moveItem(items: RoleItem[], fromIndex: number, toIndex: number) {

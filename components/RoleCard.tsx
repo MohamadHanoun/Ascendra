@@ -9,7 +9,7 @@ function normalizeColor(color: string) {
     return color;
   }
 
-  return "#8b5cf6";
+  return "#b8893d";
 }
 
 export default function RoleCard({ name, color, description }: RoleCardProps) {
