@@ -1,21 +1,11 @@
 import { NextResponse } from "next/server";
 
+import { isBotAuthorized } from "@/lib/botAuth";
 import { prisma } from "@/lib/prisma";
 import { cleanupOldRealtimeEvents, createRealtimeEvent } from "@/lib/realtime";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function isAuthorized(request: Request) {
-  const authHeader = request.headers.get("authorization");
-
-  if (!authHeader?.startsWith("Bearer ")) {
-    return false;
-  }
-
-  const token = authHeader.replace("Bearer ", "");
-
-  return token === process.env.BOT_API_TOKEN;
-}
 
 async function upsertSetting(key: string, value: string, description: string) {
   await prisma.serverSetting.upsert({
@@ -144,7 +134,7 @@ function getSafeSlashCommands(value: unknown) {
 }
 
 export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
+  if (!isBotAuthorized(request)) {
     return NextResponse.json(
       {
         ok: false,

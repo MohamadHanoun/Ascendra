@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { isBotAuthorized } from "@/lib/botAuth";
 import { createRealtimeEvent } from "@/lib/realtime";
 import { prisma } from "@/lib/prisma";
 
@@ -19,17 +20,6 @@ type SlashCommandLogBody = {
   latencyMs?: number;
 };
 
-function isAuthorized(request: Request) {
-  const authHeader = request.headers.get("authorization");
-
-  if (!authHeader?.startsWith("Bearer ")) {
-    return false;
-  }
-
-  const token = authHeader.replace("Bearer ", "");
-
-  return token === process.env.BOT_API_TOKEN;
-}
 
 function cleanValue(value: unknown, fallback = "-") {
   const normalized = String(value || "").trim();
@@ -58,7 +48,7 @@ function cleanStatus(value: unknown): "completed" | "failed" {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  if (!isBotAuthorized(request)) {
     return NextResponse.json(
       {
         success: false,

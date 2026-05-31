@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isBotAuthorized } from "@/lib/botAuth";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
 
@@ -10,17 +11,6 @@ const MAX_ATTEMPTS = 3;
 const EVENTS_PER_POLL = 3;
 const STALE_PROCESSING_SECONDS = 45;
 
-function isAuthorized(request: Request) {
-  const authHeader = request.headers.get("authorization");
-
-  if (!authHeader?.startsWith("Bearer ")) {
-    return false;
-  }
-
-  const token = authHeader.replace("Bearer ", "");
-
-  return token === process.env.BOT_API_TOKEN;
-}
 
 function getStaleProcessingDate() {
   const date = new Date();
@@ -100,7 +90,7 @@ async function recoverStaleProcessingEvents() {
 }
 
 export async function GET(request: Request) {
-  if (!isAuthorized(request)) {
+  if (!isBotAuthorized(request)) {
     return NextResponse.json(
       {
         ok: false,

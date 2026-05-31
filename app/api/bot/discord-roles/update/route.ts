@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+import { isBotAuthorized } from "@/lib/botAuth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -44,26 +46,6 @@ function badRequest(message: string) {
   );
 }
 
-function getBearerToken(request: Request) {
-  const header = request.headers.get("authorization") || "";
-
-  if (!header.startsWith("Bearer ")) {
-    return "";
-  }
-
-  return header.slice("Bearer ".length).trim();
-}
-
-function requireBotAccess(request: Request) {
-  const expectedToken = process.env.BOT_API_TOKEN;
-  const providedToken = getBearerToken(request);
-
-  if (!expectedToken || !providedToken) {
-    return false;
-  }
-
-  return providedToken === expectedToken;
-}
 
 function normalizeString(value: unknown) {
   if (typeof value !== "string") {
@@ -74,7 +56,7 @@ function normalizeString(value: unknown) {
 }
 
 export async function POST(request: Request) {
-  if (!requireBotAccess(request)) {
+  if (!isBotAuthorized(request)) {
     return unauthorized();
   }
 

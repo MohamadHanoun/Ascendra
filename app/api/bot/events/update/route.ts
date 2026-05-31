@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isBotAuthorized } from "@/lib/botAuth";
 import { createRealtimeEvent } from "@/lib/realtime";
 import { prisma } from "@/lib/prisma";
 
@@ -8,17 +9,6 @@ export const dynamic = "force-dynamic";
 
 type JsonRecord = Record<string, unknown>;
 
-function isAuthorized(request: Request) {
-  const authHeader = request.headers.get("authorization");
-
-  if (!authHeader?.startsWith("Bearer ")) {
-    return false;
-  }
-
-  const token = authHeader.replace("Bearer ", "");
-
-  return token === process.env.BOT_API_TOKEN;
-}
 
 function isFinalStatus(status: string) {
   return (
@@ -233,7 +223,7 @@ async function syncRegistrationStatus(params: {
 }
 
 export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
+  if (!isBotAuthorized(request)) {
     return NextResponse.json(
       {
         ok: false,
@@ -257,6 +247,20 @@ export async function POST(request: Request) {
       {
         ok: false,
         error: "Missing fields",
+      },
+      {
+        status: 400,
+      },
+    );
+  }
+
+  const ALLOWED_STATUSES = new Set(["completed", "failed", "cancelled"]);
+
+  if (!ALLOWED_STATUSES.has(status)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Invalid status.",
       },
       {
         status: 400,

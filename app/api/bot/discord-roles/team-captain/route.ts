@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isBotAuthorized } from "@/lib/botAuth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -8,22 +9,6 @@ export const dynamic = "force-dynamic";
 const activeTournamentStatuses = ["open", "upcoming", "active"];
 const approvedRegistrationStatuses = ["approved", "accepted"];
 
-function getBearerToken(request: Request) {
-  const header = request.headers.get("authorization") || "";
-
-  if (!header.startsWith("Bearer ")) {
-    return "";
-  }
-
-  return header.slice("Bearer ".length).trim();
-}
-
-function requireBotAccess(request: Request) {
-  const expectedToken = process.env.BOT_API_TOKEN;
-  const providedToken = getBearerToken(request);
-
-  return Boolean(expectedToken && providedToken && providedToken === expectedToken);
-}
 
 function unauthorized() {
   return NextResponse.json(
@@ -38,7 +23,7 @@ function unauthorized() {
 }
 
 export async function GET(request: Request) {
-  if (!requireBotAccess(request)) {
+  if (!isBotAuthorized(request)) {
     return unauthorized();
   }
 

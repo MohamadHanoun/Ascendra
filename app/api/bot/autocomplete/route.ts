@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { isBotAuthorized } from "@/lib/botAuth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -10,17 +11,6 @@ type AutocompleteOption = {
   value: string;
 };
 
-function isAuthorized(request: Request) {
-  const authHeader = request.headers.get("authorization");
-
-  if (!authHeader?.startsWith("Bearer ")) {
-    return false;
-  }
-
-  const token = authHeader.replace("Bearer ", "");
-
-  return token === process.env.BOT_API_TOKEN;
-}
 
 function normalizeQuery(value: string | null) {
   return String(value || "").trim();
@@ -35,7 +25,7 @@ function compactLabel(value: string, maxLength = 100) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  if (!isBotAuthorized(request)) {
     return NextResponse.json(
       {
         success: false,

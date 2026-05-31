@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+import { isBotAuthorized } from "@/lib/botAuth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -24,26 +26,6 @@ function unauthorized() {
   );
 }
 
-function getBearerToken(request: Request) {
-  const header = request.headers.get("authorization") || "";
-
-  if (!header.startsWith("Bearer ")) {
-    return "";
-  }
-
-  return header.slice("Bearer ".length).trim();
-}
-
-function requireBotAccess(request: Request) {
-  const expectedToken = process.env.BOT_API_TOKEN;
-  const providedToken = getBearerToken(request);
-
-  if (!expectedToken || !providedToken) {
-    return false;
-  }
-
-  return providedToken === expectedToken;
-}
 
 function getBotAction(status: string) {
   if (status === "pending_create" || status === "failed") {
@@ -58,7 +40,7 @@ function getBotAction(status: string) {
 }
 
 export async function GET(request: Request) {
-  if (!requireBotAccess(request)) {
+  if (!isBotAuthorized(request)) {
     return unauthorized();
   }
 
