@@ -21,7 +21,7 @@ function getAutocompleteEntity(commandName: string) {
     return "team";
   }
 
-  if (commandName === "match") {
+  if (commandName === "match" || commandName === "checkin") {
     return "match";
   }
 

@@ -251,6 +251,17 @@ type BotTeamDetails = {
   }>;
 };
 
+type BotCheckInResult = {
+  ok: boolean;
+  alreadyCheckedIn: boolean;
+  message: string;
+  matchLabel: string | null;
+  tournamentTitle: string | null;
+  tournamentId: string | null;
+  matchId: string | null;
+  teamName: string | null;
+};
+
 type BotMatchDetails = {
   id: string;
   tournamentId: string;
@@ -464,6 +475,38 @@ async function fetchBotJsonWithTimeout(url: string, timeoutMs: number) {
     }
 
     return response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function postBotJsonWithTimeout(
+  url: string,
+  body: Record<string, unknown>,
+  timeoutMs: number,
+) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const botApiToken = process.env.BOT_API_TOKEN || "";
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${botApiToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      return response.json().catch(() => null);
+    }
+
+    return response.json();
+  } catch {
+    return null;
   } finally {
     clearTimeout(timeout);
   }
@@ -938,6 +981,26 @@ async function fetchMatchLookup(
   return (data.match as BotMatchDetails) || null;
 }
 
+async function fetchMatchCheckIn(
+  ctx: SlashCommandContext,
+  matchId: string,
+  discordUserId: string,
+): Promise<BotCheckInResult | null> {
+  try {
+    const data = await postBotJsonWithTimeout(
+      `${ctx.siteUrl}/api/bot/match-checkin`,
+      { matchId, discordUserId },
+      ctx.apiTimeoutMs,
+    );
+
+    if (!data) return null;
+
+    return data as BotCheckInResult;
+  } catch {
+    return null;
+  }
+}
+
 function formatMatchStatus(status: string) {
   const normalized = String(status || "").toLowerCase();
 
@@ -1276,6 +1339,19 @@ export function getSlashCommands() {
       options: [
         {
           name: "query",
+          autocomplete: true,
+          description: "Match ID or tournament title.",
+          type: ApplicationCommandOptionType.String,
+          required: true,
+        },
+      ],
+    },
+    {
+      name: "checkin",
+      description: "Check in for a tournament match.",
+      options: [
+        {
+          name: "match",
           autocomplete: true,
           description: "Match ID or tournament title.",
           type: ApplicationCommandOptionType.String,
@@ -1830,6 +1906,100 @@ export async function handleSlashCommand(
         ),
       ],
     });
+
+    return;
+  }
+
+  if (commandName === "checkin") {
+    await deferCommand(interaction);
+
+    const matchId = String(interaction.options?.getString("match") || "").trim();
+    const discordUserId = String(interaction.user?.id || "").trim();
+
+    if (!matchId || !discordUserId) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("Check-in failed")
+        .setDescription("Ascendra could not complete check-in.")
+        .setTimestamp();
+
+      await replyToCommand(interaction, { embeds: [embed] });
+
+      return;
+    }
+
+    const result = await fetchMatchCheckIn(ctx, matchId, discordUserId);
+
+    if (!result) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("Check-in failed")
+        .setDescription("Ascendra could not complete check-in.")
+        .setTimestamp();
+
+      await replyToCommand(interaction, { embeds: [embed] });
+
+      return;
+    }
+
+    if (!result.ok) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("Check-in failed")
+        .setDescription(result.message || "Check-in failed.")
+        .setTimestamp();
+
+      const components =
+        result.tournamentId && result.matchId
+          ? [
+              buildLinkRow(
+                "Open match",
+                getSiteLink(
+                  ctx,
+                  `/tournaments/${result.tournamentId}/matches/${result.matchId}`,
+                ),
+              ),
+            ]
+          : [];
+
+      await replyToCommand(interaction, { embeds: [embed], components });
+
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(result.alreadyCheckedIn ? COLORS.warning : COLORS.success)
+      .setTitle(
+        result.alreadyCheckedIn ? "Already checked in" : "Check-in confirmed",
+      )
+      .addFields(
+        ...(result.matchLabel
+          ? [{ name: "Match", value: result.matchLabel, inline: true }]
+          : []),
+        ...(result.teamName
+          ? [{ name: "Team", value: result.teamName, inline: true }]
+          : []),
+        { name: "Status", value: result.alreadyCheckedIn ? "Already checked in" : "Confirmed", inline: true },
+        ...(result.tournamentTitle
+          ? [{ name: "Tournament", value: result.tournamentTitle, inline: false }]
+          : []),
+      )
+      .setTimestamp();
+
+    const components =
+      result.tournamentId && result.matchId
+        ? [
+            buildLinkRow(
+              "Open match",
+              getSiteLink(
+                ctx,
+                `/tournaments/${result.tournamentId}/matches/${result.matchId}`,
+              ),
+            ),
+          ]
+        : [];
+
+    await replyToCommand(interaction, { embeds: [embed], components });
 
     return;
   }
@@ -2426,7 +2596,7 @@ export async function handleSlashCommand(
         {
           name: "Tournaments",
           value:
-            "`/tournaments` List\n`/schedule` Schedule\n`/tournament` Details\n`/results` Results\n`/match` Match\n`/registrations` Registrations",
+            "`/tournaments` List\n`/schedule` Schedule\n`/tournament` Details\n`/results` Results\n`/match` Match\n`/checkin` Check-in\n`/registrations` Registrations",
           inline: true,
         },
         {
