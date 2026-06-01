@@ -252,12 +252,15 @@ type BotTeamDetails = {
 };
 
 const COLORS = {
-  success: 0x10b981,
-  error: 0xef4444,
-  info: 0x8b5cf6,
-  tournament: 0x7c3aed,
-  premium: 0x6d28d9,
-  deepPurple: 0x4c1d95,
+  brand: 0xb88746,
+  secondary: 0x6f5431,
+  success: 0x2f855a,
+  warning: 0xb7791f,
+  error: 0xb23a48,
+  info: 0xb88746,
+  tournament: 0xb88746,
+  premium: 0xb88746,
+  deepPurple: 0x6f5431,
 };
 
 const games = ["Overall", "Valorant", "League of Legends", "CS2", "Dota2"];
@@ -309,6 +312,20 @@ function formatUptime(value: number) {
   }
 
   return `${minutes}m`;
+}
+
+function formatLatency(interaction: any) {
+  const latency = Number(interaction.client?.ws?.ping);
+
+  if (!Number.isFinite(latency) || latency < 0) {
+    return "-";
+  }
+
+  return `${Math.round(latency)}ms`;
+}
+
+function getGuildLabel(interaction: any) {
+  return interaction.guild?.name || interaction.guildId || "Direct Message";
 }
 
 function isValidHttpUrl(value: unknown) {
@@ -625,7 +642,7 @@ function filterTournaments(
 
 function buildTournamentListDescription(tournaments: PublicTournament[]) {
   if (tournaments.length === 0) {
-    return "No tournaments available right now.";
+    return "No tournaments available.";
   }
 
   return tournaments
@@ -633,7 +650,7 @@ function buildTournamentListDescription(tournaments: PublicTournament[]) {
     .map((tournament, index) => {
       return [
         `**${index + 1}. ${tournament.title}**`,
-        `${tournament.game} · ${formatTournamentStatus(tournament.status)}`,
+        `${tournament.game} | ${formatTournamentStatus(tournament.status)}`,
         `Date: ${tournament.date || "-"}`,
         `Prize: ${tournament.prize || "-"}`,
       ].join("\n");
@@ -651,7 +668,7 @@ function buildScheduleDescription(tournaments: PublicTournament[]) {
     .map((tournament, index) => {
       return [
         `**${index + 1}. ${tournament.title}**`,
-        `${tournament.game} · ${formatTournamentStatus(tournament.status)}`,
+        `${tournament.game} | ${formatTournamentStatus(tournament.status)}`,
         `Date: ${tournament.date || "-"}`,
       ].join("\n");
     })
@@ -660,7 +677,7 @@ function buildScheduleDescription(tournaments: PublicTournament[]) {
 
 function buildAnnouncementsDescription(announcements: PublicAnnouncement[]) {
   if (announcements.length === 0) {
-    return "No announcements available right now.";
+    return "No announcements available.";
   }
 
   return announcements
@@ -677,7 +694,7 @@ function buildAnnouncementsDescription(announcements: PublicAnnouncement[]) {
 
 function buildRulesDescription(rules: PublicRule[]) {
   if (rules.length === 0) {
-    return "No active rules available right now.";
+    return "No active rules available.";
   }
 
   return rules
@@ -688,7 +705,7 @@ function buildRulesDescription(rules: PublicRule[]) {
 
 function buildStaffDescription(staff: PublicStaffMember[]) {
   if (staff.length === 0) {
-    return "No staff members available right now.";
+    return "No staff members available.";
   }
 
   return staff
@@ -696,7 +713,7 @@ function buildStaffDescription(staff: PublicStaffMember[]) {
     .map((member, index) => {
       return [
         `**${index + 1}. ${member.name}**`,
-        `${member.role} · ${member.status}`,
+        `${member.role} | ${member.status}`,
       ].join("\n");
     })
     .join("\n\n");
@@ -704,7 +721,7 @@ function buildStaffDescription(staff: PublicStaffMember[]) {
 
 function buildStatsDescription(stats: PublicStats) {
   if (stats.summary.length === 0) {
-    return "No stats available right now.";
+    return "No stats available.";
   }
 
   return stats.summary
@@ -715,7 +732,7 @@ function buildStatsDescription(stats: PublicStats) {
 
 function buildGameStatsDescription(stats: PublicStats) {
   if (stats.gameBreakdown.length === 0) {
-    return "No game stats available right now.";
+    return "No game stats available.";
   }
 
   return stats.gameBreakdown
@@ -723,7 +740,7 @@ function buildGameStatsDescription(stats: PublicStats) {
     .map((item) => {
       return [
         `**${item.game}**`,
-        `Tournaments: ${item.tournaments} · Results: ${item.results} · Points: ${item.points}`,
+        `Tournaments: ${item.tournaments} | Results: ${item.results} | Points: ${item.points}`,
       ].join("\n");
     })
     .join("\n\n");
@@ -751,7 +768,7 @@ function buildTournamentRows(
     rows.push(row);
   }
 
-  rows.push(buildLinkRow("Open Tournaments", getSiteLink(ctx, "/tournaments")));
+  rows.push(buildLinkRow("Tournaments", getSiteLink(ctx, "/tournaments")));
 
   return rows;
 }
@@ -791,7 +808,7 @@ async function fetchLeaderboard(
 function buildLeaderboardTitle(type: LeaderboardType, game: string) {
   const label = type === "teams" ? "Teams" : "Players";
 
-  return `${label} Leaderboard · ${game}`;
+  return `${label} Leaderboard | ${game}`;
 }
 
 function buildLeaderboardDescription(
@@ -799,7 +816,7 @@ function buildLeaderboardDescription(
   type: LeaderboardType,
 ) {
   if (entries.length === 0) {
-    return "No leaderboard results available right now.";
+    return "No leaderboard results available.";
   }
 
   return entries
@@ -807,19 +824,19 @@ function buildLeaderboardDescription(
     .map((entry) => {
       const name =
         type === "teams"
-          ? entry.name || "Unknown team"
-          : entry.username || "Unknown player";
+          ? entry.name || "Unnamed team"
+          : entry.username || "Unnamed player";
 
       const details =
         type === "teams"
-          ? `Leader: ${entry.leaderName || "-"} · Members: ${
+          ? `Leader: ${entry.leaderName || "-"} | Members: ${
               entry.membersCount ?? "-"
             }`
           : `Results: ${entry.tournamentResults}`;
 
       return [
-        `**#${entry.rank} — ${name}**`,
-        `${entry.tournamentPoints} pts · Best: ${formatPlacement(
+        `**#${entry.rank} - ${name}**`,
+        `${entry.tournamentPoints} pts | Best: ${formatPlacement(
           entry.bestPlacement,
         )}`,
         details,
@@ -904,7 +921,7 @@ function buildTeamDetailsDescription(team: BotTeamDetails) {
 
 function buildTeamRosterDescription(team: BotTeamDetails) {
   if (team.members.length === 0) {
-    return "No members found for this team.";
+    return "No members found.";
   }
 
   return team.members
@@ -912,7 +929,7 @@ function buildTeamRosterDescription(team: BotTeamDetails) {
     .map((member, index) => {
       return [
         `**${index + 1}. ${member.user.username}**`,
-        `Team role: ${member.role} · Site role: ${member.user.role}`,
+        `Team role: ${member.role} | Site role: ${member.user.role}`,
       ].join("\n");
     })
     .join("\n\n");
@@ -920,7 +937,7 @@ function buildTeamRosterDescription(team: BotTeamDetails) {
 
 function buildTeamRegistrationsDescription(team: BotTeamDetails) {
   if (team.registrations.length === 0) {
-    return "No tournament registrations found for this team.";
+    return "No tournament registrations found.";
   }
 
   return team.registrations
@@ -928,7 +945,7 @@ function buildTeamRegistrationsDescription(team: BotTeamDetails) {
     .map((registration, index) => {
       return [
         `**${index + 1}. ${registration.tournament.title}**`,
-        `${registration.tournament.game} · ${formatTournamentStatus(
+        `${registration.tournament.game} | ${formatTournamentStatus(
           registration.tournament.status,
         )}`,
         `Registration: ${formatRegistrationStatus(registration.status)}`,
@@ -939,15 +956,15 @@ function buildTeamRegistrationsDescription(team: BotTeamDetails) {
 
 function buildTeamResultsDescription(team: BotTeamDetails) {
   if (team.results.length === 0) {
-    return "No tournament results found for this team.";
+    return "No tournament results found.";
   }
 
   return team.results
     .slice(0, 8)
     .map((result) => {
       return [
-        `**#${result.placement} — ${result.tournament.title}**`,
-        `${result.tournament.game} · ${result.points} pts`,
+        `**#${result.placement} - ${result.tournament.title}**`,
+        `${result.tournament.game} | ${result.points} pts`,
       ].join("\n");
     })
     .join("\n\n");
@@ -967,7 +984,7 @@ function buildProfileDescription(profile: PlayerProfile) {
 
 function buildTeamsDescription(teams: PlayerProfileTeam[]) {
   if (teams.length === 0) {
-    return "No teams found for this player.";
+    return "No teams found.";
   }
 
   return teams
@@ -975,8 +992,8 @@ function buildTeamsDescription(teams: PlayerProfileTeam[]) {
     .map((team, index) => {
       return [
         `**${index + 1}. ${team.name}**`,
-        `${team.game} · ${formatTeamStatus(team.status)} · ${team.role}`,
-        `Members: ${team.membersCount} · Points: ${team.tournamentPoints} · Best: ${formatPlacement(
+        `${team.game} | ${formatTeamStatus(team.status)} | ${team.role}`,
+        `Members: ${team.membersCount} | Points: ${team.tournamentPoints} | Best: ${formatPlacement(
           team.bestPlacement,
         )}`,
       ].join("\n");
@@ -994,7 +1011,7 @@ function buildRegistrationsDescription(profile: PlayerProfile) {
     .map((registration, index) => {
       return [
         `**${index + 1}. ${registration.tournamentTitle}**`,
-        `${registration.tournamentGame} · ${formatTournamentStatus(
+        `${registration.tournamentGame} | ${formatTournamentStatus(
           registration.tournamentStatus,
         )}`,
         `Team: ${registration.teamName}`,
@@ -1020,7 +1037,7 @@ function buildTournamentDetailsDescription(tournament: BotTournamentDetails) {
     `Slots: **${summary.active}/${tournament.maxSlots}**`,
     `Prize: **${tournament.prize || "-"}**`,
     "",
-    `Approved: **${summary.approved}** · Pending: **${summary.pending}** · Total: **${summary.total}**`,
+    `Approved: **${summary.approved}** | Pending: **${summary.pending}** | Total: **${summary.total}**`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -1028,7 +1045,7 @@ function buildTournamentDetailsDescription(tournament: BotTournamentDetails) {
 
 function buildTournamentTeamsDescription(tournament: BotTournamentDetails) {
   if (tournament.teams.length === 0) {
-    return "No registered teams found.";
+    return "No registered teams.";
   }
 
   return tournament.teams
@@ -1036,7 +1053,7 @@ function buildTournamentTeamsDescription(tournament: BotTournamentDetails) {
     .map((team, index) => {
       return [
         `**${index + 1}. ${team.name}**`,
-        `Leader: ${team.leaderName} · Members: ${team.membersCount}`,
+        `Leader: ${team.leaderName} | Members: ${team.membersCount}`,
         `Status: ${formatRegistrationStatus(team.registrationStatus)}`,
       ].join("\n");
     })
@@ -1051,7 +1068,7 @@ function buildTournamentResultsDescription(tournament: BotTournamentDetails) {
   return tournament.results
     .slice(0, 8)
     .map((result) => {
-      return `**#${result.placement} — ${result.teamName}**\n${result.points} pts`;
+      return `**#${result.placement} - ${result.teamName}**\n${result.points} pts`;
     })
     .join("\n\n");
 }
@@ -1093,7 +1110,7 @@ export function getSlashCommands() {
   return [
     {
       name: "ascendra",
-      description: "Open AscendraHub.",
+      description: "Open Ascendra.",
     },
     {
       name: "about",
@@ -1306,7 +1323,7 @@ export function getSlashCommands() {
     },
     {
       name: "community",
-      description: "Open the Ascendra community page.",
+      description: "Open Ascendra community.",
     },
     {
       name: "status",
@@ -1328,13 +1345,13 @@ export async function handleSlashCommand(
   if (commandName === "ascendra") {
     const embed = new EmbedBuilder()
       .setColor(COLORS.premium)
-      .setTitle("AscendraHub")
-      .setDescription("Open the AscendraHub website.")
+      .setTitle("Ascendra")
+      .setDescription("Open the Ascendra platform.")
       .setTimestamp();
 
     await replyToCommand(interaction, {
       embeds: [embed],
-      components: [buildLinkRow("Open AscendraHub", getSiteLink(ctx))],
+      components: [buildLinkRow("Website", getSiteLink(ctx))],
     });
 
     return;
@@ -1346,9 +1363,9 @@ export async function handleSlashCommand(
       .setTitle("Ascendra")
       .setDescription(
         [
-          "Ascendra is a competitive gaming hub for tournaments, teams, rankings, and community events.",
+          "Premium esports tournaments, teams, rankings, and community updates.",
           "",
-          "Track tournaments, explore leaderboards, manage teams, and follow community updates from one place.",
+          "Built for organized competition and clean match visibility.",
         ].join("\n"),
       )
       .setTimestamp();
@@ -1371,7 +1388,7 @@ export async function handleSlashCommand(
     const embed = new EmbedBuilder()
       .setColor(COLORS.deepPurple)
       .setTitle("Ascendra Links")
-      .setDescription("Quick access to AscendraHub.")
+      .setDescription("Key Ascendra destinations.")
       .setTimestamp();
 
     await replyToCommand(interaction, {
@@ -1404,14 +1421,14 @@ export async function handleSlashCommand(
     const embed = new EmbedBuilder()
       .setColor(COLORS.premium)
       .setTitle("Ascendra Discord")
-      .setDescription("Join the Ascendra community.")
+      .setDescription("Join the official Ascendra Discord.")
       .setTimestamp();
 
     await replyToCommand(interaction, {
       embeds: [embed],
       components: [
         buildLinkRow(
-          isValidHttpUrl(inviteUrl) ? "Join Discord" : "Open Community",
+          isValidHttpUrl(inviteUrl) ? "Discord" : "Community",
           targetUrl,
         ),
       ],
@@ -1423,7 +1440,7 @@ export async function handleSlashCommand(
   if (commandName === "ping") {
     const embed = new EmbedBuilder()
       .setColor(COLORS.success)
-      .setTitle("Pong")
+      .setTitle("Bot Response")
       .addFields(
         {
           name: "Status",
@@ -1475,7 +1492,7 @@ export async function handleSlashCommand(
 
     const embed = new EmbedBuilder()
       .setColor(COLORS.tournament)
-      .setTitle(titleParts.join(" · "))
+      .setTitle(titleParts.join(" | "))
       .setDescription(buildTournamentListDescription(visibleTournaments))
       .setFooter({
         text:
@@ -1515,7 +1532,7 @@ export async function handleSlashCommand(
       .setTitle(
         selectedGame === "Overall"
           ? "Ascendra Schedule"
-          : `Ascendra Schedule · ${selectedGame}`,
+          : `Ascendra Schedule | ${selectedGame}`,
       )
       .setDescription(buildScheduleDescription(visibleTournaments))
       .setFooter({
@@ -1545,13 +1562,13 @@ export async function handleSlashCommand(
       const embed = new EmbedBuilder()
         .setColor(COLORS.error)
         .setTitle("Tournament not found")
-        .setDescription("No tournament matched your search.")
+        .setDescription("No tournament found.")
         .setTimestamp();
 
       await replyToCommand(interaction, {
         embeds: [embed],
         components: [
-          buildLinkRow("Open Tournaments", getSiteLink(ctx, "/tournaments")),
+          buildLinkRow("Tournaments", getSiteLink(ctx, "/tournaments")),
         ],
       });
 
@@ -1565,7 +1582,7 @@ export async function handleSlashCommand(
       .setFooter({
         text:
           tournaments.length > 1
-            ? `Showing best match · ${tournaments.length} matches found`
+            ? `Showing best match | ${tournaments.length} matches found`
             : "Tournament details",
       })
       .setTimestamp();
@@ -1585,13 +1602,13 @@ export async function handleSlashCommand(
       components: [
         buildTwoLinkRow(
           {
-            label: "Open Tournament",
+            label: "Tournament",
             url: getSiteLink(ctx, `/tournaments/${tournament.id}`),
           },
           tournament.discordAnnouncementUrl &&
             isValidHttpUrl(tournament.discordAnnouncementUrl)
             ? {
-                label: "Discord Message",
+                label: "Discord",
                 url: tournament.discordAnnouncementUrl,
               }
             : undefined,
@@ -1613,13 +1630,13 @@ export async function handleSlashCommand(
       const embed = new EmbedBuilder()
         .setColor(COLORS.error)
         .setTitle("Tournament not found")
-        .setDescription("No tournament matched your search.")
+        .setDescription("No tournament found.")
         .setTimestamp();
 
       await replyToCommand(interaction, {
         embeds: [embed],
         components: [
-          buildLinkRow("Open Tournaments", getSiteLink(ctx, "/tournaments")),
+          buildLinkRow("Tournaments", getSiteLink(ctx, "/tournaments")),
         ],
       });
 
@@ -1628,7 +1645,7 @@ export async function handleSlashCommand(
 
     const embed = new EmbedBuilder()
       .setColor(COLORS.info)
-      .setTitle(`${tournament.title} · Results`)
+      .setTitle(`${tournament.title} | Results`)
       .setDescription(buildTournamentResultsDescription(tournament))
       .setTimestamp();
 
@@ -1636,7 +1653,7 @@ export async function handleSlashCommand(
       embeds: [embed],
       components: [
         buildLinkRow(
-          "Open Tournament",
+          "Tournament",
           getSiteLink(ctx, `/tournaments/${tournament.id}`),
         ),
       ],
@@ -1683,7 +1700,7 @@ export async function handleSlashCommand(
 
     await replyToCommand(interaction, {
       embeds: [embed],
-      components: [buildLinkRow("Open Leaderboard", leaderboardUrl.toString())],
+      components: [buildLinkRow("Leaderboard", leaderboardUrl.toString())],
     });
 
     return;
@@ -1698,12 +1715,12 @@ export async function handleSlashCommand(
       const embed = new EmbedBuilder()
         .setColor(COLORS.error)
         .setTitle("Games unavailable")
-        .setDescription("Game stats are not available right now.")
+        .setDescription("Ascendra could not load game stats.")
         .setTimestamp();
 
       await replyToCommand(interaction, {
         embeds: [embed],
-        components: [buildLinkRow("Open Stats", getSiteLink(ctx, "/stats"))],
+        components: [buildLinkRow("Stats", getSiteLink(ctx, "/stats"))],
       });
 
       return;
@@ -1717,7 +1734,7 @@ export async function handleSlashCommand(
 
     await replyToCommand(interaction, {
       embeds: [embed],
-      components: [buildLinkRow("Open Stats", getSiteLink(ctx, "/stats"))],
+      components: [buildLinkRow("Stats", getSiteLink(ctx, "/stats"))],
     });
 
     return;
@@ -1733,13 +1750,13 @@ export async function handleSlashCommand(
       const embed = new EmbedBuilder()
         .setColor(COLORS.error)
         .setTitle("Profile not found")
-        .setDescription("This Discord user does not have an Ascendra profile.")
+        .setDescription("No Ascendra profile found.")
         .setTimestamp();
 
       await replyToCommand(interaction, {
         embeds: [embed],
         components: [
-          buildLinkRow("Open Profile", getSiteLink(ctx, "/profile")),
+          buildLinkRow("Profile", getSiteLink(ctx, "/profile")),
         ],
       });
 
@@ -1748,7 +1765,7 @@ export async function handleSlashCommand(
 
     const embed = new EmbedBuilder()
       .setColor(COLORS.premium)
-      .setTitle(`${profile.username} · Ascendra Profile`)
+      .setTitle(`${profile.username} | Ascendra Profile`)
       .setDescription(buildProfileDescription(profile))
       .setTimestamp();
 
@@ -1758,7 +1775,7 @@ export async function handleSlashCommand(
 
     await replyToCommand(interaction, {
       embeds: [embed],
-      components: [buildLinkRow("Open Profile", getSiteLink(ctx, "/profile"))],
+      components: [buildLinkRow("Profile", getSiteLink(ctx, "/profile"))],
     });
 
     return;
@@ -1774,13 +1791,13 @@ export async function handleSlashCommand(
       const embed = new EmbedBuilder()
         .setColor(COLORS.error)
         .setTitle("Teams not found")
-        .setDescription("This Discord user does not have an Ascendra profile.")
+        .setDescription("No Ascendra profile found.")
         .setTimestamp();
 
       await replyToCommand(interaction, {
         embeds: [embed],
         components: [
-          buildLinkRow("Open Profile", getSiteLink(ctx, "/profile")),
+          buildLinkRow("Profile", getSiteLink(ctx, "/profile")),
         ],
       });
 
@@ -1800,13 +1817,13 @@ export async function handleSlashCommand(
         const embed = new EmbedBuilder()
           .setColor(COLORS.error)
           .setTitle("Team not found")
-          .setDescription("No team matched your search.")
+          .setDescription("No team found.")
           .setTimestamp();
 
         await replyToCommand(interaction, {
           embeds: [embed],
           components: [
-            buildLinkRow("Open Profile", getSiteLink(ctx, "/profile")),
+            buildLinkRow("Profile", getSiteLink(ctx, "/profile")),
           ],
         });
 
@@ -1815,12 +1832,12 @@ export async function handleSlashCommand(
 
       const embed = new EmbedBuilder()
         .setColor(COLORS.tournament)
-        .setTitle(`${team.name} · Team Details`)
+        .setTitle(`${team.name} | Team Details`)
         .setDescription(buildTeamDetailsDescription(team))
         .setFooter({
           text:
             teams.length > 1
-              ? `Showing best match · ${teams.length} matches found`
+              ? `Showing best match | ${teams.length} matches found`
               : "Team details",
         })
         .setTimestamp();
@@ -1840,11 +1857,11 @@ export async function handleSlashCommand(
         components: [
           buildTwoLinkRow(
             {
-              label: "Team Leaderboard",
+              label: "Leaderboard",
               url: getTeamLeaderboardUrl(ctx, team),
             },
             {
-              label: "Open Tournaments",
+              label: "Tournaments",
               url: getSiteLink(ctx, "/tournaments"),
             },
           ),
@@ -1867,13 +1884,13 @@ export async function handleSlashCommand(
         const embed = new EmbedBuilder()
           .setColor(COLORS.error)
           .setTitle("Team not found")
-          .setDescription("No team matched your search.")
+          .setDescription("No team found.")
           .setTimestamp();
 
         await replyToCommand(interaction, {
           embeds: [embed],
           components: [
-            buildLinkRow("Open Profile", getSiteLink(ctx, "/profile")),
+            buildLinkRow("Profile", getSiteLink(ctx, "/profile")),
           ],
         });
 
@@ -1882,7 +1899,7 @@ export async function handleSlashCommand(
 
       const embed = new EmbedBuilder()
         .setColor(COLORS.deepPurple)
-        .setTitle(`${team.name} · Roster`)
+        .setTitle(`${team.name} | Roster`)
         .setDescription(buildTeamRosterDescription(team))
         .setFooter({
           text:
@@ -1897,11 +1914,11 @@ export async function handleSlashCommand(
         components: [
           buildTwoLinkRow(
             {
-              label: "Team Leaderboard",
+              label: "Leaderboard",
               url: getTeamLeaderboardUrl(ctx, team),
             },
             {
-              label: "Open Profile",
+              label: "Profile",
               url: getSiteLink(ctx, "/profile"),
             },
           ),
@@ -1924,13 +1941,13 @@ export async function handleSlashCommand(
         const embed = new EmbedBuilder()
           .setColor(COLORS.error)
           .setTitle("Team not found")
-          .setDescription("No team matched your search.")
+          .setDescription("No team found.")
           .setTimestamp();
 
         await replyToCommand(interaction, {
           embeds: [embed],
           components: [
-            buildLinkRow("Open Leaderboard", getSiteLink(ctx, "/leaderboard")),
+            buildLinkRow("Leaderboard", getSiteLink(ctx, "/leaderboard")),
           ],
         });
 
@@ -1939,7 +1956,7 @@ export async function handleSlashCommand(
 
       const embed = new EmbedBuilder()
         .setColor(COLORS.info)
-        .setTitle(`${team.name} · Team Results`)
+        .setTitle(`${team.name} | Team Results`)
         .setDescription(buildTeamResultsDescription(team))
         .setFooter({
           text:
@@ -1954,11 +1971,11 @@ export async function handleSlashCommand(
         components: [
           buildTwoLinkRow(
             {
-              label: "Team Leaderboard",
+              label: "Leaderboard",
               url: getTeamLeaderboardUrl(ctx, team),
             },
             {
-              label: "Open Leaderboard",
+              label: "Leaderboard",
               url: getSiteLink(ctx, "/leaderboard"),
             },
           ),
@@ -1972,7 +1989,7 @@ export async function handleSlashCommand(
 
     const embed = new EmbedBuilder()
       .setColor(COLORS.tournament)
-      .setTitle(`${profile.username} · Teams`)
+      .setTitle(`${profile.username} | Teams`)
       .setDescription(buildTeamsDescription(visibleTeams))
       .setFooter({
         text:
@@ -1984,7 +2001,7 @@ export async function handleSlashCommand(
 
     await replyToCommand(interaction, {
       embeds: [embed],
-      components: [buildLinkRow("Open Profile", getSiteLink(ctx, "/profile"))],
+      components: [buildLinkRow("Profile", getSiteLink(ctx, "/profile"))],
     });
 
     return;
@@ -2000,13 +2017,13 @@ export async function handleSlashCommand(
       const embed = new EmbedBuilder()
         .setColor(COLORS.error)
         .setTitle("Registrations not found")
-        .setDescription("This Discord user does not have an Ascendra profile.")
+        .setDescription("No Ascendra profile found.")
         .setTimestamp();
 
       await replyToCommand(interaction, {
         embeds: [embed],
         components: [
-          buildLinkRow("Open Profile", getSiteLink(ctx, "/profile")),
+          buildLinkRow("Profile", getSiteLink(ctx, "/profile")),
         ],
       });
 
@@ -2017,7 +2034,7 @@ export async function handleSlashCommand(
 
     const embed = new EmbedBuilder()
       .setColor(COLORS.info)
-      .setTitle(`${profile.username} · Registrations`)
+      .setTitle(`${profile.username} | Registrations`)
       .setDescription(buildRegistrationsDescription(profile))
       .setFooter({
         text:
@@ -2032,11 +2049,11 @@ export async function handleSlashCommand(
       components: [
         buildTwoLinkRow(
           {
-            label: "Open Profile",
+            label: "Profile",
             url: getSiteLink(ctx, "/profile"),
           },
           {
-            label: "Open Tournaments",
+            label: "Tournaments",
             url: getSiteLink(ctx, "/tournaments"),
           },
         ),
@@ -2067,7 +2084,7 @@ export async function handleSlashCommand(
     await replyToCommand(interaction, {
       embeds: [embed],
       components: [
-        buildLinkRow("Open Announcements", getSiteLink(ctx, "/announcements")),
+        buildLinkRow("Announcements", getSiteLink(ctx, "/announcements")),
       ],
     });
 
@@ -2083,12 +2100,12 @@ export async function handleSlashCommand(
       const embed = new EmbedBuilder()
         .setColor(COLORS.error)
         .setTitle("Stats unavailable")
-        .setDescription("Ascendra stats are not available right now.")
+        .setDescription("Ascendra could not load stats.")
         .setTimestamp();
 
       await replyToCommand(interaction, {
         embeds: [embed],
-        components: [buildLinkRow("Open Stats", getSiteLink(ctx, "/stats"))],
+        components: [buildLinkRow("Stats", getSiteLink(ctx, "/stats"))],
       });
 
       return;
@@ -2108,7 +2125,7 @@ export async function handleSlashCommand(
 
     await replyToCommand(interaction, {
       embeds: [embed, gameEmbed],
-      components: [buildLinkRow("Open Stats", getSiteLink(ctx, "/stats"))],
+      components: [buildLinkRow("Stats", getSiteLink(ctx, "/stats"))],
     });
 
     return;
@@ -2134,7 +2151,7 @@ export async function handleSlashCommand(
 
     await replyToCommand(interaction, {
       embeds: [embed],
-      components: [buildLinkRow("Open Staff", getSiteLink(ctx, "/staff"))],
+      components: [buildLinkRow("Staff", getSiteLink(ctx, "/staff"))],
     });
 
     return;
@@ -2160,7 +2177,7 @@ export async function handleSlashCommand(
 
     await replyToCommand(interaction, {
       embeds: [embed],
-      components: [buildLinkRow("Open Rules", getSiteLink(ctx, "/rules"))],
+      components: [buildLinkRow("Rules", getSiteLink(ctx, "/rules"))],
     });
 
     return;
@@ -2170,13 +2187,13 @@ export async function handleSlashCommand(
     const embed = new EmbedBuilder()
       .setColor(COLORS.premium)
       .setTitle("Community")
-      .setDescription("Open the Ascendra community page.")
+      .setDescription("Open the Ascendra community.")
       .setTimestamp();
 
     await replyToCommand(interaction, {
       embeds: [embed],
       components: [
-        buildLinkRow("Open Community", getSiteLink(ctx, "/community")),
+        buildLinkRow("Community", getSiteLink(ctx, "/community")),
       ],
     });
 
@@ -2186,10 +2203,10 @@ export async function handleSlashCommand(
   if (commandName === "status") {
     const embed = new EmbedBuilder()
       .setColor(COLORS.success)
-      .setTitle("Bot status")
+      .setTitle("Ascendra Status")
       .addFields(
         {
-          name: "Status",
+          name: "Bot",
           value: "Online",
           inline: true,
         },
@@ -2199,16 +2216,22 @@ export async function handleSlashCommand(
           inline: true,
         },
         {
-          name: "Slash commands",
-          value: ctx.slashCommandsReady ? "Ready" : "Check required",
+          name: "Latency",
+          value: formatLatency(interaction),
+          inline: true,
+        },
+        {
+          name: "Guild",
+          value: getGuildLabel(interaction),
+          inline: true,
+        },
+        {
+          name: "Commands",
+          value: ctx.slashCommandsReady ? "Ready" : "Needs review",
           inline: true,
         },
       )
       .setTimestamp();
-
-    if (!ctx.slashCommandsReady && ctx.slashCommandError) {
-      embed.setDescription(ctx.slashCommandError.slice(0, 500));
-    }
 
     await replyToCommand(interaction, {
       embeds: [embed],
@@ -2220,40 +2243,48 @@ export async function handleSlashCommand(
   if (commandName === "help") {
     const embed = new EmbedBuilder()
       .setColor(COLORS.deepPurple)
-      .setTitle("Ascendra Bot")
-      .setDescription(
-        [
-          "`/ascendra` — Website",
-          "`/about` — Overview",
-          "`/links` — Quick links",
-          "`/invite` — Discord invite",
-          "`/ping` — Bot response",
-          "`/tournaments` — Tournament list",
-          "`/schedule` — Upcoming tournaments",
-          "`/tournament` — Tournament details",
-          "`/results` — Tournament results",
-          "`/leaderboard` — Leaderboard",
-          "`/games` — Game stats",
-          "`/profile` — Player profile",
-          "`/teams` — Player teams",
-          "`/team` — Team details",
-          "`/roster` — Team roster",
-          "`/teamresults` — Team results",
-          "`/registrations` — Tournament registrations",
-          "`/announcements` — Announcements",
-          "`/stats` — Community stats",
-          "`/staff` — Staff",
-          "`/rules` — Rules",
-          "`/community` — Community",
-          "`/status` — Bot status",
-          "`/help` — Commands",
-        ].join("\n"),
+      .setTitle("Ascendra Commands")
+      .addFields(
+        {
+          name: "Platform",
+          value:
+            "`/ascendra` Website\n`/about` Overview\n`/links` Links\n`/invite` Discord",
+          inline: true,
+        },
+        {
+          name: "Tournaments",
+          value:
+            "`/tournaments` List\n`/schedule` Schedule\n`/tournament` Details\n`/results` Results\n`/registrations` Registrations",
+          inline: true,
+        },
+        {
+          name: "Teams",
+          value:
+            "`/profile` Profile\n`/teams` Player teams\n`/team` Details\n`/roster` Roster\n`/teamresults` Results",
+          inline: true,
+        },
+        {
+          name: "Rankings",
+          value: "`/leaderboard` Leaderboard\n`/games` Games\n`/stats` Stats",
+          inline: true,
+        },
+        {
+          name: "Community",
+          value:
+            "`/announcements` Announcements\n`/rules` Rules\n`/staff` Staff\n`/community` Community",
+          inline: true,
+        },
+        {
+          name: "Status",
+          value: "`/ping` Response\n`/status` Bot status\n`/help` Commands",
+          inline: true,
+        },
       )
       .setTimestamp();
 
     await replyToCommand(interaction, {
       embeds: [embed],
-      components: [buildLinkRow("Open AscendraHub", getSiteLink(ctx))],
+      components: [buildLinkRow("Website", getSiteLink(ctx))],
     });
   }
 }

@@ -55,19 +55,21 @@ const TEAM_CAPTAIN_ROLE_ID =
   process.env.DISCORD_TEAM_CAPTAIN_ROLE_ID || "1506789979190460446";
 
 const COLORS = {
-  success: 0x10b981,
-  error: 0xef4444,
-  warning: 0xf97316,
-  info: 0x8b5cf6,
-  tournament: 0x7c3aed,
-  premium: 0x6d28d9,
-  deepPurple: 0x4c1d95,
-  blue: 0x2563eb,
+  brand: 0xb88746,
+  secondary: 0x6f5431,
+  success: 0x2f855a,
+  error: 0xb23a48,
+  warning: 0xb7791f,
+  info: 0xb88746,
+  tournament: 0xb88746,
+  premium: 0xb88746,
+  deepPurple: 0x6f5431,
+  blue: 0xb88746,
   ended: 0x64748b,
 };
 
 const BRAND_LOGO_URL = `${SITE_URL}/images/brand/ascendra-logo-mark.png`;
-const BRAND_FOOTER_TEXT = "Ascendra • Rise Beyond Limits";
+const BRAND_FOOTER_TEXT = "Ascendra - Rise Beyond Limits";
 
 if (!BOT_API_TOKEN) {
   throw new Error("Missing BOT_API_TOKEN");
@@ -357,7 +359,7 @@ function getRegistrationPresentation(value: unknown): RegistrationPresentation {
     case "open":
       return {
         label: "Open",
-        badge: "🟢 REGISTRATION OPEN",
+        badge: "REGISTRATION OPEN",
         color: COLORS.success,
         footerStatus: "Registration Open",
       };
@@ -365,7 +367,7 @@ function getRegistrationPresentation(value: unknown): RegistrationPresentation {
     case "upcoming":
       return {
         label: "Upcoming",
-        badge: "🟣 REGISTRATION COMING SOON",
+        badge: "REGISTRATION UPCOMING",
         color: COLORS.premium,
         footerStatus: "Registration Coming Soon",
       };
@@ -373,7 +375,7 @@ function getRegistrationPresentation(value: unknown): RegistrationPresentation {
     case "closed":
       return {
         label: "Closed",
-        badge: "🔴 REGISTRATION CLOSED",
+        badge: "REGISTRATION CLOSED",
         color: COLORS.error,
         footerStatus: "Registration Closed",
       };
@@ -381,7 +383,7 @@ function getRegistrationPresentation(value: unknown): RegistrationPresentation {
     default:
       return {
         label: cleanLogValue(value),
-        badge: "🟣 TOURNAMENT UPDATE",
+        badge: "TOURNAMENT UPDATE",
         color: COLORS.premium,
         footerStatus: "Tournament Update",
       };
@@ -399,37 +401,37 @@ function getTournamentStatusPresentation(
     case "open":
       return {
         label: "Live",
-        badge: "⚔️ LIVE",
+        badge: "LIVE",
       };
 
     case "upcoming":
       return {
         label: "Upcoming",
-        badge: "🗓️ UPCOMING",
+        badge: "UPCOMING",
       };
 
     case "closed":
       return {
         label: "Closed",
-        badge: "🔒 CLOSED",
+        badge: "CLOSED",
       };
 
     case "cancelled":
       return {
         label: "Cancelled",
-        badge: "⛔ CANCELLED",
+        badge: "CANCELLED",
       };
 
     case "ended":
       return {
         label: "Ended",
-        badge: "🏁 ENDED",
+        badge: "ENDED",
       };
 
     default:
       return {
         label: cleanLogValue(value),
-        badge: "🟣 TOURNAMENT",
+        badge: "TOURNAMENT",
       };
   }
 }
@@ -445,7 +447,7 @@ function buildTournamentDescription(payload: Record<string, any>) {
     return description.slice(0, 1200);
   }
 
-  return "A new Ascendra tournament is now live. Review the details, prepare your team, and follow updates through the tournament page.";
+  return "Ascendra tournament details are listed below.";
 }
 
 function buildTournamentButtons(tournamentUrl: string) {
@@ -457,7 +459,7 @@ function buildTournamentButtons(tournamentUrl: string) {
 
   row.addComponents(
     new ButtonBuilder()
-      .setLabel("Open Tournament")
+      .setLabel("Tournament")
       .setStyle(ButtonStyle.Link)
       .setURL(safeTournamentUrl),
   );
@@ -465,7 +467,7 @@ function buildTournamentButtons(tournamentUrl: string) {
   if (isValidHttpUrl(DISCORD_INVITE_URL)) {
     row.addComponents(
       new ButtonBuilder()
-        .setLabel("Join Discord")
+        .setLabel("Discord")
         .setStyle(ButtonStyle.Link)
         .setURL(DISCORD_INVITE_URL),
     );
@@ -502,59 +504,55 @@ function buildTournamentAnnouncementContent(payload: Record<string, any>) {
       iconURL: BRAND_LOGO_URL,
       url: SITE_URL,
     })
-    .setTitle(`🏆 ${title}`)
+    .setTitle(title)
     .setURL(isValidHttpUrl(tournamentUrl) ? tournamentUrl : SITE_URL)
     .setDescription(
       [
-        `${registration.badge} • ${tournamentStatus.badge}`,
-        "",
-        "━━━━━━━━━━━━━━━━━━━━",
+        `${registration.badge} | ${tournamentStatus.badge}`,
         "",
         description,
-        "",
-        "> Prepare your squad, secure your slot, and rise beyond limits.",
       ].join("\n"),
     )
     .setThumbnail(BRAND_LOGO_URL)
     .addFields(
       {
-        name: "🎮 Game",
+        name: "Game",
         value: `**${game}**`,
         inline: true,
       },
       {
-        name: "👥 Team Size",
+        name: "Team size",
         value: `**${teamSize}**`,
         inline: true,
       },
       {
-        name: "📦 Slots",
+        name: "Slots",
         value: `**${slots}**`,
         inline: true,
       },
       {
-        name: "🗓️ Tournament Date",
+        name: "Date",
         value: date,
         inline: false,
       },
       {
-        name: "💎 Prize",
+        name: "Prize",
         value: `**${prize}**`,
         inline: true,
       },
       {
-        name: "📍 Registration",
+        name: "Registration",
         value: `**${registration.label}**`,
         inline: true,
       },
       {
-        name: "⚔️ Status",
+        name: "Status",
         value: `**${tournamentStatus.label}**`,
         inline: true,
       },
     )
     .setFooter({
-      text: `${BRAND_FOOTER_TEXT} • ${registration.footerStatus}`,
+      text: `${BRAND_FOOTER_TEXT} | ${registration.footerStatus}`,
       iconURL: BRAND_LOGO_URL,
     })
     .setTimestamp();
@@ -568,10 +566,10 @@ function buildTournamentAnnouncementContent(payload: Record<string, any>) {
     .setDescription(
       [
         "**Tournament Brief**",
-        "• Competitive team-based event",
-        "• Official Ascendra tournament tracking",
-        "• Registration and updates handled through AscendraHub",
-        "• Follow the tournament page for rules, slots, and status changes",
+        "- Team-based competition",
+        "- Official Ascendra tracking",
+        "- Registration through Ascendra",
+        "- Rules, slots, and status on the tournament page",
       ].join("\n"),
     );
 
@@ -2085,7 +2083,7 @@ function buildTournamentListDescription(tournaments: PublicTournament[]) {
     .map((tournament, index) => {
       return [
         `**${index + 1}. ${tournament.title}**`,
-        `${tournament.game} · ${formatTournamentStatus(tournament.status)}`,
+        `${tournament.game} | ${formatTournamentStatus(tournament.status)}`,
         `Date: ${tournament.date || "-"}`,
         `Prize: ${tournament.prize || "-"}`,
       ].join("\n");
@@ -2112,7 +2110,7 @@ function buildTournamentRows(tournaments: PublicTournament[]) {
     rows.push(row);
   }
 
-  rows.push(buildLinkRow("Open Tournaments", getSiteLink("/tournaments")));
+  rows.push(buildLinkRow("Tournaments", getSiteLink("/tournaments")));
 
   return rows;
 }
@@ -2121,7 +2119,7 @@ function getSlashCommands() {
   return [
     {
       name: "ascendra",
-      description: "Open AscendraHub.",
+      description: "Open Ascendra.",
     },
     {
       name: "tournaments",
@@ -2212,13 +2210,13 @@ async function handleSlashCommand(interaction: any) {
   if (commandName === "ascendra") {
     const embed = new EmbedBuilder()
       .setColor(COLORS.premium)
-      .setTitle("AscendraHub")
-      .setDescription("Open the AscendraHub website.")
+      .setTitle("Ascendra")
+      .setDescription("Open the Ascendra platform.")
       .setTimestamp();
 
     await replyToCommand(interaction, {
       embeds: [embed],
-      components: [buildLinkRow("Open AscendraHub", getSiteLink())],
+      components: [buildLinkRow("Website", getSiteLink())],
     });
 
     return;
@@ -2258,7 +2256,7 @@ async function handleSlashCommand(interaction: any) {
     await replyToCommand(interaction, {
       embeds: [embed],
       components: [
-        buildLinkRow("Open Leaderboard", getSiteLink("/leaderboard")),
+        buildLinkRow("Leaderboard", getSiteLink("/leaderboard")),
       ],
     });
 
@@ -2268,10 +2266,10 @@ async function handleSlashCommand(interaction: any) {
   if (commandName === "status") {
     const embed = new EmbedBuilder()
       .setColor(COLORS.success)
-      .setTitle("Bot status")
+      .setTitle("Ascendra Status")
       .addFields(
         {
-          name: "Status",
+          name: "Bot",
           value: "Online",
           inline: true,
         },
@@ -2281,7 +2279,7 @@ async function handleSlashCommand(interaction: any) {
           inline: true,
         },
         {
-          name: "Slash commands",
+          name: "Commands",
           value: slashCommandsReady ? "Ready" : "Check required",
           inline: true,
         },
@@ -2298,21 +2296,21 @@ async function handleSlashCommand(interaction: any) {
   if (commandName === "help") {
     const embed = new EmbedBuilder()
       .setColor(COLORS.deepPurple)
-      .setTitle("Ascendra Bot")
+      .setTitle("Ascendra Commands")
       .setDescription(
         [
-          "`/ascendra` — Website",
-          "`/tournaments` — Tournaments",
-          "`/leaderboard` — Leaderboard",
-          "`/status` — Bot status",
-          "`/help` — Commands",
+          "`/ascendra` - Website",
+          "`/tournaments` - Tournaments",
+          "`/leaderboard` - Leaderboard",
+          "`/status` - Bot status",
+          "`/help` - Commands",
         ].join("\n"),
       )
       .setTimestamp();
 
     await replyToCommand(interaction, {
       embeds: [embed],
-      components: [buildLinkRow("Open AscendraHub", getSiteLink())],
+      components: [buildLinkRow("Website", getSiteLink())],
     });
   }
 }
@@ -2813,7 +2811,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       });
 
       await replyToCommand(interaction, {
-        content: "Command failed.",
+        content: "This command is unavailable right now.",
       }).catch(() => null);
     }
   }
