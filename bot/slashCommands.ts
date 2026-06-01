@@ -251,6 +251,30 @@ type BotTeamDetails = {
   }>;
 };
 
+type BotMatchDetails = {
+  id: string;
+  tournamentId: string;
+  tournamentTitle: string;
+  tournamentGame: string | null;
+  roundNumber: number;
+  matchNumber: number;
+  status: string;
+  teamAId: string | null;
+  teamBId: string | null;
+  winnerTeamId: string | null;
+  teamAName: string | null;
+  teamBName: string | null;
+  winnerName: string | null;
+  scheduledAt: string | null;
+  completedAt: string | null;
+  isBye: boolean;
+  report: {
+    teamAScore: number;
+    teamBScore: number;
+    status: string;
+  } | null;
+};
+
 const COLORS = {
   brand: 0xb88746,
   secondary: 0x6f5431,
@@ -896,6 +920,52 @@ async function fetchTeamLookup(ctx: SlashCommandContext, query: string) {
   return (data as BotTeamLookup).teams;
 }
 
+async function fetchMatchLookup(
+  ctx: SlashCommandContext,
+  query: string,
+): Promise<BotMatchDetails | null> {
+  const params = new URLSearchParams({ query });
+
+  const data = await fetchBotJsonWithTimeout(
+    `${ctx.siteUrl}/api/bot/match-lookup?${params.toString()}`,
+    ctx.apiTimeoutMs,
+  );
+
+  if (!data?.success) {
+    return null;
+  }
+
+  return (data.match as BotMatchDetails) || null;
+}
+
+function formatMatchStatus(status: string) {
+  const normalized = String(status || "").toLowerCase();
+
+  if (normalized === "scheduled") return "Scheduled";
+  if (normalized === "ready") return "Ready";
+  if (normalized === "room_created") return "Room created";
+  if (normalized === "in_progress") return "In progress";
+  if (normalized === "result_pending") return "Result pending";
+  if (normalized === "disputed") return "Disputed";
+  if (normalized === "confirmed") return "Confirmed";
+  if (normalized === "completed") return "Completed";
+  if (normalized === "cancelled") return "Cancelled";
+  if (normalized === "forfeit") return "Forfeit";
+  if (normalized === "bye") return "Bye";
+
+  return status || "—";
+}
+
+function formatDiscordTimestamp(isoString: string | null) {
+  if (!isoString) return "—";
+
+  const date = new Date(isoString);
+
+  if (isNaN(date.getTime())) return "—";
+
+  return `<t:${Math.floor(date.getTime() / 1000)}:f>`;
+}
+
 function getTeamLeaderboardUrl(ctx: SlashCommandContext, team: BotTeamDetails) {
   const url = new URL(getSiteLink(ctx, "/leaderboard"));
 
@@ -1195,6 +1265,19 @@ export function getSlashCommands() {
           name: "query",
           autocomplete: true,
           description: "Tournament title, game, or ID.",
+          type: ApplicationCommandOptionType.String,
+          required: true,
+        },
+      ],
+    },
+    {
+      name: "match",
+      description: "Find a tournament match.",
+      options: [
+        {
+          name: "query",
+          autocomplete: true,
+          description: "Match ID or tournament title.",
           type: ApplicationCommandOptionType.String,
           required: true,
         },
@@ -1655,6 +1738,95 @@ export async function handleSlashCommand(
         buildLinkRow(
           "Tournament",
           getSiteLink(ctx, `/tournaments/${tournament.id}`),
+        ),
+      ],
+    });
+
+    return;
+  }
+
+  if (commandName === "match") {
+    await deferCommand(interaction);
+
+    const query = String(interaction.options?.getString("query") || "").trim();
+    const match = await fetchMatchLookup(ctx, query);
+
+    if (!match) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("No match found")
+        .setDescription("No match found.")
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed],
+        components: [
+          buildLinkRow("Tournaments", getSiteLink(ctx, "/tournaments")),
+        ],
+      });
+
+      return;
+    }
+
+    const teamA = match.teamAName ?? "TBD";
+    const teamB = match.teamBName ?? "TBD";
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.tournament)
+      .setTitle("Match details")
+      .addFields(
+        {
+          name: "Tournament",
+          value: match.tournamentTitle,
+          inline: false,
+        },
+        {
+          name: "Match",
+          value: `Round ${match.roundNumber}, Match ${match.matchNumber}`,
+          inline: true,
+        },
+        {
+          name: "Teams",
+          value: match.isBye ? "Bye" : `${teamA} vs ${teamB}`,
+          inline: true,
+        },
+        {
+          name: "Status",
+          value: formatMatchStatus(match.status),
+          inline: true,
+        },
+        {
+          name: "Scheduled",
+          value: formatDiscordTimestamp(match.scheduledAt),
+          inline: true,
+        },
+        {
+          name: "Result",
+          value: match.report
+            ? `${match.report.teamAScore} – ${match.report.teamBScore}`
+            : "—",
+          inline: true,
+        },
+        {
+          name: "Winner",
+          value: match.winnerName ?? "—",
+          inline: true,
+        },
+      )
+      .setTimestamp();
+
+    const matchUrl = getSiteLink(
+      ctx,
+      `/tournaments/${match.tournamentId}/matches/${match.id}`,
+    );
+    const tournamentUrl = getSiteLink(ctx, `/tournaments/${match.tournamentId}`);
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [
+        buildTwoLinkRow(
+          { label: "Open match", url: matchUrl },
+          { label: "Tournament", url: tournamentUrl },
         ),
       ],
     });
@@ -2254,7 +2426,7 @@ export async function handleSlashCommand(
         {
           name: "Tournaments",
           value:
-            "`/tournaments` List\n`/schedule` Schedule\n`/tournament` Details\n`/results` Results\n`/registrations` Registrations",
+            "`/tournaments` List\n`/schedule` Schedule\n`/tournament` Details\n`/results` Results\n`/match` Match\n`/registrations` Registrations",
           inline: true,
         },
         {

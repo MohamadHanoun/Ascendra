@@ -134,6 +134,66 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  if (entity === "match") {
+    const matches = await prisma.tournamentMatch.findMany({
+      where: query
+        ? {
+            OR: [
+              { id: query },
+              {
+                tournament: {
+                  title: { contains: query, mode: "insensitive" },
+                },
+              },
+            ],
+          }
+        : {},
+      orderBy: { createdAt: "desc" },
+      take: 25,
+      select: {
+        id: true,
+        roundNumber: true,
+        matchNumber: true,
+        status: true,
+        teamAId: true,
+        teamBId: true,
+        tournament: { select: { title: true } },
+      },
+    });
+
+    const teamIds = [
+      ...new Set(
+        matches
+          .flatMap((m) => [m.teamAId, m.teamBId])
+          .filter((id): id is string => id !== null && id !== undefined),
+      ),
+    ];
+
+    const teams =
+      teamIds.length > 0
+        ? await prisma.team.findMany({
+            where: { id: { in: teamIds } },
+            select: { id: true, name: true },
+          })
+        : [];
+
+    const teamMap = new Map(teams.map((t) => [t.id, t.name]));
+
+    const options: AutocompleteOption[] = matches.map((m) => {
+      const teamA = m.teamAId ? (teamMap.get(m.teamAId) ?? "TBD") : "TBD";
+      const teamB = m.teamBId ? (teamMap.get(m.teamBId) ?? "TBD") : "TBD";
+
+      return {
+        name: compactLabel(
+          `R${m.roundNumber} M${m.matchNumber} · ${teamA} vs ${teamB} · ${m.tournament.title}`,
+        ),
+        value: m.id,
+      };
+    });
+
+    return NextResponse.json({ success: true, entity, options });
+  }
+
   return NextResponse.json(
     {
       success: false,
