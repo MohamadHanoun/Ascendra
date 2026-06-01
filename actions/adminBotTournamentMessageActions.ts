@@ -146,6 +146,7 @@ function getTournamentDiscordActionTitle(type: TournamentDiscordEventType) {
 
 function shouldLogTournamentDiscordAction(type: TournamentDiscordEventType) {
   return (
+    type === "tournament_announcement_update" ||
     type === "tournament_announcement_recreate" ||
     type === "tournament_announcement_delete"
   );
