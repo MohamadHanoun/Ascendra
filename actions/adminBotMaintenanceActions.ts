@@ -7,6 +7,11 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import {
+  getServerLogErrorMessage,
+  logServerAdminAction,
+  logServerBotError,
+} from "@/lib/serverDiscordLogs";
 
 const commandLogWhere: Prisma.BotEventWhereInput = {
   OR: [
@@ -93,32 +98,60 @@ function redirectWithResult(
   );
 }
 
+async function logMaintenanceFailure(
+  title: string,
+  error: unknown,
+  fields: Array<{ name: string; value: string | number; inline?: boolean }> = [],
+) {
+  await logServerBotError({
+    title,
+    description: getServerLogErrorMessage(error),
+    fields,
+  });
+}
+
 export async function cleanupOldBotEventsMaintenanceInline(formData: FormData) {
   await requireAdmin();
 
   const days = getDays(formData, 30);
   const cutoffDate = getCutoffDate(days);
+  let deletedCount = 0;
 
-  const result = await prisma.botEvent.deleteMany({
-    where: {
-      status: {
-        in: ["completed", "cancelled"],
+  try {
+    const result = await prisma.botEvent.deleteMany({
+      where: {
+        status: {
+          in: ["completed", "cancelled"],
+        },
+        updatedAt: {
+          lt: cutoffDate,
+        },
       },
-      updatedAt: {
-        lt: cutoffDate,
-      },
-    },
-  });
+    });
+    deletedCount = result.count;
 
-  await publishMaintenanceEvent({
-    action: "cleanup_old_bot_events",
-    deletedCount: result.count,
-    days,
-  });
+    await publishMaintenanceEvent({
+      action: "cleanup_old_bot_events",
+      deletedCount,
+      days,
+    });
+    await logServerAdminAction({
+      title: "Old bot events cleaned",
+      fields: [
+        { name: "Deleted", value: deletedCount },
+        { name: "Days", value: days },
+      ],
+    });
+  } catch (error) {
+    await logMaintenanceFailure("Old bot events cleanup failed", error, [
+      { name: "Days", value: days },
+    ]);
+    throw error;
+  }
 
   revalidateBotViews();
 
-  redirectWithResult(`${result.count} old bot event(s) deleted.`);
+  redirectWithResult(`${deletedCount} old bot event(s) deleted.`);
 }
 
 export async function cleanupOldCommandLogsMaintenanceInline(
@@ -128,29 +161,45 @@ export async function cleanupOldCommandLogsMaintenanceInline(
 
   const days = getDays(formData, 30);
   const cutoffDate = getCutoffDate(days);
+  let deletedCount = 0;
 
-  const result = await prisma.botEvent.deleteMany({
-    where: {
-      AND: [
-        commandLogWhere,
-        {
-          createdAt: {
-            lt: cutoffDate,
+  try {
+    const result = await prisma.botEvent.deleteMany({
+      where: {
+        AND: [
+          commandLogWhere,
+          {
+            createdAt: {
+              lt: cutoffDate,
+            },
           },
-        },
-      ],
-    },
-  });
+        ],
+      },
+    });
+    deletedCount = result.count;
 
-  await publishMaintenanceEvent({
-    action: "cleanup_old_command_logs",
-    deletedCount: result.count,
-    days,
-  });
+    await publishMaintenanceEvent({
+      action: "cleanup_old_command_logs",
+      deletedCount,
+      days,
+    });
+    await logServerAdminAction({
+      title: "Old command logs cleaned",
+      fields: [
+        { name: "Deleted", value: deletedCount },
+        { name: "Days", value: days },
+      ],
+    });
+  } catch (error) {
+    await logMaintenanceFailure("Old command logs cleanup failed", error, [
+      { name: "Days", value: days },
+    ]);
+    throw error;
+  }
 
   revalidateBotViews();
 
-  redirectWithResult(`${result.count} old command log(s) deleted.`);
+  redirectWithResult(`${deletedCount} old command log(s) deleted.`);
 }
 
 export async function cleanupOldRealtimeEventsMaintenanceInline(
@@ -160,24 +209,40 @@ export async function cleanupOldRealtimeEventsMaintenanceInline(
 
   const days = getDays(formData, 7);
   const cutoffDate = getCutoffDate(days);
+  let deletedCount = 0;
 
-  const result = await prisma.realtimeEvent.deleteMany({
-    where: {
-      createdAt: {
-        lt: cutoffDate,
+  try {
+    const result = await prisma.realtimeEvent.deleteMany({
+      where: {
+        createdAt: {
+          lt: cutoffDate,
+        },
       },
-    },
-  });
+    });
+    deletedCount = result.count;
 
-  await publishMaintenanceEvent({
-    action: "cleanup_old_realtime_events",
-    deletedCount: result.count,
-    days,
-  });
+    await publishMaintenanceEvent({
+      action: "cleanup_old_realtime_events",
+      deletedCount,
+      days,
+    });
+    await logServerAdminAction({
+      title: "Old realtime events cleaned",
+      fields: [
+        { name: "Deleted", value: deletedCount },
+        { name: "Days", value: days },
+      ],
+    });
+  } catch (error) {
+    await logMaintenanceFailure("Old realtime events cleanup failed", error, [
+      { name: "Days", value: days },
+    ]);
+    throw error;
+  }
 
   revalidateBotViews();
 
-  redirectWithResult(`${result.count} old realtime event(s) deleted.`);
+  redirectWithResult(`${deletedCount} old realtime event(s) deleted.`);
 }
 
 export async function cleanupOldFailedBotEventsMaintenanceInline(
@@ -187,48 +252,75 @@ export async function cleanupOldFailedBotEventsMaintenanceInline(
 
   const days = getDays(formData, 30);
   const cutoffDate = getCutoffDate(days);
+  let deletedCount = 0;
 
-  const result = await prisma.botEvent.deleteMany({
-    where: {
-      status: "failed",
-      updatedAt: {
-        lt: cutoffDate,
+  try {
+    const result = await prisma.botEvent.deleteMany({
+      where: {
+        status: "failed",
+        updatedAt: {
+          lt: cutoffDate,
+        },
       },
-    },
-  });
+    });
+    deletedCount = result.count;
 
-  await publishMaintenanceEvent({
-    action: "cleanup_old_failed_bot_events",
-    deletedCount: result.count,
-    days,
-  });
+    await publishMaintenanceEvent({
+      action: "cleanup_old_failed_bot_events",
+      deletedCount,
+      days,
+    });
+    await logServerAdminAction({
+      title: "Old failed events deleted",
+      fields: [
+        { name: "Deleted", value: deletedCount },
+        { name: "Days", value: days },
+      ],
+    });
+  } catch (error) {
+    await logMaintenanceFailure("Old failed events deletion failed", error, [
+      { name: "Days", value: days },
+    ]);
+    throw error;
+  }
 
   revalidateBotViews();
 
-  redirectWithResult(`${result.count} old failed bot event(s) deleted.`);
+  redirectWithResult(`${deletedCount} old failed bot event(s) deleted.`);
 }
 
 export async function cleanupFailedCommandLogsMaintenanceInline() {
   await requireAdmin();
+  let deletedCount = 0;
 
-  const result = await prisma.botEvent.deleteMany({
-    where: {
-      AND: [
-        commandLogWhere,
-        {
-          status: "failed",
-        },
-      ],
-    },
-  });
+  try {
+    const result = await prisma.botEvent.deleteMany({
+      where: {
+        AND: [
+          commandLogWhere,
+          {
+            status: "failed",
+          },
+        ],
+      },
+    });
+    deletedCount = result.count;
 
-  await publishMaintenanceEvent({
-    action: "cleanup_failed_command_logs",
-    deletedCount: result.count,
-    days: 0,
-  });
+    await publishMaintenanceEvent({
+      action: "cleanup_failed_command_logs",
+      deletedCount,
+      days: 0,
+    });
+    await logServerAdminAction({
+      title: "Failed command logs deleted",
+      fields: [{ name: "Deleted", value: deletedCount }],
+    });
+  } catch (error) {
+    await logMaintenanceFailure("Failed command logs deletion failed", error);
+    throw error;
+  }
 
   revalidateBotViews();
 
-  redirectWithResult(`${result.count} failed command log(s) deleted.`);
+  redirectWithResult(`${deletedCount} failed command log(s) deleted.`);
 }

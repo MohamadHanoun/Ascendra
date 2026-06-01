@@ -5,6 +5,11 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import {
+  getServerLogErrorMessage,
+  logServerAdminAction,
+  logServerBotError,
+} from "@/lib/serverDiscordLogs";
 
 export type AdminBotEventActionResult = {
   ok: boolean;
@@ -63,6 +68,18 @@ function getFormValue(formData: FormData, name: string) {
 function revalidateBotViews() {
   revalidatePath("/admin");
   revalidatePath("/admin/bot");
+}
+
+async function logBotActionFailure(
+  title: string,
+  error: unknown,
+  fields: Array<{ name: string; value: string | number; inline?: boolean }> = [],
+) {
+  await logServerBotError({
+    title,
+    description: getServerLogErrorMessage(error),
+    fields,
+  });
 }
 
 async function publishBotEventUpdate(eventId: string, status: string) {
@@ -242,23 +259,32 @@ export async function resetProcessingBotEventsInline(): Promise<AdminBotEventAct
     return authError;
   }
 
-  const result = await prisma.botEvent.updateMany({
-    where: {
-      status: "processing",
-    },
-    data: {
-      status: "queued",
-      lockedAt: null,
-      error: "Reset manually from processing state.",
-      processedAt: null,
-    },
-  });
+  try {
+    const result = await prisma.botEvent.updateMany({
+      where: {
+        status: "processing",
+      },
+      data: {
+        status: "queued",
+        lockedAt: null,
+        error: "Reset manually from processing state.",
+        processedAt: null,
+      },
+    });
 
-  await publishBotBulkUpdate("bot.events.processing.reset", result.count);
+    await publishBotBulkUpdate("bot.events.processing.reset", result.count);
+    await logServerAdminAction({
+      title: "Processing events reset",
+      fields: [{ name: "Count", value: result.count }],
+    });
 
-  revalidateBotViews();
+    revalidateBotViews();
 
-  return success(`Reset ${result.count} event(s).`);
+    return success(`Reset ${result.count} event(s).`);
+  } catch (error) {
+    await logBotActionFailure("Processing events reset failed", error);
+    throw error;
+  }
 }
 
 export async function cancelPendingBotEventsInline(): Promise<AdminBotEventActionResult> {
@@ -268,25 +294,34 @@ export async function cancelPendingBotEventsInline(): Promise<AdminBotEventActio
     return authError;
   }
 
-  const result = await prisma.botEvent.updateMany({
-    where: {
-      status: {
-        in: ["queued", "failed", "processing"],
+  try {
+    const result = await prisma.botEvent.updateMany({
+      where: {
+        status: {
+          in: ["queued", "failed", "processing"],
+        },
       },
-    },
-    data: {
-      status: "cancelled",
-      lockedAt: null,
-      processedAt: new Date(),
-      error: "Cancelled from bot dashboard.",
-    },
-  });
+      data: {
+        status: "cancelled",
+        lockedAt: null,
+        processedAt: new Date(),
+        error: "Cancelled from bot dashboard.",
+      },
+    });
 
-  await publishBotBulkUpdate("bot.events.pending.cancelled", result.count);
+    await publishBotBulkUpdate("bot.events.pending.cancelled", result.count);
+    await logServerAdminAction({
+      title: "Pending bot events cancelled",
+      fields: [{ name: "Count", value: result.count }],
+    });
 
-  revalidateBotViews();
+    revalidateBotViews();
 
-  return success(`Cancelled ${result.count} event(s).`);
+    return success(`Cancelled ${result.count} event(s).`);
+  } catch (error) {
+    await logBotActionFailure("Pending bot events cancellation failed", error);
+    throw error;
+  }
 }
 
 export async function pauseBotQueueInline(): Promise<AdminBotEventActionResult> {
@@ -296,27 +331,33 @@ export async function pauseBotQueueInline(): Promise<AdminBotEventActionResult> 
     return authError;
   }
 
-  await prisma.serverSetting.upsert({
-    where: {
-      key: "bot.queue.paused",
-    },
-    create: {
-      key: "bot.queue.paused",
-      value: "true",
-      description: "Controls bot event queue processing.",
-    },
-    update: {
-      value: "true",
-    },
-  });
+  try {
+    await prisma.serverSetting.upsert({
+      where: {
+        key: "bot.queue.paused",
+      },
+      create: {
+        key: "bot.queue.paused",
+        value: "true",
+        description: "Controls bot event queue processing.",
+      },
+      update: {
+        value: "true",
+      },
+    });
 
-  await publishBotRuntimeUpdate("bot.queue.paused", {
-    paused: true,
-  });
+    await publishBotRuntimeUpdate("bot.queue.paused", {
+      paused: true,
+    });
+    await logServerAdminAction({ title: "Queue paused" });
 
-  revalidateBotViews();
+    revalidateBotViews();
 
-  return success("Queue paused.");
+    return success("Queue paused.");
+  } catch (error) {
+    await logBotActionFailure("Queue pause failed", error);
+    throw error;
+  }
 }
 
 export async function resumeBotQueueInline(): Promise<AdminBotEventActionResult> {
@@ -326,27 +367,33 @@ export async function resumeBotQueueInline(): Promise<AdminBotEventActionResult>
     return authError;
   }
 
-  await prisma.serverSetting.upsert({
-    where: {
-      key: "bot.queue.paused",
-    },
-    create: {
-      key: "bot.queue.paused",
-      value: "false",
-      description: "Controls bot event queue processing.",
-    },
-    update: {
-      value: "false",
-    },
-  });
+  try {
+    await prisma.serverSetting.upsert({
+      where: {
+        key: "bot.queue.paused",
+      },
+      create: {
+        key: "bot.queue.paused",
+        value: "false",
+        description: "Controls bot event queue processing.",
+      },
+      update: {
+        value: "false",
+      },
+    });
 
-  await publishBotRuntimeUpdate("bot.queue.resumed", {
-    paused: false,
-  });
+    await publishBotRuntimeUpdate("bot.queue.resumed", {
+      paused: false,
+    });
+    await logServerAdminAction({ title: "Queue resumed" });
 
-  revalidateBotViews();
+    revalidateBotViews();
 
-  return success("Queue resumed.");
+    return success("Queue resumed.");
+  } catch (error) {
+    await logBotActionFailure("Queue resume failed", error);
+    throw error;
+  }
 }
 
 export async function queueBotHealthCheckInline(): Promise<AdminBotEventActionResult> {
@@ -356,9 +403,18 @@ export async function queueBotHealthCheckInline(): Promise<AdminBotEventActionRe
     return authError;
   }
 
-  await queueBotCommand("bot_command_health_check", 100);
+  try {
+    const event = await queueBotCommand("bot_command_health_check", 100);
+    await logServerAdminAction({
+      title: "Health check queued",
+      fields: [{ name: "Event ID", value: event.id, inline: false }],
+    });
 
-  return success("Health check queued.");
+    return success("Health check queued.");
+  } catch (error) {
+    await logBotActionFailure("Health check queue failed", error);
+    throw error;
+  }
 }
 
 export async function queueBotRefreshConfigInline(): Promise<AdminBotEventActionResult> {
@@ -368,9 +424,18 @@ export async function queueBotRefreshConfigInline(): Promise<AdminBotEventAction
     return authError;
   }
 
-  await queueBotCommand("bot_command_refresh_config", 95);
+  try {
+    const event = await queueBotCommand("bot_command_refresh_config", 95);
+    await logServerAdminAction({
+      title: "Config refresh queued",
+      fields: [{ name: "Event ID", value: event.id, inline: false }],
+    });
 
-  return success("Config refresh queued.");
+    return success("Config refresh queued.");
+  } catch (error) {
+    await logBotActionFailure("Config refresh queue failed", error);
+    throw error;
+  }
 }
 
 export async function queueBotRestartInline(): Promise<AdminBotEventActionResult> {
@@ -380,9 +445,18 @@ export async function queueBotRestartInline(): Promise<AdminBotEventActionResult
     return authError;
   }
 
-  await queueBotCommand("bot_command_restart", 120);
+  try {
+    const event = await queueBotCommand("bot_command_restart", 120);
+    await logServerAdminAction({
+      title: "Bot restart queued",
+      fields: [{ name: "Event ID", value: event.id, inline: false }],
+    });
 
-  return success("Restart queued.");
+    return success("Restart queued.");
+  } catch (error) {
+    await logBotActionFailure("Bot restart queue failed", error);
+    throw error;
+  }
 }
 
 export async function queueBotSendMessageInline(
@@ -447,29 +521,43 @@ export async function cleanupCompletedBotEventsInline(
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - days);
 
-  const result = await prisma.botEvent.deleteMany({
-    where: {
-      status: {
-        in: ["completed", "cancelled"],
+  try {
+    const result = await prisma.botEvent.deleteMany({
+      where: {
+        status: {
+          in: ["completed", "cancelled"],
+        },
+        updatedAt: {
+          lt: cutoffDate,
+        },
       },
-      updatedAt: {
-        lt: cutoffDate,
+    });
+
+    await createRealtimeEvent({
+      type: "bot.events.cleaned",
+      audience: "admin",
+      entityType: "botEvent",
+      entityId: "cleanup",
+      payload: {
+        deletedCount: result.count,
+        olderThanDays: days,
       },
-    },
-  });
+    });
+    await logServerAdminAction({
+      title: "Old bot events cleaned",
+      fields: [
+        { name: "Deleted", value: result.count },
+        { name: "Days", value: days },
+      ],
+    });
 
-  await createRealtimeEvent({
-    type: "bot.events.cleaned",
-    audience: "admin",
-    entityType: "botEvent",
-    entityId: "cleanup",
-    payload: {
-      deletedCount: result.count,
-      olderThanDays: days,
-    },
-  });
+    revalidateBotViews();
 
-  revalidateBotViews();
-
-  return success(`Cleaned ${result.count} event(s).`);
+    return success(`Cleaned ${result.count} event(s).`);
+  } catch (error) {
+    await logBotActionFailure("Old bot events cleanup failed", error, [
+      { name: "Days", value: days },
+    ]);
+    throw error;
+  }
 }

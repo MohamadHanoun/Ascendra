@@ -5,6 +5,11 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  getServerLogErrorMessage,
+  logServerAdminAction,
+  logServerBotError,
+} from "@/lib/serverDiscordLogs";
 
 const botTextSettings = [
   {
@@ -97,41 +102,54 @@ export async function saveAdminBotSettings(formData: FormData) {
     redirectBack("error", "Only Ascendra admins can update bot settings.");
   }
 
-  await prisma.$transaction([
-    ...botTextSettings.map((setting) =>
-      prisma.serverSetting.upsert({
-        where: {
-          key: setting.key,
-        },
-        update: {
-          value: getValue(formData, setting.formName),
-          description: setting.description,
-        },
-        create: {
-          key: setting.key,
-          value: getValue(formData, setting.formName),
-          description: setting.description,
-        },
-      }),
-    ),
+  try {
+    await prisma.$transaction([
+      ...botTextSettings.map((setting) =>
+        prisma.serverSetting.upsert({
+          where: {
+            key: setting.key,
+          },
+          update: {
+            value: getValue(formData, setting.formName),
+            description: setting.description,
+          },
+          create: {
+            key: setting.key,
+            value: getValue(formData, setting.formName),
+            description: setting.description,
+          },
+        }),
+      ),
 
-    ...botBooleanSettings.map((setting) =>
-      prisma.serverSetting.upsert({
-        where: {
-          key: setting.key,
-        },
-        update: {
-          value: getCheckboxValue(formData, setting.formName),
-          description: setting.description,
-        },
-        create: {
-          key: setting.key,
-          value: getCheckboxValue(formData, setting.formName),
-          description: setting.description,
-        },
-      }),
-    ),
-  ]);
+      ...botBooleanSettings.map((setting) =>
+        prisma.serverSetting.upsert({
+          where: {
+            key: setting.key,
+          },
+          update: {
+            value: getCheckboxValue(formData, setting.formName),
+            description: setting.description,
+          },
+          create: {
+            key: setting.key,
+            value: getCheckboxValue(formData, setting.formName),
+            description: setting.description,
+          },
+        }),
+      ),
+    ]);
+    await logServerAdminAction({
+      title: "Bot settings saved",
+      fields: [{ name: "Admin ID", value: sessionUser.databaseId, inline: false }],
+    });
+  } catch (error) {
+    await logServerBotError({
+      title: "Bot settings save failed",
+      description: getServerLogErrorMessage(error),
+      fields: [{ name: "Admin ID", value: sessionUser.databaseId, inline: false }],
+    });
+    throw error;
+  }
 
   revalidatePath("/admin");
 

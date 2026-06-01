@@ -5,6 +5,11 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import {
+  getServerLogErrorMessage,
+  logServerAdminAction,
+  logServerBotError,
+} from "@/lib/serverDiscordLogs";
 
 type TournamentDiscordEventType =
   | "tournament_announcement_update"
@@ -127,62 +132,104 @@ async function getTournament(tournamentId: string) {
   });
 }
 
+function getTournamentDiscordActionTitle(type: TournamentDiscordEventType) {
+  if (type === "tournament_announcement_recreate") {
+    return "Tournament Discord message recreated";
+  }
+
+  if (type === "tournament_announcement_delete") {
+    return "Tournament Discord message deleted";
+  }
+
+  return "Tournament Discord message synced";
+}
+
+function shouldLogTournamentDiscordAction(type: TournamentDiscordEventType) {
+  return (
+    type === "tournament_announcement_recreate" ||
+    type === "tournament_announcement_delete"
+  );
+}
+
 async function queueTournamentDiscordEvent(
   type: TournamentDiscordEventType,
   tournamentId: string,
 ) {
-  const tournament = await getTournament(tournamentId);
+  try {
+    const tournament = await getTournament(tournamentId);
 
-  if (!tournament) {
-    return fail("Tournament was not found.");
+    if (!tournament) {
+      return fail("Tournament was not found.");
+    }
+
+    if (
+      type === "tournament_announcement_delete" &&
+      (!tournament.discordAnnouncementChannelId ||
+        !tournament.discordAnnouncementMessageId)
+    ) {
+      return fail("No Discord message is stored for this tournament.");
+    }
+
+    const event = await prisma.botEvent.create({
+      data: {
+        type,
+        entityType: "tournament",
+        entityId: tournament.id,
+        priority:
+          type === "tournament_announcement_delete"
+            ? 125
+            : type === "tournament_announcement_recreate"
+              ? 120
+              : 100,
+        payload: buildTournamentAnnouncementPayload(tournament),
+      },
+    });
+
+    await createRealtimeEvent({
+      type: "bot.command.queued",
+      audience: "admin",
+      entityType: "botEvent",
+      entityId: event.id,
+      payload: {
+        botEventId: event.id,
+        eventType: type,
+        tournamentId: tournament.id,
+      },
+    });
+
+    if (shouldLogTournamentDiscordAction(type)) {
+      await logServerAdminAction({
+        title: getTournamentDiscordActionTitle(type),
+        fields: [
+          { name: "Tournament", value: tournament.title, inline: false },
+          { name: "Tournament ID", value: tournament.id, inline: false },
+          { name: "Event ID", value: event.id, inline: false },
+        ],
+      });
+    }
+
+    revalidateBotViews();
+
+    if (type === "tournament_announcement_delete") {
+      return success("Delete queued.");
+    }
+
+    if (type === "tournament_announcement_recreate") {
+      return success("Recreate queued.");
+    }
+
+    return success("Sync queued.");
+  } catch (error) {
+    if (shouldLogTournamentDiscordAction(type)) {
+      await logServerBotError({
+        title: `${getTournamentDiscordActionTitle(type)} failed`,
+        description: getServerLogErrorMessage(error),
+        fields: [{ name: "Tournament ID", value: tournamentId, inline: false }],
+      });
+    }
+
+    throw error;
   }
-
-  if (
-    type === "tournament_announcement_delete" &&
-    (!tournament.discordAnnouncementChannelId ||
-      !tournament.discordAnnouncementMessageId)
-  ) {
-    return fail("No Discord message is stored for this tournament.");
-  }
-
-  const event = await prisma.botEvent.create({
-    data: {
-      type,
-      entityType: "tournament",
-      entityId: tournament.id,
-      priority:
-        type === "tournament_announcement_delete"
-          ? 125
-          : type === "tournament_announcement_recreate"
-            ? 120
-            : 100,
-      payload: buildTournamentAnnouncementPayload(tournament),
-    },
-  });
-
-  await createRealtimeEvent({
-    type: "bot.command.queued",
-    audience: "admin",
-    entityType: "botEvent",
-    entityId: event.id,
-    payload: {
-      botEventId: event.id,
-      eventType: type,
-      tournamentId: tournament.id,
-    },
-  });
-
-  revalidateBotViews();
-
-  if (type === "tournament_announcement_delete") {
-    return success("Delete queued.");
-  }
-
-  if (type === "tournament_announcement_recreate") {
-    return success("Recreate queued.");
-  }
-
-  return success("Sync queued.");
 }
 
 export async function syncTournamentDiscordMessageInline(
