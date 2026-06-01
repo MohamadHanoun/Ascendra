@@ -31,6 +31,11 @@ type TournamentForAnnouncement = {
   discordAnnouncementUrl: string | null;
 };
 
+type TournamentAnnouncementContext = {
+  registrationStatusChange?: "opened" | "closed";
+  previousRegistrationStatus?: string;
+};
+
 function success(message: string): AdminTournamentActionResult {
   return { ok: true, message };
 }
@@ -126,6 +131,7 @@ function normalizeImageUrl(imageUrl: string) {
 
 function buildTournamentAnnouncementPayload(
   tournament: TournamentForAnnouncement,
+  context: TournamentAnnouncementContext = {},
 ) {
   return {
     tournamentId: tournament.id,
@@ -143,12 +149,15 @@ function buildTournamentAnnouncementPayload(
     announcementChannelId: tournament.discordAnnouncementChannelId,
     announcementMessageId: tournament.discordAnnouncementMessageId,
     announcementUrl: tournament.discordAnnouncementUrl,
+    registrationStatusChange: context.registrationStatusChange,
+    previousRegistrationStatus: context.previousRegistrationStatus,
   };
 }
 
 async function queueTournamentAnnouncementEvent(
   type: "tournament_announcement_create" | "tournament_announcement_update",
   tournament: TournamentForAnnouncement,
+  context: TournamentAnnouncementContext = {},
 ) {
   if (type === "tournament_announcement_update") {
     await prisma.botEvent.updateMany({
@@ -173,7 +182,7 @@ async function queueTournamentAnnouncementEvent(
       entityType: "tournament",
       entityId: tournament.id,
       priority: type === "tournament_announcement_create" ? 30 : 20,
-      payload: buildTournamentAnnouncementPayload(tournament),
+      payload: buildTournamentAnnouncementPayload(tournament, context),
     },
   });
 }
@@ -534,6 +543,14 @@ async function setTournamentRegistrationStatus(
     return fail("Ended tournaments cannot reopen registration.");
   }
 
+  if (tournament.registrationStatus === registrationStatus) {
+    return success(
+      registrationStatus === "open"
+        ? "Tournament registration opened."
+        : "Tournament registration closed.",
+    );
+  }
+
   const updatedTournament = await prisma.tournament.update({
     where: { id: tournament.id },
     data: { registrationStatus },
@@ -543,6 +560,11 @@ async function setTournamentRegistrationStatus(
   await queueTournamentAnnouncementEvent(
     "tournament_announcement_update",
     updatedTournament,
+    {
+      registrationStatusChange:
+        registrationStatus === "open" ? "opened" : "closed",
+      previousRegistrationStatus: tournament.registrationStatus,
+    },
   );
 
   await createRealtimeEvent({

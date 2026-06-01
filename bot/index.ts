@@ -1160,6 +1160,27 @@ async function fetchAnnouncementMessage(params: {
   return message;
 }
 
+async function logRegistrationStatusChange(event: BotEvent) {
+  const change = pickFirstNonEmpty(event.payload.registrationStatusChange);
+
+  if (change !== "opened" && change !== "closed") {
+    return;
+  }
+
+  const status = change === "opened" ? "Open" : "Closed";
+
+  await sendTournamentLog({
+    title: change === "opened" ? "Registration opened" : "Registration closed",
+    fields: [
+      { name: "Tournament", value: cleanLogValue(event.payload.title) },
+      { name: "Game", value: cleanLogValue(event.payload.game) },
+      { name: "Status", value: status },
+      { name: "Event ID", value: event.id, inline: false },
+    ],
+    color: change === "opened" ? COLORS.success : COLORS.warning,
+  });
+}
+
 async function upsertTournamentAnnouncementMessage(
   event: BotEvent,
 ): Promise<TournamentAnnouncementResult> {
@@ -1209,6 +1230,8 @@ async function upsertTournamentAnnouncementMessage(
       color: COLORS.success,
     });
 
+    await logRegistrationStatusChange(event);
+
     return {
       channelId: editedMessage.channelId,
       messageId: editedMessage.id,
@@ -1238,6 +1261,8 @@ async function upsertTournamentAnnouncementMessage(
     ],
     color: COLORS.success,
   });
+
+  await logRegistrationStatusChange(event);
 
   return {
     channelId: sentMessage.channelId,
@@ -1449,6 +1474,7 @@ async function removeRoleFromMembers(params: {
     return {
       removed: [],
       failed: [],
+      failedDetails: [],
     };
   }
 
@@ -1456,6 +1482,7 @@ async function removeRoleFromMembers(params: {
 
   const removed: string[] = [];
   const failed: string[] = [];
+  const failedDetails: MemberRoleFailure[] = [];
 
   for (const discordId of params.memberDiscordIds) {
     try {
@@ -1473,14 +1500,21 @@ async function removeRoleFromMembers(params: {
 
       removed.push(discordId);
     } catch (error) {
+      const reason = getErrorMessage(error);
+
       console.error(`Failed to remove role from ${discordId}`, error);
       failed.push(discordId);
+      failedDetails.push({
+        discordId,
+        reason,
+      });
     }
   }
 
   return {
     removed,
     failed,
+    failedDetails,
   };
 }
 
@@ -1752,6 +1786,10 @@ function formatAssignmentSummary(assignedCount: number, failedCount: number) {
   return `${assignedCount} assigned, ${failedCount} failed`;
 }
 
+function formatRemovalSummary(removedCount: number, failedCount: number) {
+  return `${removedCount} removed, ${failedCount} failed`;
+}
+
 function formatCaptainRoleSummary(params: {
   assigned: string[];
   failed: string[];
@@ -1768,6 +1806,33 @@ function formatCaptainRoleSummary(params: {
   return cleanLogValue(params.reason);
 }
 
+function formatCaptainRemovalSummary(params: {
+  removed: string[];
+  failed: string[];
+  reason: string;
+}) {
+  if (params.removed.length > 0) {
+    return "Removed";
+  }
+
+  if (params.failed.length > 0) {
+    return "Failed";
+  }
+
+  if (params.reason === "Leader still qualifies") {
+    return "Kept";
+  }
+
+  return cleanLogValue(params.reason);
+}
+
+function formatRemovedOrMissing(label: unknown, id: unknown, removed: boolean) {
+  const target = cleanLogValue(pickFirstNonEmpty(label, id));
+  const result = removed ? "Removed" : "Not found";
+
+  return target === "-" ? result : `${result} - ${target}`;
+}
+
 function formatFailureReason(value: unknown) {
   return cleanLogValue(value).replace(/\s+/g, " ").slice(0, 180);
 }
@@ -1775,13 +1840,14 @@ function formatFailureReason(value: unknown) {
 function formatMemberAssignmentFailures(
   failedIds: string[],
   failedDetails: MemberRoleFailure[] = [],
+  fallbackReason = "Assignment failed",
 ) {
   const details =
     failedDetails.length > 0
       ? failedDetails
       : failedIds.map((discordId) => ({
           discordId,
-          reason: "Assignment failed",
+          reason: fallbackReason,
         }));
 
   if (details.length === 0) {
@@ -2101,31 +2167,46 @@ async function processTeamAccessRemove(event: BotEvent) {
   });
 
   await sendTournamentLog({
-    title: "Team Discord access removed",
+    title: "Team access removed",
     fields: [
+      {
+        name: "Tournament",
+        value: getTeamAccessTournamentTitle(payload),
+      },
       { name: "Team", value: cleanLogValue(payload.teamName) },
-      { name: "Action", value: cleanLogValue(payload.action || "removed") },
+      { name: "Game", value: cleanLogValue(payload.game) },
       {
         name: "Reason",
-        value: cleanLogValue(payload.rejectionReason),
+        value: cleanLogValue(payload.rejectionReason || payload.action || "removed"),
         inline: false,
       },
       {
         name: "Role",
-        value: cleanLogValue(payload.roleName || payload.roleId),
+        value: formatRemovedOrMissing(
+          payload.roleName,
+          roleDeletion.roleId || payload.roleId,
+          roleDeletion.deleted,
+        ),
       },
       {
-        name: "Voice Room",
-        value: cleanLogValue(payload.channelName || payload.channelId),
+        name: "Channel",
+        value: formatRemovedOrMissing(
+          payload.channelName,
+          channelDeletion.channelId || payload.channelId,
+          channelDeletion.deleted,
+        ),
       },
-      { name: "Members Removed", value: String(roleRemoval.removed.length) },
-      { name: "Failed Removals", value: String(roleRemoval.failed.length) },
       {
-        name: "Team Captain",
-        value: cleanLogValue(teamCaptainRemoval.reason),
+        name: "Members updated",
+        value: formatRemovalSummary(
+          roleRemoval.removed.length,
+          roleRemoval.failed.length,
+        ),
       },
-      { name: "Room Deleted", value: channelDeletion.deleted ? "Yes" : "No" },
-      { name: "Role Deleted", value: roleDeletion.deleted ? "Yes" : "No" },
+      {
+        name: "Captain role",
+        value: formatCaptainRemovalSummary(teamCaptainRemoval),
+      },
       { name: "Event ID", value: event.id, inline: false },
     ],
     color:
@@ -2139,10 +2220,22 @@ async function processTeamAccessRemove(event: BotEvent) {
       title: "Team role removal failed",
       fields: [
         { name: "Team", value: cleanLogValue(payload.teamName) },
-        { name: "Failed Members", value: String(roleRemoval.failed.length) },
         {
-          name: "Team Captain",
-          value: cleanLogValue(teamCaptainRemoval.reason),
+          name: "Tournament",
+          value: getTeamAccessTournamentTitle(payload),
+        },
+        {
+          name: "Failed members",
+          value: formatMemberAssignmentFailures(
+            roleRemoval.failed,
+            roleRemoval.failedDetails,
+            "Removal failed",
+          ),
+          inline: false,
+        },
+        {
+          name: "Captain role",
+          value: formatCaptainRemovalSummary(teamCaptainRemoval),
         },
         { name: "Event ID", value: event.id, inline: false },
       ],

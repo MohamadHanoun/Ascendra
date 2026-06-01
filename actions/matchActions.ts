@@ -24,6 +24,7 @@ import {
   notifyMatchConfirmed,
   notifyMatchCommunicationUpdated,
   notifyFaceitRoomLinked,
+  notifyMatchScheduled,
 } from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
@@ -1368,9 +1369,22 @@ export async function updateTournamentMatchCommunication(
 
   const match = await prisma.tournamentMatch.findUnique({
     where: { id: matchId },
-    select: { id: true, tournamentId: true, teamAId: true, teamBId: true },
+    select: {
+      id: true,
+      tournamentId: true,
+      roundNumber: true,
+      matchNumber: true,
+      scheduledAt: true,
+      teamAId: true,
+      teamBId: true,
+    },
   });
   if (!match) return fail(messages.matchNotFound);
+
+  const scheduleChanged =
+    scheduledAt !== null &&
+    (!match.scheduledAt ||
+      match.scheduledAt.getTime() !== scheduledAt.getTime());
 
   await prisma.tournamentMatch.update({
     where: { id: match.id },
@@ -1382,6 +1396,15 @@ export async function updateTournamentMatchCommunication(
 
   revalidateMatchPaths(match.tournamentId);
   revalidatePath(`/tournaments/${match.tournamentId}/matches/${match.id}`);
+
+  if (scheduleChanged && scheduledAt) {
+    void notifyMatchScheduled(
+      { ...match, scheduledAt },
+      String(scheduledAt.getTime()),
+    ).catch((err) =>
+      console.error("[matchActions] notifyMatchScheduled failed:", err),
+    );
+  }
 
   void notifyMatchCommunicationUpdated(match, String(Date.now())).catch((err) =>
     console.error("[matchActions] notifyMatchCommunicationUpdated failed:", err),

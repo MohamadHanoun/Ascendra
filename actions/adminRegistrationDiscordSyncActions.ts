@@ -262,7 +262,7 @@ export async function forceRemoveRegistrationDiscordAccess(
       id: registrationId,
     },
     include: {
-      tournament: true,
+      tournament: { include: { game: true } },
       team: {
         include: {
           members: {
@@ -310,6 +310,7 @@ export async function forceRemoveRegistrationDiscordAccess(
 
           tournamentId: registration.tournament.id,
           tournamentTitle: registration.tournament.title,
+          game: registration.tournament.game?.name ?? null,
 
           teamId: registration.team.id,
           teamName: registration.team.name,

@@ -6,6 +6,11 @@ import {
 } from "@/lib/notifications";
 import { sendDiscordNotificationsToUsers } from "@/lib/discordNotificationBridge";
 import { prisma } from "@/lib/prisma";
+import {
+  getServerLogErrorMessage,
+  logServerBotError,
+  logServerTournamentAction,
+} from "@/lib/serverDiscordLogs";
 
 export type MatchNotificationMatch = {
   id: string;
@@ -15,6 +20,7 @@ export type MatchNotificationMatch = {
   teamAId?: string | null;
   teamBId?: string | null;
   winnerTeamId?: string | null;
+  scheduledAt?: Date | null;
 };
 
 export type MatchNotificationScore = {
@@ -49,7 +55,10 @@ function matchHref(match: MatchNotificationMatch) {
   return `/tournaments/${match.tournamentId}/matches/${match.id}`;
 }
 
-function matchLabel(match: MatchNotificationMatch) {
+function matchLabel(match: {
+  roundNumber?: number | null;
+  matchNumber?: number | null;
+}) {
   if (
     typeof match.roundNumber === "number" &&
     typeof match.matchNumber === "number"
@@ -143,6 +152,134 @@ function scoreLabel(score?: MatchNotificationScore | null) {
   return null;
 }
 
+function formatMatchTime(value?: Date | null) {
+  if (!value) {
+    return "-";
+  }
+
+  return `<t:${Math.floor(value.getTime() / 1000)}:F>`;
+}
+
+function formatMatchTeams(
+  teams: Map<string, TeamRecipient>,
+  match: MatchNotificationMatch,
+) {
+  return `${teamName(teams, match.teamAId)} vs ${teamName(
+    teams,
+    match.teamBId,
+  )}`;
+}
+
+async function loadMatchLogDetails(match: MatchNotificationMatch) {
+  return prisma.tournamentMatch.findUnique({
+    where: { id: match.id },
+    select: {
+      id: true,
+      roundNumber: true,
+      matchNumber: true,
+      scheduledAt: true,
+      tournament: { select: { title: true } },
+      reports: {
+        where: { status: "confirmed" },
+        orderBy: { updatedAt: "desc" },
+        take: 1,
+        select: { teamAScore: true, teamBScore: true },
+      },
+    },
+  });
+}
+
+async function logMatchNotificationFailure(input: {
+  title: string;
+  error: unknown;
+  match: MatchNotificationMatch;
+}) {
+  await logServerBotError({
+    title: input.title,
+    description: getServerLogErrorMessage(input.error),
+    fields: [
+      { name: "Match ID", value: input.match.id, inline: false },
+      { name: "Tournament ID", value: input.match.tournamentId, inline: false },
+    ],
+  });
+}
+
+async function logMatchScheduledToTournamentChannel(
+  match: MatchNotificationMatch,
+  teams: Map<string, TeamRecipient>,
+) {
+  try {
+    const details = await loadMatchLogDetails(match);
+
+    await logServerTournamentAction({
+      title: "Match scheduled",
+      fields: [
+        {
+          name: "Tournament",
+          value: details?.tournament.title || match.tournamentId,
+          inline: false,
+        },
+        { name: "Match", value: matchLabel(details ?? match) },
+        { name: "Teams", value: formatMatchTeams(teams, match), inline: false },
+        { name: "Time", value: formatMatchTime(details?.scheduledAt) },
+      ],
+    });
+  } catch (error) {
+    await logMatchNotificationFailure({
+      title: "Match scheduled log failed",
+      error,
+      match,
+    });
+  }
+}
+
+async function logMatchConfirmedToTournamentChannel(
+  match: MatchNotificationMatch,
+  teams: Map<string, TeamRecipient>,
+  winnerTeamId: string,
+  score?: MatchNotificationScore | null,
+) {
+  try {
+    const details = await loadMatchLogDetails(match);
+    const resultScore =
+      scoreLabel(score) ||
+      scoreLabel(details?.reports[0] ?? null) ||
+      "Confirmed";
+
+    await logServerTournamentAction({
+      title: "Match result confirmed",
+      fields: [
+        {
+          name: "Tournament",
+          value: details?.tournament.title || match.tournamentId,
+          inline: false,
+        },
+        { name: "Match", value: matchLabel(details ?? match) },
+        { name: "Result", value: resultScore },
+        { name: "Winner", value: teamName(teams, winnerTeamId) },
+      ],
+    });
+  } catch (error) {
+    await logMatchNotificationFailure({
+      title: "Match result log failed",
+      error,
+      match,
+    });
+  }
+}
+
+function logMatchDmFailure(
+  title: string,
+  match: MatchNotificationMatch,
+  error: unknown,
+) {
+  void logMatchNotificationFailure({
+    title,
+    error,
+    match,
+  }).catch(() => {});
+}
+
 async function createMatchNotifications({
   userIds,
   type,
@@ -171,8 +308,13 @@ async function createMatchNotifications({
   }
 }
 
-export async function notifyMatchScheduled(match: MatchNotificationMatch) {
+export async function notifyMatchScheduled(
+  match: MatchNotificationMatch,
+  updateKey = "initial",
+) {
   const teams = await loadTeams([match.teamAId, match.teamBId]);
+  await logMatchScheduledToTournamentChannel(match, teams);
+
   const userIds = memberIdsForTeams(teams, [match.teamAId, match.teamBId]);
 
   if (userIds.length === 0) return;
@@ -186,10 +328,15 @@ export async function notifyMatchScheduled(match: MatchNotificationMatch) {
     title,
     message,
     match,
-    dedupeKey: `match.scheduled:${match.id}`,
+    dedupeKey: `match.scheduled:${match.id}:${updateKey}`,
   });
 
-  void sendDiscordNotificationsToUsers({ userIds, title, message, href: matchHref(match) }).catch(() => {});
+  void sendDiscordNotificationsToUsers({
+    userIds,
+    title,
+    message,
+    href: matchHref(match),
+  }).catch((error) => logMatchDmFailure("Match scheduled DM failed", match, error));
 }
 
 export async function notifyMatchRoomReady(match: MatchNotificationMatch) {
@@ -292,6 +439,8 @@ export async function notifyMatchConfirmed(
   score?: MatchNotificationScore | null,
 ) {
   const teams = await loadTeams([match.teamAId, match.teamBId, winnerTeamId]);
+  await logMatchConfirmedToTournamentChannel(match, teams, winnerTeamId, score);
+
   const userIds = memberIdsForTeams(teams, [match.teamAId, match.teamBId]);
 
   if (userIds.length === 0) return;
@@ -320,7 +469,9 @@ export async function notifyMatchConfirmed(
     title: "Result confirmed",
     message: confirmedMessage,
     href: matchHref(match),
-  }).catch(() => {});
+  }).catch((error) =>
+    logMatchDmFailure("Match result DM failed", match, error),
+  );
 }
 
 export async function notifyMatchProcessingFailed(input: {

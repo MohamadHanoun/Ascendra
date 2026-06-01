@@ -6,6 +6,7 @@ const DISCORD_API = "https://discord.com/api/v10";
 
 const ADMIN_ACTION_COLOR = 0xb88746;
 const BOT_ERROR_COLOR = 0xb23a48;
+const TOURNAMENT_LOG_COLOR = 0xb88746;
 
 type ServerDiscordLogField = {
   name: string;
@@ -31,7 +32,7 @@ export function getServerLogErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unexpected server action error.";
 }
 
-async function getLogChannelId(kind: "admin" | "error") {
+async function getLogChannelId(kind: "admin" | "error" | "tournament") {
   const settings = await prisma.serverSetting.findMany({
     where: {
       key: {
@@ -39,6 +40,7 @@ async function getLogChannelId(kind: "admin" | "error") {
           "bot.adminActionsLogChannelId",
           "bot.errorLogChannelId",
           "bot.config.botLogChannelId",
+          "bot.config.tournamentLogChannelId",
         ],
       },
     },
@@ -51,11 +53,15 @@ async function getLogChannelId(kind: "admin" | "error") {
     return getValue("bot.adminActionsLogChannelId") || getValue("bot.config.botLogChannelId");
   }
 
+  if (kind === "tournament") {
+    return getValue("bot.config.tournamentLogChannelId") || getValue("bot.config.botLogChannelId");
+  }
+
   return getValue("bot.errorLogChannelId") || getValue("bot.config.botLogChannelId");
 }
 
 async function sendServerDiscordLog(
-  kind: "admin" | "error",
+  kind: "admin" | "error" | "tournament",
   input: ServerDiscordLogInput,
 ) {
   try {
@@ -80,7 +86,12 @@ async function sendServerDiscordLog(
       body: JSON.stringify({
         embeds: [
           {
-            color: kind === "admin" ? ADMIN_ACTION_COLOR : BOT_ERROR_COLOR,
+            color:
+              kind === "error"
+                ? BOT_ERROR_COLOR
+                : kind === "tournament"
+                  ? TOURNAMENT_LOG_COLOR
+                  : ADMIN_ACTION_COLOR,
             title: input.title.slice(0, 256),
             description: input.description?.slice(0, 3900) || undefined,
             fields: input.fields?.slice(0, 12).map((field) => ({
@@ -108,4 +119,8 @@ export async function logServerAdminAction(input: ServerDiscordLogInput) {
 
 export async function logServerBotError(input: ServerDiscordLogInput) {
   await sendServerDiscordLog("error", input);
+}
+
+export async function logServerTournamentAction(input: ServerDiscordLogInput) {
+  await sendServerDiscordLog("tournament", input);
 }

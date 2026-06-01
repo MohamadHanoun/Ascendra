@@ -8,6 +8,7 @@ import { createNotificationsOnceForUsers } from "@/lib/notifications";
 import { sendDiscordNotificationsToUsers } from "@/lib/discordNotificationBridge";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import { logServerTournamentAction } from "@/lib/serverDiscordLogs";
 
 export type AdminRegistrationActionResult = {
   ok: boolean;
@@ -605,7 +606,7 @@ export async function rejectRegistrationInline(
       id: registrationId,
     },
     include: {
-      tournament: true,
+      tournament: { include: { game: true } },
       team: {
         include: {
           members: {
@@ -662,6 +663,7 @@ export async function rejectRegistrationInline(
 
             tournamentId: registration.tournament.id,
             tournamentTitle: registration.tournament.title,
+            game: registration.tournament.game?.name ?? null,
 
             teamId: registration.team.id,
             teamName: registration.team.name,
@@ -692,6 +694,16 @@ export async function rejectRegistrationInline(
   });
 
   const reason = compactReason(rejectionReason);
+
+  await logServerTournamentAction({
+    title: "Team registration rejected",
+    fields: [
+      { name: "Tournament", value: registration.tournament.title, inline: false },
+      { name: "Team", value: registration.team.name },
+      { name: "Game", value: registration.tournament.game?.name ?? null },
+      { name: "Reason", value: reason, inline: false },
+    ],
+  });
 
   await notifyRegistrationUsers({
     userIds: [
@@ -734,7 +746,7 @@ export async function cancelRegistrationInline(
       id: registrationId,
     },
     include: {
-      tournament: true,
+      tournament: { include: { game: true } },
       team: {
         include: {
           members: {
@@ -790,6 +802,7 @@ export async function cancelRegistrationInline(
 
             tournamentId: registration.tournament.id,
             tournamentTitle: registration.tournament.title,
+            game: registration.tournament.game?.name ?? null,
 
             teamId: registration.team.id,
             teamName: registration.team.name,
