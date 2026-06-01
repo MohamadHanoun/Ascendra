@@ -107,6 +107,7 @@ type BotRuntimeConfig = {
 type BotEvent = {
   id: string;
   type: string;
+  attempts?: number;
   payload: Record<string, any>;
 };
 
@@ -114,6 +115,11 @@ type LogField = {
   name: string;
   value: string;
   inline?: boolean;
+};
+
+type MemberRoleFailure = {
+  discordId: string;
+  reason: string;
 };
 
 type RegistrationPresentation = {
@@ -1399,6 +1405,7 @@ async function assignRoleToMembers(params: {
 
   const assigned: string[] = [];
   const failed: string[] = [];
+  const failedDetails: MemberRoleFailure[] = [];
 
   for (const discordId of params.memberDiscordIds) {
     try {
@@ -1416,14 +1423,21 @@ async function assignRoleToMembers(params: {
 
       assigned.push(discordId);
     } catch (error) {
+      const reason = getErrorMessage(error);
+
       console.error(`Failed to assign role to ${discordId}`, error);
       failed.push(discordId);
+      failedDetails.push({
+        discordId,
+        reason,
+      });
     }
   }
 
   return {
     assigned,
     failed,
+    failedDetails,
   };
 }
 
@@ -1727,6 +1741,231 @@ async function deleteTeamRole(params: {
   };
 }
 
+function formatAccessResult(label: unknown, created: boolean) {
+  const result = created ? "Created" : "Ready";
+  const cleanLabel = cleanLogValue(label);
+
+  return cleanLabel === "-" ? result : `${result} - ${cleanLabel}`;
+}
+
+function formatAssignmentSummary(assignedCount: number, failedCount: number) {
+  return `${assignedCount} assigned, ${failedCount} failed`;
+}
+
+function formatCaptainRoleSummary(params: {
+  assigned: string[];
+  failed: string[];
+  reason: string;
+}) {
+  if (params.assigned.length > 0) {
+    return "Assigned";
+  }
+
+  if (params.failed.length > 0) {
+    return "Failed";
+  }
+
+  return cleanLogValue(params.reason);
+}
+
+function formatFailureReason(value: unknown) {
+  return cleanLogValue(value).replace(/\s+/g, " ").slice(0, 180);
+}
+
+function formatMemberAssignmentFailures(
+  failedIds: string[],
+  failedDetails: MemberRoleFailure[] = [],
+) {
+  const details =
+    failedDetails.length > 0
+      ? failedDetails
+      : failedIds.map((discordId) => ({
+          discordId,
+          reason: "Assignment failed",
+        }));
+
+  if (details.length === 0) {
+    return "-";
+  }
+
+  const visibleDetails = details.slice(0, 8).map((failure) => {
+    return `${failure.discordId}: ${formatFailureReason(failure.reason)}`;
+  });
+  const remainingCount = details.length - visibleDetails.length;
+
+  if (remainingCount > 0) {
+    visibleDetails.push(`${remainingCount} more`);
+  }
+
+  return visibleDetails.join("\n");
+}
+
+function getTeamAccessTournamentTitle(payload: Record<string, any>) {
+  return cleanLogValue(payload.tournamentTitle);
+}
+
+function getTeamAccessTournamentName(payload: Record<string, any>) {
+  return pickFirstNonEmpty(payload.tournamentTitle, "this tournament");
+}
+
+function getTeamAccessTournamentUrl(payload: Record<string, any>) {
+  return getAbsoluteUrl(
+    pickFirstNonEmpty(payload.websiteUrl, payload.tournamentUrl),
+  );
+}
+
+function getTeamAccessCaptainDiscordId(payload: Record<string, any>) {
+  return pickFirstNonEmpty(payload.leaderDiscordId, payload.captainDiscordId);
+}
+
+function isFirstBotEventAttempt(event: BotEvent) {
+  const attempts = Number(event.attempts ?? 1);
+
+  return !Number.isFinite(attempts) || attempts <= 1;
+}
+
+function shouldSendTeamApprovedDm(event: BotEvent, payload: Record<string, any>) {
+  if (!isFirstBotEventAttempt(event)) {
+    return false;
+  }
+
+  return pickFirstNonEmpty(payload.action) !== "manual_sync";
+}
+
+async function logCaptainDmFailure(params: {
+  payload: Record<string, any>;
+  eventId: string;
+  captainDiscordId: string;
+  reason: string;
+}) {
+  await sendBotErrorLog({
+    title: "Captain DM failed",
+    fields: [
+      { name: "Team", value: cleanLogValue(params.payload.teamName) },
+      {
+        name: "Tournament",
+        value: getTeamAccessTournamentTitle(params.payload),
+      },
+      {
+        name: "Captain",
+        value: cleanLogValue(params.captainDiscordId),
+      },
+      { name: "Reason", value: formatFailureReason(params.reason) },
+      { name: "Event ID", value: params.eventId, inline: false },
+    ],
+  });
+}
+
+async function sendTeamApprovedCaptainDm(params: {
+  event: BotEvent;
+  payload: Record<string, any>;
+  teamChannelName: string;
+  roleAssignments: {
+    failed: string[];
+  };
+}) {
+  if (!shouldSendTeamApprovedDm(params.event, params.payload)) {
+    return;
+  }
+
+  const captainDiscordId = getTeamAccessCaptainDiscordId(params.payload);
+
+  if (!captainDiscordId) {
+    await logCaptainDmFailure({
+      payload: params.payload,
+      eventId: params.event.id,
+      captainDiscordId,
+      reason: "Missing captain Discord ID",
+    });
+
+    return;
+  }
+
+  if (params.roleAssignments.failed.includes(captainDiscordId)) {
+    await logCaptainDmFailure({
+      payload: params.payload,
+      eventId: params.event.id,
+      captainDiscordId,
+      reason: "Captain access not ready",
+    });
+
+    return;
+  }
+
+  const tournamentName = getTeamAccessTournamentName(params.payload);
+  const tournamentUrl = getTeamAccessTournamentUrl(params.payload);
+  const embed = new EmbedBuilder()
+    .setColor(COLORS.tournament)
+    .setAuthor({
+      name: "Ascendra Tournaments",
+      iconURL: BRAND_LOGO_URL,
+      url: SITE_URL,
+    })
+    .setTitle("Team approved")
+    .setDescription(`Your team has been approved for ${tournamentName}.`)
+    .addFields(
+      {
+        name: "Team",
+        value: cleanLogValue(params.payload.teamName),
+        inline: true,
+      },
+      {
+        name: "Tournament",
+        value: getTeamAccessTournamentTitle(params.payload),
+        inline: true,
+      },
+      {
+        name: "Discord access",
+        value: "Ready",
+        inline: true,
+      },
+      {
+        name: "Team channel",
+        value: cleanLogValue(params.teamChannelName),
+        inline: false,
+      },
+    )
+    .setFooter({
+      text: BRAND_FOOTER_TEXT,
+      iconURL: BRAND_LOGO_URL,
+    })
+    .setTimestamp();
+
+  const messagePayload: {
+    embeds: EmbedBuilder[];
+    components?: ActionRowBuilder<ButtonBuilder>[];
+  } = {
+    embeds: [embed],
+  };
+
+  if (tournamentUrl) {
+    messagePayload.components = [
+      buildLinkRow("Open tournament", tournamentUrl),
+    ];
+  }
+
+  try {
+    const user = await withTimeout(
+      client.users.fetch(captainDiscordId),
+      API_TIMEOUT_MS,
+      "Captain fetch timeout.",
+    );
+
+    await withTimeout<DiscordMessage>(
+      user.send(messagePayload) as unknown as Promise<DiscordMessage>,
+      API_TIMEOUT_MS,
+      "Captain DM timeout.",
+    );
+  } catch (error) {
+    await logCaptainDmFailure({
+      payload: params.payload,
+      eventId: params.event.id,
+      captainDiscordId,
+      reason: getErrorMessage(error),
+    });
+  }
+}
+
 async function processTeamAccessCreate(event: BotEvent) {
   const payload = event.payload;
   const config = await getBotConfig();
@@ -1749,25 +1988,35 @@ async function processTeamAccessCreate(event: BotEvent) {
   const teamCaptainAssignment = await assignTeamCaptainRole(payload);
 
   await sendTournamentLog({
-    title: "Team Discord access created",
+    title: "Team access created",
     fields: [
       { name: "Team", value: cleanLogValue(payload.teamName) },
+      {
+        name: "Tournament",
+        value: getTeamAccessTournamentTitle(payload),
+      },
       { name: "Game", value: cleanLogValue(payload.game) },
-      { name: "Role", value: cleanLogValue(payload.roleName) },
-      { name: "Role Created", value: roleResult.created ? "Yes" : "No" },
-      { name: "Voice Room", value: cleanLogValue(payload.channelName) },
-      { name: "Room Created", value: channelResult.created ? "Yes" : "No" },
       {
-        name: "Assigned Members",
-        value: String(roleAssignments.assigned.length),
+        name: "Team role",
+        value: formatAccessResult(roleResult.role.name, roleResult.created),
       },
       {
-        name: "Failed Assignments",
-        value: String(roleAssignments.failed.length),
+        name: "Team channel",
+        value: formatAccessResult(
+          channelResult.channel.name,
+          channelResult.created,
+        ),
       },
       {
-        name: "Team Captain",
-        value: cleanLogValue(teamCaptainAssignment.reason),
+        name: "Members",
+        value: formatAssignmentSummary(
+          roleAssignments.assigned.length,
+          roleAssignments.failed.length,
+        ),
+      },
+      {
+        name: "Captain role",
+        value: formatCaptainRoleSummary(teamCaptainAssignment),
       },
       { name: "Event ID", value: event.id, inline: false },
     ],
@@ -1783,18 +2032,36 @@ async function processTeamAccessCreate(event: BotEvent) {
     teamCaptainAssignment.failed.length > 0
   ) {
     await sendBotErrorLog({
-      title: "Team role assignment failed",
+      title: "Team role assignment incomplete",
       fields: [
         { name: "Team", value: cleanLogValue(payload.teamName) },
-        { name: "Failed Members", value: String(roleAssignments.failed.length) },
         {
-          name: "Team Captain",
-          value: cleanLogValue(teamCaptainAssignment.reason),
+          name: "Tournament",
+          value: getTeamAccessTournamentTitle(payload),
+        },
+        {
+          name: "Failed members",
+          value: formatMemberAssignmentFailures(
+            roleAssignments.failed,
+            roleAssignments.failedDetails,
+          ),
+          inline: false,
+        },
+        {
+          name: "Captain role",
+          value: formatCaptainRoleSummary(teamCaptainAssignment),
         },
         { name: "Event ID", value: event.id, inline: false },
       ],
     });
   }
+
+  await sendTeamApprovedCaptainDm({
+    event,
+    payload,
+    teamChannelName: channelResult.channel.name,
+    roleAssignments,
+  });
 
   return {
     roleId: roleResult.role.id,
