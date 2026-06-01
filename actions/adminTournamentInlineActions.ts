@@ -7,6 +7,11 @@ import { auth } from "@/auth";
 import { createNotificationsOnceForUsers } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import {
+  getServerLogErrorMessage,
+  logServerBotError,
+  logServerTournamentAction,
+} from "@/lib/serverDiscordLogs";
 
 export type AdminTournamentActionResult = {
   ok: boolean;
@@ -700,6 +705,32 @@ async function setTournamentStatus(
   }
 
   revalidateTournamentViews(tournament.id);
+
+  if (status === "ended") {
+    try {
+      const endedAt = updatedTournament.endedAt ?? new Date();
+      await logServerTournamentAction({
+        title: "Tournament completed",
+        fields: [
+          { name: "Tournament", value: updatedTournament.title, inline: false },
+          { name: "Game", value: updatedTournament.game?.name ?? null },
+          { name: "Status", value: "Ended" },
+          {
+            name: "Completed at",
+            value: endedAt.toISOString().replace("T", " ").slice(0, 19) + " UTC",
+          },
+        ],
+      });
+    } catch (error) {
+      void logServerBotError({
+        title: "Tournament completion notification failed",
+        fields: [
+          { name: "Tournament", value: updatedTournament.title, inline: false },
+          { name: "Reason", value: getServerLogErrorMessage(error) },
+        ],
+      });
+    }
+  }
 
   return success(`Tournament status changed to ${status}.`);
 }

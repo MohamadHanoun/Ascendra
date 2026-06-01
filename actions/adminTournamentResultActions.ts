@@ -7,6 +7,11 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
 import { awardTournamentResultsAndPoints } from "@/lib/tournamentResults";
+import {
+  getServerLogErrorMessage,
+  logServerBotError,
+  logServerTournamentAction,
+} from "@/lib/serverDiscordLogs";
 
 function success(message: string): AdminTournamentActionResult {
   return {
@@ -282,6 +287,53 @@ export async function saveTournamentResultInline(
   await publishResultRealtimeEvents(tournamentId);
 
   revalidateResultViews(tournamentId);
+
+  try {
+    const topResults = await prisma.tournamentResult.findMany({
+      where: { tournamentId },
+      orderBy: { placement: "asc" },
+      select: {
+        snapshotTeamName: true,
+        team: { select: { name: true } },
+      },
+    });
+
+    const winner = topResults[0];
+    const runnerUp = topResults[1];
+
+    await logServerTournamentAction({
+      title: "Final standings updated",
+      fields: [
+        {
+          name: "Tournament",
+          value: registration.tournament.title,
+          inline: false,
+        },
+        {
+          name: "Winner",
+          value: winner ? winner.snapshotTeamName || winner.team.name : null,
+        },
+        {
+          name: "Runner-up",
+          value: runnerUp ? runnerUp.snapshotTeamName || runnerUp.team.name : null,
+        },
+        { name: "Results count", value: topResults.length },
+        { name: "Leaderboard", value: "Updated" },
+      ],
+    });
+  } catch (error) {
+    void logServerBotError({
+      title: "Final standings notification failed",
+      fields: [
+        {
+          name: "Tournament",
+          value: registration.tournament.title,
+          inline: false,
+        },
+        { name: "Reason", value: getServerLogErrorMessage(error) },
+      ],
+    });
+  }
 
   return success(
     `${snapshotTeamName} saved as #${placement} with ${points} tournament points.`,
