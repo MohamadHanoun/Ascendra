@@ -61,6 +61,8 @@ export async function GET(request: Request) {
           "bot.config.tournamentStaffRoleIds",
           "bot.config.botLogChannelId",
           "bot.config.tournamentLogChannelId",
+          "bot.errorLogChannelId",
+          "bot.adminActionsLogChannelId",
           "bot.config.inviteChannelId",
           "bot.config.enableAnnouncements",
           "bot.config.enableDiscordAccess",
@@ -96,6 +98,14 @@ export async function GET(request: Request) {
         settings,
         "bot.config.tournamentLogChannelId",
         process.env.DISCORD_TOURNAMENT_LOG_CHANNEL_ID || "",
+      ),
+      errorLogChannelId: getSettingValue(
+        settings,
+        "bot.errorLogChannelId",
+      ),
+      adminActionsLogChannelId: getSettingValue(
+        settings,
+        "bot.adminActionsLogChannelId",
       ),
       inviteChannelId: getSettingValue(
         settings,

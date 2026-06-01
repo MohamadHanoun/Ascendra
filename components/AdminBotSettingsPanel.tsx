@@ -2,11 +2,13 @@ import { saveAdminBotSettings } from "@/actions/adminBotSettingsActions";
 import { prisma } from "@/lib/prisma";
 
 const textSettings = [
-  { key: "bot.config.announcementChannelId", name: "announcementChannelId", label: "Announcement channel ID", placeholder: "Example: 1506789622376562838", hint: "Public tournament announcements." },
-  { key: "bot.config.tournamentCategoryId", name: "TEAMROOMSCategoryId", label: "Team Rooms Category ID", placeholder: "Example: 1506789194914332722", hint: "Voice rooms are created inside this category." },
-  { key: "bot.config.tournamentStaffRoleIds", name: "tournamentStaffRoleIds", label: "Tournament staff role IDs", placeholder: "Example: 1506789882255900772,1506789882255900773", hint: "Comma-separated role IDs.", multiline: true },
+  { key: "bot.config.announcementChannelId", name: "announcementChannelId", label: "Announcement channel ID", placeholder: "Discord channel ID", hint: "Public tournament announcements." },
+  { key: "bot.config.tournamentCategoryId", name: "TEAMROOMSCategoryId", label: "Team Rooms Category ID", placeholder: "Discord category ID", hint: "Voice rooms are created inside this category." },
+  { key: "bot.config.tournamentStaffRoleIds", name: "tournamentStaffRoleIds", label: "Tournament staff role IDs", placeholder: "Discord role IDs", hint: "Comma-separated role IDs.", multiline: true },
   { key: "bot.config.botLogChannelId", name: "botLogChannelId", label: "Bot log channel ID", placeholder: "Discord channel ID", hint: "Technical bot logs." },
   { key: "bot.config.tournamentLogChannelId", name: "tournamentLogChannelId", label: "Tournament log channel ID", placeholder: "Discord channel ID", hint: "Approve, reject, create, and remove logs." },
+  { key: "bot.errorLogChannelId", name: "errorLogChannelId", label: "Bot error channel ID", placeholder: "Discord channel ID", hint: "Bot errors." },
+  { key: "bot.adminActionsLogChannelId", name: "adminActionsLogChannelId", label: "Admin actions channel ID", placeholder: "Discord channel ID", hint: "Admin actions." },
   { key: "bot.config.inviteChannelId", name: "inviteChannelId", label: "Invite channel ID", placeholder: "Discord channel ID", hint: "Used when the bot creates invite links." },
 ];
 

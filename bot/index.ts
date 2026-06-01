@@ -97,6 +97,8 @@ type BotRuntimeConfig = {
   tournamentStaffRoleIds: string[];
   botLogChannelId: string;
   tournamentLogChannelId: string;
+  errorLogChannelId: string;
+  adminActionsLogChannelId: string;
   inviteChannelId: string;
   enableAnnouncements: boolean;
   enableDiscordAccess: boolean;
@@ -143,6 +145,7 @@ let pollingInterval: NodeJS.Timeout | null = null;
 let isPolling = false;
 let isShuttingDown = false;
 let lastPausedLogAt = 0;
+let lastQueuePausedState: boolean | null = null;
 let slashCommandsReady = false;
 let slashCommandError = "";
 
@@ -588,6 +591,8 @@ function getEnvBotConfig(): BotRuntimeConfig {
     ),
     botLogChannelId: process.env.DISCORD_BOT_LOG_CHANNEL_ID || "",
     tournamentLogChannelId: process.env.DISCORD_TOURNAMENT_LOG_CHANNEL_ID || "",
+    errorLogChannelId: "",
+    adminActionsLogChannelId: "",
     inviteChannelId:
       process.env.DISCORD_INVITE_CHANNEL_ID ||
       process.env.DISCORD_ANNOUNCEMENT_CHANNEL_ID ||
@@ -638,6 +643,13 @@ async function getBotConfig(force = false): Promise<BotRuntimeConfig> {
       tournamentLogChannelId:
         String(config.tournamentLogChannelId || "") ||
         fallback.tournamentLogChannelId,
+
+      errorLogChannelId:
+        String(config.errorLogChannelId || "") || fallback.errorLogChannelId,
+
+      adminActionsLogChannelId:
+        String(config.adminActionsLogChannelId || "") ||
+        fallback.adminActionsLogChannelId,
 
       inviteChannelId:
         String(config.inviteChannelId || "") || fallback.inviteChannelId,
@@ -733,9 +745,39 @@ async function sendBotLog(params: {
   const config = await getBotConfig();
 
   await sendDiscordLog({
+    ...params,
     channelId: config.botLogChannelId,
     color: params.color || COLORS.info,
+  });
+}
+
+async function sendBotErrorLog(params: {
+  title: string;
+  description?: string;
+  fields?: LogField[];
+  color?: number;
+}) {
+  const config = await getBotConfig();
+
+  await sendDiscordLog({
     ...params,
+    channelId: config.errorLogChannelId || config.botLogChannelId,
+    color: params.color || COLORS.error,
+  });
+}
+
+async function sendAdminActionLog(params: {
+  title: string;
+  description?: string;
+  fields?: LogField[];
+  color?: number;
+}) {
+  const config = await getBotConfig();
+
+  await sendDiscordLog({
+    ...params,
+    channelId: config.adminActionsLogChannelId || config.botLogChannelId,
+    color: params.color || COLORS.warning,
   });
 }
 
@@ -748,10 +790,20 @@ async function sendTournamentLog(params: {
   const config = await getBotConfig();
 
   await sendDiscordLog({
+    ...params,
     channelId: config.tournamentLogChannelId || config.botLogChannelId,
     color: params.color || COLORS.tournament,
-    ...params,
   });
+}
+
+function isAdminActionEvent(type: string) {
+  return [
+    "bot_command_restart",
+    "bot_command_refresh_config",
+    "bot_command_send_message",
+    "tournament_announcement_recreate",
+    "tournament_announcement_delete",
+  ].includes(type);
 }
 
 const publicDiscordRoleDefinitions = [
@@ -1726,6 +1778,24 @@ async function processTeamAccessCreate(event: BotEvent) {
         : COLORS.success,
   });
 
+  if (
+    roleAssignments.failed.length > 0 ||
+    teamCaptainAssignment.failed.length > 0
+  ) {
+    await sendBotErrorLog({
+      title: "Team role assignment failed",
+      fields: [
+        { name: "Team", value: cleanLogValue(payload.teamName) },
+        { name: "Failed Members", value: String(roleAssignments.failed.length) },
+        {
+          name: "Team Captain",
+          value: cleanLogValue(teamCaptainAssignment.reason),
+        },
+        { name: "Event ID", value: event.id, inline: false },
+      ],
+    });
+  }
+
   return {
     roleId: roleResult.role.id,
     channelId: channelResult.channel.id,
@@ -1796,6 +1866,21 @@ async function processTeamAccessRemove(event: BotEvent) {
         ? COLORS.warning
         : COLORS.success,
   });
+
+  if (roleRemoval.failed.length > 0 || teamCaptainRemoval.failed.length > 0) {
+    await sendBotErrorLog({
+      title: "Team role removal failed",
+      fields: [
+        { name: "Team", value: cleanLogValue(payload.teamName) },
+        { name: "Failed Members", value: String(roleRemoval.failed.length) },
+        {
+          name: "Team Captain",
+          value: cleanLogValue(teamCaptainRemoval.reason),
+        },
+        { name: "Event ID", value: event.id, inline: false },
+      ],
+    });
+  }
 
   return {
     roleId: payload.roleId,
@@ -2453,6 +2538,17 @@ async function processEvent(event: BotEvent) {
       color: COLORS.success,
     });
 
+    if (isAdminActionEvent(event.type)) {
+      await sendAdminActionLog({
+        title: "Admin bot action completed",
+        fields: [
+          { name: "Action", value: event.type },
+          { name: "Event ID", value: event.id, inline: false },
+        ],
+        color: COLORS.success,
+      });
+    }
+
     console.log(`[BotEvent] Completed ${event.type}`);
 
     if (shouldRestart) {
@@ -2470,7 +2566,7 @@ async function processEvent(event: BotEvent) {
 
     await sendHeartbeat();
 
-    await sendBotLog({
+    await sendBotErrorLog({
       title: "Bot event failed",
       description: message,
       fields: [
@@ -2482,15 +2578,41 @@ async function processEvent(event: BotEvent) {
   }
 }
 
-function logPausedQueue() {
+async function logQueueState(paused: boolean) {
   const now = Date.now();
 
-  if (now - lastPausedLogAt < PAUSED_LOG_INTERVAL_MS) {
+  if (lastQueuePausedState === paused) {
+    if (paused && now - lastPausedLogAt >= PAUSED_LOG_INTERVAL_MS) {
+      lastPausedLogAt = now;
+      console.log("[BotEvent] Queue paused.");
+    }
+
     return;
   }
 
-  lastPausedLogAt = now;
-  console.log("[BotEvent] Queue paused.");
+  const wasPaused = lastQueuePausedState === true;
+  lastQueuePausedState = paused;
+
+  if (paused) {
+    lastPausedLogAt = now;
+    console.log("[BotEvent] Queue paused.");
+
+    await sendAdminActionLog({
+      title: "Queue paused",
+      description: "Bot event processing is paused.",
+    });
+
+    return;
+  }
+
+  if (wasPaused) {
+    console.log("[BotEvent] Queue resumed.");
+
+    await sendAdminActionLog({
+      title: "Queue resumed",
+      description: "Bot event processing resumed.",
+    });
+  }
 }
 
 async function pollEvents() {
@@ -2509,9 +2631,11 @@ async function pollEvents() {
     const data = await fetchPendingEvents();
 
     if (data.paused) {
-      logPausedQueue();
+      await logQueueState(true);
       return;
     }
+
+    await logQueueState(false);
 
     const events: BotEvent[] = data.events || [];
 
@@ -2531,7 +2655,7 @@ async function pollEvents() {
 
     console.error("[BotEvent] Poll failed:", error);
 
-    await sendBotLog({
+    await sendBotErrorLog({
       title: "Bot polling failed",
       description: message,
       color: COLORS.error,
@@ -2729,7 +2853,7 @@ async function logSlashCommandUsage(interaction: any) {
 
 async function logSlashCommandFailure(interaction: any, error: unknown) {
   try {
-    await sendBotLog({
+    await sendBotErrorLog({
       title: "Slash command failed",
       description: getErrorMessage(error),
       fields: [
@@ -2819,6 +2943,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 client.on(Events.Error, (error) => {
   console.error("[Discord] Client error:", error);
+  void sendBotErrorLog({
+    title: "Discord client error",
+    description: getErrorMessage(error),
+  });
 });
 
 client.on(Events.Warn, (message) => {
@@ -2836,7 +2964,7 @@ process.on("SIGTERM", () => {
 process.on("unhandledRejection", async (reason) => {
   console.error("[Process] Unhandled rejection:", reason);
 
-  await sendBotLog({
+  await sendBotErrorLog({
     title: "Unhandled rejection",
     description: getErrorMessage(reason),
     color: COLORS.error,
@@ -2846,7 +2974,7 @@ process.on("unhandledRejection", async (reason) => {
 process.on("uncaughtException", async (error) => {
   console.error("[Process] Uncaught exception:", error);
 
-  await sendBotLog({
+  await sendBotErrorLog({
     title: "Uncaught exception",
     description: getErrorMessage(error),
     color: COLORS.error,

@@ -33,6 +33,16 @@ const botTextSettings = [
     description: "Discord channel used for tournament operation logs.",
   },
   {
+    key: "bot.errorLogChannelId",
+    formName: "errorLogChannelId",
+    description: "Discord channel used for bot error logs.",
+  },
+  {
+    key: "bot.adminActionsLogChannelId",
+    formName: "adminActionsLogChannelId",
+    description: "Discord channel used for admin action logs.",
+  },
+  {
     key: "bot.config.inviteChannelId",
     formName: "inviteChannelId",
     description: "Discord channel used when the bot creates invite links.",
