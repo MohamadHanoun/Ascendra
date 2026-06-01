@@ -247,17 +247,18 @@ export default async function AdminBotOverviewPanel() {
             </form>
           ) : (
             <form action={pauseQueueAction}>
-              <button
-                type="submit"
+              <AdminConfirmSubmitButton
+                label="Pause queue"
+                confirmTitle="Pause queue?"
+                confirmDescription="Stops bot event processing until the queue is resumed."
+                confirmLabel="Pause"
                 className="border px-4 py-2 text-sm font-black transition hover:opacity-90"
                 style={{
                   borderColor: "var(--asc-line-soft)",
                   background: "var(--asc-bg-2)",
                   color: "var(--asc-fg-2)",
-                }}
-              >
-                Pause queue
-              </button>
+                } as CSSProperties}
+              />
             </form>
           )}
 
@@ -294,7 +295,7 @@ export default async function AdminBotOverviewPanel() {
               label="Restart bot"
               danger
               confirmTitle="Restart bot?"
-              confirmDescription="Queues a restart command. The bot will shut down and restart via its process supervisor."
+              confirmDescription="Queues a restart command for the Discord bot."
               confirmLabel="Restart"
               className="border px-4 py-2 text-sm font-black transition hover:opacity-90"
               style={{

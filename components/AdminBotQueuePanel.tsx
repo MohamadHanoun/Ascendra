@@ -147,17 +147,18 @@ export default async function AdminBotQueuePanel() {
             </form>
           ) : (
             <form action={pauseQueueAction}>
-              <button
-                type="submit"
+              <AdminConfirmSubmitButton
+                label="Pause queue"
+                confirmTitle="Pause queue?"
+                confirmDescription="Stops bot event processing until the queue is resumed."
+                confirmLabel="Pause"
                 className="border px-4 py-2 text-sm font-black transition hover:opacity-90"
                 style={{
                   borderColor: "var(--asc-line-soft)",
                   background: "var(--asc-bg-2)",
                   color: "var(--asc-fg-2)",
-                }}
-              >
-                Pause queue
-              </button>
+                } as CSSProperties}
+              />
             </form>
           )}
         </div>
@@ -187,7 +188,7 @@ export default async function AdminBotQueuePanel() {
             <AdminConfirmSubmitButton
               label="Reset processing"
               confirmTitle="Reset processing events?"
-              confirmDescription="Moves all processing bot events back to queued. Use if the bot was restarted mid-operation."
+              confirmDescription="Moves processing bot events back to queued."
               confirmLabel="Reset"
               className="border px-4 py-2 text-sm font-black transition hover:opacity-90"
               style={{
@@ -199,11 +200,11 @@ export default async function AdminBotQueuePanel() {
           </form>
           <form action={cancelPendingAction}>
             <AdminConfirmSubmitButton
-              label="Cancel all pending"
+              label="Cancel pending"
               danger
-              confirmTitle="Cancel all pending events?"
-              confirmDescription="Cancels all queued, failed, and processing bot events. Use to clear the queue before a restart."
-              confirmLabel="Cancel all"
+              confirmTitle="Cancel pending events?"
+              confirmDescription="Cancels queued, failed, and processing bot events."
+              confirmLabel="Cancel pending"
               className="border px-4 py-2 text-sm font-black transition hover:opacity-90"
               style={{
                 borderColor: "var(--asc-live-border)",

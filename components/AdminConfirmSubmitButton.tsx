@@ -9,6 +9,7 @@ type AdminConfirmSubmitButtonProps = {
   confirmLabel?: string;
   cancelLabel?: string;
   danger?: boolean;
+  disabled?: boolean;
   className?: string;
   style?: React.CSSProperties;
 };
@@ -20,6 +21,7 @@ export default function AdminConfirmSubmitButton({
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   danger = false,
+  disabled = false,
   className,
   style,
 }: AdminConfirmSubmitButtonProps) {
@@ -60,7 +62,7 @@ export default function AdminConfirmSubmitButton({
     <>
       <button
         type="button"
-        disabled={isSubmitting}
+        disabled={disabled || isSubmitting}
         onClick={openConfirm}
         className={className || (danger ? "border px-5 py-3 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60" : "px-5 py-3 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60")}
         style={style ?? (className ? undefined : defaultStyle)}

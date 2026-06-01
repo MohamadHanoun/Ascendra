@@ -108,10 +108,10 @@ function MaintenanceActionCard({
         <AdminConfirmSubmitButton
           label={buttonLabel}
           danger={danger}
-          confirmTitle={confirmTitle || (danger ? "Delete old failed events?" : "Run maintenance cleanup?")}
+          confirmTitle={confirmTitle || (danger ? "Delete maintenance data?" : "Run maintenance cleanup?")}
           confirmDescription={confirmDescription || (danger
-            ? "This will permanently delete old failed bot events based on the selected number of days. Use this only after reviewing old errors."
-            : "This will permanently delete old maintenance data based on the selected number of days. This action cannot be undone.")}
+            ? "Deletes selected maintenance data."
+            : "Deletes maintenance data using the selected age.")}
           confirmLabel={confirmLabel || (danger ? "Delete" : "Clean")}
         />
       </div>
@@ -189,6 +189,9 @@ export default async function AdminBotMaintenancePanel() {
           defaultDays={30}
           buttonLabel="Clean bot events"
           action={cleanupOldBotEventsMaintenanceInline}
+          confirmTitle="Clean old bot events?"
+          confirmDescription="Deletes old completed and cancelled bot events."
+          confirmLabel="Clean"
         />
         <MaintenanceActionCard
           title="Clean old command logs"
@@ -196,6 +199,9 @@ export default async function AdminBotMaintenancePanel() {
           defaultDays={30}
           buttonLabel="Clean command logs"
           action={cleanupOldCommandLogsMaintenanceInline}
+          confirmTitle="Clean old command logs?"
+          confirmDescription="Deletes old Discord command logs."
+          confirmLabel="Clean"
         />
         <MaintenanceActionCard
           title="Delete failed command logs"
@@ -205,7 +211,7 @@ export default async function AdminBotMaintenancePanel() {
           danger
           showDays={false}
           confirmTitle="Delete failed command logs?"
-          confirmDescription="This will permanently delete all failed command logs. Use this only after reviewing the errors."
+          confirmDescription="Deletes all failed Discord command logs."
           confirmLabel="Delete"
         />
         <MaintenanceActionCard
@@ -214,6 +220,9 @@ export default async function AdminBotMaintenancePanel() {
           defaultDays={7}
           buttonLabel="Clean realtime events"
           action={cleanupOldRealtimeEventsMaintenanceInline}
+          confirmTitle="Clean old realtime events?"
+          confirmDescription="Deletes old realtime events."
+          confirmLabel="Clean"
         />
         <MaintenanceActionCard
           title="Clean old failed events"
@@ -222,6 +231,9 @@ export default async function AdminBotMaintenancePanel() {
           buttonLabel="Delete old failed events"
           action={cleanupOldFailedBotEventsMaintenanceInline}
           danger
+          confirmTitle="Delete old failed events?"
+          confirmDescription="Deletes old failed bot events."
+          confirmLabel="Delete"
         />
       </div>
     </section>

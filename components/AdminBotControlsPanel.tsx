@@ -5,6 +5,7 @@ import {
   queueBotRestartInline,
   resumeBotQueueInline,
 } from "@/actions/adminBotEventInlineActions";
+import AdminConfirmSubmitButton from "@/components/AdminConfirmSubmitButton";
 import { prisma } from "@/lib/prisma";
 
 async function pauseQueueFormAction() {
@@ -107,7 +108,14 @@ export default async function AdminBotControlsPanel() {
           </form>
         ) : (
           <form action={pauseQueueFormAction}>
-            <ControlButton label="Pause queue" />
+            <AdminConfirmSubmitButton
+              label="Pause queue"
+              confirmTitle="Pause queue?"
+              confirmDescription="Stops bot event processing until the queue is resumed."
+              confirmLabel="Pause"
+              className="border px-4 py-3 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              style={controlButtonStyles.default}
+            />
           </form>
         )}
 
@@ -120,7 +128,15 @@ export default async function AdminBotControlsPanel() {
         </form>
 
         <form action={restartBotFormAction}>
-          <ControlButton label="Restart bot" tone="danger" />
+          <AdminConfirmSubmitButton
+            label="Restart bot"
+            danger
+            confirmTitle="Restart bot?"
+            confirmDescription="Queues a restart command for the Discord bot."
+            confirmLabel="Restart"
+            className="border px-4 py-3 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            style={controlButtonStyles.danger}
+          />
         </form>
       </div>
     </section>

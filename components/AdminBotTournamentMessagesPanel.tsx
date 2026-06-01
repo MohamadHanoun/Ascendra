@@ -1,8 +1,11 @@
+import type { CSSProperties } from "react";
+
 import {
   deleteTournamentDiscordMessageInline,
   recreateTournamentDiscordMessageInline,
   syncTournamentDiscordMessageInline,
 } from "@/actions/adminBotTournamentMessageActions";
+import AdminConfirmSubmitButton from "@/components/AdminConfirmSubmitButton";
 import { prisma } from "@/lib/prisma";
 
 async function syncMessageFormAction(formData: FormData) {
@@ -49,7 +52,7 @@ function StatusBadge({ linked, error }: { linked: boolean; error?: string | null
   );
 }
 
-const actionButtonStyles: Record<string, React.CSSProperties> = {
+const actionButtonStyles: Record<string, CSSProperties> = {
   default: { borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" },
   danger: { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" },
   blue: { borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)", color: "var(--asc-blue)" },
@@ -143,11 +146,27 @@ export default async function AdminBotTournamentMessagesPanel() {
                     </form>
                     <form action={recreateMessageFormAction}>
                       <input type="hidden" name="tournamentId" value={tournament.id} />
-                      <ActionButton label="Recreate" />
+                      <AdminConfirmSubmitButton
+                        label="Recreate"
+                        confirmTitle="Recreate announcement?"
+                        confirmDescription="Queues a Discord announcement recreation."
+                        confirmLabel="Recreate"
+                        className="border px-4 py-2 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-40 hover:opacity-90"
+                        style={actionButtonStyles.default}
+                      />
                     </form>
                     <form action={deleteMessageFormAction}>
                       <input type="hidden" name="tournamentId" value={tournament.id} />
-                      <ActionButton label="Delete" tone="danger" disabled={!linked} />
+                      <AdminConfirmSubmitButton
+                        label="Delete"
+                        danger
+                        disabled={!linked}
+                        confirmTitle="Delete announcement?"
+                        confirmDescription="Queues deletion of the linked Discord announcement."
+                        confirmLabel="Delete"
+                        className="border px-4 py-2 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-40 hover:opacity-90"
+                        style={actionButtonStyles.danger}
+                      />
                     </form>
                   </div>
                 </div>
