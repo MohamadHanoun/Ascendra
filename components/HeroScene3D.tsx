@@ -1,10 +1,11 @@
 'use client';
 
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Suspense, useRef, useMemo } from 'react';
+import { Suspense, useRef, useMemo, useEffect } from 'react';
+import { useReducedMotion } from 'motion/react';
 import * as THREE from 'three';
 
-function ScanGrid() {
+function ScanGrid({ paused }: { paused: boolean }) {
   const groupRef = useRef<THREE.Group>(null!);
   const STEP = 2.5;
   const SIZE = 50;
@@ -25,8 +26,12 @@ function ScanGrid() {
     return geo;
   }, []);
 
+  useEffect(() => {
+    return () => { geometry.dispose(); };
+  }, [geometry]);
+
   useFrame((_, delta) => {
-    if (!groupRef.current) return;
+    if (paused || !groupRef.current) return;
     groupRef.current.position.z += delta * 0.5;
     if (groupRef.current.position.z > STEP) {
       groupRef.current.position.z -= STEP;
@@ -47,17 +52,19 @@ function Crystal({
   speed,
   rotSpeed,
   scale,
+  paused,
 }: {
   position: [number, number, number];
   speed: number;
   rotSpeed: number;
   scale: number;
+  paused: boolean;
 }) {
   const meshRef = useRef<THREE.Mesh>(null!);
   const initY = position[1];
 
   useFrame(({ clock }) => {
-    if (!meshRef.current) return;
+    if (paused || !meshRef.current) return;
     const t = clock.elapsedTime;
     meshRef.current.position.y = initY + Math.sin(t * speed) * 0.38;
     meshRef.current.rotation.x += rotSpeed * 0.28;
@@ -79,12 +86,18 @@ function Crystal({
   );
 }
 
-function AccentCrystal({ position }: { position: [number, number, number] }) {
+function AccentCrystal({
+  position,
+  paused,
+}: {
+  position: [number, number, number];
+  paused: boolean;
+}) {
   const groupRef = useRef<THREE.Group>(null!);
   const initY = position[1];
 
   useFrame(({ clock }) => {
-    if (!groupRef.current) return;
+    if (paused || !groupRef.current) return;
     const t = clock.elapsedTime;
     groupRef.current.position.y = initY + Math.sin(t * 0.38) * 0.42;
     groupRef.current.rotation.x = t * 0.045;
@@ -119,30 +132,32 @@ function AccentCrystal({ position }: { position: [number, number, number] }) {
   );
 }
 
-function Scene() {
+function Scene({ paused }: { paused: boolean }) {
   return (
     <>
       <ambientLight intensity={0.45} color="#c9933e" />
       <pointLight position={[8, 14, 6]} intensity={2} color="#d4a050" />
       <pointLight position={[-12, 5, -3]} intensity={0.6} color="#7a4c18" />
 
-      <ScanGrid />
+      <ScanGrid paused={paused} />
 
-      <Crystal position={[-7.5, 1.5, -5]} speed={0.27} rotSpeed={0.004} scale={1.1} />
-      <Crystal position={[8.5, 2.5, -7]} speed={0.21} rotSpeed={0.003} scale={0.85} />
-      <Crystal position={[-3.5, 3.2, -11]} speed={0.34} rotSpeed={0.005} scale={0.65} />
-      <Crystal position={[11.5, 0.5, -4]} speed={0.31} rotSpeed={0.004} scale={1.15} />
-      <Crystal position={[4.5, 4.2, -13]} speed={0.18} rotSpeed={0.003} scale={1.4} />
-      <Crystal position={[-10.5, 2.2, -6]} speed={0.40} rotSpeed={0.003} scale={0.62} />
-      <Crystal position={[2.5, 1.2, -3]} speed={0.26} rotSpeed={0.006} scale={0.42} />
-      <Crystal position={[-5.5, 0.9, -14]} speed={0.35} rotSpeed={0.002} scale={1.05} />
+      <Crystal position={[-7.5, 1.5, -5]} speed={0.27} rotSpeed={0.004} scale={1.1} paused={paused} />
+      <Crystal position={[8.5, 2.5, -7]} speed={0.21} rotSpeed={0.003} scale={0.85} paused={paused} />
+      <Crystal position={[-3.5, 3.2, -11]} speed={0.34} rotSpeed={0.005} scale={0.65} paused={paused} />
+      <Crystal position={[11.5, 0.5, -4]} speed={0.31} rotSpeed={0.004} scale={1.15} paused={paused} />
+      <Crystal position={[4.5, 4.2, -13]} speed={0.18} rotSpeed={0.003} scale={1.4} paused={paused} />
+      <Crystal position={[-10.5, 2.2, -6]} speed={0.40} rotSpeed={0.003} scale={0.62} paused={paused} />
+      <Crystal position={[2.5, 1.2, -3]} speed={0.26} rotSpeed={0.006} scale={0.42} paused={paused} />
+      <Crystal position={[-5.5, 0.9, -14]} speed={0.35} rotSpeed={0.002} scale={1.05} paused={paused} />
 
-      <AccentCrystal position={[9.5, 3.2, -8.5]} />
+      <AccentCrystal position={[9.5, 3.2, -8.5]} paused={paused} />
     </>
   );
 }
 
 export default function HeroScene3D() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div
       aria-hidden="true"
@@ -160,7 +175,7 @@ export default function HeroScene3D() {
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
-          <Scene />
+          <Scene paused={!!shouldReduceMotion} />
         </Suspense>
       </Canvas>
     </div>

@@ -1006,25 +1006,3 @@ article.overflow-hidden[class*="border"]::before {
   z-index: 5;
 }
 
-@keyframes ascGoldShimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-
-.asc-hero-headline-gradient {
-  background: linear-gradient(100deg, #c9933e 0%, #f0e2ca 42%, #8f642f 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  background-size: 200% auto;
-  animation: ascGoldShimmer 6s linear infinite;
-}
-
-@keyframes ascGlowPulse {
-  0%, 100% { box-shadow: 0 0 18px var(--asc-accent-glow); }
-  50%       { box-shadow: 0 0 36px var(--asc-accent-glow), 0 0 72px rgba(184, 137, 61, 0.10); }
-}
-
-.asc-card-glow-hover:hover {
-  animation: ascGlowPulse 2.4s ease-in-out infinite;
-}

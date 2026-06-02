@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 
 interface HeroTextAnimatedProps {
   eyebrow: string;
@@ -45,13 +45,23 @@ export default function HeroTextAnimated({
   secondaryLabel,
   locale,
 }: HeroTextAnimatedProps) {
+  const shouldReduceMotion = useReducedMotion();
   const arrow = locale === 'ar' ? '‹' : '›';
   const isRtl = locale === 'ar';
 
+  const containerVariants = shouldReduceMotion ? undefined : container;
+  const itemVariants = shouldReduceMotion ? undefined : item;
+  const initialState = shouldReduceMotion ? false : 'hidden';
+  const animateState = shouldReduceMotion ? undefined : 'visible';
+
   return (
-    <motion.div variants={container} initial="hidden" animate="visible">
+    <motion.div
+      variants={containerVariants}
+      initial={initialState}
+      animate={animateState}
+    >
       <motion.p
-        variants={item}
+        variants={itemVariants}
         style={{
           marginBottom: '1.25rem',
           fontSize: '0.75rem',
@@ -65,7 +75,7 @@ export default function HeroTextAnimated({
       </motion.p>
 
       <motion.h1
-        variants={item}
+        variants={itemVariants}
         style={{
           fontFamily: 'var(--font-display)',
           fontWeight: 900,
@@ -91,7 +101,7 @@ export default function HeroTextAnimated({
       </motion.h1>
 
       <motion.p
-        variants={item}
+        variants={itemVariants}
         style={{
           marginTop: '1.5rem',
           maxWidth: '36rem',
@@ -104,7 +114,7 @@ export default function HeroTextAnimated({
       </motion.p>
 
       <motion.div
-        variants={item}
+        variants={itemVariants}
         style={{
           marginTop: '2rem',
           display: 'flex',

@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import type { ReactNode } from 'react';
 
 interface SectionRevealProps {
@@ -10,6 +10,12 @@ interface SectionRevealProps {
 }
 
 export default function SectionReveal({ children, delay = 0, className }: SectionRevealProps) {
+  const shouldReduceMotion = useReducedMotion();
+
+  if (shouldReduceMotion) {
+    return <div className={className}>{children}</div>;
+  }
+
   return (
     <motion.div
       className={className}
