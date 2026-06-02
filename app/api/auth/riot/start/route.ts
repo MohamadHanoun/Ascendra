@@ -3,9 +3,12 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const rateLimiter = createRateLimiter(5, 60_000);
 
 const RIOT_AUTH_URL = "https://auth.riotgames.com/authorize";
 const STATE_COOKIE = "riot_oauth_state";
@@ -38,6 +41,9 @@ function getRequestLocale(request: Request): Locale {
 }
 
 export async function GET(request: Request) {
+  const limited = rateLimiter(request);
+  if (limited) return limited;
+
   const messages = riotStartMessages[getRequestLocale(request)];
   const session = await auth();
   const userId = (session?.user as { databaseId?: string } | undefined)

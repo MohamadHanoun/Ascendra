@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+import { createRateLimiter } from "@/lib/rateLimit";
+
 export const runtime = "nodejs";
 
-export async function GET() {
+const rateLimiter = createRateLimiter(60, 60_000);
+
+export async function GET(request: Request) {
+  const limited = rateLimiter(request);
+  if (limited) return limited;
   try {
     const tournaments = await prisma.tournament.findMany({
       orderBy: { createdAt: "asc" },

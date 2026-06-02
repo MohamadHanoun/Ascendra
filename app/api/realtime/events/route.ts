@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const rateLimiter = createRateLimiter(30, 60_000);
 
 function parseDate(value: string | null) {
   if (!value) {
@@ -29,6 +32,9 @@ function normalizeAudience(value: string | null) {
 }
 
 export async function GET(request: Request) {
+  const limited = rateLimiter(request);
+  if (limited) return limited;
+
   const { searchParams } = new URL(request.url);
 
   const audience = normalizeAudience(searchParams.get("audience"));

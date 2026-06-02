@@ -3,9 +3,12 @@ import { Prisma } from "@prisma/client";
 
 import { auth } from "@/auth";
 import { getNotificationSummary } from "@/lib/notifications";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const rateLimiter = createRateLimiter(30, 60_000);
 
 function parseLimit(value: string | null) {
   if (!value) {
@@ -43,6 +46,9 @@ function mayBeMissingNotificationMigration(error: unknown) {
 }
 
 export async function GET(request: Request) {
+  const limited = rateLimiter(request);
+  if (limited) return limited;
+
   try {
     const session = await auth();
     const userId = session?.user?.databaseId;

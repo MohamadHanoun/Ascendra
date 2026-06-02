@@ -5,9 +5,12 @@ import { NextResponse } from "next/server";
 import { GameProvider } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const rateLimiter = createRateLimiter(10, 60_000);
 
 const RIOT_TOKEN_URL = "https://auth.riotgames.com/token";
 const RIOT_ACCOUNT_URL =
@@ -115,6 +118,9 @@ function fail(baseUrl: string, error: string) {
 }
 
 export async function GET(request: Request) {
+  const limited = rateLimiter(request);
+  if (limited) return limited;
+
   const { searchParams } = new URL(request.url);
   const baseUrl = new URL(request.url).origin;
   const messages = riotCallbackMessages[getRequestLocale(request)];

@@ -3,9 +3,12 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const rateLimiter = createRateLimiter(5, 60_000);
 
 const STEAM_OPENID_URL = "https://steamcommunity.com/openid/login";
 const STATE_COOKIE = "steam_openid_state";
@@ -52,6 +55,9 @@ function getAppBaseUrl(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const limited = rateLimiter(request);
+  if (limited) return limited;
+
   const messages = steamStartMessages[getRequestLocale(request)];
   const session = await auth();
   const userId = (session?.user as { databaseId?: string } | undefined)

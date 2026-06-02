@@ -21,11 +21,16 @@
 import { NextResponse } from "next/server";
 
 import { FaceitApiError, getFaceitPlayerByNickname } from "@/lib/faceit";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const rateLimiter = createRateLimiter(30, 60_000);
+
 export async function GET(request: Request) {
+  const limited = rateLimiter(request);
+  if (limited) return limited;
   const url = new URL(request.url);
   const nickname = url.searchParams.get("nickname")?.trim();
   const game = url.searchParams.get("game")?.trim() || "cs2";

@@ -5,9 +5,12 @@ import { NextResponse } from "next/server";
 import { AuditStatus, GameProvider, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const rateLimiter = createRateLimiter(10, 60_000);
 
 const STEAM_VERIFY_URL = "https://steamcommunity.com/openid/login";
 const STEAM_PLAYER_URL =
@@ -167,6 +170,9 @@ async function writeAudit(opts: {
 }
 
 export async function GET(request: Request) {
+  const limited = rateLimiter(request);
+  if (limited) return limited;
+
   const { searchParams } = new URL(request.url);
   const baseUrl = getAppBaseUrl(request);
   const messages = steamCallbackMessages[getRequestLocale(request)];
