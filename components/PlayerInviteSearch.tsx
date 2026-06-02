@@ -18,13 +18,20 @@ export default function PlayerInviteSearch({ teamId }: PlayerInviteSearchProps) 
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [prevQuery, setPrevQuery] = useState(query);
+
+  if (prevQuery !== query) {
+    setPrevQuery(query);
+    if (query.trim().length < 2) {
+      setPlayers([]);
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
     const cleanQuery = query.trim();
 
     if (cleanQuery.length < 2) {
-      setPlayers([]);
-      setIsLoading(false);
       return;
     }
 

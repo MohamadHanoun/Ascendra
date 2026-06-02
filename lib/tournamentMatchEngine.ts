@@ -172,7 +172,7 @@ export async function createMatchesForTournament(
 
   const drafts: DraftMatch[] = [];
 
-  let firstRoundMatchCount = totalSlots / 2;
+  const firstRoundMatchCount = totalSlots / 2;
 
   for (let i = 0; i < firstRoundMatchCount; i += 1) {
     const teamA = seeds[i * 2].teamId;

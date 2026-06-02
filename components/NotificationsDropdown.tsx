@@ -79,12 +79,20 @@ export default function NotificationsDropdown({
   const pathname = usePathname();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
+
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    setIsOpen(false);
+  }
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [hasFetched, setHasFetched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  const fetchNotificationsRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   const fetchNotifications = useCallback(async () => {
     if (!isLoggedIn) {
@@ -137,8 +145,13 @@ export default function NotificationsDropdown({
   }, [isLoggedIn]);
 
   useEffect(() => {
-    void fetchNotifications();
-  }, [fetchNotifications]);
+    fetchNotificationsRef.current = fetchNotifications;
+  });
+
+  useEffect(() => {
+    void fetchNotificationsRef.current?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn]);
 
     useRealtimeEvents({
       audience: "public",
@@ -160,10 +173,6 @@ export default function NotificationsDropdown({
         }
       },
     });
-
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     if (!isOpen) {

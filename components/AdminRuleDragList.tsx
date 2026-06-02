@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -68,14 +68,16 @@ export default function AdminRuleDragList({ initialRules }: { initialRules: Rule
   const router = useRouter();
 
   const [rules, setRules] = useState(initialRules);
+  const [prevInitialRules, setPrevInitialRules] = useState(initialRules);
   const [draggedRuleId, setDraggedRuleId] = useState<string | null>(null);
   const [dragOverRuleId, setDragOverRuleId] = useState<string | null>(null);
   const [notice, setNotice] = useState<AdminRuleActionResult | null>(null);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
+  if (prevInitialRules !== initialRules) {
+    setPrevInitialRules(initialRules);
     setRules(initialRules);
-  }, [initialRules]);
+  }
 
   function saveOrder(nextRules: RuleItem[]) {
     const formData = new FormData();

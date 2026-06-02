@@ -1,8 +1,10 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+
+const emptySubscribe = () => () => {};
 
 type ConfirmDialogPortalProps = {
   open: boolean;
@@ -62,11 +64,7 @@ export default function ConfirmDialogPortal({
   onConfirm,
   onCancel,
 }: ConfirmDialogPortalProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   useEffect(() => {
     if (!open) {

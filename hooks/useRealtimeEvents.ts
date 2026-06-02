@@ -27,7 +27,9 @@ export function useRealtimeEvents({
   const onEventsRef = useRef(onEvents);
   const isFetchingRef = useRef(false);
 
-  onEventsRef.current = onEvents;
+  useEffect(() => {
+    onEventsRef.current = onEvents;
+  });
 
   useEffect(() => {
     let isActive = true;

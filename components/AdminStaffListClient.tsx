@@ -39,14 +39,19 @@ export default function AdminStaffListClient({
 }: AdminStaffListClientProps) {
   const router = useRouter();
   const [items, setItems] = useState(staffMembers);
+  const [prevStaffMembers, setPrevStaffMembers] = useState(staffMembers);
   const itemsRef = useRef(staffMembers);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    itemsRef.current = staffMembers;
+  if (prevStaffMembers !== staffMembers) {
+    setPrevStaffMembers(staffMembers);
     setItems(staffMembers);
-  }, [staffMembers]);
+  }
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   function updateItems(nextItems: StaffItem[]) {
     itemsRef.current = nextItems;

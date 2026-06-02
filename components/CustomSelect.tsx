@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+
+const emptySubscribe = () => () => {};
 import { createPortal } from "react-dom";
 
 type CustomSelectOption = {
@@ -61,15 +63,21 @@ export default function CustomSelect({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [open, setOpen] = useState(false);
   const [selectedValue, setSelectedValue] = useState(defaultValue);
+  const [prevDefaultValue, setPrevDefaultValue] = useState(defaultValue);
   const [position, setPosition] = useState<DropdownPosition>({
     top: 0,
     left: 0,
     width: 0,
     maxHeight: 280,
   });
+
+  if (prevDefaultValue !== defaultValue) {
+    setPrevDefaultValue(defaultValue);
+    setSelectedValue(defaultValue);
+  }
 
   const selectedOption = options.find(
     (option) => option.value === selectedValue,
@@ -103,13 +111,6 @@ export default function CustomSelect({
     });
   }
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    setSelectedValue(defaultValue);
-  }, [defaultValue]);
 
   useLayoutEffect(() => {
     if (open) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 type ProfileIdentityActionsProps = {
   discordId: string;
@@ -26,11 +26,9 @@ function getCurrentLocale(): Locale {
 }
 
 export default function ProfileIdentityActions({ discordId }: ProfileIdentityActionsProps) {
-  const [locale, setLocale] = useState<Locale>("en");
+  const locale = useSyncExternalStore(() => () => {}, getCurrentLocale, () => "en" as Locale);
   const [visible, setVisible] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => { setLocale(getCurrentLocale()); }, []);
 
   const messages = profileIdentityMessages[locale];
   const hiddenDiscordId =

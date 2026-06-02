@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -136,14 +136,16 @@ export default function AdminStaffDragList({
   const router = useRouter();
 
   const [staffMembers, setStaffMembers] = useState(initialStaffMembers);
+  const [prevInitialStaffMembers, setPrevInitialStaffMembers] = useState(initialStaffMembers);
   const [draggedStaffId, setDraggedStaffId] = useState<string | null>(null);
   const [dragOverStaffId, setDragOverStaffId] = useState<string | null>(null);
   const [notice, setNotice] = useState<AdminStaffActionResult | null>(null);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
+  if (prevInitialStaffMembers !== initialStaffMembers) {
+    setPrevInitialStaffMembers(initialStaffMembers);
     setStaffMembers(initialStaffMembers);
-  }, [initialStaffMembers]);
+  }
 
   function saveOrder(nextStaffMembers: StaffItem[]) {
     const formData = new FormData();

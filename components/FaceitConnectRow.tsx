@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 
 import type { AccountActionResult } from "@/actions/profileAccountActions";
 import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
@@ -53,11 +53,13 @@ export default function FaceitConnectRow({
   const [connectState, connectFormAction, connectPending] = useActionState(connectAction, INITIAL);
   const [unlinkState, unlinkFormAction, unlinkPending] = useActionState(unlinkAction, INITIAL);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [prevUnlinkPending, setPrevUnlinkPending] = useState(unlinkPending);
   const unlinkFormRef = useRef<HTMLFormElement>(null);
 
-  useEffect(() => {
+  if (prevUnlinkPending !== unlinkPending) {
+    setPrevUnlinkPending(unlinkPending);
     if (!unlinkPending) setConfirmOpen(false);
-  }, [unlinkPending]);
+  }
 
   function submitUnlink() {
     unlinkFormRef.current?.requestSubmit();
