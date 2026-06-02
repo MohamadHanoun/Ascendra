@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import SectionReveal from "@/components/SectionReveal";
 import { getDictionary, type Locale, type NewsMessages } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
@@ -429,21 +430,23 @@ export default async function AnnouncementsPage() {
         </section>
 
         <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-10 px-6 pb-16 lg:px-10 2xl:px-14">
-          <section className="grid gap-4 md:grid-cols-3">
-            <StatCard
-              label={messages.stats.published}
-              value={announcements.length}
-            />
-            <StatCard
-              label={messages.stats.important}
-              value={importantCount}
-              accent
-            />
-            <StatCard
-              label={messages.stats.categories}
-              value={categoriesCount}
-            />
-          </section>
+          <SectionReveal>
+            <section className="grid gap-4 md:grid-cols-3">
+              <StatCard
+                label={messages.stats.published}
+                value={announcements.length}
+              />
+              <StatCard
+                label={messages.stats.important}
+                value={importantCount}
+                accent
+              />
+              <StatCard
+                label={messages.stats.categories}
+                value={categoriesCount}
+              />
+            </section>
+          </SectionReveal>
 
           {announcements.length === 0 ? (
             <EmptyState
@@ -453,52 +456,56 @@ export default async function AnnouncementsPage() {
           ) : (
             <>
               {featuredAnnouncement && (
-                <section>
-                  <SectionHeader
-                    eyebrow={messages.labels.featured}
-                    title={featuredAnnouncement.category}
-                  />
+                <SectionReveal delay={0.05}>
+                  <section>
+                    <SectionHeader
+                      eyebrow={messages.labels.featured}
+                      title={featuredAnnouncement.category}
+                    />
 
-                  <FeaturedAnnouncement
-                    announcement={featuredAnnouncement}
-                    locale={locale}
-                    labels={messages.labels}
-                  />
-                </section>
+                    <FeaturedAnnouncement
+                      announcement={featuredAnnouncement}
+                      locale={locale}
+                      labels={messages.labels}
+                    />
+                  </section>
+                </SectionReveal>
               )}
 
-              <section>
-                <SectionHeader
-                  eyebrow={messages.labels.latest}
-                  title={messages.labels.publishedAnnouncements}
-                />
+              <SectionReveal delay={0.1}>
+                <section>
+                  <SectionHeader
+                    eyebrow={messages.labels.latest}
+                    title={messages.labels.publishedAnnouncements}
+                  />
 
-                {regularAnnouncements.length === 0 ? (
-                  <div
-                    className="relative border p-6 text-sm"
-                    style={{
-                      borderColor: "var(--asc-line-soft)",
-                      background: "var(--asc-bg-1)",
-                      color: "var(--asc-fg-3)",
-                    }}
-                  >
-                    <CornerMark />
-                    {messages.labels.noOtherAnnouncements}
-                  </div>
-                ) : (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {regularAnnouncements.map((announcement, index) => (
-                      <AnnouncementCard
-                        key={announcement.id}
-                        announcement={announcement}
-                        index={index}
-                        locale={locale}
-                        labels={messages.labels}
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
+                  {regularAnnouncements.length === 0 ? (
+                    <div
+                      className="relative border p-6 text-sm"
+                      style={{
+                        borderColor: "var(--asc-line-soft)",
+                        background: "var(--asc-bg-1)",
+                        color: "var(--asc-fg-3)",
+                      }}
+                    >
+                      <CornerMark />
+                      {messages.labels.noOtherAnnouncements}
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {regularAnnouncements.map((announcement, index) => (
+                        <AnnouncementCard
+                          key={announcement.id}
+                          announcement={announcement}
+                          index={index}
+                          locale={locale}
+                          labels={messages.labels}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </SectionReveal>
             </>
           )}
         </section>

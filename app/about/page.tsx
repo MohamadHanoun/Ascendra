@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import SectionReveal from "@/components/SectionReveal";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 
@@ -172,6 +173,10 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+function CornerMark() {
+  return <div aria-hidden="true" className="asc-corner-mark" />;
+}
+
 function ValueRow({
   title,
   description,
@@ -185,7 +190,6 @@ function ValueRow({
       style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
     >
       <h3 className="font-black" style={{ color: "var(--asc-fg-0)" }}>{title}</h3>
-
       <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>{description}</p>
     </article>
   );
@@ -194,11 +198,18 @@ function ValueRow({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+      <p
+        className="text-[11px] font-black uppercase tracking-[0.14em]"
+        style={{ color: "var(--asc-fg-3)" }}
+      >
         {label}
       </p>
-
-      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
+      <p
+        className="mt-2 text-4xl font-black tabular-nums"
+        style={{ color: "var(--asc-accent)", fontFamily: "var(--font-display)" }}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -207,12 +218,21 @@ export default async function AboutPage() {
   const locale = await getLocale();
   const messages = aboutMessages[locale];
 
+  const clipPath14 =
+    "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)";
+  const clipPath16 =
+    "polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)";
+
   return (
-    <main className="asc-public-page asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}>
+    <main
+      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
+      style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
+    >
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[430px] overflow-hidden">
+        {/* Hero */}
+        <section className="asc-image-hero relative min-h-[430px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -220,112 +240,178 @@ export default async function AboutPage() {
             }}
           />
 
-          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,rgb(12 11 9 / 0.92) 0%,rgb(12 11 9 / 0.62) 44%,rgb(12 11 9 / 0.82) 100%)" }} />
-          <div className="absolute inset-x-0 bottom-0 h-40" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: [
+                "linear-gradient(180deg, rgb(12 11 9 / 0.22) 0%, rgb(12 11 9 / 0.58) 52%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.42) 40%, transparent 68%)",
+              ].join(", "),
+            }}
+          />
+
+          <div
+            className="absolute inset-x-0 bottom-0 h-40"
+            style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }}
+          />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
-              {messages.hero.label}
+            <p
+              className="mb-4 text-xs font-black uppercase tracking-[0.22em]"
+              style={{ color: "var(--asc-accent)" }}
+            >
+              ▲ {messages.hero.label}
             </p>
 
-            <h1 className="text-5xl font-black uppercase tracking-tight md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
+            <h1
+              className="text-5xl font-black uppercase tracking-tight md:text-7xl"
+              style={{ color: "var(--asc-fg-0)" }}
+            >
               {messages.hero.title}
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-7" style={{ color: "var(--asc-fg-1)" }}>
+            <p
+              className="mt-5 max-w-2xl text-base leading-7"
+              style={{ color: "var(--asc-fg-1)" }}
+            >
               {messages.hero.description}
             </p>
           </div>
         </section>
 
         <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
-          <section
-            className="p-6 shadow-2xl shadow-black/20 backdrop-blur"
-            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-          >
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-                  {messages.purpose.label}
-                </p>
 
-                <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-                  {messages.purpose.title}
-                </h2>
-
-                <p className="mt-4 max-w-3xl text-sm leading-7" style={{ color: "var(--asc-fg-3)" }}>
-                  {messages.purpose.description}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-5">
-                <Stat
-                  label={messages.stats.focus}
-                  value={messages.stats.focusValue}
-                />
-                <Stat
-                  label={messages.stats.system}
-                  value={messages.stats.systemValue}
-                />
-                <Stat
-                  label={messages.stats.tracking}
-                  value={messages.stats.trackingValue}
-                />
-                <Stat
-                  label={messages.stats.motto}
-                  value={messages.stats.mottoValue}
-                />
-              </div>
-            </div>
-          </section>
-
-          <section
-            className="overflow-hidden shadow-2xl shadow-black/20 backdrop-blur"
-            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-          >
-            <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-              <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-                {messages.core.label}
-              </p>
-
-              <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-                {messages.core.title}
-              </h2>
-            </div>
-
-            <div>
-              {messages.core.values.map((item) => (
-                <ValueRow
-                  key={item.title}
-                  title={item.title}
-                  description={item.description}
-                />
-              ))}
-            </div>
-          </section>
-
-          <section
-            className="flex flex-col justify-between gap-4 p-6 shadow-2xl shadow-black/20 md:flex-row md:items-center"
-            style={{ border: "1px solid var(--asc-line)", background: "var(--asc-accent-dim)" }}
-          >
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-                {messages.cta.label}
-              </p>
-
-              <h2 className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-                {messages.cta.title}
-              </h2>
-            </div>
-
-            <Link
-              href="/tournaments"
-              className="w-fit px-5 py-3 text-sm font-black text-white transition"
-              style={{ background: "var(--asc-accent-2)" }}
+          {/* Purpose + Stats */}
+          <SectionReveal>
+            <section
+              className="relative overflow-hidden border p-6 shadow-2xl shadow-black/20 backdrop-blur"
+              style={{
+                borderColor: "var(--asc-line-soft)",
+                background: "var(--asc-bg-1)",
+                clipPath: clipPath16,
+              }}
             >
-              {messages.cta.action}
-            </Link>
-          </section>
+              <CornerMark />
+
+              <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
+                <div>
+                  <p
+                    className="text-xs font-black uppercase tracking-[0.16em]"
+                    style={{ color: "var(--asc-accent)" }}
+                  >
+                    ▲ {messages.purpose.label}
+                  </p>
+
+                  <h2
+                    className="mt-2 text-3xl font-black"
+                    style={{ color: "var(--asc-fg-0)" }}
+                  >
+                    {messages.purpose.title}
+                  </h2>
+
+                  <p
+                    className="mt-4 max-w-3xl text-sm leading-7"
+                    style={{ color: "var(--asc-fg-3)" }}
+                  >
+                    {messages.purpose.description}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <Stat label={messages.stats.focus} value={messages.stats.focusValue} />
+                  <Stat label={messages.stats.system} value={messages.stats.systemValue} />
+                  <Stat label={messages.stats.tracking} value={messages.stats.trackingValue} />
+                  <Stat label={messages.stats.motto} value={messages.stats.mottoValue} />
+                </div>
+              </div>
+            </section>
+          </SectionReveal>
+
+          {/* Core areas */}
+          <SectionReveal delay={0.08}>
+            <section
+              className="relative overflow-hidden border shadow-2xl shadow-black/20 backdrop-blur"
+              style={{
+                borderColor: "var(--asc-line-soft)",
+                background: "var(--asc-bg-1)",
+                clipPath: clipPath14,
+              }}
+            >
+              <CornerMark />
+
+              <div
+                className="px-5 py-4"
+                style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+              >
+                <p
+                  className="text-xs font-black uppercase tracking-[0.16em]"
+                  style={{ color: "var(--asc-accent)" }}
+                >
+                  ▲ {messages.core.label}
+                </p>
+
+                <h2
+                  className="mt-1 text-xl font-black"
+                  style={{ color: "var(--asc-fg-0)" }}
+                >
+                  {messages.core.title}
+                </h2>
+              </div>
+
+              <div>
+                {messages.core.values.map((item) => (
+                  <ValueRow
+                    key={item.title}
+                    title={item.title}
+                    description={item.description}
+                  />
+                ))}
+              </div>
+            </section>
+          </SectionReveal>
+
+          {/* CTA */}
+          <SectionReveal delay={0.14}>
+            <section
+              className="relative overflow-hidden flex flex-col justify-between gap-4 border p-6 shadow-2xl shadow-black/20 md:flex-row md:items-center"
+              style={{
+                borderColor: "var(--asc-accent-border)",
+                background: "linear-gradient(135deg, var(--asc-accent-dim) 0%, rgba(184,137,61,0.06) 100%)",
+                clipPath: clipPath14,
+              }}
+            >
+              <CornerMark />
+
+              <div className="relative z-10">
+                <p
+                  className="text-xs font-black uppercase tracking-[0.16em]"
+                  style={{ color: "var(--asc-accent)" }}
+                >
+                  ▲ {messages.cta.label}
+                </p>
+
+                <h2
+                  className="mt-1 text-2xl font-black"
+                  style={{ color: "var(--asc-fg-0)" }}
+                >
+                  {messages.cta.title}
+                </h2>
+              </div>
+
+              <Link
+                href="/tournaments"
+                className="relative z-10 w-fit px-6 py-3 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:opacity-90"
+                style={{
+                  background: "linear-gradient(135deg, #c9933e 0%, #b8893d 55%, #9a6a2a 100%)",
+                  boxShadow: "0 0 22px rgba(184, 137, 61, 0.36), 0 4px 16px rgba(0,0,0,0.4)",
+                  clipPath:
+                    "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+                }}
+              >
+                {messages.cta.action} ›
+              </Link>
+            </section>
+          </SectionReveal>
         </section>
 
         <Footer />

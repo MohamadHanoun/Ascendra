@@ -5,6 +5,7 @@ import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import SectionReveal from "@/components/SectionReveal";
 import TournamentsRealtimeRefresh from "@/components/TournamentsRealtimeRefresh";
 import ProfileNotice from "@/components/ProfileNotice";
 import {
@@ -1078,34 +1079,38 @@ export default async function TournamentsPage({
           <ProfileNotice message={params.message} error={params.error} />
 
           {/* Stats */}
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard label={copy.totalEvents} value={tournaments.length} />
-            <StatCard
-              label={copy.activeEventsStat}
-              value={openTournamentCount}
-            />
-            <StatCard
-              label={copy.openRegistration}
-              value={openRegistrationCount}
-              accent
-            />
-            <StatCard label={copy.approvedTeams} value={approvedSlotsCount} />
-          </section>
+          <SectionReveal>
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <StatCard label={copy.totalEvents} value={tournaments.length} />
+              <StatCard
+                label={copy.activeEventsStat}
+                value={openTournamentCount}
+              />
+              <StatCard
+                label={copy.openRegistration}
+                value={openRegistrationCount}
+                accent
+              />
+              <StatCard label={copy.approvedTeams} value={approvedSlotsCount} />
+            </section>
+          </SectionReveal>
 
           {/* Featured */}
-          <section>
-            <SectionHeader
-              eyebrow={copy.featuredEyebrow}
-              title={copy.featuredTitle}
-            />
+          <SectionReveal delay={0.06}>
+            <section>
+              <SectionHeader
+                eyebrow={copy.featuredEyebrow}
+                title={copy.featuredTitle}
+              />
 
-            <FeaturedTournament
-              tournament={featuredTournament}
-              locale={locale}
-              messages={messages}
-              copy={copy}
-            />
-          </section>
+              <FeaturedTournament
+                tournament={featuredTournament}
+                locale={locale}
+                messages={messages}
+                copy={copy}
+              />
+            </section>
+          </SectionReveal>
 
           {tournaments.length === 0 ? (
             <EmptyState
@@ -1114,15 +1119,17 @@ export default async function TournamentsPage({
             />
           ) : (
             <>
-              <TournamentDirectory
-                title={copy.directoryTitle}
-                eyebrow={copy.directoryEyebrow}
-                tournaments={activeTournaments}
-                locale={locale}
-                messages={messages}
-                copy={copy}
-                emptyTitle={messages.empty.noActive}
-              />
+              <SectionReveal delay={0.1}>
+                <TournamentDirectory
+                  title={copy.directoryTitle}
+                  eyebrow={copy.directoryEyebrow}
+                  tournaments={activeTournaments}
+                  locale={locale}
+                  messages={messages}
+                  copy={copy}
+                  emptyTitle={messages.empty.noActive}
+                />
+              </SectionReveal>
 
               {archivedTournaments.length > 0 && (
                 <details className="group">

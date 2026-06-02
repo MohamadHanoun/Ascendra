@@ -983,6 +983,12 @@ article.overflow-hidden[class*="border"]::before {
   --asc-card: rgba(246, 238, 229, 0.96);
 }
 
+/* ─── Navbar gold border tint ───────────────────────────────────────────── */
+
+.asc-public-page .asc-navbar {
+  border-bottom: 1px solid rgba(184, 137, 61, 0.11);
+}
+
 /* ─── Homepage cinematic polish ─────────────────────────────────────────── */
 
 .asc-image-hero::after {

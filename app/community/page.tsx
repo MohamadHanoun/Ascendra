@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import SectionReveal from "@/components/SectionReveal";
 import { prisma } from "@/lib/prisma";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
@@ -734,68 +735,73 @@ export default async function CommunityPage() {
         </section>
 
         <section className="mx-auto grid max-w-[1480px] gap-12 px-6 pb-20 pt-10 lg:px-10 2xl:px-14">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatTile
-              label={messages.stats.activeTournaments.label}
-              value={stats.activeTournaments}
-              sub={messages.stats.activeTournaments.sub}
-              accent
-            />
-            <StatTile
-              label={messages.stats.players.label}
-              value={stats.totalUsers}
-              sub={messages.stats.players.sub}
-            />
-            <StatTile
-              label={messages.stats.teams.label}
-              value={stats.totalTeams}
-              sub={messages.stats.teams.sub}
-            />
-            <StatTile
-              label={messages.stats.results.label}
-              value={stats.tournamentResults}
-              sub={messages.stats.results.sub}
-            />
-          </div>
-
-          <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px]">
-            <div>
-              <SectionRule label={messages.features.sectionLabel} />
-              <div className="grid gap-4 md:grid-cols-2">
-                <FeatureCard
-                  index={1}
-                  title={messages.features.cards.tournament.title}
-                  description={messages.features.cards.tournament.description}
-                  href="/tournaments"
-                  label={messages.features.cards.tournament.label}
-                />
-                <FeatureCard
-                  index={2}
-                  title={messages.features.cards.rules.title}
-                  description={messages.features.cards.rules.description}
-                  href="/rules"
-                  label={messages.features.cards.rules.label}
-                />
-                <FeatureCard
-                  index={3}
-                  title={messages.features.cards.leaderboard.title}
-                  description={messages.features.cards.leaderboard.description}
-                  href="/leaderboard"
-                  label={messages.features.cards.leaderboard.label}
-                />
-                <FeatureCard
-                  index={4}
-                  title={messages.features.cards.staff.title}
-                  description={messages.features.cards.staff.description}
-                  href="/staff"
-                  label={messages.features.cards.staff.label}
-                />
-              </div>
+          <SectionReveal>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <StatTile
+                label={messages.stats.activeTournaments.label}
+                value={stats.activeTournaments}
+                sub={messages.stats.activeTournaments.sub}
+                accent
+              />
+              <StatTile
+                label={messages.stats.players.label}
+                value={stats.totalUsers}
+                sub={messages.stats.players.sub}
+              />
+              <StatTile
+                label={messages.stats.teams.label}
+                value={stats.totalTeams}
+                sub={messages.stats.teams.sub}
+              />
+              <StatTile
+                label={messages.stats.results.label}
+                value={stats.tournamentResults}
+                sub={messages.stats.results.sub}
+              />
             </div>
+          </SectionReveal>
 
-            <DiscordCard messages={messages.discordCard} />
-          </section>
+          <SectionReveal delay={0.08}>
+            <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px]">
+              <div>
+                <SectionRule label={messages.features.sectionLabel} />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FeatureCard
+                    index={1}
+                    title={messages.features.cards.tournament.title}
+                    description={messages.features.cards.tournament.description}
+                    href="/tournaments"
+                    label={messages.features.cards.tournament.label}
+                  />
+                  <FeatureCard
+                    index={2}
+                    title={messages.features.cards.rules.title}
+                    description={messages.features.cards.rules.description}
+                    href="/rules"
+                    label={messages.features.cards.rules.label}
+                  />
+                  <FeatureCard
+                    index={3}
+                    title={messages.features.cards.leaderboard.title}
+                    description={messages.features.cards.leaderboard.description}
+                    href="/leaderboard"
+                    label={messages.features.cards.leaderboard.label}
+                  />
+                  <FeatureCard
+                    index={4}
+                    title={messages.features.cards.staff.title}
+                    description={messages.features.cards.staff.description}
+                    href="/staff"
+                    label={messages.features.cards.staff.label}
+                  />
+                </div>
+              </div>
 
+              <DiscordCard messages={messages.discordCard} />
+            </section>
+          </SectionReveal>
+
+          <SectionReveal delay={0.12}>
           <section>
             <SectionRule label={messages.directory.sectionLabel} />
             <Panel className="p-0">
@@ -845,6 +851,7 @@ export default async function CommunityPage() {
               />
             </Panel>
           </section>
+          </SectionReveal>
         </section>
 
         <Footer />

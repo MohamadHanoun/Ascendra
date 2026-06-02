@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import SectionReveal from "@/components/SectionReveal";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
@@ -395,12 +396,14 @@ export default async function StaffPage() {
         </section>
 
         <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-20 lg:px-10 2xl:px-14">
-          <SummaryCard
-            label={messages.summary.label}
-            title={messages.summary.title}
-            totalLabel={messages.summary.total}
-            total={staffMembers.length}
-          />
+          <SectionReveal>
+            <SummaryCard
+              label={messages.summary.label}
+              title={messages.summary.title}
+              totalLabel={messages.summary.total}
+              total={staffMembers.length}
+            />
+          </SectionReveal>
 
           {staffMembers.length === 0 ? (
             <EmptyState
@@ -408,18 +411,20 @@ export default async function StaffPage() {
               description={messages.empty.description}
             />
           ) : (
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {staffMembers.map((member, index) => (
-                <StaffCard
-                  key={member.id}
-                  name={member.name}
-                  role={member.role}
-                  status={member.status}
-                  staffMemberLabel={messages.labels.staffMember}
-                  index={index}
-                />
-              ))}
-            </section>
+            <SectionReveal delay={0.08}>
+              <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {staffMembers.map((member, index) => (
+                  <StaffCard
+                    key={member.id}
+                    name={member.name}
+                    role={member.role}
+                    status={member.status}
+                    staffMemberLabel={messages.labels.staffMember}
+                    index={index}
+                  />
+                ))}
+              </section>
+            </SectionReveal>
           )}
         </section>
 
