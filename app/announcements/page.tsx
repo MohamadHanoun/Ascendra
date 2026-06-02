@@ -379,7 +379,7 @@ export default async function AnnouncementsPage() {
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[430px] overflow-hidden">
+        <section className="asc-image-hero relative min-h-[430px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{

@@ -40,7 +40,11 @@ export default function GlobalError({
           type="button"
           onClick={reset}
           className="inline-flex items-center px-6 py-3 text-sm font-black text-white transition hover:opacity-90"
-          style={{ background: "var(--asc-accent-2)" }}
+          style={{
+            background: "var(--asc-accent-2)",
+            clipPath:
+              "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+          }}
         >
           Try Again
         </button>
@@ -51,6 +55,8 @@ export default function GlobalError({
           style={{
             border: "1px solid var(--asc-line)",
             color: "var(--asc-fg-2)",
+            clipPath:
+              "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
           }}
         >
           Back to Home

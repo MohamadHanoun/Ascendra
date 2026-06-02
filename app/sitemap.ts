@@ -14,6 +14,7 @@ const staticRoutes = [
   "/tournaments",
   "/leaderboard",
   "/announcements",
+  "/games",
   "/community",
   "/about",
   "/rules",

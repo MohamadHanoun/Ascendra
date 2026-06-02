@@ -228,7 +228,7 @@ export default async function StatsPage() {
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[430px] overflow-hidden">
+        <section className="asc-image-hero relative min-h-[430px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -241,7 +241,7 @@ export default async function StatsPage() {
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
             <p className="mb-4 text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
-              {messages.hero.label}
+              ▲ {messages.hero.label}
             </p>
 
             <h1 className="text-5xl font-black uppercase tracking-tight md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
