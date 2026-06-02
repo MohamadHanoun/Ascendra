@@ -6,10 +6,24 @@ import {
   getAdminNotificationUserIds,
 } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
+import {
+  countTeamPlayers,
+  hasTournamentCapacity,
+  meetsTeamSize,
+} from "@/lib/tournamentRegistrationHelpers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 const activeRegistrationStatuses = ["registered", "approved"];
+
+// Sentinel used to surface a user-visible error from inside a $transaction
+// without triggering an unexpected rollback path.
+class RegistrationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RegistrationError";
+  }
+}
 
 function tournamentRedirect(message: string): never {
   redirect(`/tournaments?message=${encodeURIComponent(message)}`);
@@ -131,7 +145,8 @@ export async function registerTeamForTournament(formData: FormData) {
     tournamentError("This team does not match the tournament game.");
   }
 
-  if (team.members.length < tournament.teamSize) {
+  const totalPlayers = countTeamPlayers(team);
+  if (!meetsTeamSize(totalPlayers, tournament.teamSize)) {
     tournamentError(
       `This tournament requires at least ${tournament.teamSize} players.`,
     );
@@ -150,25 +165,49 @@ export async function registerTeamForTournament(formData: FormData) {
     tournamentError("You already registered a team for this tournament.");
   }
 
-  const existingRegistration = await prisma.tournamentRegistration.findUnique({
-    where: {
-      tournamentId_teamId: {
-        tournamentId: tournament.id,
-        teamId: team.id,
-      },
-    },
-  });
+  // Re-check capacity and write atomically inside a transaction to close the
+  // race window between the capacity read above and the registration write.
+  // The outer check above is a fast early-exit; this inner check is authoritative.
+  let registration: Awaited<
+    ReturnType<typeof prisma.tournamentRegistration.create>
+  >;
 
-  if (existingRegistration && existingRegistration.status !== "cancelled") {
-    tournamentError("This team is already registered for this tournament.");
-  }
+  try {
+    registration = await prisma.$transaction(async (tx) => {
+      const activeCount = await tx.tournamentRegistration.count({
+        where: {
+          tournamentId: tournament.id,
+          status: { in: activeRegistrationStatuses },
+        },
+      });
 
-  const registration = existingRegistration
-    ? await prisma.tournamentRegistration.update({
-        where: { id: existingRegistration.id },
-        data: { status: "registered", registeredById: user.id },
-      })
-    : await prisma.tournamentRegistration.create({
+      if (!hasTournamentCapacity(activeCount, tournament.maxTeams)) {
+        throw new RegistrationError("This tournament is already full.");
+      }
+
+      const existing = await tx.tournamentRegistration.findUnique({
+        where: {
+          tournamentId_teamId: {
+            tournamentId: tournament.id,
+            teamId: team.id,
+          },
+        },
+      });
+
+      if (existing && existing.status !== "cancelled") {
+        throw new RegistrationError(
+          "This team is already registered for this tournament.",
+        );
+      }
+
+      if (existing) {
+        return tx.tournamentRegistration.update({
+          where: { id: existing.id },
+          data: { status: "registered", registeredById: user.id },
+        });
+      }
+
+      return tx.tournamentRegistration.create({
         data: {
           tournamentId: tournament.id,
           teamId: team.id,
@@ -176,6 +215,13 @@ export async function registerTeamForTournament(formData: FormData) {
           status: "registered",
         },
       });
+    });
+  } catch (err) {
+    if (err instanceof RegistrationError) {
+      tournamentError(err.message);
+    }
+    throw err;
+  }
 
   const teamUserIds = Array.from(
     new Set([team.leaderId, ...team.members.map((member) => member.userId)]),
