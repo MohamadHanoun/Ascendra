@@ -180,8 +180,10 @@ Common variables expected by the platform may include:
 ```env
 DATABASE_URL=
 AUTH_SECRET=
+AUTH_URL=
 NEXTAUTH_SECRET=
 NEXTAUTH_URL=
+NEXT_PUBLIC_SITE_URL=
 DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
 ADMIN_DISCORD_IDS=
@@ -193,7 +195,23 @@ RIOT_API_KEY=
 
 Do not commit real secret values to GitHub.
 
-A dedicated `.env.example` file should be added and kept updated as the next documentation step.
+### Production Auth URLs
+
+For production, the public auth and canonical site URLs must point to the live HTTPS origin:
+
+```env
+AUTH_URL=https://www.ascendrahub.com
+NEXTAUTH_URL=https://www.ascendrahub.com
+NEXT_PUBLIC_SITE_URL=https://www.ascendrahub.com
+```
+
+The Discord Developer Portal OAuth2 callback URL must be:
+
+```txt
+https://www.ascendrahub.com/api/auth/callback/discord
+```
+
+Keep `.env.example` updated when deployment requirements change.
 
 ---
 
@@ -292,7 +310,8 @@ Before treating the website as fully complete, verify these items:
 ### Authentication
 
 - Discord OAuth works in production
-- Callback URLs are correct
+- Auth URLs use `https://www.ascendrahub.com`
+- Discord OAuth callback URL is `https://www.ascendrahub.com/api/auth/callback/discord`
 - Admin Discord IDs are configured
 - Non-admin users cannot access protected admin pages
 

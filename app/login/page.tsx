@@ -35,7 +35,7 @@ const loginMessages: Record<Locale, LoginMessages> = {
   en: {
     metadata: {
       title: "Login | Ascendra",
-      description: "Login to Ascendra with Discord.",
+      description: "Login to Ascendra through official Discord OAuth.",
     },
     hero: {
       label: "Ascendra login",
@@ -45,10 +45,10 @@ const loginMessages: Record<Locale, LoginMessages> = {
       pills: ["Profile", "Teams", "Tournaments", "Leaderboard"],
     },
     card: {
-      label: "Secure access",
+      label: "Ascendra account",
       title: "Continue to Ascendra",
       description:
-        "Discord connects your account to team management and tournament registration.",
+        "Ascendra uses Discord only to verify your identity for profile, team, and tournament features.",
       button: "Login with Discord",
       note: "After login, Ascendra checks your Discord identity and sends you to your profile.",
     },
@@ -76,6 +76,34 @@ const loginMessages: Record<Locale, LoginMessages> = {
   },
 };
 
+const loginTrustMessages: Record<
+  Locale,
+  {
+    cardLabel: string;
+    label: string;
+    items: string[];
+  }
+> = {
+  en: {
+    cardLabel: "Ascendra account",
+    label: "Official OAuth",
+    items: [
+      "Ascendra uses official Discord OAuth.",
+      "You will be redirected to discord.com to authorize your account.",
+      "Ascendra never asks for or stores your Discord password.",
+    ],
+  },
+  ar: {
+    cardLabel: "حساب Ascendra",
+    label: "مصادقة OAuth رسمية",
+    items: [
+      "تستخدم Ascendra مصادقة Discord OAuth الرسمية.",
+      "سيتم توجيهك إلى discord.com لتفويض حسابك.",
+      "لا تطلب Ascendra كلمة مرور Discord ولا تخزنها.",
+    ],
+  },
+};
+
 const panelClip =
   "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)";
 
@@ -89,6 +117,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: messages.title,
     description: messages.description,
+    robots: {
+      index: false,
+      follow: false,
+    },
   };
 }
 
@@ -213,6 +245,7 @@ function DiscordGlyph() {
 export default async function LoginPage() {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   const messages = loginMessages[locale];
+  const trustMessages = loginTrustMessages[locale];
 
   if (session?.user?.databaseId) {
     redirect("/profile");
@@ -308,7 +341,7 @@ export default async function LoginPage() {
                       className="text-[10px] font-black uppercase tracking-[0.18em]"
                       style={{ color: "var(--asc-accent)" }}
                     >
-                      ▲ {messages.card.label}
+                      ▲ {trustMessages.cardLabel}
                     </p>
 
                     <h2
@@ -329,6 +362,42 @@ export default async function LoginPage() {
 
                 <div className="mt-7">
                   <LoginWithDiscordButton label={messages.card.button} />
+                </div>
+
+                <div
+                  className="mt-4 border p-4"
+                  style={{
+                    borderColor: "var(--asc-accent-border)",
+                    background: "var(--asc-accent-dim)",
+                    clipPath: panelClip,
+                  }}
+                >
+                  <p
+                    className="text-[10px] font-black uppercase tracking-[0.16em]"
+                    style={{ color: "var(--asc-accent)" }}
+                  >
+                    {trustMessages.label}
+                  </p>
+
+                  <ul className="mt-3 grid gap-2">
+                    {trustMessages.items.map((item) => (
+                      <li
+                        key={item}
+                        className="flex gap-2 text-xs leading-5"
+                        style={{ color: "var(--asc-fg-2)" }}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className="mt-[0.35rem] h-1.5 w-1.5 shrink-0"
+                          style={{
+                            background: "var(--asc-accent)",
+                            boxShadow: "0 0 10px var(--asc-accent-glow)",
+                          }}
+                        />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
                 <div
