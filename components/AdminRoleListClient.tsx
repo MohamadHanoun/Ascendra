@@ -38,14 +38,19 @@ export default function AdminRoleListClient({
 }: AdminRoleListClientProps) {
   const router = useRouter();
   const [items, setItems] = useState(roles);
+  const [prevRoles, setPrevRoles] = useState(roles);
   const itemsRef = useRef(roles);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    itemsRef.current = roles;
+  if (prevRoles !== roles) {
+    setPrevRoles(roles);
     setItems(roles);
-  }, [roles]);
+  }
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   function updateItems(nextItems: RoleItem[]) {
     itemsRef.current = nextItems;

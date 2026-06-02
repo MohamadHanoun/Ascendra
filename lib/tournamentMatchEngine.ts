@@ -9,6 +9,7 @@ import {
 
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import { isSupportedTournamentFormat } from "@/lib/tournamentFormatSupport";
 import {
   notifyBracketAdvanced,
   notifyManualResultSubmitted,
@@ -132,6 +133,12 @@ export async function createMatchesForTournament(
 
   if (!tournament) return fail("Tournament was not found.");
 
+  if (!isSupportedTournamentFormat(tournament.format)) {
+    return fail(
+      "Bracket generation is not supported for this tournament format. Only Single Elimination is currently supported.",
+    );
+  }
+
   const existing = await prisma.tournamentMatch.count({
     where: { tournamentId },
   });
@@ -172,7 +179,7 @@ export async function createMatchesForTournament(
 
   const drafts: DraftMatch[] = [];
 
-  let firstRoundMatchCount = totalSlots / 2;
+  const firstRoundMatchCount = totalSlots / 2;
 
   for (let i = 0; i < firstRoundMatchCount; i += 1) {
     const teamA = seeds[i * 2].teamId;

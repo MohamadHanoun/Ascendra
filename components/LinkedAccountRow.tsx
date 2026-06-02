@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 
 import type { AccountActionResult } from "@/actions/profileAccountActions";
 import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
@@ -48,13 +48,13 @@ export default function LinkedAccountRow({
 }: Props) {
   const [state, formAction, pending] = useActionState(unlinkAction, INITIAL);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [prevPending, setPrevPending] = useState(pending);
   const formRef = useRef<HTMLFormElement>(null);
 
-  useEffect(() => {
-    if (!pending) {
-      setConfirmOpen(false);
-    }
-  }, [pending]);
+  if (prevPending !== pending) {
+    setPrevPending(pending);
+    if (!pending) setConfirmOpen(false);
+  }
 
   const confirmDescription = labels.unlinkAccountConfirmDescription.replace(
     "{provider}",

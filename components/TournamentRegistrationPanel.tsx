@@ -553,6 +553,35 @@ function RequirementsList({
   );
 }
 
+function Cs2RequirementRow({
+  done,
+  label,
+  linkLabel,
+}: {
+  done: boolean;
+  label: string;
+  linkLabel?: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <span
+          className="text-xs font-black"
+          style={{ color: done ? "var(--asc-green)" : "var(--asc-live)" }}
+        >
+          {done ? "✓" : "✗"}
+        </span>
+        <span className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
+          {label}
+        </span>
+      </div>
+      {!done && linkLabel && (
+        <NoticeLink href="/profile">{linkLabel}</NoticeLink>
+      )}
+    </div>
+  );
+}
+
 function Cs2RequirementsBlock({
   readiness,
   messages,
@@ -560,34 +589,6 @@ function Cs2RequirementsBlock({
   readiness: Cs2Readiness;
   messages: TournamentDetailsMessages["panel"];
 }) {
-  function Row({
-    done,
-    label,
-    linkLabel,
-  }: {
-    done: boolean;
-    label: string;
-    linkLabel?: string;
-  }) {
-    return (
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span
-            className="text-xs font-black"
-            style={{ color: done ? "var(--asc-green)" : "var(--asc-live)" }}
-          >
-            {done ? "✓" : "✗"}
-          </span>
-          <span className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
-            {label}
-          </span>
-        </div>
-        {!done && linkLabel && (
-          <NoticeLink href="/profile">{linkLabel}</NoticeLink>
-        )}
-      </div>
-    );
-  }
 
   return (
     <div
@@ -601,17 +602,17 @@ function Cs2RequirementsBlock({
         {messages.cs2RequirementsDescription}
       </p>
       <div className="mt-4 grid gap-3">
-        <Row
+        <Cs2RequirementRow
           done={readiness.steamConnected}
           label={messages.cs2SteamConnected}
           linkLabel={messages.cs2ConnectSteam}
         />
-        <Row
+        <Cs2RequirementRow
           done={readiness.faceitConnected}
           label={messages.cs2FaceitConnected}
           linkLabel={messages.cs2ConnectFaceit}
         />
-        <Row
+        <Cs2RequirementRow
           done={readiness.faceitMatchesSteam}
           label={messages.cs2FaceitMatchesSteam}
         />

@@ -46,9 +46,11 @@ export function PublicThemeProvider({ children }: { children: ReactNode }) {
       );
     }
 
-    setThemeState(initialTheme);
     applyTheme(initialTheme);
-    setIsReady(true);
+    queueMicrotask(() => {
+      setThemeState(initialTheme);
+      setIsReady(true);
+    });
   }, []);
 
   const setTheme = useCallback((nextTheme: PublicTheme) => {

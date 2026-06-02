@@ -16,14 +16,15 @@ export default function AdminToast({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [visible, setVisible] = useState(Boolean(message));
+  const [prevMessage, setPrevMessage] = useState(message);
+
+  if (prevMessage !== message) {
+    setPrevMessage(message);
+    setVisible(Boolean(message));
+  }
 
   useEffect(() => {
-    if (!message) {
-      setVisible(false);
-      return;
-    }
-
-    setVisible(true);
+    if (!message) return;
 
     const timer = window.setTimeout(() => {
       setVisible(false);

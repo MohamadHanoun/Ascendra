@@ -1,8 +1,15 @@
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { createRateLimiter } from "@/lib/rateLimit";
+
+const rateLimiter = createRateLimiter(20, 60_000);
+
 export async function GET(request: Request) {
+  const limited = rateLimiter(request);
+  if (limited) return limited;
+
   const session = await auth();
 
   if (!session?.user?.databaseId) {

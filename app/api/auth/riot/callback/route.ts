@@ -5,9 +5,13 @@ import { NextResponse } from "next/server";
 import { GameProvider } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { createRateLimiter } from "@/lib/rateLimit";
+import { getRiotRsoConfig } from "@/lib/riotRsoConfig";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const rateLimiter = createRateLimiter(10, 60_000);
 
 const RIOT_TOKEN_URL = "https://auth.riotgames.com/token";
 const RIOT_ACCOUNT_URL =
@@ -115,6 +119,9 @@ function fail(baseUrl: string, error: string) {
 }
 
 export async function GET(request: Request) {
+  const limited = rateLimiter(request);
+  if (limited) return limited;
+
   const { searchParams } = new URL(request.url);
   const baseUrl = new URL(request.url).origin;
   const messages = riotCallbackMessages[getRequestLocale(request)];
@@ -165,14 +172,22 @@ export async function GET(request: Request) {
     return fail(baseUrl, messages.stateMismatch);
   }
 
+  // Require all RSO config before any cryptographic operations.
+  // clientSecret is the HMAC key – it must be a real configured secret,
+  // never a well-known fallback string.
+  const rsoConfig = getRiotRsoConfig();
+  if (!rsoConfig) {
+    return fail(baseUrl, messages.notConfigured);
+  }
+  const { clientId, clientSecret, redirectUri } = rsoConfig;
+
   // Verify the HMAC embedded in the state so nobody can forge a valid state.
   const [nonce, sig] = returnedState.split(".");
   if (!nonce || !sig) {
     return fail(baseUrl, messages.invalidStateFormat);
   }
-  const secret = process.env.RIOT_RSO_CLIENT_SECRET?.trim() ?? "fallback";
   const expectedSig = crypto
-    .createHmac("sha256", secret)
+    .createHmac("sha256", clientSecret)
     .update(`${userId}:${nonce}`)
     .digest("hex");
   const sigA = Buffer.from(sig, "hex");
@@ -191,14 +206,6 @@ export async function GET(request: Request) {
   });
   if (!user) {
     return fail(baseUrl, messages.userNotFound);
-  }
-
-  const clientId = process.env.RIOT_RSO_CLIENT_ID?.trim();
-  const clientSecret = process.env.RIOT_RSO_CLIENT_SECRET?.trim();
-  const redirectUri = process.env.RIOT_RSO_REDIRECT_URI?.trim();
-
-  if (!clientId || !clientSecret || !redirectUri) {
-    return fail(baseUrl, messages.notConfigured);
   }
 
   // Exchange authorization code for access token.

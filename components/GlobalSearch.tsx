@@ -47,6 +47,7 @@ export default function GlobalSearch({ labels }: GlobalSearchProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [prevPathname, setPrevPathname] = useState(pathname);
 
   const cleanQuery = query.trim();
   const hasSearchText = cleanQuery.length >= 2;
@@ -71,9 +72,10 @@ export default function GlobalSearch({ labels }: GlobalSearchProps) {
     router.push(result.href);
   }
 
-  useEffect(() => {
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     closeSearch();
-  }, [pathname]);
+  }
 
     useEffect(() => {
       function handleKeyboardShortcut(event: KeyboardEvent) {
@@ -113,12 +115,21 @@ export default function GlobalSearch({ labels }: GlobalSearchProps) {
     });
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen || !hasSearchText) {
+  const searchActive = isOpen && hasSearchText;
+  const [prevSearchActive, setPrevSearchActive] = useState(searchActive);
+
+  if (prevSearchActive !== searchActive) {
+    setPrevSearchActive(searchActive);
+    if (!searchActive) {
       setResults([]);
       setIsLoading(false);
       setHasError(false);
       setSelectedIndex(0);
+    }
+  }
+
+  useEffect(() => {
+    if (!isOpen || !hasSearchText) {
       return;
     }
 

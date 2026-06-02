@@ -12,7 +12,15 @@ import {
   PermissionFlagsBits,
   REST,
   Routes,
+  type Channel,
+  type ChatInputCommandInteraction,
+  type GuildChannel,
+  type GuildMember,
+  type InteractionReplyOptions,
   type Message,
+  type OverwriteData,
+  type TextBasedChannel,
+  type VoiceChannel,
 } from "discord.js";
 import {
   getSlashCommands as getEnhancedSlashCommands,
@@ -108,7 +116,7 @@ type BotEvent = {
   id: string;
   type: string;
   attempts?: number;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
 };
 
 type LogField = {
@@ -445,7 +453,7 @@ function getTournamentStatusPresentation(
   }
 }
 
-function buildTournamentDescription(payload: Record<string, any>) {
+function buildTournamentDescription(payload: Record<string, unknown>) {
   const description = pickFirstNonEmpty(
     payload.shortDescription,
     payload.description,
@@ -485,7 +493,7 @@ function buildTournamentButtons(tournamentUrl: string) {
   return row;
 }
 
-function buildTournamentAnnouncementContent(payload: Record<string, any>) {
+function buildTournamentAnnouncementContent(payload: Record<string, unknown>) {
   const tournamentUrl = pickFirstNonEmpty(payload.websiteUrl, SITE_URL);
   const title = pickFirstNonEmpty(payload.title, "Ascendra Tournament");
   const game = cleanLogValue(payload.game);
@@ -880,7 +888,7 @@ function getSlashOptionTypeLabel(value: unknown) {
 function getPublicSlashCommands() {
   return getEnhancedSlashCommands()
     .map((command) => {
-      const record = command as Record<string, any>;
+      const record = command as Record<string, unknown>;
       const name = String(record.name || "").trim();
       const description = String(record.description || "").trim();
 
@@ -890,7 +898,7 @@ function getPublicSlashCommands() {
 
       const options = Array.isArray(record.options)
         ? record.options
-            .map((option: Record<string, any>) => {
+            .map((option: Record<string, unknown>) => {
               const optionName = String(option?.name || "").trim();
 
               if (!optionName) {
@@ -983,7 +991,7 @@ async function collectDiscordPresenceCount(guild: Awaited<ReturnType<typeof getG
 
 async function collectDiscordStats() {
   const guild = await withTimeout(
-    client.guilds.fetch({ guild: GUILD_ID, withCounts: true } as any),
+    client.guilds.fetch({ guild: GUILD_ID ?? "", withCounts: true }),
     API_TIMEOUT_MS,
     "Guild stats fetch timeout.",
   );
@@ -1143,7 +1151,7 @@ async function fetchAnnouncementMessage(params: {
     return null;
   }
 
-  const messages = (channel as any).messages;
+  const messages = (channel as TextBasedChannel).messages;
 
   if (!messages?.fetch) {
     return null;
@@ -1350,12 +1358,12 @@ async function findOrCreateTeamChannel(params: {
 
   if (existingChannel) {
     return {
-      channel: existingChannel as any,
+      channel: existingChannel as VoiceChannel,
       created: false,
     };
   }
 
-  const permissionOverwrites: any[] = [
+  const permissionOverwrites: OverwriteData[] = [
     {
       id: guild.roles.everyone.id,
       allow: [PermissionFlagsBits.ViewChannel],
@@ -1536,7 +1544,7 @@ async function fetchTeamCaptainState(registrationId: string) {
     throw new Error(`Team Captain check ${response.status}`);
   }
 
-  const data = (await response.json()) as Record<string, any>;
+  const data = (await response.json()) as Record<string, unknown>;
 
   return {
     leaderDiscordId: String(data.leaderDiscordId || "").trim(),
@@ -1544,7 +1552,7 @@ async function fetchTeamCaptainState(registrationId: string) {
   };
 }
 
-async function resolveLeaderDiscordId(payload: Record<string, any>) {
+async function resolveLeaderDiscordId(payload: Record<string, unknown>) {
   const direct = pickFirstNonEmpty(payload.leaderDiscordId);
 
   if (direct) {
@@ -1562,7 +1570,7 @@ async function resolveLeaderDiscordId(payload: Record<string, any>) {
   return state.leaderDiscordId;
 }
 
-async function assignTeamCaptainRole(payload: Record<string, any>) {
+async function assignTeamCaptainRole(payload: Record<string, unknown>) {
   try {
     const leaderDiscordId = await resolveLeaderDiscordId(payload);
 
@@ -1597,7 +1605,7 @@ async function assignTeamCaptainRole(payload: Record<string, any>) {
   }
 }
 
-async function removeTeamCaptainRoleIfSafe(payload: Record<string, any>) {
+async function removeTeamCaptainRoleIfSafe(payload: Record<string, unknown>) {
   try {
     const registrationId = pickFirstNonEmpty(payload.registrationId);
 
@@ -1666,7 +1674,7 @@ async function findTeamVoiceChannel(params: {
     );
 
     if (channel && channel.type === ChannelType.GuildVoice) {
-      return channel as any;
+      return channel as VoiceChannel;
     }
   }
 
@@ -1691,7 +1699,7 @@ async function findTeamVoiceChannel(params: {
       );
     }) || null;
 
-  return channel as any;
+  return channel as VoiceChannel | null;
 }
 
 async function deleteTeamVoiceChannel(params: {
@@ -1866,21 +1874,21 @@ function formatMemberAssignmentFailures(
   return visibleDetails.join("\n");
 }
 
-function getTeamAccessTournamentTitle(payload: Record<string, any>) {
+function getTeamAccessTournamentTitle(payload: Record<string, unknown>) {
   return cleanLogValue(payload.tournamentTitle);
 }
 
-function getTeamAccessTournamentName(payload: Record<string, any>) {
+function getTeamAccessTournamentName(payload: Record<string, unknown>) {
   return pickFirstNonEmpty(payload.tournamentTitle, "this tournament");
 }
 
-function getTeamAccessTournamentUrl(payload: Record<string, any>) {
+function getTeamAccessTournamentUrl(payload: Record<string, unknown>) {
   return getAbsoluteUrl(
     pickFirstNonEmpty(payload.websiteUrl, payload.tournamentUrl),
   );
 }
 
-function getTeamAccessCaptainDiscordId(payload: Record<string, any>) {
+function getTeamAccessCaptainDiscordId(payload: Record<string, unknown>) {
   return pickFirstNonEmpty(payload.leaderDiscordId, payload.captainDiscordId);
 }
 
@@ -1890,7 +1898,7 @@ function isFirstBotEventAttempt(event: BotEvent) {
   return !Number.isFinite(attempts) || attempts <= 1;
 }
 
-function shouldSendTeamApprovedDm(event: BotEvent, payload: Record<string, any>) {
+function shouldSendTeamApprovedDm(event: BotEvent, payload: Record<string, unknown>) {
   if (!isFirstBotEventAttempt(event)) {
     return false;
   }
@@ -1899,7 +1907,7 @@ function shouldSendTeamApprovedDm(event: BotEvent, payload: Record<string, any>)
 }
 
 async function logCaptainDmFailure(params: {
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   eventId: string;
   captainDiscordId: string;
   reason: string;
@@ -1924,7 +1932,7 @@ async function logCaptainDmFailure(params: {
 
 async function sendTeamApprovedCaptainDm(params: {
   event: BotEvent;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   teamChannelName: string;
   roleAssignments: {
     failed: string[];
@@ -2034,22 +2042,25 @@ async function sendTeamApprovedCaptainDm(params: {
 
 async function processTeamAccessCreate(event: BotEvent) {
   const payload = event.payload;
+  const roleName = payload.roleName as string;
+  const channelName = payload.channelName as string;
+  const memberDiscordIds = (payload.memberDiscordIds as string[] | undefined) ?? [];
   const config = await getBotConfig();
 
   if (!config.enableDiscordAccess) {
     throw new Error("Discord access disabled.");
   }
 
-  const roleResult = await findOrCreateRole(payload.roleName);
+  const roleResult = await findOrCreateRole(roleName);
 
   const channelResult = await findOrCreateTeamChannel({
-    channelName: payload.channelName,
+    channelName,
     roleId: roleResult.role.id,
   });
 
   const roleAssignments = await assignRoleToMembers({
     roleId: roleResult.role.id,
-    memberDiscordIds: payload.memberDiscordIds || [],
+    memberDiscordIds,
   });
   const teamCaptainAssignment = await assignTeamCaptainRole(payload);
 
@@ -2144,6 +2155,11 @@ async function processTeamAccessCreate(event: BotEvent) {
 
 async function processTeamAccessRemove(event: BotEvent) {
   const payload = event.payload;
+  const roleId = payload.roleId as string | null | undefined;
+  const roleName = payload.roleName as string | null | undefined;
+  const channelId = payload.channelId as string | null | undefined;
+  const channelName = payload.channelName as string | null | undefined;
+  const memberDiscordIds = (payload.memberDiscordIds as string[] | undefined) ?? [];
   const config = await getBotConfig();
 
   if (!config.enableDiscordAccess) {
@@ -2151,19 +2167,19 @@ async function processTeamAccessRemove(event: BotEvent) {
   }
 
   const roleRemoval = await removeRoleFromMembers({
-    roleId: payload.roleId,
-    memberDiscordIds: payload.memberDiscordIds || [],
+    roleId,
+    memberDiscordIds,
   });
   const teamCaptainRemoval = await removeTeamCaptainRoleIfSafe(payload);
 
   const channelDeletion = await deleteTeamVoiceChannel({
-    channelId: payload.channelId,
-    channelName: payload.channelName,
+    channelId,
+    channelName,
   });
 
   const roleDeletion = await deleteTeamRole({
-    roleId: payload.roleId,
-    roleName: payload.roleName,
+    roleId,
+    roleName,
   });
 
   await sendTournamentLog({
@@ -2436,12 +2452,12 @@ async function recreateTournamentAnnouncementMessage(event: BotEvent) {
   };
 }
 
-function canSendToChannel(channel: any, botMember: any) {
-  if (!channel || !botMember || !channel.isSendable?.()) {
+function canSendToChannel(channel: Channel | null | undefined, botMember: GuildMember | null | undefined) {
+  if (!channel || !botMember || !channel.isSendable()) {
     return false;
   }
 
-  const permissions = channel.permissionsFor?.(botMember);
+  const permissions = (channel as unknown as GuildChannel).permissionsFor?.(botMember);
 
   if (!permissions) {
     return false;
@@ -2633,7 +2649,7 @@ async function registerSlashCommands() {
   }
 }
 
-async function replyToCommand(interaction: any, payload: any) {
+async function replyToCommand(interaction: ChatInputCommandInteraction, payload: InteractionReplyOptions) {
   if (interaction.deferred || interaction.replied) {
     await interaction.followUp({
       ...payload,
@@ -2649,7 +2665,7 @@ async function replyToCommand(interaction: any, payload: any) {
   });
 }
 
-async function handleSlashCommand(interaction: any) {
+async function handleSlashCommand(interaction: ChatInputCommandInteraction) {
   const commandName = interaction.commandName;
 
   if (commandName === "ascendra") {
@@ -3092,19 +3108,20 @@ client.once(Events.ClientReady, async () => {
   }, POLL_INTERVAL_MS);
 });
 
-function getInteractionLocation(interaction: any) {
+function getInteractionLocation(interaction: ChatInputCommandInteraction) {
   if (!interaction.guildId) {
     return "Direct Message";
   }
 
-  const channelName = interaction.channel?.name
-    ? `#${interaction.channel.name}`
+  const guildChannel = interaction.channel as GuildChannel | null;
+  const channelName = guildChannel?.name
+    ? `#${guildChannel.name}`
     : interaction.channelId || "Unknown channel";
 
   return channelName;
 }
 
-function getInteractionUserLabel(interaction: any) {
+function getInteractionUserLabel(interaction: ChatInputCommandInteraction) {
   const username =
     interaction.user?.tag ||
     interaction.user?.username ||
@@ -3116,7 +3133,7 @@ function getInteractionUserLabel(interaction: any) {
   return `${username} (${userId})`;
 }
 
-function getInteractionOptionsSnapshot(interaction: any) {
+function getInteractionOptionsSnapshot(interaction: ChatInputCommandInteraction) {
   const rawOptions = interaction.options?.data || [];
 
   if (!Array.isArray(rawOptions) || rawOptions.length === 0) {
@@ -3124,14 +3141,15 @@ function getInteractionOptionsSnapshot(interaction: any) {
   }
 
   const values = rawOptions
-    .map((option: any) => {
-      const name = option.name || "unknown";
-      const value =
-        option.value ||
-        option.user?.tag ||
-        option.user?.username ||
-        option.user?.id ||
-        "-";
+    .map((option) => {
+      const name = String(option.name || "unknown");
+      const value = String(
+        option.value ??
+        option.user?.tag ??
+        option.user?.username ??
+        option.user?.id ??
+        "-"
+      );
 
       return `${name}: ${value}`;
     })
@@ -3141,7 +3159,7 @@ function getInteractionOptionsSnapshot(interaction: any) {
 }
 
 async function recordSlashCommandLog(params: {
-  interaction: any;
+  interaction: ChatInputCommandInteraction;
   status: "completed" | "failed";
   error?: unknown;
   latencyMs?: number;
@@ -3178,7 +3196,7 @@ async function recordSlashCommandLog(params: {
   }
 }
 
-async function logSlashCommandUsage(interaction: any) {
+async function logSlashCommandUsage(interaction: ChatInputCommandInteraction) {
   try {
     await sendBotLog({
       title: "Slash command used",
@@ -3211,7 +3229,7 @@ async function logSlashCommandUsage(interaction: any) {
   }
 }
 
-async function logSlashCommandFailure(interaction: any, error: unknown) {
+async function logSlashCommandFailure(interaction: ChatInputCommandInteraction, error: unknown) {
   try {
     await sendBotErrorLog({
       title: "Slash command failed",

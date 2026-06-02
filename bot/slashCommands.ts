@@ -4,7 +4,14 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
+  type ChatInputCommandInteraction,
 } from "discord.js";
+
+type CommandReplyPayload = {
+  content?: string;
+  embeds?: EmbedBuilder[];
+  components?: ActionRowBuilder<ButtonBuilder>[];
+};
 
 type SlashCommandContext = {
   siteUrl: string;
@@ -349,7 +356,7 @@ function formatUptime(value: number) {
   return `${minutes}m`;
 }
 
-function formatLatency(interaction: any) {
+function formatLatency(interaction: ChatInputCommandInteraction) {
   const latency = Number(interaction.client?.ws?.ping);
 
   if (!Number.isFinite(latency) || latency < 0) {
@@ -359,7 +366,7 @@ function formatLatency(interaction: any) {
   return `${Math.round(latency)}ms`;
 }
 
-function getGuildLabel(interaction: any) {
+function getGuildLabel(interaction: ChatInputCommandInteraction) {
   return interaction.guild?.name || interaction.guildId || "Direct Message";
 }
 
@@ -1206,11 +1213,11 @@ function buildTournamentResultsDescription(tournament: BotTournamentDetails) {
     .join("\n\n");
 }
 
-function getTargetDiscordUser(interaction: any) {
+function getTargetDiscordUser(interaction: ChatInputCommandInteraction) {
   return interaction.options?.getUser("user") || interaction.user;
 }
 
-async function deferCommand(interaction: any) {
+async function deferCommand(interaction: ChatInputCommandInteraction) {
   if (!interaction.deferred && !interaction.replied) {
     await interaction.deferReply({
       ephemeral: true,
@@ -1218,7 +1225,7 @@ async function deferCommand(interaction: any) {
   }
 }
 
-async function replyToCommand(interaction: any, payload: any) {
+async function replyToCommand(interaction: ChatInputCommandInteraction, payload: CommandReplyPayload) {
   if (interaction.deferred) {
     await interaction.editReply(payload);
     return;
@@ -1496,7 +1503,7 @@ export function getSlashCommands() {
 }
 
 export async function handleSlashCommand(
-  interaction: any,
+  interaction: ChatInputCommandInteraction,
   ctx: SlashCommandContext,
 ) {
   const commandName = interaction.commandName;
@@ -2123,6 +2130,187 @@ export async function handleSlashCommand(
     return;
   }
 
+  if (commandName === "team") {
+    await deferCommand(interaction);
+
+    const query = String(
+      interaction.options?.getString("query") || "",
+    ).trim();
+    const teams = await fetchTeamLookup(ctx, query);
+    const team = teams[0];
+
+    if (!team) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("Team not found")
+        .setDescription("No team found.")
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed],
+        components: [
+          buildLinkRow("Profile", getSiteLink(ctx, "/profile")),
+        ],
+      });
+
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.tournament)
+      .setTitle(`${team.name} | Team Details`)
+      .setDescription(buildTeamDetailsDescription(team))
+      .setFooter({
+        text:
+          teams.length > 1
+            ? `Showing best match | ${teams.length} matches found`
+            : "Team details",
+      })
+      .setTimestamp();
+
+    if (team.leader.avatar && isValidHttpUrl(team.leader.avatar)) {
+      embed.setThumbnail(team.leader.avatar);
+    }
+
+    const registrationsEmbed = new EmbedBuilder()
+      .setColor(COLORS.deepPurple)
+      .setTitle("Recent registrations")
+      .setDescription(buildTeamRegistrationsDescription(team))
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed, registrationsEmbed],
+      components: [
+        buildTwoLinkRow(
+          {
+            label: "Leaderboard",
+            url: getTeamLeaderboardUrl(ctx, team),
+          },
+          {
+            label: "Tournaments",
+            url: getSiteLink(ctx, "/tournaments"),
+          },
+        ),
+      ],
+    });
+
+    return;
+  }
+
+  if (commandName === "roster") {
+    await deferCommand(interaction);
+
+    const query = String(
+      interaction.options?.getString("query") || "",
+    ).trim();
+    const teams = await fetchTeamLookup(ctx, query);
+    const team = teams[0];
+
+    if (!team) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("Team not found")
+        .setDescription("No team found.")
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed],
+        components: [
+          buildLinkRow("Profile", getSiteLink(ctx, "/profile")),
+        ],
+      });
+
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.deepPurple)
+      .setTitle(`${team.name} | Roster`)
+      .setDescription(buildTeamRosterDescription(team))
+      .setFooter({
+        text:
+          team.members.length > 10
+            ? `10 of ${team.members.length} shown`
+            : `${team.members.length} shown`,
+      })
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [
+        buildTwoLinkRow(
+          {
+            label: "Leaderboard",
+            url: getTeamLeaderboardUrl(ctx, team),
+          },
+          {
+            label: "Profile",
+            url: getSiteLink(ctx, "/profile"),
+          },
+        ),
+      ],
+    });
+
+    return;
+  }
+
+  if (commandName === "teamresults") {
+    await deferCommand(interaction);
+
+    const query = String(
+      interaction.options?.getString("query") || "",
+    ).trim();
+    const teams = await fetchTeamLookup(ctx, query);
+    const team = teams[0];
+
+    if (!team) {
+      const embed = new EmbedBuilder()
+        .setColor(COLORS.error)
+        .setTitle("Team not found")
+        .setDescription("No team found.")
+        .setTimestamp();
+
+      await replyToCommand(interaction, {
+        embeds: [embed],
+        components: [
+          buildLinkRow("Leaderboard", getSiteLink(ctx, "/leaderboard")),
+        ],
+      });
+
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.info)
+      .setTitle(`${team.name} | Team Results`)
+      .setDescription(buildTeamResultsDescription(team))
+      .setFooter({
+        text:
+          team.results.length > 8
+            ? `8 of ${team.results.length} shown`
+            : `${team.results.length} shown`,
+      })
+      .setTimestamp();
+
+    await replyToCommand(interaction, {
+      embeds: [embed],
+      components: [
+        buildTwoLinkRow(
+          {
+            label: "Leaderboard",
+            url: getTeamLeaderboardUrl(ctx, team),
+          },
+          {
+            label: "Leaderboard",
+            url: getSiteLink(ctx, "/leaderboard"),
+          },
+        ),
+      ],
+    });
+
+    return;
+  }
+
   if (commandName === "teams") {
     await deferCommand(interaction);
 
@@ -2140,187 +2328,6 @@ export async function handleSlashCommand(
         embeds: [embed],
         components: [
           buildLinkRow("Profile", getSiteLink(ctx, "/profile")),
-        ],
-      });
-
-      return;
-    }
-
-    if (commandName === "team") {
-      await deferCommand(interaction);
-
-      const query = String(
-        interaction.options?.getString("query") || "",
-      ).trim();
-      const teams = await fetchTeamLookup(ctx, query);
-      const team = teams[0];
-
-      if (!team) {
-        const embed = new EmbedBuilder()
-          .setColor(COLORS.error)
-          .setTitle("Team not found")
-          .setDescription("No team found.")
-          .setTimestamp();
-
-        await replyToCommand(interaction, {
-          embeds: [embed],
-          components: [
-            buildLinkRow("Profile", getSiteLink(ctx, "/profile")),
-          ],
-        });
-
-        return;
-      }
-
-      const embed = new EmbedBuilder()
-        .setColor(COLORS.tournament)
-        .setTitle(`${team.name} | Team Details`)
-        .setDescription(buildTeamDetailsDescription(team))
-        .setFooter({
-          text:
-            teams.length > 1
-              ? `Showing best match | ${teams.length} matches found`
-              : "Team details",
-        })
-        .setTimestamp();
-
-      if (team.leader.avatar && isValidHttpUrl(team.leader.avatar)) {
-        embed.setThumbnail(team.leader.avatar);
-      }
-
-      const registrationsEmbed = new EmbedBuilder()
-        .setColor(COLORS.deepPurple)
-        .setTitle("Recent registrations")
-        .setDescription(buildTeamRegistrationsDescription(team))
-        .setTimestamp();
-
-      await replyToCommand(interaction, {
-        embeds: [embed, registrationsEmbed],
-        components: [
-          buildTwoLinkRow(
-            {
-              label: "Leaderboard",
-              url: getTeamLeaderboardUrl(ctx, team),
-            },
-            {
-              label: "Tournaments",
-              url: getSiteLink(ctx, "/tournaments"),
-            },
-          ),
-        ],
-      });
-
-      return;
-    }
-
-    if (commandName === "roster") {
-      await deferCommand(interaction);
-
-      const query = String(
-        interaction.options?.getString("query") || "",
-      ).trim();
-      const teams = await fetchTeamLookup(ctx, query);
-      const team = teams[0];
-
-      if (!team) {
-        const embed = new EmbedBuilder()
-          .setColor(COLORS.error)
-          .setTitle("Team not found")
-          .setDescription("No team found.")
-          .setTimestamp();
-
-        await replyToCommand(interaction, {
-          embeds: [embed],
-          components: [
-            buildLinkRow("Profile", getSiteLink(ctx, "/profile")),
-          ],
-        });
-
-        return;
-      }
-
-      const embed = new EmbedBuilder()
-        .setColor(COLORS.deepPurple)
-        .setTitle(`${team.name} | Roster`)
-        .setDescription(buildTeamRosterDescription(team))
-        .setFooter({
-          text:
-            team.members.length > 10
-              ? `10 of ${team.members.length} shown`
-              : `${team.members.length} shown`,
-        })
-        .setTimestamp();
-
-      await replyToCommand(interaction, {
-        embeds: [embed],
-        components: [
-          buildTwoLinkRow(
-            {
-              label: "Leaderboard",
-              url: getTeamLeaderboardUrl(ctx, team),
-            },
-            {
-              label: "Profile",
-              url: getSiteLink(ctx, "/profile"),
-            },
-          ),
-        ],
-      });
-
-      return;
-    }
-
-    if (commandName === "teamresults") {
-      await deferCommand(interaction);
-
-      const query = String(
-        interaction.options?.getString("query") || "",
-      ).trim();
-      const teams = await fetchTeamLookup(ctx, query);
-      const team = teams[0];
-
-      if (!team) {
-        const embed = new EmbedBuilder()
-          .setColor(COLORS.error)
-          .setTitle("Team not found")
-          .setDescription("No team found.")
-          .setTimestamp();
-
-        await replyToCommand(interaction, {
-          embeds: [embed],
-          components: [
-            buildLinkRow("Leaderboard", getSiteLink(ctx, "/leaderboard")),
-          ],
-        });
-
-        return;
-      }
-
-      const embed = new EmbedBuilder()
-        .setColor(COLORS.info)
-        .setTitle(`${team.name} | Team Results`)
-        .setDescription(buildTeamResultsDescription(team))
-        .setFooter({
-          text:
-            team.results.length > 8
-              ? `8 of ${team.results.length} shown`
-              : `${team.results.length} shown`,
-        })
-        .setTimestamp();
-
-      await replyToCommand(interaction, {
-        embeds: [embed],
-        components: [
-          buildTwoLinkRow(
-            {
-              label: "Leaderboard",
-              url: getTeamLeaderboardUrl(ctx, team),
-            },
-            {
-              label: "Leaderboard",
-              url: getSiteLink(ctx, "/leaderboard"),
-            },
-          ),
         ],
       });
 

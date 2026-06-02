@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -100,14 +100,16 @@ export default function AdminRoleDragList({
   const router = useRouter();
 
   const [roles, setRoles] = useState(initialRoles);
+  const [prevInitialRoles, setPrevInitialRoles] = useState(initialRoles);
   const [draggedRoleId, setDraggedRoleId] = useState<string | null>(null);
   const [dragOverRoleId, setDragOverRoleId] = useState<string | null>(null);
   const [notice, setNotice] = useState<AdminRoleActionResult | null>(null);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
+  if (prevInitialRoles !== initialRoles) {
+    setPrevInitialRoles(initialRoles);
     setRoles(initialRoles);
-  }, [initialRoles]);
+  }
 
   function saveOrder(nextRoles: RoleItem[]) {
     const formData = new FormData();

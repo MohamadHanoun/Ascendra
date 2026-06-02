@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,8 @@ type SearchResult = {
   description: string;
   href: string;
 };
+
+const rateLimiter = createRateLimiter(20, 60_000);
 
 const minQueryLength = 2;
 const maxQueryLength = 80;
@@ -41,6 +44,9 @@ function compactText(value: string | null | undefined, fallback = "") {
 }
 
 export async function GET(request: Request) {
+  const limited = rateLimiter(request);
+  if (limited) return limited;
+
   const { searchParams } = new URL(request.url);
   const query = normalizeQuery(searchParams.get("q"));
 

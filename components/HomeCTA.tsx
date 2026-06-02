@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { currentContent } from "@/content/siteContent";
 import { serverInfo } from "@/data/server";
 
@@ -35,13 +36,13 @@ export default function HomeCTA() {
               {currentContent.nav.joinDiscord}
             </a>
 
-            <a
+            <Link
               href="/tournaments"
               className="border px-7 py-4 font-bold transition hover:opacity-90"
               style={{ borderColor: "var(--asc-line)", color: "var(--asc-fg-2)", background: "transparent" }}
             >
               View Tournaments
-            </a>
+            </Link>
           </div>
         </div>
       </div>

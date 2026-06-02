@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { getLeaderboardData } from "@/lib/leaderboardData";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const rateLimiter = createRateLimiter(60, 60_000);
+
 export async function GET(request: NextRequest) {
+  const limited = rateLimiter(request);
+  if (limited) return limited;
+
   try {
     const leaderboard = await getLeaderboardData({
       game: request.nextUrl.searchParams.get("game"),

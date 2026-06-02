@@ -63,11 +63,11 @@ const registrationStatuses = [
 ];
 
 const tournamentFormats = [
-  { value: "single_elimination", label: "Single Elimination" },
-  { value: "double_elimination", label: "Double Elimination" },
-  { value: "round_robin", label: "Round Robin" },
-  { value: "swiss", label: "Swiss" },
-  { value: "group_stage", label: "Group Stage" },
+  { value: "single_elimination", label: "Single Elimination", supported: true },
+  { value: "double_elimination", label: "Double Elimination (Coming Soon)", supported: false },
+  { value: "round_robin", label: "Round Robin (Coming Soon)", supported: false },
+  { value: "swiss", label: "Swiss (Coming Soon)", supported: false },
+  { value: "group_stage", label: "Group Stage (Coming Soon)", supported: false },
 ];
 
 const platforms = ["PC", "Console", "Mobile", "Cross-platform"];
@@ -418,7 +418,7 @@ export default function AdminTournamentWizard({
                 style={inputStyle}
               >
                 {tournamentFormats.map((f) => (
-                  <option key={f.value} value={f.value}>
+                  <option key={f.value} value={f.value} disabled={!f.supported}>
                     {f.label}
                   </option>
                 ))}

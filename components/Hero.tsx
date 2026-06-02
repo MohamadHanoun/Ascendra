@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const discordInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "#";
 
 export default function Hero() {
@@ -33,13 +35,13 @@ export default function Hero() {
               Join Discord
             </a>
 
-            <a
+            <Link
               href="/tournaments"
               className="border px-7 py-4 font-bold transition hover:opacity-90"
               style={{ borderColor: "var(--asc-line)", color: "var(--asc-fg-2)", background: "transparent" }}
             >
               View Tournaments
-            </a>
+            </Link>
           </div>
         </div>
       </div>

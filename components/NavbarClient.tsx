@@ -236,11 +236,13 @@ export default function NavbarClient({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
 
-  useEffect(() => {
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setIsMenuOpen(false);
     setIsProfileOpen(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

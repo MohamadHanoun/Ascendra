@@ -1198,12 +1198,14 @@ function AnnouncementCard({
   item,
   index,
   locale = "en",
+  now,
 }: {
   item: AnnouncementData;
   index: number;
   locale?: Locale;
+  now: number;
 }) {
-  const msAgo = Date.now() - item.createdAt.getTime();
+  const msAgo = now - item.createdAt.getTime();
   const hoursAgo = Math.max(1, Math.round(msAgo / 3600000));
   const timeLabel =
     hoursAgo < 24 ? `${hoursAgo}H AGO` : `${Math.round(hoursAgo / 24)}D AGO`;
@@ -1256,7 +1258,12 @@ function AnnouncementCard({
   );
 }
 
+function currentTimeMs(): number {
+  return Date.now();
+}
+
 export default async function HomePage() {
+  const now = currentTimeMs();
   const locale = await getLocale();
   const messages = getDictionary(locale).home;
 
@@ -1800,7 +1807,7 @@ export default async function HomePage() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
                 {displayAnnouncements.map((item, index) => (
-                  <AnnouncementCard key={item.id} item={item} index={index} locale={locale} />
+                  <AnnouncementCard key={item.id} item={item} index={index} locale={locale} now={now} />
                 ))}
               </div>
             )}

@@ -34,14 +34,19 @@ export default function AdminRuleListClient({
 }: AdminRuleListClientProps) {
   const router = useRouter();
   const [items, setItems] = useState(rules);
+  const [prevRules, setPrevRules] = useState(rules);
   const itemsRef = useRef(rules);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    itemsRef.current = rules;
+  if (prevRules !== rules) {
+    setPrevRules(rules);
     setItems(rules);
-  }, [rules]);
+  }
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   function updateItems(nextItems: RuleItem[]) {
     itemsRef.current = nextItems;

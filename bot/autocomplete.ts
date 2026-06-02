@@ -1,3 +1,5 @@
+import type { AutocompleteInteraction } from "discord.js";
+
 type AutocompleteContext = {
   siteUrl: string;
   apiTimeoutMs: number;
@@ -72,7 +74,7 @@ async function fetchAutocompleteOptions(params: {
 }
 
 export async function handleAutocompleteInteraction(
-  interaction: any,
+  interaction: AutocompleteInteraction,
   ctx: AutocompleteContext,
 ) {
   const entity = getAutocompleteEntity(interaction.commandName);
