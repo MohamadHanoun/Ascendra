@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { createRateLimiter } from "@/lib/rateLimit";
+import { getRiotRsoConfig } from "@/lib/riotRsoConfig";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,21 +56,21 @@ export async function GET(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const clientId = process.env.RIOT_RSO_CLIENT_ID?.trim();
-  const redirectUri = process.env.RIOT_RSO_REDIRECT_URI?.trim();
+  const rsoConfig = getRiotRsoConfig();
 
-  if (!clientId || !redirectUri) {
+  if (!rsoConfig) {
     const profileUrl = new URL("/profile", request.url);
     profileUrl.searchParams.set("error", messages.notConfigured);
     return NextResponse.redirect(profileUrl);
   }
 
+  const { clientId, clientSecret, redirectUri } = rsoConfig;
+
   // Generate a cryptographically-random state. We sign it with the client
   // secret so we can verify it on the callback without storing a DB record.
   const nonce = crypto.randomBytes(16).toString("hex");
-  const secret = process.env.RIOT_RSO_CLIENT_SECRET?.trim() ?? "fallback";
   const sig = crypto
-    .createHmac("sha256", secret)
+    .createHmac("sha256", clientSecret)
     .update(`${userId}:${nonce}`)
     .digest("hex");
   const state = `${nonce}.${sig}`;
