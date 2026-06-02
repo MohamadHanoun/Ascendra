@@ -3,9 +3,8 @@
  *
  * Authentication
  * --------------
- * Every incoming request must carry FACEIT_WEBHOOK_SECRET in one of two ways:
- *   • Authorization: Bearer <secret>   (preferred)
- *   • ?secret=<secret>                 (fallback for manual testing)
+ * Every incoming request must carry FACEIT_WEBHOOK_SECRET as:
+ *   Authorization: Bearer <secret>
  * Comparison is always constant-time to prevent timing attacks.
  *
  * Phase 3 behaviour
@@ -19,7 +18,7 @@
  * -----------------
  * Every authenticated request creates a FaceitWebhookLog entry:
  *   - status="received" on entry, updated to processed/skipped/failed on exit
- *   - Unauthorized requests log status="unauthorized" (no payload stored)
+ *   - Unauthorized requests are rejected before DB logging or payload parsing
  *   - Sensitive fields are stripped from the stored payload
  *
  * This handler NEVER:
@@ -45,10 +44,13 @@ import {
 } from "@/lib/faceitWebhookLog";
 import type { FaceitWebhookPayload } from "@/lib/faceitTypes";
 import { prisma } from "@/lib/prisma";
+import { createRateLimiter } from "@/lib/rateLimit";
 import { Prisma } from "@prisma/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const webhookRateLimiter = createRateLimiter(30, 60_000);
 
 function safeEqual(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
@@ -63,10 +65,6 @@ function verifySecret(request: Request): boolean {
 
   const authHeader = request.headers.get("authorization") ?? "";
   if (authHeader && safeEqual(authHeader, `Bearer ${secret}`)) return true;
-
-  const url = new URL(request.url);
-  const querySecret = url.searchParams.get("secret");
-  if (querySecret && safeEqual(querySecret, secret)) return true;
 
   return false;
 }
@@ -137,8 +135,10 @@ async function syncProofForFaceitMatch(faceitMatchId: string): Promise<SyncProof
 }
 
 export async function POST(request: Request) {
+  const limited = webhookRateLimiter(request);
+  if (limited) return limited;
+
   if (!verifySecret(request)) {
-    await createFaceitWebhookLog({ status: "unauthorized", httpStatus: 401 }).catch(() => undefined);
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

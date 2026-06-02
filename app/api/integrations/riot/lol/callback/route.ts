@@ -22,10 +22,13 @@ import {
   notifyMatchResultReceived,
 } from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
+import { createRateLimiter } from "@/lib/rateLimit";
 import { completeMatchGame } from "@/lib/tournamentMatchEngine";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const callbackRateLimiter = createRateLimiter(30, 60_000);
 
 type IngestResult =
   | { status: "ok"; code: number; body: Record<string, unknown> }
@@ -386,6 +389,9 @@ async function ingest(rawBody: string, rawJson: unknown): Promise<IngestResult> 
 }
 
 export async function POST(request: Request) {
+  const limited = callbackRateLimiter(request);
+  if (limited) return limited;
+
   let rawBody = "";
   try {
     rawBody = await request.text();

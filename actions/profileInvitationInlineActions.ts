@@ -19,6 +19,7 @@ type ProfileInvitationActionMessages = {
   invitationNotFound: string;
   invitationDoesNotBelong: string;
   invitationAlreadyHandled: string;
+  teamLocked: string;
   rejectedTitle: string;
   rejectedMessage: string;
   rejectedSuccess: string;
@@ -37,6 +38,7 @@ const profileInvitationActionMessages: Record<
     invitationNotFound: "Invitation was not found.",
     invitationDoesNotBelong: "This invitation does not belong to you.",
     invitationAlreadyHandled: "This invitation has already been handled.",
+    teamLocked: 'This team is locked while registered for "{title}".',
     rejectedTitle: "Team invitation declined",
     rejectedMessage: "{username} declined the invitation to join {team}.",
     rejectedSuccess: "Invitation rejected.",
@@ -50,6 +52,7 @@ const profileInvitationActionMessages: Record<
     invitationNotFound: "لم يتم العثور على الدعوة.",
     invitationDoesNotBelong: "هذه الدعوة لا تخصك.",
     invitationAlreadyHandled: "تم التعامل مع هذه الدعوة مسبقًا.",
+    teamLocked: 'هذا الفريق مقفل أثناء تسجيله في بطولة "{title}".',
     rejectedTitle: "تم رفض دعوة الفريق",
     rejectedMessage: "رفض {username} دعوة الانضمام إلى {team}.",
     rejectedSuccess: "تم رفض الدعوة.",
@@ -70,6 +73,32 @@ async function getMessages() {
   const locale = await getLocale();
 
   return profileInvitationActionMessages[locale];
+}
+
+async function getActiveTeamRegistration(teamId: string) {
+  return prisma.tournamentRegistration.findFirst({
+    where: {
+      teamId,
+      status: {
+        in: ["registered", "approved"],
+      },
+      tournament: {
+        status: {
+          notIn: ["ended", "cancelled"],
+        },
+      },
+    },
+    select: {
+      id: true,
+      status: true,
+      tournament: {
+        select: {
+          title: true,
+          status: true,
+        },
+      },
+    },
+  });
 }
 
 function success(message: string): ProfileInvitationActionResult {
@@ -227,6 +256,15 @@ async function respondToInvitation(
     revalidatePath(`/profile/teams/${invite.teamId}`);
 
     return success(messages.rejectedSuccess);
+  }
+
+  const activeRegistration = await getActiveTeamRegistration(invite.teamId);
+  if (activeRegistration) {
+    return fail(
+      formatMessage(messages.teamLocked, {
+        title: activeRegistration.tournament.title,
+      }),
+    );
   }
 
   const respondedAt = new Date();

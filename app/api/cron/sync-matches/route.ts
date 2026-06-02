@@ -9,9 +9,8 @@
  *
  * Authentication
  * --------------
- * Every request must carry the CRON_SECRET in one of two ways:
- *   • Authorization: Bearer <secret>   (Vercel's recommended approach)
- *   • ?secret=<secret>                 (manual curl / debug)
+ * Every request must carry CRON_SECRET as:
+ *   Authorization: Bearer <secret>
  *
  * Vercel.json example (Pro plan – 1 min minimum):
  * {
@@ -23,10 +22,9 @@
  * Hobby plan: minimum schedule is 1 hour ("0 * * * *"), not 1 minute.
  */
 
-import crypto from "node:crypto";
-
 import { NextResponse } from "next/server";
 
+import { verifyCronSecret } from "@/lib/cronAuth";
 import {
   retryFailedWebhookEvents,
   syncPendingGameRooms,
@@ -36,33 +34,6 @@ import { syncTournamentLifecycle } from "@/lib/jobs/tournamentLifecycleJobs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-// ─── Auth ─────────────────────────────────────────────────────────────────────
-
-function verifyCronSecret(request: Request): boolean {
-  const secret = process.env.CRON_SECRET?.trim();
-  // Fail closed if not configured. Host header is client-controlled and
-  // cannot be trusted, so we never fall back to a host-based allowlist.
-  if (!secret) return false;
-
-  // Authorization: Bearer <secret> (Vercel cron / production path)
-  const authHeader = request.headers.get("authorization") ?? "";
-  if (authHeader && safeEqual(authHeader, `Bearer ${secret}`)) return true;
-
-  // ?secret=<secret> (manual curl / debug). Constant-time compare.
-  const url = new URL(request.url);
-  const queryValue = url.searchParams.get("secret");
-  if (queryValue && safeEqual(queryValue, secret)) return true;
-
-  return false;
-}
-
-function safeEqual(a: string, b: string): boolean {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) return false;
-  return crypto.timingSafeEqual(bufA, bufB);
-}
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
