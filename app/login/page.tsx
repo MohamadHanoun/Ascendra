@@ -226,7 +226,7 @@ export default async function LoginPage() {
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[720px] overflow-hidden">
+        <section className="asc-image-hero relative min-h-[720px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{

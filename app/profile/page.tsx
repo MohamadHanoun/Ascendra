@@ -15,6 +15,7 @@ import ProfileIdentityActions from "@/components/ProfileIdentityActions";
 import ProfileNotice from "@/components/ProfileNotice";
 import ProfileRealtime from "@/components/ProfileRealtime";
 import ProfileTabs from "@/components/ProfileTabs";
+import SectionReveal from "@/components/SectionReveal";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import {
@@ -1022,7 +1023,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[520px] overflow-hidden">
+        <section className="asc-image-hero relative min-h-[520px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -1221,6 +1222,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           </div>
 
           {/* My active matches */}
+          <SectionReveal>
           <div className="mt-10">
             <div
               className="relative overflow-hidden border"
@@ -1273,7 +1275,9 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               </div>
             </div>
           </div>
+          </SectionReveal>
 
+          <SectionReveal delay={0.08}>
           <div className="mt-10">
             <div className="relative overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
               <CornerMark />
@@ -1399,6 +1403,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               </div>
             </div>
           </div>
+          </SectionReveal>
         </section>
 
         <Footer />

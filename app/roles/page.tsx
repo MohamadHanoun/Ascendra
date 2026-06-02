@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import SectionReveal from "@/components/SectionReveal";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
@@ -325,12 +326,14 @@ export default async function RolesPage() {
         </section>
 
         <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-20 lg:px-10 2xl:px-14">
-          <SummaryCard
-            label={messages.summary.label}
-            title={messages.summary.title}
-            totalLabel={messages.summary.total}
-            total={roles.length}
-          />
+          <SectionReveal>
+            <SummaryCard
+              label={messages.summary.label}
+              title={messages.summary.title}
+              totalLabel={messages.summary.total}
+              total={roles.length}
+            />
+          </SectionReveal>
 
           {roles.length === 0 ? (
             <EmptyState
@@ -338,17 +341,19 @@ export default async function RolesPage() {
               description={messages.empty.description}
             />
           ) : (
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {roles.map((role, index) => (
-                <RoleCard
-                  key={role.id}
-                  name={role.name}
-                  color={role.color}
-                  description={role.description}
-                  index={index}
-                />
-              ))}
-            </section>
+            <SectionReveal delay={0.08}>
+              <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {roles.map((role, index) => (
+                  <RoleCard
+                    key={role.id}
+                    name={role.name}
+                    color={role.color}
+                    description={role.description}
+                    index={index}
+                  />
+                ))}
+              </section>
+            </SectionReveal>
           )}
         </section>
 

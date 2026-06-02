@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import SectionReveal from "@/components/SectionReveal";
 import { prisma } from "@/lib/prisma";
 import { getGameImageUrl } from "@/lib/tournamentImages";
 import type { Locale } from "@/lib/i18n";
@@ -634,38 +635,42 @@ export default async function GamesPage() {
         </section>
 
         <section className="mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 pt-10 lg:px-10 2xl:px-14">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p
-                className="asc-section-label"
-              >
-                ▲ {messages.section.eyebrow}
-              </p>
-              <h2 className="mt-2 text-2xl" style={{ color: "var(--asc-fg-0)" }}>
-                {messages.section.title}
-              </h2>
-            </div>
+          <SectionReveal>
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p
+                  className="asc-section-label"
+                >
+                  ▲ {messages.section.eyebrow}
+                </p>
+                <h2 className="mt-2 text-2xl" style={{ color: "var(--asc-fg-0)" }}>
+                  {messages.section.title}
+                </h2>
+              </div>
 
-            <div className="flex flex-wrap gap-6">
-              <StatBlock label={messages.stats.games} value={games.length} />
-              <StatBlock label={messages.stats.active} value={activeGamesCount} accent />
-              <StatBlock label={messages.stats.tournaments} value={totalTournaments} />
+              <div className="flex flex-wrap gap-6">
+                <StatBlock label={messages.stats.games} value={games.length} />
+                <StatBlock label={messages.stats.active} value={activeGamesCount} accent />
+                <StatBlock label={messages.stats.tournaments} value={totalTournaments} />
+              </div>
             </div>
-          </div>
+          </SectionReveal>
 
           {games.length === 0 ? (
             <EmptyGamesState messages={messages.empty} />
           ) : (
-            <div className="flex flex-col gap-6">
-              {games.map((game, index) => (
-                <GameRow
-                  key={game.id}
-                  game={game}
-                  index={index + 1}
-                  messages={messages}
-                />
-              ))}
-            </div>
+            <SectionReveal delay={0.07}>
+              <div className="flex flex-col gap-6">
+                {games.map((game, index) => (
+                  <GameRow
+                    key={game.id}
+                    game={game}
+                    index={index + 1}
+                    messages={messages}
+                  />
+                ))}
+              </div>
+            </SectionReveal>
           )}
         </section>
 

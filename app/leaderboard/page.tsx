@@ -6,6 +6,7 @@ import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import LeaderboardTable from "@/components/LeaderboardTable";
 import Navbar from "@/components/Navbar";
+import SectionReveal from "@/components/SectionReveal";
 import TeamLeaderboardTable from "@/components/TeamLeaderboardTable";
 import type { LeaderboardTeam, LeaderboardUser } from "@/data/leaderboard";
 import { getDictionary } from "@/lib/i18n";
@@ -124,16 +125,18 @@ function GameFilters({
 
 function LeaderboardDisclaimer({ text }: { text: string }) {
   return (
-    <p
+    <div
       className="mb-4 border px-4 py-3 text-xs leading-5"
       style={{
         borderColor: "var(--asc-line-soft)",
         background: "var(--asc-card-muted)",
         color: "var(--asc-fg-2)",
+        clipPath:
+          "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
       }}
     >
       {text}
-    </p>
+    </div>
   );
 }
 
@@ -323,16 +326,18 @@ export default async function LeaderboardPage({
           </div>
         </section>
 
-        <div className="relative z-20 mx-auto -mt-5 max-w-[1480px] px-6 pb-24 lg:px-8">
-          <LeaderboardDisclaimer text={messages.disclaimer} />
-          <LeaderboardContent
-            type={leaderboard.type}
-            data={leaderboard.data}
-            messages={messages}
-            currentUserId={currentUserId}
-            selectedGame={leaderboard.selectedGame}
-          />
-        </div>
+        <SectionReveal>
+          <div className="relative z-20 mx-auto -mt-5 max-w-[1480px] px-6 pb-24 lg:px-8">
+            <LeaderboardDisclaimer text={messages.disclaimer} />
+            <LeaderboardContent
+              type={leaderboard.type}
+              data={leaderboard.data}
+              messages={messages}
+              currentUserId={currentUserId}
+              selectedGame={leaderboard.selectedGame}
+            />
+          </div>
+        </SectionReveal>
 
         <Footer />
       </div>
