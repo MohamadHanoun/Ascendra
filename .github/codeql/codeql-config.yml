@@ -1,0 +1,6 @@
+name: "Ascendra CodeQL"
+
+# reference-design contains generated/static design reference artifacts, not
+# production Next.js app source. Production source remains scanned.
+paths-ignore:
+  - reference-design/**
