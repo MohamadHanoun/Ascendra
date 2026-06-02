@@ -153,6 +153,13 @@ article.overflow-hidden[class*="border"]::before {
 .asc-card {
   background: var(--asc-bg-1);
   border: 1px solid var(--asc-line-soft);
+  transition: border-color 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease;
+}
+
+.asc-card:hover {
+  border-color: var(--asc-accent-border);
+  box-shadow: 0 0 24px var(--asc-accent-dim), 0 8px 36px rgba(0, 0, 0, 0.5);
+  transform: translateY(-3px);
 }
 
 .prize-value,
@@ -241,6 +248,8 @@ article.overflow-hidden[class*="border"]::before {
 .asc-ticker-track {
   overflow: hidden;
   white-space: nowrap;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%);
 }
 .asc-ticker-inner {
   display: inline-flex;
@@ -972,4 +981,44 @@ article.overflow-hidden[class*="border"]::before {
   --asc-accent: #8f642f;
   --asc-line-soft: rgba(23, 20, 16, 0.18);
   --asc-card: rgba(246, 238, 229, 0.96);
+}
+
+/* ─── Homepage cinematic polish ─────────────────────────────────────────── */
+
+.asc-image-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.022) 2px,
+    rgba(0, 0, 0, 0.022) 3px
+  );
+  pointer-events: none;
+  z-index: 5;
+}
+
+@keyframes ascGoldShimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.asc-hero-headline-gradient {
+  background: linear-gradient(100deg, #c9933e 0%, #f0e2ca 42%, #8f642f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% auto;
+  animation: ascGoldShimmer 6s linear infinite;
+}
+
+@keyframes ascGlowPulse {
+  0%, 100% { box-shadow: 0 0 18px var(--asc-accent-glow); }
+  50%       { box-shadow: 0 0 36px var(--asc-accent-glow), 0 0 72px rgba(184, 137, 61, 0.10); }
+}
+
+.asc-card-glow-hover:hover {
+  animation: ascGlowPulse 2.4s ease-in-out infinite;
 }

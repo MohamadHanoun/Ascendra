@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
-
 import LeaderboardAvatar from "@/components/LeaderboardAvatar";
 import Footer from "@/components/Footer";
 import HomeRealtimeRefresh from "@/components/HomeRealtimeRefresh";
+import HeroTextAnimated from "@/components/HeroTextAnimated";
+import HeroScene3DWrapper from "@/components/HeroScene3DWrapper";
+import SectionReveal from "@/components/SectionReveal";
 import Navbar from "@/components/Navbar";
 import { getDictionary, type HomeMessages, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
@@ -1430,6 +1432,8 @@ export default async function HomePage() {
             }}
           />
 
+          <HeroScene3DWrapper />
+
           <div
             className="asc-hero-overlay absolute inset-0"
             style={{
@@ -1437,54 +1441,21 @@ export default async function HomePage() {
                 "linear-gradient(180deg, rgb(12 11 9 / 0.20) 0%, rgb(12 11 9 / 0.55) 55%, var(--asc-bg-0) 100%)",
                 "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.30) 40%, transparent 65%)",
               ].join(", "),
+              zIndex: 3,
             }}
           />
 
           <div className="asc-image-hero-content relative z-10 mx-auto flex min-h-[720px] max-w-[1680px] items-end px-6 pb-20 pt-24 lg:px-10 2xl:px-14">
             <div className="grid w-full gap-10 lg:grid-cols-[3fr_2fr] lg:items-end">
-              <div>
-                <p
-                  className="mb-5 text-xs font-black uppercase tracking-[0.22em]"
-                  style={{ color: "var(--asc-accent)" }}
-                >
-                  ▲ ASCENDRA · {activeSeason?.name ?? messages.hero.seasonLabel} · {messages.hero.platformTagline}
-                </p>
-
-                <h1
-                  className="text-6xl font-black uppercase leading-none md:text-8xl"
-                  style={{ color: "var(--asc-fg-0)" }}
-                >
-                  RISE
-                  <br />
-                  <span
-                    style={{
-                      background:
-                        "linear-gradient(90deg, #b8893d, #f6eee5, #8f642f)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      backgroundClip: "text",
-                    }}
-                  >
-                    BEYOND LIMITS.
-                  </span>
-                </h1>
-
-                <p
-                  className="mt-6 max-w-xl text-base leading-7"
-                  style={{ color: "var(--asc-fg-2)" }}
-                >
-                  {messages.hero.description}
-                </p>
-
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <PrimaryLink href="/tournaments" locale={locale}>
-                    {messages.hero.primary}
-                  </PrimaryLink>
-                  <SecondaryLink href="/discord">
-                    {messages.hero.discordButton}
-                  </SecondaryLink>
-                </div>
-              </div>
+              <HeroTextAnimated
+                eyebrow={`▲ ASCENDRA · ${activeSeason?.name ?? messages.hero.seasonLabel} · ${messages.hero.platformTagline}`}
+                description={messages.hero.description}
+                primaryHref="/tournaments"
+                primaryLabel={messages.hero.primary}
+                secondaryHref="/discord"
+                secondaryLabel={messages.hero.discordButton}
+                locale={locale}
+              />
 
               <FeaturedEventCard
                 featuredTournament={featuredTournament}
@@ -1565,33 +1536,35 @@ export default async function HomePage() {
               </span>
             </div>
 
-            <div className="grid gap-8 md:grid-cols-3">
-              {messages.flow.steps.map((step, index) => (
-                <article key={index}>
-                  <p
-                    className="text-6xl font-black leading-none"
-                    style={{
-                      color: "var(--asc-accent)",
-                      fontFamily: "var(--font-display)",
-                    }}
-                  >
-                    {String(index + 1).padStart(2, "0")}
-                  </p>
-                  <h3
-                    className="mt-4 text-lg"
-                    style={{ color: "var(--asc-fg-0)" }}
-                  >
-                    {step.title}
-                  </h3>
-                  <p
-                    className="mt-3 max-w-sm text-sm leading-6"
-                    style={{ color: "var(--asc-fg-2)" }}
-                  >
-                    {step.description}
-                  </p>
-                </article>
-              ))}
-            </div>
+            <SectionReveal>
+              <div className="grid gap-8 md:grid-cols-3">
+                {messages.flow.steps.map((step, index) => (
+                  <article key={index}>
+                    <p
+                      className="text-6xl font-black leading-none"
+                      style={{
+                        color: "var(--asc-accent)",
+                        fontFamily: "var(--font-display)",
+                      }}
+                    >
+                      {String(index + 1).padStart(2, "0")}
+                    </p>
+                    <h3
+                      className="mt-4 text-lg"
+                      style={{ color: "var(--asc-fg-0)" }}
+                    >
+                      {step.title}
+                    </h3>
+                    <p
+                      className="mt-3 max-w-sm text-sm leading-6"
+                      style={{ color: "var(--asc-fg-2)" }}
+                    >
+                      {step.description}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </SectionReveal>
           </div>
         </section>
 
@@ -1611,36 +1584,38 @@ export default async function HomePage() {
               </Link>
             </SectionHeader>
 
-            {sortedMatches.length === 0 ? (
-              <div
-                className="relative border p-8 text-center"
-                style={{
-                  borderColor: "var(--asc-line-soft)",
-                  background: "var(--asc-bg-1)",
-                  clipPath:
-                    "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
-                }}
-              >
-                <p
-                  className="text-sm font-black uppercase tracking-[0.12em]"
-                  style={{ color: "var(--asc-fg-0)" }}
+            <SectionReveal>
+              {sortedMatches.length === 0 ? (
+                <div
+                  className="relative border p-8 text-center"
+                  style={{
+                    borderColor: "var(--asc-line-soft)",
+                    background: "var(--asc-bg-1)",
+                    clipPath:
+                      "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+                  }}
                 >
-                  {messages.matches.emptyTitle}
-                </p>
-                <p
-                  className="mt-2 text-xs"
-                  style={{ color: "var(--asc-fg-3)" }}
-                >
-                  {messages.matches.emptySub}
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {sortedMatches.map((match) => (
-                  <LiveMatchCard key={match.id} match={match} messages={messages} />
-                ))}
-              </div>
-            )}
+                  <p
+                    className="text-sm font-black uppercase tracking-[0.12em]"
+                    style={{ color: "var(--asc-fg-0)" }}
+                  >
+                    {messages.matches.emptyTitle}
+                  </p>
+                  <p
+                    className="mt-2 text-xs"
+                    style={{ color: "var(--asc-fg-3)" }}
+                  >
+                    {messages.matches.emptySub}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {sortedMatches.map((match) => (
+                    <LiveMatchCard key={match.id} match={match} messages={messages} />
+                  ))}
+                </div>
+              )}
+            </SectionReveal>
           </div>
         </section>
 
@@ -1659,45 +1634,47 @@ export default async function HomePage() {
               </Link>
             </SectionHeader>
 
-            {tournaments.length === 0 ? (
-              <div
-                className="border p-6"
-                style={{
-                  borderColor: "var(--asc-line-soft)",
-                  background: "var(--asc-bg-1)",
-                  color: "var(--asc-fg-2)",
-                }}
-              >
-                {messages.tournaments.empty}
-              </div>
-            ) : (
-              <>
-                <div className="grid gap-5 lg:grid-cols-2">
-                  {tournaments.slice(0, 2).map((tournament) => (
-                    <TournamentFeatureCard
-                      key={tournament.id}
-                      tournament={tournament}
-                      locale={locale}
-                      messages={messages}
-                    />
-                  ))}
+            <SectionReveal>
+              {tournaments.length === 0 ? (
+                <div
+                  className="border p-6"
+                  style={{
+                    borderColor: "var(--asc-line-soft)",
+                    background: "var(--asc-bg-1)",
+                    color: "var(--asc-fg-2)",
+                  }}
+                >
+                  {messages.tournaments.empty}
                 </div>
-
-                {tournaments.length > 2 && (
-                  <div className="mt-5 grid gap-5 lg:grid-cols-2">
-                    {tournaments.slice(2, 4).map((tournament) => (
+              ) : (
+                <>
+                  <div className="grid gap-5 lg:grid-cols-2">
+                    {tournaments.slice(0, 2).map((tournament) => (
                       <TournamentFeatureCard
                         key={tournament.id}
                         tournament={tournament}
-                        compact
                         locale={locale}
                         messages={messages}
                       />
                     ))}
                   </div>
-                )}
-              </>
-            )}
+
+                  {tournaments.length > 2 && (
+                    <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                      {tournaments.slice(2, 4).map((tournament) => (
+                        <TournamentFeatureCard
+                          key={tournament.id}
+                          tournament={tournament}
+                          compact
+                          locale={locale}
+                          messages={messages}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </SectionReveal>
           </div>
         </section>
 
@@ -1716,36 +1693,39 @@ export default async function HomePage() {
               </Link>
             </SectionHeader>
 
-            {displayGames.length === 0 ? (
-              <div
-                className="border p-6 text-center"
-                style={{
-                  borderColor: "var(--asc-line-soft)",
-                  background: "var(--asc-bg-1)",
-                  clipPath:
-                    "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
-                }}
-              >
-                <p
-                  className="text-sm font-black uppercase tracking-[0.12em]"
-                  style={{ color: "var(--asc-fg-0)" }}
+            <SectionReveal>
+              {displayGames.length === 0 ? (
+                <div
+                  className="border p-6 text-center"
+                  style={{
+                    borderColor: "var(--asc-line-soft)",
+                    background: "var(--asc-bg-1)",
+                    clipPath:
+                      "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+                  }}
                 >
-                  {messages.games.emptyTitle}
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-                {displayGames.slice(0, 5).map((game) => (
-                  <GameTile key={game.id} game={game} messages={messages} />
-                ))}
-              </div>
-            )}
+                  <p
+                    className="text-sm font-black uppercase tracking-[0.12em]"
+                    style={{ color: "var(--asc-fg-0)" }}
+                  >
+                    {messages.games.emptyTitle}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+                  {displayGames.slice(0, 5).map((game) => (
+                    <GameTile key={game.id} game={game} messages={messages} />
+                  ))}
+                </div>
+              )}
+            </SectionReveal>
           </div>
         </section>
 
         {/* Leaderboard + Community */}
         <section className="relative py-16 lg:py-20">
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
+            <SectionReveal>
             <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-start">
               <LeaderboardPreview players={topPlayers} messages={messages} locale={locale} />
 
@@ -1776,6 +1756,7 @@ export default async function HomePage() {
                 </div>
               </div>
             </div>
+            </SectionReveal>
           </div>
         </section>
 
@@ -1784,33 +1765,35 @@ export default async function HomePage() {
           <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
             <SectionHeader label={messages.announcements.label} title={messages.announcements.title} />
 
-            {displayAnnouncements.length === 0 ? (
-              <div
-                className="border p-6 text-center"
-                style={{
-                  borderColor: "var(--asc-line-soft)",
-                  background: "var(--asc-bg-1)",
-                  clipPath:
-                    "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
-                }}
-              >
-                <p
-                  className="text-sm font-black uppercase tracking-[0.12em]"
-                  style={{ color: "var(--asc-fg-0)" }}
+            <SectionReveal>
+              {displayAnnouncements.length === 0 ? (
+                <div
+                  className="border p-6 text-center"
+                  style={{
+                    borderColor: "var(--asc-line-soft)",
+                    background: "var(--asc-bg-1)",
+                    clipPath:
+                      "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+                  }}
                 >
-                  {messages.announcements.emptyTitle}
-                </p>
-                <p className="mt-2 text-xs" style={{ color: "var(--asc-fg-3)" }}>
-                  {messages.announcements.emptySub}
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {displayAnnouncements.map((item, index) => (
-                  <AnnouncementCard key={item.id} item={item} index={index} locale={locale} now={now} />
-                ))}
-              </div>
-            )}
+                  <p
+                    className="text-sm font-black uppercase tracking-[0.12em]"
+                    style={{ color: "var(--asc-fg-0)" }}
+                  >
+                    {messages.announcements.emptyTitle}
+                  </p>
+                  <p className="mt-2 text-xs" style={{ color: "var(--asc-fg-3)" }}>
+                    {messages.announcements.emptySub}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {displayAnnouncements.map((item, index) => (
+                    <AnnouncementCard key={item.id} item={item} index={index} locale={locale} now={now} />
+                  ))}
+                </div>
+              )}
+            </SectionReveal>
 
             <div className="mt-8 flex justify-center">
               <SecondaryLink href="/announcements">
