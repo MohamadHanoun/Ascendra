@@ -2,18 +2,12 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { isSupportedTournamentFormat } from "@/lib/tournamentFormatSupport";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 const allowedTournamentStatuses = ["open", "upcoming", "closed"];
 const allowedRegistrationStatuses = ["open", "closed"];
-const allowedFormats = [
-  "single_elimination",
-  "double_elimination",
-  "round_robin",
-  "swiss",
-  "group_stage",
-];
 const allowedVisibility = ["public", "private"];
 
 async function requireAdmin() {
@@ -118,8 +112,10 @@ export async function createTournament(formData: FormData) {
     adminError("Invalid registration status.");
   }
 
-  if (!allowedFormats.includes(format)) {
-    adminError("Invalid tournament format.");
+  if (!isSupportedTournamentFormat(format)) {
+    adminError(
+      "Only Single Elimination format is currently supported. Other formats are coming soon.",
+    );
   }
 
   if (!allowedVisibility.includes(visibility)) {
@@ -243,8 +239,10 @@ export async function updateTournament(formData: FormData) {
     adminError("Invalid registration status.");
   }
 
-  if (!allowedFormats.includes(format)) {
-    adminError("Invalid tournament format.");
+  if (!isSupportedTournamentFormat(format)) {
+    adminError(
+      "Only Single Elimination format is currently supported. Other formats are coming soon.",
+    );
   }
 
   if (!allowedVisibility.includes(visibility)) {
