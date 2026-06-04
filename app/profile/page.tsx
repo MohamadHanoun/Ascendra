@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { GameProvider } from "@prisma/client";
 
 import { connectFaceitAccount, unlinkFaceitAccount, unlinkRiotAccount, unlinkSteamAccount } from "@/actions/profileAccountActions";
-import { auth } from "@/auth";
+import { auth, signOut } from "@/auth";
 import FaceitConnectRow from "@/components/FaceitConnectRow";
 import Footer from "@/components/Footer";
 import LinkedAccountRow from "@/components/LinkedAccountRow";
@@ -15,7 +15,6 @@ import ProfileIdentityActions from "@/components/ProfileIdentityActions";
 import ProfileNotice from "@/components/ProfileNotice";
 import ProfileRealtime from "@/components/ProfileRealtime";
 import ProfileTabs from "@/components/ProfileTabs";
-import SectionReveal from "@/components/SectionReveal";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import {
@@ -51,10 +50,12 @@ type ProfileMessages = {
     invite: string;
   };
   tabLabels: {
-    stats: string;
+    overview: string;
     teams: string;
     history: string;
+    matches: string;
     achievements: string;
+    account: string;
   };
   sections: {
     invitations: string;
@@ -90,6 +91,18 @@ type ProfileMessages = {
     tableColPlace: string;
     tableColPts: string;
     tableColDate: string;
+    noActivityDesc: string;
+    browseTournaments: string;
+    accountTitle: string;
+    connectedAccountsDesc: string;
+    discordAccountTitle: string;
+    discordSubtitle: string;
+    privacyTitle: string;
+    privacyDesc: string;
+    preferencesTitle: string;
+    preferencesDesc: string;
+    securityTitle: string;
+    signOutDesc: string;
   };
   labels: {
     by: string;
@@ -144,6 +157,7 @@ type ProfileMessages = {
     creatingLabel: string;
     createTeamDialogTitle: string;
     createTeamDialogDesc: string;
+    signOut: string;
   };
   statuses: {
     active: string;
@@ -191,10 +205,12 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       invite: "invite",
     },
     tabLabels: {
-      stats: "Stats",
+      overview: "Overview",
       teams: "Teams",
       history: "History",
+      matches: "Matches",
       achievements: "Achievements",
+      account: "Account",
     },
     sections: {
       invitations: "Invitations",
@@ -230,6 +246,18 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       tableColPlace: "Place",
       tableColPts: "PTS",
       tableColDate: "Date",
+      noActivityDesc: "Compete in a tournament to start building your record.",
+      browseTournaments: "Browse tournaments",
+      accountTitle: "Account & Settings",
+      connectedAccountsDesc: "Connect your gaming platforms to your Ascendra account.",
+      discordAccountTitle: "Discord",
+      discordSubtitle: "Login provider · Ascendra community",
+      privacyTitle: "Privacy & Visibility",
+      privacyDesc: "Control who can see your profile data.",
+      preferencesTitle: "Preferences",
+      preferencesDesc: "Appearance, language, and notification settings.",
+      securityTitle: "Security",
+      signOutDesc: "You are currently signed in on this device.",
     },
     labels: {
       by: "by",
@@ -288,6 +316,7 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       creatingLabel: "Creating...",
       createTeamDialogTitle: "Create team?",
       createTeamDialogDesc: "Create this team with the selected game. You will become the team leader.",
+      signOut: "Sign out",
     },
     statuses: {
       active: "Active",
@@ -334,10 +363,12 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       invite: "دعوة",
     },
     tabLabels: {
-      stats: "الإحصاءات",
+      overview: "نظرة عامة",
       teams: "الفرق",
       history: "السجل",
+      matches: "المباريات",
       achievements: "الإنجازات",
+      account: "الحساب",
     },
     sections: {
       invitations: "الدعوات",
@@ -373,6 +404,18 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       tableColPlace: "المركز",
       tableColPts: "النقاط",
       tableColDate: "التاريخ",
+      noActivityDesc: "شارك في بطولة لبدء بناء سجلك.",
+      browseTournaments: "تصفح البطولات",
+      accountTitle: "الحساب والإعدادات",
+      connectedAccountsDesc: "اربط منصات الألعاب بحسابك في Ascendra.",
+      discordAccountTitle: "Discord",
+      discordSubtitle: "مزود تسجيل الدخول · مجتمع Ascendra",
+      privacyTitle: "الخصوصية والظهور",
+      privacyDesc: "تحكم في من يمكنه رؤية بيانات ملفك الشخصي.",
+      preferencesTitle: "التفضيلات",
+      preferencesDesc: "إعدادات المظهر واللغة والإشعارات.",
+      securityTitle: "الأمان",
+      signOutDesc: "أنت مسجل الدخول حاليًا على هذا الجهاز.",
     },
     labels: {
       by: "بواسطة",
@@ -431,6 +474,7 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       creatingLabel: "جارٍ الإنشاء...",
       createTeamDialogTitle: "إنشاء فريق؟",
       createTeamDialogDesc: "إنشاء هذا الفريق مع اللعبة المختارة. ستصبح قائد الفريق.",
+      signOut: "تسجيل الخروج",
     },
     statuses: {
       active: "نشط",
@@ -613,44 +657,6 @@ function HeroStat({
   );
 }
 
-function StatCell({
-  label,
-  value,
-  accent,
-  isLast,
-}: {
-  label: string;
-  value: ReactNode;
-  accent?: boolean;
-  isLast?: boolean;
-}) {
-  return (
-    <div
-      className="flex flex-col justify-center px-5 py-4"
-      style={{
-        borderRight: isLast ? "none" : "1px solid var(--asc-line-soft)",
-      }}
-    >
-      <p
-        className="text-[10px] font-black uppercase tracking-[0.16em]"
-        style={{ color: "var(--asc-fg-3)" }}
-      >
-        {label}
-      </p>
-
-      <p
-        className="mt-1 text-2xl font-black tabular-nums"
-        style={{
-          color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
-          fontFamily: "var(--font-display)",
-        }}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
 function formatScheduledAt(date: Date, locale: Locale): string {
   const dateStr = date.toLocaleString(locale === "ar" ? "ar-SA" : "en-GB", {
     timeZone: "UTC",
@@ -713,7 +719,6 @@ function ActiveMatchCard({
         background: "var(--asc-bg-2)",
       }}
     >
-      {/* Eyebrow: tournament + round */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <p
@@ -733,7 +738,6 @@ function ActiveMatchCard({
         <MatchStatusBadge status={card.status} locale={locale} />
       </div>
 
-      {/* Teams */}
       <div className="grid gap-2">
         <div className="flex items-start gap-2">
           <span
@@ -765,7 +769,6 @@ function ActiveMatchCard({
         </div>
       </div>
 
-      {/* Scheduled time */}
       {card.scheduledAt && (
         <div
           className="border-t pt-3"
@@ -786,7 +789,6 @@ function ActiveMatchCard({
         </div>
       )}
 
-      {/* FACEIT room (CS2 only) */}
       {card.isCs2 && (
         <div
           className="border-t pt-3"
@@ -824,7 +826,6 @@ function ActiveMatchCard({
         </div>
       )}
 
-      {/* Check-in status */}
       <div
         className="border-t pt-3"
         style={{ borderColor: "var(--asc-line-soft)" }}
@@ -850,7 +851,6 @@ function ActiveMatchCard({
         )}
       </div>
 
-      {/* Open match button */}
       <a
         href={card.matchHref}
         className="mt-auto border px-4 py-2 text-center text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80"
@@ -1015,6 +1015,323 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     awardedAt: result.awardedAt.toISOString(),
   }));
 
+  const riotAccount = linkedAccounts.find(
+    (a: { provider: string }) => a.provider === GameProvider.riot_lol,
+  );
+  const steamAccount = linkedAccounts.find(
+    (a: { provider: string }) => a.provider === GameProvider.steam,
+  );
+
+  const matchesNode = (
+    <div
+      className="relative overflow-hidden border"
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "var(--asc-bg-1)",
+        clipPath:
+          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
+      }}
+    >
+      <CornerMark />
+      <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
+        <p
+          className="text-[10px] font-black uppercase tracking-[0.16em]"
+          style={{ color: "var(--asc-accent)" }}
+        >
+          ▲ {messages.activeMatches.heading}
+        </p>
+      </div>
+      <div className="p-5">
+        {activeMatches.length === 0 ? (
+          <div className="flex flex-col gap-3">
+            <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
+              {messages.activeMatches.empty}
+            </p>
+            <Link
+              href="/tournaments"
+              className="inline-flex w-fit border px-4 py-2 text-sm font-black transition hover:opacity-90"
+              style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+            >
+              {messages.activeMatches.browseTournaments}
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {activeMatches.map((card) => (
+              <ActiveMatchCard
+                key={card.matchId}
+                card={card}
+                msgs={messages.activeMatches}
+                locale={locale}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const accountNode = (
+    <div className="grid gap-6">
+      <div>
+        <p
+          className="text-[10px] font-black uppercase tracking-[0.16em]"
+          style={{ color: "var(--asc-accent)" }}
+        >
+          ▲ {messages.sections.accountTitle}
+        </p>
+        <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+          {messages.sections.connectedAccountsDesc}
+        </p>
+      </div>
+
+      {/* Connected accounts */}
+      <div
+        className="relative overflow-hidden border"
+        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+      >
+        <CornerMark />
+        <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
+          <p
+            className="text-[10px] font-black uppercase tracking-[0.16em]"
+            style={{ color: "var(--asc-accent)" }}
+          >
+            ▲ {messages.labels.linkedAccounts}
+          </p>
+          <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
+            {messages.labels.connectedGameAccounts}
+          </h2>
+        </div>
+
+        <div className="grid gap-px" style={{ background: "var(--asc-line-soft)" }}>
+          {/* Discord — always connected (auth provider) */}
+          <div className="flex flex-wrap items-center justify-between gap-4 bg-[var(--asc-bg-1)] px-5 py-4">
+            <div className="flex items-center gap-4">
+              <div
+                className="grid h-10 w-10 shrink-0 place-items-center border text-xs font-black"
+                style={{
+                  borderColor: "var(--asc-green-border)",
+                  background: "var(--asc-green-bg)",
+                  color: "var(--asc-green)",
+                }}
+              >
+                D
+              </div>
+              <div>
+                <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
+                  {messages.sections.discordAccountTitle}
+                </p>
+                <p className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
+                  {messages.sections.discordSubtitle}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {user.isGuildMember && (
+                <span
+                  className="border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
+                  style={{
+                    borderColor: "var(--asc-green-border)",
+                    background: "var(--asc-green-bg)",
+                    color: "var(--asc-green)",
+                  }}
+                >
+                  {messages.statuses.member}
+                </span>
+              )}
+              <span
+                className="border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
+                style={{
+                  borderColor: "var(--asc-green-border)",
+                  background: "var(--asc-green-bg)",
+                  color: "var(--asc-green)",
+                }}
+              >
+                {messages.labels.connected}
+              </span>
+            </div>
+          </div>
+
+          <LinkedAccountRow
+            icon="R"
+            title={messages.labels.riotAccount}
+            providerName="Riot"
+            subtitle="League of Legends · VALORANT"
+            connected={Boolean(riotAccount)}
+            displayName={
+              riotAccount?.displayName ??
+              (riotAccount ? riotAccount.externalId.slice(0, 8) + "…" : null)
+            }
+            linkedDate={
+              riotAccount?.verifiedAt
+                ? riotAccount.verifiedAt.toLocaleDateString(locale, { dateStyle: "medium" })
+                : null
+            }
+            connectHref="/api/auth/riot/start"
+            unlinkAction={unlinkRiotAccount}
+            labels={{
+              linked: messages.labels.linked,
+              connected: messages.labels.connected,
+              connect: messages.labels.connect,
+              unlink: messages.labels.unlink,
+              unlinking: messages.labels.unlinking,
+              confirmationEyebrow: messages.labels.confirmationEyebrow,
+              unlinkAccountConfirmTitle: messages.labels.unlinkAccountConfirmTitle,
+              unlinkAccountConfirmDescription: messages.labels.unlinkAccountConfirmDescription,
+              unlinkAccountConfirmButton: messages.labels.unlinkAccountConfirmButton,
+              cancel: messages.labels.cancelLabel,
+            }}
+          />
+
+          <LinkedAccountRow
+            icon="S"
+            title={messages.labels.steamAccount}
+            providerName="Steam"
+            subtitle={messages.labels.steamSubtitle}
+            connected={Boolean(steamAccount)}
+            displayName={
+              steamAccount?.displayName ??
+              (steamAccount ? steamAccount.externalId.slice(0, 8) + "…" : null)
+            }
+            linkedDate={
+              steamAccount?.verifiedAt
+                ? steamAccount.verifiedAt.toLocaleDateString(locale, { dateStyle: "medium" })
+                : null
+            }
+            connectHref="/api/auth/steam/start"
+            unlinkAction={unlinkSteamAccount}
+            labels={{
+              linked: messages.labels.linked,
+              connected: messages.labels.connected,
+              connect: messages.labels.connect,
+              unlink: messages.labels.unlink,
+              unlinking: messages.labels.unlinking,
+              confirmationEyebrow: messages.labels.confirmationEyebrow,
+              unlinkAccountConfirmTitle: messages.labels.unlinkAccountConfirmTitle,
+              unlinkAccountConfirmDescription: messages.labels.unlinkAccountConfirmDescription,
+              unlinkAccountConfirmButton: messages.labels.unlinkAccountConfirmButton,
+              cancel: messages.labels.cancelLabel,
+            }}
+          />
+
+          <FaceitConnectRow
+            connected={Boolean(user.faceitPlayerId)}
+            faceitNickname={user.faceitNickname ?? null}
+            faceitSkillLevel={user.faceitSkillLevelCs2 ?? null}
+            faceitLinkedAt={
+              user.faceitLinkedAt
+                ? user.faceitLinkedAt.toLocaleDateString(locale, { dateStyle: "medium" })
+                : null
+            }
+            connectAction={connectFaceitAccount}
+            unlinkAction={unlinkFaceitAccount}
+            labels={{
+              title: messages.labels.faceitAccount,
+              subtitle: messages.labels.faceitSubtitle,
+              help: messages.labels.faceitHelp,
+              connectedHelp: messages.labels.faceitConnectedHelp,
+              connected: messages.labels.connected,
+              connect: messages.labels.connect,
+              connecting: messages.labels.faceitConnecting,
+              unlink: messages.labels.unlink,
+              unlinking: messages.labels.unlinking,
+              linked: messages.labels.linked,
+              skillLevel: messages.labels.faceitSkillLevel,
+              nicknamePlaceholder: messages.labels.faceitNicknamePlaceholder,
+              confirmationEyebrow: messages.labels.confirmationEyebrow,
+              unlinkAccountConfirmTitle: messages.labels.unlinkAccountConfirmTitle,
+              unlinkAccountConfirmDescription: messages.labels.unlinkAccountConfirmDescription.replace("{provider}", "FACEIT"),
+              unlinkAccountConfirmButton: messages.labels.unlinkAccountConfirmButton,
+              cancel: messages.labels.cancelLabel,
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Privacy placeholder */}
+      <div
+        className="border px-5 py-5"
+        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
+              {messages.sections.privacyTitle}
+            </p>
+            <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+              {messages.sections.privacyDesc}
+            </p>
+          </div>
+          <span
+            className="shrink-0 border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
+            style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-3)" }}
+          >
+            {messages.sections.comingSoon}
+          </span>
+        </div>
+      </div>
+
+      {/* Preferences placeholder */}
+      <div
+        className="border px-5 py-5"
+        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
+              {messages.sections.preferencesTitle}
+            </p>
+            <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+              {messages.sections.preferencesDesc}
+            </p>
+          </div>
+          <span
+            className="shrink-0 border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
+            style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-3)" }}
+          >
+            {messages.sections.comingSoon}
+          </span>
+        </div>
+      </div>
+
+      {/* Security / sign out */}
+      <div
+        className="border"
+        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+      >
+        <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
+          <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
+            {messages.sections.securityTitle}
+          </p>
+        </div>
+        <div className="px-5 py-5">
+          <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
+            {messages.sections.signOutDesc}
+          </p>
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/" });
+            }}
+            className="mt-4"
+          >
+            <button
+              type="submit"
+              className="border px-5 py-2.5 text-sm font-black uppercase tracking-[0.10em] transition hover:opacity-80"
+              style={{
+                borderColor: "var(--asc-live-border)",
+                color: "var(--asc-live)",
+                background: "transparent",
+              }}
+            >
+              {messages.labels.signOut}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <main
       className="asc-public-page asc-ambient min-h-screen overflow-hidden"
@@ -1137,273 +1454,49 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         </section>
 
         <section className="relative -mt-16 mx-auto max-w-[1440px] px-6 pb-20 lg:px-10">
-          <div
-            className="relative overflow-hidden border"
-            style={{
-              borderColor: "var(--asc-line-soft)",
-              background: "var(--asc-bg-1)",
-              clipPath:
-                "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
-            }}
-          >
-            <CornerMark />
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-              <StatCell
-                label={messages.labels.ptsLabel}
-                value={rankingPoints.toLocaleString()}
-                accent
-              />
-              <StatCell
-                label={messages.labels.results}
-                value={tournamentResults.length}
-              />
-              <StatCell
-                label={messages.labels.best}
-                value={bestPlacement ? `#${bestPlacement}` : "—"}
-              />
-              <StatCell label={messages.hero.teams} value={teams.length} />
-              <StatCell
-                label={messages.hero.invites}
-                value={invitations.length}
-              />
-              <StatCell
-                label={messages.labels.discord}
-                value={
-                  user.isGuildMember
-                    ? messages.statuses.member
-                    : messages.statuses.notMember
-                }
-                isLast
-              />
-            </div>
-          </div>
-
-          <div className="mt-10">
-            <ProfileTabs
-              tournamentResults={serializedResults}
-              teams={teams.map((team) => ({
-                id: team.id,
-                name: team.name,
-                status: team.status,
-                leaderId: team.leaderId,
-                rejectionReason: team.rejectionReason,
-                game: team.game,
-                members: team.members.map((member) => ({
+          <ProfileTabs
+            tournamentResults={serializedResults}
+            teams={teams.map((team) => ({
+              id: team.id,
+              name: team.name,
+              status: team.status,
+              leaderId: team.leaderId,
+              rejectionReason: team.rejectionReason,
+              game: team.game,
+              members: team.members.map((member) => ({
+                userId: member.userId,
+                role: member.role,
+              })),
+            }))}
+            invitations={invitations.map((invitation) => ({
+              id: invitation.id,
+              team: {
+                name: invitation.team.name,
+                game: invitation.team.game,
+                members: invitation.team.members.map((member) => ({
                   userId: member.userId,
-                  role: member.role,
                 })),
-              }))}
-              invitations={invitations.map((invitation) => ({
-                id: invitation.id,
-                team: {
-                  name: invitation.team.name,
-                  game: invitation.team.game,
-                  members: invitation.team.members.map((member) => ({
-                    userId: member.userId,
-                  })),
-                },
-                invitedBy: {
-                  username: invitation.invitedBy.username,
-                },
-              }))}
-              userId={user.id}
-              isGuildMember={user.isGuildMember}
-              dbGames={dbGames}
-              tabLabels={messages.tabLabels}
-              labels={messages.labels}
-              sectionLabels={messages.sections}
-              statuses={messages.statuses}
-              heroLabels={{
-                team: messages.hero.team,
-                teams: messages.hero.teams,
-              }}
-            />
-          </div>
-
-          {/* My active matches */}
-          <SectionReveal>
-          <div className="mt-10">
-            <div
-              className="relative overflow-hidden border"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                background: "var(--asc-bg-1)",
-                clipPath:
-                  "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
-              }}
-            >
-              <CornerMark />
-              <div
-                className="border-b px-5 py-4"
-                style={{ borderColor: "var(--asc-line-soft)" }}
-              >
-                <p
-                  className="text-[10px] font-black uppercase tracking-[0.16em]"
-                  style={{ color: "var(--asc-accent)" }}
-                >
-                  ▲ {messages.activeMatches.heading}
-                </p>
-              </div>
-
-              <div className="p-5">
-                {activeMatches.length === 0 ? (
-                  <div className="flex flex-col gap-3">
-                    <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
-                      {messages.activeMatches.empty}
-                    </p>
-                    <Link
-                      href="/tournaments"
-                      className="inline-flex w-fit border px-4 py-2 text-sm font-black transition hover:opacity-90"
-                      style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
-                    >
-                      {messages.activeMatches.browseTournaments}
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {activeMatches.map((card) => (
-                      <ActiveMatchCard
-                        key={card.matchId}
-                        card={card}
-                        msgs={messages.activeMatches}
-                        locale={locale}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          </SectionReveal>
-
-          <SectionReveal delay={0.08}>
-          <div className="mt-10">
-            <div className="relative overflow-hidden border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
-              <CornerMark />
-              <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
-                <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>▲ {messages.labels.linkedAccounts}</p>
-                <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>{messages.labels.connectedGameAccounts}</h2>
-              </div>
-
-              <div className="grid gap-px" style={{ background: "var(--asc-line-soft)" }}>
-                {(() => {
-                  const riotAccount = linkedAccounts.find(
-                    (a: { provider: string }) => a.provider === GameProvider.riot_lol,
-                  );
-                  return (
-                    <LinkedAccountRow
-                      icon="R"
-                      title={messages.labels.riotAccount}
-                      providerName="Riot"
-                      subtitle="League of Legends · VALORANT"
-                      connected={Boolean(riotAccount)}
-                      displayName={
-                        riotAccount?.displayName ??
-                        (riotAccount ? riotAccount.externalId.slice(0, 8) + "…" : null)
-                      }
-                      linkedDate={
-                        riotAccount?.verifiedAt
-                          ? riotAccount.verifiedAt.toLocaleDateString(locale, { dateStyle: "medium" })
-                          : null
-                      }
-                      connectHref="/api/auth/riot/start"
-                      unlinkAction={unlinkRiotAccount}
-                      labels={{
-                        linked: messages.labels.linked,
-                        connected: messages.labels.connected,
-                        connect: messages.labels.connect,
-                        unlink: messages.labels.unlink,
-                        unlinking: messages.labels.unlinking,
-                        confirmationEyebrow: messages.labels.confirmationEyebrow,
-                        unlinkAccountConfirmTitle:
-                          messages.labels.unlinkAccountConfirmTitle,
-                        unlinkAccountConfirmDescription:
-                          messages.labels.unlinkAccountConfirmDescription,
-                        unlinkAccountConfirmButton:
-                          messages.labels.unlinkAccountConfirmButton,
-                        cancel: messages.labels.cancelLabel,
-                      }}
-                    />
-                  );
-                })()}
-
-                {(() => {
-                  const steamAccount = linkedAccounts.find(
-                    (a: { provider: string }) => a.provider === GameProvider.steam,
-                  );
-                  return (
-                    <LinkedAccountRow
-                      icon="S"
-                      title={messages.labels.steamAccount}
-                      providerName="Steam"
-                      subtitle={messages.labels.steamSubtitle}
-                      connected={Boolean(steamAccount)}
-                      displayName={
-                        steamAccount?.displayName ??
-                        (steamAccount ? steamAccount.externalId.slice(0, 8) + "…" : null)
-                      }
-                      linkedDate={
-                        steamAccount?.verifiedAt
-                          ? steamAccount.verifiedAt.toLocaleDateString(locale, { dateStyle: "medium" })
-                          : null
-                      }
-                      connectHref="/api/auth/steam/start"
-                      unlinkAction={unlinkSteamAccount}
-                      labels={{
-                        linked: messages.labels.linked,
-                        connected: messages.labels.connected,
-                        connect: messages.labels.connect,
-                        unlink: messages.labels.unlink,
-                        unlinking: messages.labels.unlinking,
-                        confirmationEyebrow: messages.labels.confirmationEyebrow,
-                        unlinkAccountConfirmTitle:
-                          messages.labels.unlinkAccountConfirmTitle,
-                        unlinkAccountConfirmDescription:
-                          messages.labels.unlinkAccountConfirmDescription,
-                        unlinkAccountConfirmButton:
-                          messages.labels.unlinkAccountConfirmButton,
-                        cancel: messages.labels.cancelLabel,
-                      }}
-                    />
-                  );
-                })()}
-
-                <FaceitConnectRow
-                  connected={Boolean(user.faceitPlayerId)}
-                  faceitNickname={user.faceitNickname ?? null}
-                  faceitSkillLevel={user.faceitSkillLevelCs2 ?? null}
-                  faceitLinkedAt={
-                    user.faceitLinkedAt
-                      ? user.faceitLinkedAt.toLocaleDateString(locale, { dateStyle: "medium" })
-                      : null
-                  }
-                  connectAction={connectFaceitAccount}
-                  unlinkAction={unlinkFaceitAccount}
-                  labels={{
-                    title: messages.labels.faceitAccount,
-                    subtitle: messages.labels.faceitSubtitle,
-                    help: messages.labels.faceitHelp,
-                    connectedHelp: messages.labels.faceitConnectedHelp,
-                    connected: messages.labels.connected,
-                    connect: messages.labels.connect,
-                    connecting: messages.labels.faceitConnecting,
-                    unlink: messages.labels.unlink,
-                    unlinking: messages.labels.unlinking,
-                    linked: messages.labels.linked,
-                    skillLevel: messages.labels.faceitSkillLevel,
-                    nicknamePlaceholder: messages.labels.faceitNicknamePlaceholder,
-                    confirmationEyebrow: messages.labels.confirmationEyebrow,
-                    unlinkAccountConfirmTitle: messages.labels.unlinkAccountConfirmTitle,
-                    unlinkAccountConfirmDescription: messages.labels.unlinkAccountConfirmDescription.replace("{provider}", "FACEIT"),
-                    unlinkAccountConfirmButton: messages.labels.unlinkAccountConfirmButton,
-                    cancel: messages.labels.cancelLabel,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          </SectionReveal>
+              },
+              invitedBy: {
+                username: invitation.invitedBy.username,
+              },
+            }))}
+            userId={user.id}
+            isGuildMember={user.isGuildMember}
+            dbGames={dbGames}
+            tabLabels={messages.tabLabels}
+            labels={messages.labels}
+            sectionLabels={messages.sections}
+            statuses={messages.statuses}
+            heroLabels={{
+              team: messages.hero.team,
+              teams: messages.hero.teams,
+            }}
+            matchesNode={matchesNode}
+            accountNode={accountNode}
+            rankingPoints={rankingPoints}
+            bestPlacement={bestPlacement}
+          />
         </section>
 
         <Footer />

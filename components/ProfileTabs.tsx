@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   LineChart,
@@ -15,7 +16,7 @@ import { createTeam, respondToTeamInvite } from "@/actions/teamActions";
 import CustomSelect from "@/components/CustomSelect";
 import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
 
-type TabId = "stats" | "teams" | "history" | "achievements";
+type TabId = "overview" | "teams" | "history" | "matches" | "achievements" | "account";
 
 type TournamentResult = {
   id: string;
@@ -58,7 +59,14 @@ type ProfileTabsProps = {
   userId: string;
   isGuildMember: boolean;
   dbGames: Game[];
-  tabLabels: { stats: string; teams: string; history: string; achievements: string };
+  tabLabels: {
+    overview: string;
+    teams: string;
+    history: string;
+    matches: string;
+    achievements: string;
+    account: string;
+  };
   labels: {
     by: string;
     members: string;
@@ -121,6 +129,8 @@ type ProfileTabsProps = {
     tableColPlace: string;
     tableColPts: string;
     tableColDate: string;
+    noActivityDesc: string;
+    browseTournaments: string;
   };
   statuses: {
     active: string;
@@ -130,6 +140,10 @@ type ProfileTabsProps = {
     notMember: string;
   };
   heroLabels: { team: string; teams: string };
+  matchesNode: ReactNode;
+  accountNode: ReactNode;
+  rankingPoints: number;
+  bestPlacement: number | null;
 };
 
 function getCount(n: number, singular: string, plural: string) {
@@ -159,30 +173,20 @@ function Pill({
 
 function StatusBadge({ status, statuses }: { status: string; statuses: ProfileTabsProps["statuses"] }) {
   const s = status.toLowerCase();
-  const tone = s === "approved" || s === "member" ? "green"
+  const tone =
+    s === "approved" || s === "member" ? "green"
     : s === "pending" ? "blue"
     : s === "rejected" || s === "not member" ? "red"
     : "gray";
   const map: Record<string, string> = {
-    approved: statuses.active, pending: statuses.pending,
-    rejected: statuses.rejected, member: statuses.member, "not member": statuses.notMember,
+    approved: statuses.active,
+    pending: statuses.pending,
+    rejected: statuses.rejected,
+    member: statuses.member,
+    "not member": statuses.notMember,
   };
   return <Pill label={map[s] ?? status} tone={tone} />;
 }
-
-function SectionHeader({ eyebrow, title, action }: { eyebrow: string; title: string; action?: React.ReactNode }) {
-  return (
-    <div className="mb-4 flex items-end justify-between">
-      <div>
-        <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>{eyebrow}</p>
-        <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>{title}</h3>
-      </div>
-      {action}
-    </div>
-  );
-}
-
-void SectionHeader;
 
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
@@ -190,7 +194,16 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
       className="relative overflow-hidden border"
       style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", ...style }}
     >
-      <div aria-hidden="true" style={{ position: "absolute", top: -1, left: -1, width: 14, height: 14, borderTop: "1px solid var(--asc-accent)", borderLeft: "1px solid var(--asc-accent)", opacity: 0.6, zIndex: 1 }} />
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute", top: -1, left: -1,
+          width: 14, height: 14,
+          borderTop: "1px solid var(--asc-accent)",
+          borderLeft: "1px solid var(--asc-accent)",
+          opacity: 0.6, zIndex: 1,
+        }}
+      />
       {children}
     </div>
   );
@@ -209,14 +222,158 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-0)" }}>
+    <div
+      className="border px-3 py-2 text-xs font-black"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-0)" }}
+    >
       <p style={{ color: "var(--asc-fg-3)", marginBottom: 2 }}>{label}</p>
       <p style={{ color: "var(--asc-accent)" }}>{payload[0].value.toLocaleString()} {ptsLabel}</p>
     </div>
   );
 }
 
-function StatsTab({
+function OverviewTab({
+  tournamentResults,
+  teams,
+  invitations,
+  rankingPoints,
+  bestPlacement,
+  labels,
+  sectionLabels,
+  heroLabels,
+  onNavigate,
+}: Pick<ProfileTabsProps, "tournamentResults" | "teams" | "invitations" | "rankingPoints" | "bestPlacement" | "labels" | "sectionLabels" | "heroLabels"> & {
+  onNavigate: (tab: TabId) => void;
+}) {
+  const stats: Array<{ label: string; value: string; accent?: boolean }> = [
+    { label: sectionLabels.tableColPts, value: rankingPoints.toLocaleString(), accent: true },
+    { label: labels.results, value: String(tournamentResults.length) },
+    { label: labels.best, value: bestPlacement ? `#${bestPlacement}` : "—" },
+    { label: heroLabels.teams, value: String(teams.length) },
+  ];
+
+  return (
+    <div className="grid gap-6">
+      {invitations.length > 0 && (
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 border p-4"
+          style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}
+        >
+          <p className="font-black" style={{ color: "var(--asc-accent)" }}>
+            {invitations.length} {sectionLabels.teamInvitations}
+          </p>
+          <button
+            type="button"
+            onClick={() => onNavigate("teams")}
+            className="shrink-0 border px-4 py-2 text-xs font-black uppercase tracking-[0.10em] transition hover:opacity-80"
+            style={{ borderColor: "var(--asc-accent-border)", color: "var(--asc-accent)", background: "transparent" }}
+          >
+            {sectionLabels.invitations} →
+          </button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {stats.map(({ label, value, accent }) => (
+          <div
+            key={label}
+            className="border p-4"
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+          >
+            <p
+              className="text-[10px] font-black uppercase tracking-[0.14em]"
+              style={{ color: "var(--asc-fg-3)" }}
+            >
+              {label}
+            </p>
+            <p
+              className="mt-2 text-2xl font-black tabular-nums"
+              style={{
+                color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              {value}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {tournamentResults.length === 0 ? (
+        <div
+          className="border p-10 text-center"
+          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+        >
+          <p
+            className="text-sm font-black uppercase tracking-[0.12em]"
+            style={{ color: "var(--asc-fg-3)", opacity: 0.6 }}
+          >
+            {sectionLabels.noTournamentResults}
+          </p>
+          <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+            {sectionLabels.noActivityDesc}
+          </p>
+          <Link
+            href="/tournaments"
+            className="mt-6 inline-flex border px-5 py-2.5 text-sm font-black uppercase tracking-[0.10em] transition hover:opacity-80"
+            style={{ borderColor: "var(--asc-accent-border)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
+          >
+            {sectionLabels.browseTournaments} →
+          </Link>
+        </div>
+      ) : (
+        <div className="border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
+          <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
+            <p
+              className="text-[10px] font-black uppercase tracking-[0.16em]"
+              style={{ color: "var(--asc-accent)" }}
+            >
+              ▲ {sectionLabels.recentMatchesEyebrow}
+            </p>
+          </div>
+          {tournamentResults.slice(0, 3).map((r) => {
+            const date = new Date(r.awardedAt).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "2-digit",
+            });
+            return (
+              <Link
+                key={r.id}
+                href={`/tournaments/${r.tournament.id}`}
+                className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition hover:bg-white/[0.02]"
+                style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-black text-sm" style={{ color: "var(--asc-fg-0)" }}>
+                    {r.tournament.title}
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--asc-fg-3)" }}>{date}</p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Pill label={`#${r.placement}`} tone="blue" />
+                  <Pill label={`${r.points} ${labels.pts}`} tone="green" />
+                </div>
+              </Link>
+            );
+          })}
+          {tournamentResults.length > 3 && (
+            <button
+              type="button"
+              onClick={() => onNavigate("history")}
+              className="w-full px-5 py-4 text-left text-xs font-black uppercase tracking-[0.12em] transition hover:bg-white/[0.02]"
+              style={{ color: "var(--asc-fg-3)", borderTop: "1px solid var(--asc-line-soft)" }}
+            >
+              {sectionLabels.tournamentHistoryTitle} · {tournamentResults.length} {labels.results} →
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HistoryTab({
   tournamentResults,
   labels,
   sectionLabels,
@@ -238,7 +395,10 @@ function StatsTab({
           <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
             ▲ {sectionLabels.performanceEyebrow}
           </p>
-          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+          <h3
+            className="mt-1 text-xl font-black uppercase"
+            style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+          >
             {sectionLabels.pointHistoryTitle}
           </h3>
         </div>
@@ -280,18 +440,22 @@ function StatsTab({
       <Card>
         <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
           <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-            ▲ {sectionLabels.recentMatchesEyebrow}
+            ▲ {sectionLabels.fullRecordEyebrow}
           </p>
-          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
-            {sectionLabels.matchHistoryTitle}
+          <h3
+            className="mt-1 text-xl font-black uppercase"
+            style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+          >
+            {sectionLabels.tournamentHistoryTitle} · {tournamentResults.length}{" "}
+            {getCount(tournamentResults.length, labels.result, labels.results)}
           </h3>
         </div>
         {tournamentResults.length === 0 ? (
-          <p className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>{sectionLabels.noResultsYet}</p>
+          <p className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>{sectionLabels.noTournamentResults}</p>
         ) : (
           <>
             <div
-              className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] md:grid md:grid-cols-[minmax(0,1fr)_120px_80px_80px_100px]"
+              className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] md:grid md:grid-cols-[minmax(0,1fr)_130px_80px_80px_110px]"
               style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
             >
               <span>{sectionLabels.tableColTournament}</span>
@@ -300,22 +464,24 @@ function StatsTab({
               <span>{sectionLabels.tableColPts}</span>
               <span>{sectionLabels.tableColDate}</span>
             </div>
-            {tournamentResults.slice(0, 6).map((r) => {
+            {tournamentResults.map((r) => {
               const teamName = r.snapshotTeamName ?? r.team.name;
               const gameName = r.snapshotTeamGame ?? r.team.game?.name ?? "—";
-              const date = new Date(r.awardedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" });
+              const date = new Date(r.awardedAt).toLocaleDateString("en-GB", {
+                day: "2-digit", month: "short", year: "2-digit",
+              });
               return (
                 <Link
                   key={r.id}
                   href={`/tournaments/${r.tournament.id}`}
-                  className="grid gap-2 px-5 py-4 transition hover:bg-white/[0.02] md:grid-cols-[minmax(0,1fr)_120px_80px_80px_100px] md:items-center"
+                  className="grid gap-2 px-5 py-4 transition hover:bg-white/[0.02] md:grid-cols-[minmax(0,1fr)_130px_80px_80px_110px] md:items-center"
                   style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                 >
                   <div className="min-w-0">
                     <p className="truncate font-black text-sm" style={{ color: "var(--asc-fg-0)" }}>{r.tournament.title}</p>
                     <p className="mt-0.5 text-xs" style={{ color: "var(--asc-fg-3)" }}>{gameName}</p>
                   </div>
-                  <p className="text-sm" style={{ color: "var(--asc-fg-2)" }}>{teamName}</p>
+                  <p className="truncate text-sm" style={{ color: "var(--asc-fg-2)" }}>{teamName}</p>
                   <Pill label={`#${r.placement}`} tone="blue" />
                   <Pill label={`${r.points} ${labels.pts}`} tone="green" />
                   <p className="text-xs tabular-nums" style={{ color: "var(--asc-fg-3)" }}>{date}</p>
@@ -494,7 +660,10 @@ function TeamsTab({
             <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
               ▲ {sectionLabels.invitations}
             </p>
-            <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+            <h3
+              className="mt-1 text-xl font-black uppercase"
+              style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+            >
               {sectionLabels.teamInvitations}
             </h3>
           </div>
@@ -526,7 +695,10 @@ function TeamsTab({
           <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
             ▲ {sectionLabels.myTeams}
           </p>
-          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+          <h3
+            className="mt-1 text-xl font-black uppercase"
+            style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+          >
             {sectionLabels.myTeams} · {teams.length}{" "}
             {getCount(teams.length, heroLabels.team, heroLabels.teams)}
           </h3>
@@ -542,11 +714,27 @@ function TeamsTab({
               const membership = team.members.find((m) => m.userId === userId);
               const isLeader = team.leaderId === userId;
               return (
-                <article key={team.id} className="relative border-b p-5 transition" style={{ borderColor: "var(--asc-line-soft)" }}>
-                  <div aria-hidden="true" style={{ position: "absolute", top: 9, left: 9, width: 8, height: 8, borderTop: "1px solid var(--asc-accent)", borderLeft: "1px solid var(--asc-accent)", opacity: 0.5 }} />
+                <article
+                  key={team.id}
+                  className="relative border-b p-5 transition"
+                  style={{ borderColor: "var(--asc-line-soft)" }}
+                >
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      position: "absolute", top: 9, left: 9,
+                      width: 8, height: 8,
+                      borderTop: "1px solid var(--asc-accent)",
+                      borderLeft: "1px solid var(--asc-accent)",
+                      opacity: 0.5,
+                    }}
+                  />
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate font-black" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18 }}>
+                      <p
+                        className="truncate font-black"
+                        style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18 }}
+                      >
                         {team.name}
                       </p>
                       <p className="mt-1 text-xs" style={{ color: "var(--asc-fg-3)" }}>
@@ -563,7 +751,11 @@ function TeamsTab({
                     <p className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
                       {isLeader ? labels.leader : (membership?.role ?? statuses.member)}
                     </p>
-                    <Link href={`/profile/teams/${team.id}`} className="px-4 py-2 text-xs font-black transition hover:opacity-90" style={{ background: "var(--asc-accent-2)", color: "#fff" }}>
+                    <Link
+                      href={`/profile/teams/${team.id}`}
+                      className="px-4 py-2 text-xs font-black transition hover:opacity-90"
+                      style={{ background: "var(--asc-accent-2)", color: "#fff" }}
+                    >
                       {labels.open}
                     </Link>
                   </div>
@@ -579,7 +771,10 @@ function TeamsTab({
           <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
             ▲ {sectionLabels.createTeam}
           </p>
-          <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+          <h3
+            className="mt-1 text-xl font-black uppercase"
+            style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+          >
             {sectionLabels.startNewTeam}
           </h3>
           <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
@@ -601,64 +796,6 @@ function TeamsTab({
   );
 }
 
-function HistoryTab({
-  tournamentResults,
-  labels,
-  sectionLabels,
-}: Pick<ProfileTabsProps, "tournamentResults" | "labels" | "sectionLabels">) {
-  return (
-    <Card>
-      <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-        <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-          ▲ {sectionLabels.fullRecordEyebrow}
-        </p>
-        <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
-          {sectionLabels.tournamentHistoryTitle} · {tournamentResults.length}{" "}
-          {getCount(tournamentResults.length, labels.result, labels.results)}
-        </h3>
-      </div>
-      {tournamentResults.length === 0 ? (
-        <p className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>{sectionLabels.noTournamentResults}</p>
-      ) : (
-        <>
-          <div
-            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] md:grid md:grid-cols-[minmax(0,1fr)_130px_80px_80px_110px]"
-            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
-          >
-            <span>{sectionLabels.tableColTournament}</span>
-            <span>{sectionLabels.tableColTeam}</span>
-            <span>{sectionLabels.tableColPlace}</span>
-            <span>{sectionLabels.tableColPts}</span>
-            <span>{sectionLabels.tableColDate}</span>
-          </div>
-          {tournamentResults.map((r) => {
-            const teamName = r.snapshotTeamName ?? r.team.name;
-            const gameName = r.snapshotTeamGame ?? r.team.game?.name ?? "—";
-            const date = new Date(r.awardedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" });
-            return (
-              <Link
-                key={r.id}
-                href={`/tournaments/${r.tournament.id}`}
-                className="grid gap-2 px-5 py-4 transition hover:bg-white/[0.02] md:grid-cols-[minmax(0,1fr)_130px_80px_80px_110px] md:items-center"
-                style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-black text-sm" style={{ color: "var(--asc-fg-0)" }}>{r.tournament.title}</p>
-                  <p className="mt-0.5 text-xs" style={{ color: "var(--asc-fg-3)" }}>{gameName}</p>
-                </div>
-                <p className="text-sm truncate" style={{ color: "var(--asc-fg-2)" }}>{teamName}</p>
-                <Pill label={`#${r.placement}`} tone="blue" />
-                <Pill label={`${r.points} ${labels.pts}`} tone="green" />
-                <p className="text-xs tabular-nums" style={{ color: "var(--asc-fg-3)" }}>{date}</p>
-              </Link>
-            );
-          })}
-        </>
-      )}
-    </Card>
-  );
-}
-
 function AchievementsTab({ sectionLabels }: { sectionLabels: ProfileTabsProps["sectionLabels"] }) {
   return (
     <Card>
@@ -666,12 +803,18 @@ function AchievementsTab({ sectionLabels }: { sectionLabels: ProfileTabsProps["s
         <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
           ▲ {sectionLabels.achievementsEyebrow}
         </p>
-        <h3 className="mt-1 text-xl font-black uppercase" style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+        <h3
+          className="mt-1 text-xl font-black uppercase"
+          style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+        >
           {sectionLabels.achievementsTitle}
         </h3>
       </div>
       <div className="p-10 text-center">
-        <p className="text-4xl font-black uppercase" style={{ color: "var(--asc-fg-3)", fontFamily: "'Barlow Condensed', sans-serif", opacity: 0.4 }}>
+        <p
+          className="text-4xl font-black uppercase"
+          style={{ color: "var(--asc-fg-3)", fontFamily: "'Barlow Condensed', sans-serif", opacity: 0.4 }}
+        >
           {sectionLabels.comingSoon}
         </p>
         <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
@@ -683,42 +826,66 @@ function AchievementsTab({ sectionLabels }: { sectionLabels: ProfileTabsProps["s
 }
 
 export default function ProfileTabs(props: ProfileTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("stats");
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
 
-  const tabs: { id: TabId; label: string }[] = [
-    { id: "stats", label: props.tabLabels.stats },
-    { id: "teams", label: props.tabLabels.teams },
+  const tabs: { id: TabId; label: string; badge?: number }[] = [
+    { id: "overview", label: props.tabLabels.overview },
+    { id: "teams", label: props.tabLabels.teams, badge: props.invitations.length || undefined },
     { id: "history", label: props.tabLabels.history },
+    { id: "matches", label: props.tabLabels.matches },
     { id: "achievements", label: props.tabLabels.achievements },
+    { id: "account", label: props.tabLabels.account },
   ];
 
   return (
     <div>
-      {/* Tab navigation */}
-      <div className="mb-6 flex" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-        {tabs.map((tab) => {
-          const isActive = tab.id === activeTab;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className="px-5 py-3 text-xs font-black uppercase tracking-[0.14em] transition"
-              style={{
-                color: isActive ? "var(--asc-fg-0)" : "var(--asc-fg-3)",
-                borderBottom: isActive ? "2px solid var(--asc-accent)" : "2px solid transparent",
-                marginBottom: -1,
-                background: "transparent",
-              }}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
+      <div
+        className="mb-8 overflow-x-auto"
+        style={{ borderBottom: "2px solid var(--asc-line-soft)" }}
+      >
+        <div className="flex min-w-max">
+          {tabs.map((tab) => {
+            const isActive = tab.id === activeTab;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="flex shrink-0 items-center gap-2.5 px-5 py-4 text-xs font-black uppercase tracking-[0.12em] transition-colors"
+                style={{
+                  color: isActive ? "var(--asc-fg-0)" : "var(--asc-fg-3)",
+                  background: isActive ? "var(--asc-accent-dim)" : "transparent",
+                  borderBottom: isActive ? "2px solid var(--asc-accent)" : "2px solid transparent",
+                  marginBottom: -2,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {tab.label}
+                {tab.badge !== undefined && tab.badge > 0 && (
+                  <span
+                    className="inline-flex h-[18px] min-w-[18px] items-center justify-center px-1 text-[9px] font-black"
+                    style={{ background: "var(--asc-accent)", color: "#000" }}
+                  >
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Tab content */}
-      {activeTab === "stats" && (
-        <StatsTab tournamentResults={props.tournamentResults} labels={props.labels} sectionLabels={props.sectionLabels} />
+      {activeTab === "overview" && (
+        <OverviewTab
+          tournamentResults={props.tournamentResults}
+          teams={props.teams}
+          invitations={props.invitations}
+          rankingPoints={props.rankingPoints}
+          bestPlacement={props.bestPlacement}
+          labels={props.labels}
+          sectionLabels={props.sectionLabels}
+          heroLabels={props.heroLabels}
+          onNavigate={setActiveTab}
+        />
       )}
       {activeTab === "teams" && (
         <TeamsTab
@@ -734,9 +901,15 @@ export default function ProfileTabs(props: ProfileTabsProps) {
         />
       )}
       {activeTab === "history" && (
-        <HistoryTab tournamentResults={props.tournamentResults} labels={props.labels} sectionLabels={props.sectionLabels} />
+        <HistoryTab
+          tournamentResults={props.tournamentResults}
+          labels={props.labels}
+          sectionLabels={props.sectionLabels}
+        />
       )}
+      {activeTab === "matches" && <div>{props.matchesNode}</div>}
       {activeTab === "achievements" && <AchievementsTab sectionLabels={props.sectionLabels} />}
+      {activeTab === "account" && <div>{props.accountNode}</div>}
     </div>
   );
 }
