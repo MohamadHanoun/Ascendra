@@ -776,7 +776,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
 
     community: {
       metadata: {
-        title: "Community | Ascendra",
+        title: "Community ",
         description: "Ascendra community hub.",
       },
       hero: {
@@ -875,7 +875,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
 
     news: {
       metadata: {
-        title: "News | Ascendra",
+        title: "News",
         description: "Ascendra announcements and updates.",
       },
       hero: {
@@ -904,7 +904,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
 
     tournaments: {
       metadata: {
-        title: "Tournaments | Ascendra",
+        title: "Tournaments",
         description: "Ascendra tournaments and events.",
       },
       hero: {
@@ -960,7 +960,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
 
     leaderboard: {
       metadata: {
-        title: "Leaderboard | Ascendra",
+        title: "Leaderboard",
         description: "Ascendra tournament points and standings.",
       },
       hero: {
@@ -1038,7 +1038,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
 
     tournamentDetails: {
       metadata: {
-        title: "Tournament Details | Ascendra",
+        title: "Tournament Details",
         description: "Tournament details and registration.",
       },
       statuses: {
@@ -1379,7 +1379,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
 
     community: {
       metadata: {
-        title: "المجتمع | Ascendra",
+        title: "المجتمع ",
         description: "مركز مجتمع Ascendra.",
       },
       hero: {
@@ -1477,7 +1477,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
 
     news: {
       metadata: {
-        title: "الأخبار | Ascendra",
+        title: "الأخبار",
         description: "إعلانات وتحديثات Ascendra.",
       },
       hero: {
@@ -1505,7 +1505,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
 
     tournaments: {
       metadata: {
-        title: "البطولات | Ascendra",
+        title: "البطولات",
         description: "بطولات وفعاليات Ascendra.",
       },
       hero: {
@@ -1559,7 +1559,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
 
     leaderboard: {
       metadata: {
-        title: "لوحة المتصدرين | Ascendra",
+        title: "لوحة المتصدرين",
         description: "نقاط وترتيب بطولات Ascendra.",
       },
       hero: {
@@ -1635,7 +1635,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
     },
     tournamentDetails: {
       metadata: {
-        title: "تفاصيل البطولة | Ascendra",
+        title: "تفاصيل البطولة",
         description: "تفاصيل البطولة والتسجيل.",
       },
       statuses: {

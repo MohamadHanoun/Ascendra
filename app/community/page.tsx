@@ -71,7 +71,7 @@ type CommunityPageMessages = {
 const communityMessages: Record<Locale, CommunityPageMessages> = {
   en: {
     metadata: {
-      title: "Community | Ascendra",
+      title: "Community",
       description:
         "Explore the Ascendra community hub for tournaments, rules, roles, and platform resources.",
     },
@@ -173,7 +173,7 @@ const communityMessages: Record<Locale, CommunityPageMessages> = {
   },
   ar: {
     metadata: {
-      title: "المجتمع | Ascendra",
+      title: "المجتمع",
       description:
         "استكشف مركز مجتمع Ascendra للبطولات والقواعد والأدوار وموارد المنصة.",
     },

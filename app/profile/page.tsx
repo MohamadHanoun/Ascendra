@@ -176,7 +176,7 @@ type ProfileMessages = {
 const profileMessages: Record<Locale, ProfileMessages> = {
   en: {
     metadata: {
-      title: "Profile | Ascendra",
+      title: "Profile ",
       description: "Manage your Ascendra profile, invitations, and teams.",
     },
     hero: {

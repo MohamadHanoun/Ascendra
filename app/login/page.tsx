@@ -34,7 +34,7 @@ type LoginMessages = {
 const loginMessages: Record<Locale, LoginMessages> = {
   en: {
     metadata: {
-      title: "Login | Ascendra",
+      title: "Login",
       description: "Login to Ascendra through official Discord OAuth.",
     },
     hero: {
@@ -56,7 +56,7 @@ const loginMessages: Record<Locale, LoginMessages> = {
 
   ar: {
     metadata: {
-      title: "تسجيل الدخول | Ascendra",
+      title: "تسجيل الدخول",
       description: "سجّل الدخول إلى Ascendra عبر Discord.",
     },
     hero: {

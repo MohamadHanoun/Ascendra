@@ -80,7 +80,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const messages = getDictionary(locale).home.metadata;
 
   return {
-    title: messages.title,
+    title: { absolute: messages.title },
     description: messages.description,
   };
 }

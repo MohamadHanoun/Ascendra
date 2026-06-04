@@ -78,7 +78,7 @@ type GamesMessages = {
 const gamesMessages: Record<Locale, GamesMessages> = {
   en: {
     metadata: {
-      title: "Games Registry | Ascendra",
+      title: "Games Registry ",
       description: "Browse the competitive titles configured for Ascendra.",
     },
     hero: {

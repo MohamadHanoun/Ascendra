@@ -39,7 +39,7 @@ type StatsMessages = {
 const statsMessages: Record<Locale, StatsMessages> = {
   en: {
     metadata: {
-      title: "Stats | Ascendra",
+      title: "Stats",
       description: "Ascendra platform and tournament statistics.",
     },
     hero: {
@@ -66,7 +66,7 @@ const statsMessages: Record<Locale, StatsMessages> = {
 
   ar: {
     metadata: {
-      title: "الإحصائيات | Ascendra",
+      title: "الإحصائيات",
       description: "إحصائيات منصة Ascendra والبطولات.",
     },
     hero: {

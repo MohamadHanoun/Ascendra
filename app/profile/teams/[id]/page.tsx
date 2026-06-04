@@ -140,7 +140,7 @@ type TeamPageMessages = {
 const teamPageMessages: Record<Locale, TeamPageMessages> = {
   en: {
     metadata: {
-      title: "Manage Team | Ascendra",
+      title: "Manage Team ",
       description: "Manage your Ascendra team.",
     },
     hero: {

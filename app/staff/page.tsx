@@ -39,7 +39,7 @@ type StaffMessages = {
 const staffMessages: Record<Locale, StaffMessages> = {
   en: {
     metadata: {
-      title: "Staff | Ascendra",
+      title: "Staff",
       description: "Ascendra staff members.",
     },
     hero: {
@@ -63,7 +63,7 @@ const staffMessages: Record<Locale, StaffMessages> = {
 
   ar: {
     metadata: {
-      title: "الفريق | Ascendra",
+      title: "الفريق",
       description: "أعضاء فريق Ascendra.",
     },
     hero: {

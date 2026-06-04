@@ -66,7 +66,7 @@ type DiscordPageMessages = {
 const discordMessages: Record<Locale, DiscordPageMessages> = {
   en: {
     metadata: {
-      title: "Discord | Ascendra",
+      title: "Discord ",
       description:
         "Ascendra Discord hub with real bot status, role counts, and slash commands.",
     },

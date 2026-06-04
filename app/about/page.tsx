@@ -50,7 +50,7 @@ type AboutMessages = {
 const aboutMessages: Record<Locale, AboutMessages> = {
   en: {
     metadata: {
-      title: "About | Ascendra",
+      title: "About",
       description: "Learn more about Ascendra.",
     },
     hero: {
@@ -108,7 +108,7 @@ const aboutMessages: Record<Locale, AboutMessages> = {
 
   ar: {
     metadata: {
-      title: "حول Ascendra | Ascendra",
+      title: "حول Ascendra",
       description: "تعرّف أكثر على Ascendra.",
     },
     hero: {

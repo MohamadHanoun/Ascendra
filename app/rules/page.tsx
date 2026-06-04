@@ -36,7 +36,7 @@ type RulesMessages = {
 const rulesMessages: Record<Locale, RulesMessages> = {
   en: {
     metadata: {
-      title: "Rules | Ascendra",
+      title: "Rules",
       description: "Ascendra community rules.",
     },
     hero: {
@@ -57,7 +57,7 @@ const rulesMessages: Record<Locale, RulesMessages> = {
 
   ar: {
     metadata: {
-      title: "القواعد | Ascendra",
+      title: "القواعد",
       description: "قواعد مجتمع Ascendra.",
     },
     hero: {

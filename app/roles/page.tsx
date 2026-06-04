@@ -36,7 +36,7 @@ type RolesMessages = {
 const rolesMessages: Record<Locale, RolesMessages> = {
   en: {
     metadata: {
-      title: "Roles | Ascendra",
+      title: "Roles",
       description: "Ascendra community roles.",
     },
     hero: {
@@ -57,7 +57,7 @@ const rolesMessages: Record<Locale, RolesMessages> = {
 
   ar: {
     metadata: {
-      title: "الأدوار | Ascendra",
+      title: "الأدوار",
       description: "أدوار مجتمع Ascendra.",
     },
     hero: {
