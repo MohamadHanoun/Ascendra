@@ -50,6 +50,7 @@ function validateGameForm(formData: FormData) {
   const name = getValue(formData, "name");
   const slug = getValue(formData, "slug");
   const shortName = getValue(formData, "shortName") || null;
+  const description = getValue(formData, "description") || null;
   const platform = getValue(formData, "platform") || null;
   const defaultTeamSize = getInt(formData, "defaultTeamSize", 5);
   const defaultSubstitutes = getInt(formData, "defaultSubstitutes", 0);
@@ -79,13 +80,22 @@ function validateGameForm(formData: FormData) {
 
   return {
     ok: true as const,
-    data: { name, slug, shortName, platform, defaultTeamSize, defaultSubstitutes },
+    data: {
+      name,
+      slug,
+      shortName,
+      description,
+      platform,
+      defaultTeamSize,
+      defaultSubstitutes,
+    },
   };
 }
 
 function revalidateGamePaths() {
   revalidatePath("/admin");
   revalidatePath("/admin/games");
+  revalidatePath("/games");
   revalidatePath("/");
 }
 

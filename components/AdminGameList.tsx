@@ -147,6 +147,9 @@ export default async function AdminGameList() {
                       {game.slug}
                       {game.shortName && <span className="ml-2" style={{ color: "var(--asc-fg-3)", opacity: 0.6 }}>· {game.shortName}</span>}
                     </p>
+                    <p className="mt-2 line-clamp-2 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
+                      {game.description?.trim() || "No description set."}
+                    </p>
                   </div>
 
                   <Pill tone={game.platform ? "blue" : "gray"}>{game.platform ?? "—"}</Pill>
@@ -196,6 +199,17 @@ export default async function AdminGameList() {
                           <input name="slug" required defaultValue={game.slug} className="border px-4 py-3 outline-none transition" style={inputStyle} />
                         </label>
                       </div>
+
+                      <label className="grid gap-2">
+                        <FieldLabel>Description</FieldLabel>
+                        <textarea
+                          name="description"
+                          defaultValue={game.description ?? ""}
+                          placeholder="Short public description for the games registry"
+                          className="min-h-24 resize-y border px-4 py-3 text-sm leading-6 outline-none transition"
+                          style={inputStyle}
+                        />
+                      </label>
 
                       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_140px_140px]">
                         <label className="grid gap-2">

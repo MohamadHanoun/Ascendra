@@ -45,6 +45,16 @@ export default function AdminGameForm() {
             </label>
           </div>
 
+          <label className="grid gap-2">
+            <FieldLabel>Description</FieldLabel>
+            <textarea
+              name="description"
+              placeholder="Short public description for the games registry"
+              className="min-h-24 resize-y border px-4 py-3 text-sm leading-6 outline-none transition"
+              style={inputStyle}
+            />
+          </label>
+
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_200px_160px_160px]">
             <label className="grid gap-2">
               <FieldLabel>Short name</FieldLabel>
