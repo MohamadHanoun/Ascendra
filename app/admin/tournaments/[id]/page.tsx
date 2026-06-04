@@ -16,13 +16,11 @@ import {
   updateTournamentInline,
 } from "@/actions/adminTournamentInlineActions";
 import { auth } from "@/auth";
-import AdminTabNavigation from "@/components/AdminTabNavigation";
+import AdminShell from "@/components/AdminShell";
 import AdminTournamentImageFields from "@/components/AdminTournamentImageFields";
 import AdminTournamentMatchPanel from "@/components/AdminTournamentMatchPanel";
 import AdminTournamentResultsPanel from "@/components/AdminTournamentResultsPanel";
-import Footer from "@/components/Footer";
 import InlineAdminTournamentForm from "@/components/InlineAdminTournamentForm";
-import Navbar from "@/components/Navbar";
 import TournamentLifecycleRefresh from "@/components/TournamentLifecycleRefresh";
 import { syncTournamentLifecycleForTournament } from "@/lib/jobs/tournamentLifecycleJobs";
 import { prisma } from "@/lib/prisma";
@@ -365,11 +363,19 @@ export default async function ManageTournamentPage({
   const isCancelled = tournament.status === "cancelled";
 
   return (
-    <main
-      className="asc-admin-page asc-ambient min-h-screen overflow-hidden"
-      style={{ background: "var(--asc-bg-0)" }}
+    <AdminShell
+      userName={session.user.name}
+      eyebrow="Manage tournament"
+      title={tournament.title}
+      description="Manage tournament setup, registrations, matches, lifecycle controls, and final results."
+      headerMeta={
+        <>
+          <StatusBadge status={tournament.status} />
+          <StatusBadge status={tournament.registrationStatus} />
+          {tournament.game && <Pill tone="violet">{tournament.game.name}</Pill>}
+        </>
+      }
     >
-      <Navbar />
       <TournamentLifecycleRefresh
         registrationOpensAt={
           tournament.registrationOpensAt?.toISOString() ?? null
@@ -381,7 +387,7 @@ export default async function ManageTournamentPage({
         endsAt={tournament.endsAt?.toISOString() ?? null}
       />
 
-      <section className="relative min-h-[480px] overflow-hidden">
+      <section className="hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url("${tournamentImage}")` }}
@@ -459,8 +465,7 @@ export default async function ManageTournamentPage({
         </div>
       </section>
 
-      <section className="relative -mt-12 mx-auto max-w-[1440px] px-6 pb-8 lg:px-10">
-        <AdminTabNavigation activeTab="tournaments" />
+      <section className="hidden">
       </section>
 
       <section className="mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-10">
@@ -1021,7 +1026,6 @@ export default async function ManageTournamentPage({
         </aside>
       </section>
 
-      <Footer />
-    </main>
+    </AdminShell>
   );
 }

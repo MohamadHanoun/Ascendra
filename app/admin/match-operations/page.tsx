@@ -5,8 +5,7 @@ import Link from "next/link";
 
 import { auth } from "@/auth";
 import AdminMatchOperationsRealtime from "@/components/AdminMatchOperationsRealtime";
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
+import AdminShell from "@/components/AdminShell";
 import { prisma } from "@/lib/prisma";
 import {
   normalizeAdminMatchOperationCard,
@@ -300,11 +299,26 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <main className="asc-admin-page asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)" }}>
-      <Navbar />
+    <AdminShell
+      userName={session.user.name}
+      title="Match Operations"
+      description="Live match control across schedules, rooms, check-ins, proofs, and results."
+      headerMeta={
+        <span
+          className="border px-3 py-1 font-bold"
+          style={{
+            borderColor: "var(--asc-line-soft)",
+            background: "var(--asc-bg-2)",
+            color: "var(--asc-fg-3)",
+          }}
+        >
+          {totalActive} active match{totalActive !== 1 ? "es" : ""}
+        </span>
+      }
+    >
 
       {/* Hero */}
-      <section className="relative min-h-[430px] overflow-hidden">
+      <section className="hidden">
         
 
         <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
@@ -673,8 +687,7 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
 
       </section>
 
-      <Footer />
       <AdminMatchOperationsRealtime />
-    </main>
+    </AdminShell>
   );
 }

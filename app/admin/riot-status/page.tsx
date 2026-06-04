@@ -4,8 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
+import AdminShell from "@/components/AdminShell";
 import { getRiotIntegrationReadiness } from "@/lib/riotIntegrationReadiness";
 
 export const runtime = "nodejs";
@@ -113,13 +112,13 @@ export default async function AdminRiotStatusPage() {
   const tournamentMode = rawMode === "production" ? "Production" : "Stub";
 
   return (
-    <main
-      className="asc-admin-page asc-ambient min-h-screen overflow-hidden"
-      style={{ background: "var(--asc-bg-0)" }}
+    <AdminShell
+      userName={session.user.name}
+      title="Riot Status"
+      description="Riot RSO and tournament API configuration. Secrets are never displayed."
     >
-      <Navbar />
 
-      <section className="relative min-h-[430px] overflow-hidden">
+      <section className="hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: 'url("/images/backgrounds/admin-hero.webp")' }}
@@ -319,7 +318,6 @@ export default async function AdminRiotStatusPage() {
 
       </section>
 
-      <Footer />
-    </main>
+    </AdminShell>
   );
 }

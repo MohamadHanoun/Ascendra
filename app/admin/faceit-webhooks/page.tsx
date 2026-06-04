@@ -6,8 +6,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 
 import { auth } from "@/auth";
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
+import AdminShell from "@/components/AdminShell";
 import { getFaceitIntegrationStatus } from "@/lib/faceitIntegrationStatus";
 import { prisma } from "@/lib/prisma";
 import { isCs2Game } from "@/lib/isCs2Game";
@@ -416,10 +415,25 @@ export default async function AdminFaceitWebhooksPage({
   const productionWarnings = getFaceitProductionWarnings(integrationStatus);
 
   return (
-    <main className="asc-admin-page asc-ambient min-h-screen overflow-hidden" style={{ background: "var(--asc-bg-0)" }}>
-      <Navbar />
+    <AdminShell
+      userName={session.user.name}
+      title="FACEIT Status"
+      description="FACEIT integration status and incoming webhook log. Secrets are never displayed."
+      headerMeta={
+        <span
+          className="border px-3 py-1 font-bold"
+          style={{
+            borderColor: "var(--asc-line-soft)",
+            background: "var(--asc-bg-2)",
+            color: "var(--asc-fg-3)",
+          }}
+        >
+          {logs.length} shown of {totalCount} matching
+        </span>
+      }
+    >
 
-      <section className="relative min-h-[430px] overflow-hidden">
+      <section className="hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: 'url("/images/backgrounds/admin-hero.webp")' }}
@@ -940,7 +954,6 @@ export default async function AdminFaceitWebhooksPage({
         )}
       </section>
 
-      <Footer />
-    </main>
+    </AdminShell>
   );
 }

@@ -13,9 +13,9 @@ import AdminRoleForm from "@/components/AdminRoleForm";
 import AdminRoleList from "@/components/AdminRoleList";
 import AdminRuleForm from "@/components/AdminRuleForm";
 import AdminRuleList from "@/components/AdminRuleList";
+import AdminShell from "@/components/AdminShell";
 import AdminStaffForm from "@/components/AdminStaffForm";
 import AdminStaffList from "@/components/AdminStaffList";
-import AdminTabNavigation from "@/components/AdminTabNavigation";
 import AdminMatchesPanel from "@/components/AdminMatchesPanel";
 import AdminTeamReview from "@/components/AdminTeamReview";
 import AdminToast from "@/components/AdminToast";
@@ -519,82 +519,16 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   );
 
   return (
-    <main
-      className="asc-admin-page asc-ambient min-h-screen overflow-hidden"
-      style={{ background: "var(--asc-bg-0)" }}
+    <AdminShell
+      userName={session.user.name}
+      title="Manage Ascendra"
+      description="Control tournaments, registrations, teams, players, content, and community tools from one protected dashboard."
     >
-      <Navbar />
-
-      <section className="asc-admin-hero relative min-h-[430px] overflow-hidden">
-        <div
-          className="asc-admin-hero-image absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: 'url("/images/backgrounds/admin-hero.webp")',
-          }}
-        />
-        <div className="asc-admin-hero-overlay pointer-events-none absolute inset-0" />
-        <div className="asc-admin-hero-bottom pointer-events-none absolute inset-x-0 bottom-0 h-32" />
-
-        <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-24 pt-20 lg:px-10">
-          <p
-            className="mb-4 text-sm font-black uppercase tracking-[0.22em]"
-            style={{ color: "var(--asc-accent)" }}
-          >
-            Ascendra admin panel
-          </p>
-
-          <h1
-            className="max-w-5xl text-5xl font-black uppercase leading-[1.04] tracking-tight md:text-6xl"
-            style={{ color: "var(--asc-fg-0)" }}
-          >
-            Manage Ascendra.
-          </h1>
-
-          <p
-            className="mt-5 max-w-3xl text-base leading-7"
-            style={{ color: "var(--asc-fg-2)" }}
-          >
-            Control tournaments, registrations, teams, players, content, and
-            community tools from one protected dashboard.
-          </p>
-
-          <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
-            <span
-              className="border px-3 py-1 font-black"
-              style={{
-                borderColor: "var(--asc-green-border)",
-                background: "var(--asc-green-bg)",
-                color: "var(--asc-green)",
-              }}
-            >
-              Admin
-            </span>
-
-            <span
-              className="border px-3 py-1 font-bold"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                background: "var(--asc-bg-2)",
-                color: "var(--asc-fg-2)",
-              }}
-            >
-              {session.user.name}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative -mt-12 mx-auto max-w-[1440px] px-6 pb-8 lg:px-10">
-        <AdminTabNavigation activeTab={activeTab} />
-      </section>
-
       {shouldShowGlobalToast && (
         <AdminToast message={params.message} type={toastType} />
       )}
 
       {activeTabContent}
-
-      <Footer />
-    </main>
+    </AdminShell>
   );
 }
