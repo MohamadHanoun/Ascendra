@@ -2,6 +2,31 @@
 
 import { useRef, useState, useTransition } from "react";
 import type { ReactNode } from "react";
+
+export function CopyLinkButton({ label, copiedLabel }: { label: string; copiedLabel: string }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(window.location.href).catch(() => {});
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="border px-4 py-2 text-xs font-black uppercase tracking-[0.10em] transition hover:opacity-80"
+      style={{
+        borderColor: copied ? "var(--asc-green-border)" : "var(--asc-line-soft)",
+        color: copied ? "var(--asc-green)" : "var(--asc-fg-2)",
+        background: "transparent",
+      }}
+    >
+      {copied ? copiedLabel : label}
+    </button>
+  );
+}
 import Link from "next/link";
 import {
   LineChart,

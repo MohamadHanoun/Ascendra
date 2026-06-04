@@ -9,12 +9,15 @@ import { connectFaceitAccount, unlinkFaceitAccount, unlinkRiotAccount, unlinkSte
 import { auth, signOut } from "@/auth";
 import FaceitConnectRow from "@/components/FaceitConnectRow";
 import Footer from "@/components/Footer";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LinkedAccountRow from "@/components/LinkedAccountRow";
 import Navbar from "@/components/Navbar";
 import ProfileIdentityActions from "@/components/ProfileIdentityActions";
 import ProfileNotice from "@/components/ProfileNotice";
 import ProfileRealtime from "@/components/ProfileRealtime";
-import ProfileTabs from "@/components/ProfileTabs";
+import ProfileTabs, { CopyLinkButton } from "@/components/ProfileTabs";
+import PublicThemeToggle from "@/components/PublicThemeToggle";
+import { getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import {
@@ -255,7 +258,7 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       privacyTitle: "Privacy & Visibility",
       privacyDesc: "Control who can see your profile data.",
       preferencesTitle: "Preferences",
-      preferencesDesc: "Appearance, language, and notification settings.",
+      preferencesDesc: "Language, appearance, and your profile link.",
       securityTitle: "Security",
       signOutDesc: "You are currently signed in on this device.",
     },
@@ -413,7 +416,7 @@ const profileMessages: Record<Locale, ProfileMessages> = {
       privacyTitle: "الخصوصية والظهور",
       privacyDesc: "تحكم في من يمكنه رؤية بيانات ملفك الشخصي.",
       preferencesTitle: "التفضيلات",
-      preferencesDesc: "إعدادات المظهر واللغة والإشعارات.",
+      preferencesDesc: "اللغة والمظهر ورابط ملفك الشخصي.",
       securityTitle: "الأمان",
       signOutDesc: "أنت مسجل الدخول حاليًا على هذا الجهاز.",
     },
@@ -1011,6 +1014,12 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
   const rankingPoints = rankingPointsAgg._sum.points ?? 0;
 
+  const navDictionary = getDictionary(locale);
+
+  const copyLinkLabel = locale === "ar" ? "نسخ رابط الملف" : "Copy profile link";
+  const linkCopiedLabel = locale === "ar" ? "تم النسخ!" : "Copied!";
+  const themeLabel = locale === "ar" ? "المظهر" : "Theme";
+
   const pointEvents = rawPointEvents.map((e) => ({
     points: e.points,
     createdAt: e.createdAt.toISOString(),
@@ -1282,26 +1291,46 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         </div>
       </div>
 
-      {/* Preferences placeholder */}
+      {/* Preferences — real controls */}
       <div
-        className="border px-5 py-5"
+        className="border"
         style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
-              {messages.sections.preferencesTitle}
+        <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
+          <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
+            {messages.sections.preferencesTitle}
+          </p>
+          <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+            {messages.sections.preferencesDesc}
+          </p>
+        </div>
+        <div className="grid gap-px" style={{ background: "var(--asc-line-soft)" }}>
+          {/* Language */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--asc-bg-1)] px-5 py-4">
+            <p className="text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
+              {navDictionary.navbar.language.label}
             </p>
-            <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-              {messages.sections.preferencesDesc}
-            </p>
+            <LanguageSwitcher locale={locale} labels={navDictionary.navbar.language} />
           </div>
-          <span
-            className="shrink-0 border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
-            style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-3)" }}
-          >
-            {messages.sections.comingSoon}
-          </span>
+          {/* Theme */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--asc-bg-1)] px-5 py-4">
+            <p className="text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
+              {themeLabel}
+            </p>
+            <PublicThemeToggle />
+          </div>
+          {/* Profile link */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--asc-bg-1)] px-5 py-4">
+            <div>
+              <p className="text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
+                {copyLinkLabel}
+              </p>
+              <p className="mt-0.5 text-xs" style={{ color: "var(--asc-fg-3)" }}>
+                /profile
+              </p>
+            </div>
+            <CopyLinkButton label={copyLinkLabel} copiedLabel={linkCopiedLabel} />
+          </div>
         </div>
       </div>
 
