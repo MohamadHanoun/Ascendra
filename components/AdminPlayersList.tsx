@@ -231,27 +231,27 @@ export default async function AdminPlayersList() {
 
   return (
     <section className="grid gap-6">
-      <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
+          <h2 className="text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
             Players
-          </p>
-
-          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-            Registered players
           </h2>
 
           <p className="mt-3 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
-            Discord accounts, team activity, registrations, and official points.
+            Review player identity, role, membership, and linked accounts.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-5 lg:grid-cols-5">
-          <Stat label="Total" value={playersWithPoints.length} />
-          <Stat label="Members" value={guildMembers.length} />
-          <Stat label="Admins" value={admins.length} />
-          <Stat label="Ranked" value={rankedPlayers.length} />
-          <Stat label="Points" value={totalTournamentPoints} />
+        <div className="flex flex-wrap gap-2 text-sm">
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)" }}>
+            {playersWithPoints.length} total
+          </span>
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}>
+            {guildMembers.length} members
+          </span>
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}>
+            {totalTournamentPoints} points
+          </span>
         </div>
       </div>
 
@@ -262,7 +262,7 @@ export default async function AdminPlayersList() {
         />
       ) : (
         <section
-          className="overflow-hidden border shadow-2xl"
+          className="overflow-hidden border shadow-xl shadow-black/15"
           style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
         >
           <div
@@ -280,7 +280,7 @@ export default async function AdminPlayersList() {
             {playersWithPoints.map((player) => (
               <article
                 key={player.id}
-                className="grid gap-4 px-5 py-4 transition"
+                className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.025]"
                 style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
               >
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_110px_110px_110px_110px] xl:items-center xl:gap-5">
@@ -299,7 +299,7 @@ export default async function AdminPlayersList() {
 
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="truncate text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
+                        <h3 className="truncate text-lg font-black" style={{ color: "var(--asc-fg-0)" }}>
                           {player.username}
                         </h3>
 
@@ -344,7 +344,7 @@ export default async function AdminPlayersList() {
                   style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
                 >
                   <summary
-                    className="cursor-pointer px-4 py-3 text-sm font-black transition hover:opacity-90"
+                    className="cursor-pointer px-4 py-3 text-sm font-black transition hover:bg-white/[0.03]"
                     style={{ color: "var(--asc-fg-2)" }}
                   >
                     Player details

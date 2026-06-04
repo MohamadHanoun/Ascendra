@@ -227,41 +227,40 @@ export default async function AdminTeamReview({
     <section className="grid gap-6">
       <ProfileNotice message={message} error={error} />
 
-      <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
+          <h1 className="text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
             Teams
-          </p>
-
-          <h1 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-            Teams directory
           </h1>
 
           <p className="mt-3 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
-            Review teams, players, registrations, and official tournament
-            results.
+            Review team status, membership, registrations, and delete records when needed.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-5 lg:grid-cols-5">
-          <Stat label="Teams" value={teamsWithStats.length} />
-          <Stat label="Active" value={activeTeams} />
-          <Stat label="Players" value={totalPlayers} />
-          <Stat label="Ranked" value={teamsWithResults} />
-          <Stat label="Points" value={totalTournamentPoints} />
+        <div className="flex flex-wrap gap-2 text-sm">
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)" }}>
+            {teamsWithStats.length} teams
+          </span>
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}>
+            {activeTeams} active
+          </span>
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}>
+            {totalPlayers} players
+          </span>
         </div>
       </div>
 
       {teamsWithStats.length === 0 ? (
         <section
-          className="border p-6 shadow-2xl"
+          className="border p-6 shadow-xl shadow-black/15"
           style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-2)" }}
         >
           No teams found.
         </section>
       ) : (
         <section
-          className="overflow-hidden border shadow-2xl"
+          className="overflow-hidden border shadow-xl shadow-black/15"
           style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
         >
           <div
@@ -279,13 +278,13 @@ export default async function AdminTeamReview({
             {teamsWithStats.map((team) => (
               <article
                 key={team.id}
-                className="grid gap-4 px-5 py-4 transition"
+                className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.025]"
                 style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
               >
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_110px_110px_110px_110px] xl:items-center xl:gap-5">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="truncate text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
+                      <h2 className="truncate text-lg font-black" style={{ color: "var(--asc-fg-0)" }}>
                         {team.name}
                       </h2>
 
@@ -321,7 +320,7 @@ export default async function AdminTeamReview({
                   style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
                 >
                   <summary
-                    className="cursor-pointer px-4 py-3 text-sm font-black transition hover:opacity-90"
+                    className="cursor-pointer px-4 py-3 text-sm font-black transition hover:bg-white/[0.03]"
                     style={{ color: "var(--asc-fg-2)" }}
                   >
                     Team details and actions

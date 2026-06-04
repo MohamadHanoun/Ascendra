@@ -159,40 +159,39 @@ export default async function AdminMatchesPanel() {
 
   return (
     <section className="grid gap-6">
-      <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <p
-            className="text-sm font-black uppercase tracking-[0.18em]"
-            style={{ color: "var(--asc-accent)" }}
-          >
-            Manage matches
-          </p>
-
           <h2
-            className="mt-2 text-3xl font-black"
+            className="text-2xl font-black"
             style={{ color: "var(--asc-fg-0)" }}
           >
-            Tournament matches
+            Matches
           </h2>
 
           <p
             className="mt-3 max-w-3xl text-sm leading-6"
             style={{ color: "var(--asc-fg-3)" }}
           >
-            Overview of all match brackets. Open a tournament to manage details.
+            Review tournament brackets and jump into a match when it needs attention.
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-5">
-          <Stat label="Tournaments" value={tournaments.length} />
-          <Stat label="With matches" value={tournamentsWithMatches} />
-          <Stat label="Matches" value={totalMatches} />
+        <div className="flex flex-wrap gap-2 text-sm">
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)" }}>
+            {tournaments.length} tournaments
+          </span>
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}>
+            {tournamentsWithMatches} with matches
+          </span>
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}>
+            {totalMatches} matches
+          </span>
         </div>
       </div>
 
       {tournaments.length === 0 ? (
         <div
-          className="border p-6 shadow-2xl shadow-black/20"
+          className="border p-6 shadow-xl shadow-black/15"
           style={{
             borderColor: "var(--asc-line-soft)",
             background: "var(--asc-bg-1)",
@@ -202,22 +201,22 @@ export default async function AdminMatchesPanel() {
           No tournaments found.
         </div>
       ) : (
-        <div className="grid gap-5">
-          {tournaments.map((tournament, index) => {
-            const matches = tournament.tournamentMatches;
+          <div className="grid gap-4">
+            {tournaments.map((tournament, index) => {
+              const matches = tournament.tournamentMatches;
 
-            return (
-              <details
-                key={tournament.id}
-                open={index === 0}
-                className="group overflow-hidden border shadow-2xl shadow-black/20"
+              return (
+                <details
+                  key={tournament.id}
+                  open={index === 0}
+                  className="group overflow-hidden border shadow-xl shadow-black/15"
                 style={{
                   borderColor: "var(--asc-line-soft)",
                   background: "var(--asc-bg-1)",
                 }}
               >
                 <summary
-                  className="flex cursor-pointer list-none flex-col gap-4 px-5 py-4 transition hover:bg-white/[0.035] lg:flex-row lg:items-center lg:justify-between"
+                  className="flex cursor-pointer list-none flex-col gap-3 px-5 py-4 transition hover:bg-white/[0.025] lg:flex-row lg:items-center lg:justify-between"
                   style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                 >
                   <div className="min-w-0">
@@ -229,7 +228,7 @@ export default async function AdminMatchesPanel() {
                     </p>
 
                     <h3
-                      className="mt-1 truncate text-xl font-black"
+                      className="mt-1 truncate text-lg font-black"
                       style={{ color: "var(--asc-fg-0)" }}
                     >
                       {tournament.title}
@@ -295,7 +294,6 @@ export default async function AdminMatchesPanel() {
                     </div>
                   ) : (
                     <div className="grid gap-2">
-                      {/* Column headers */}
                       <div
                         className="grid items-center gap-3 px-3 py-2 md:grid-cols-[60px_minmax(0,1fr)_110px_44px_100px]"
                         style={{
@@ -330,7 +328,7 @@ export default async function AdminMatchesPanel() {
                         return (
                           <div
                             key={match.id}
-                            className="grid items-center gap-3 border px-3 py-2.5 transition hover:bg-white/[0.02] md:grid-cols-[60px_minmax(0,1fr)_110px_44px_100px]"
+                            className="grid items-center gap-3 border px-3 py-2.5 transition hover:bg-white/[0.025] md:grid-cols-[60px_minmax(0,1fr)_110px_44px_100px]"
                             style={{ borderColor: "var(--asc-line-soft)" }}
                           >
                             <div className="flex flex-wrap gap-1">
