@@ -1453,7 +1453,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           </div>
         </section>
 
-        <section className="relative -mt-16 mx-auto max-w-[1440px] px-6 pb-20 lg:px-10">
+        <section className="relative z-20 -mt-16 mx-auto max-w-[1440px] px-6 pb-20 lg:px-10">
           <ProfileTabs
             tournamentResults={serializedResults}
             teams={teams.map((team) => ({

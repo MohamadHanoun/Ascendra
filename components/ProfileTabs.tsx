@@ -838,41 +838,41 @@ export default function ProfileTabs(props: ProfileTabsProps) {
   ];
 
   return (
-    <div>
-      <div
-        className="mb-8 overflow-x-auto"
-        style={{ borderBottom: "2px solid var(--asc-line-soft)" }}
+    <div className="relative z-20">
+      <nav
+        className="relative z-20 mb-6 flex flex-wrap"
+        style={{ pointerEvents: "auto" }}
       >
-        <div className="flex min-w-max">
-          {tabs.map((tab) => {
-            const isActive = tab.id === activeTab;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className="flex shrink-0 items-center gap-2.5 px-5 py-4 text-xs font-black uppercase tracking-[0.12em] transition-colors"
-                style={{
-                  color: isActive ? "var(--asc-fg-0)" : "var(--asc-fg-3)",
-                  background: isActive ? "var(--asc-accent-dim)" : "transparent",
-                  borderBottom: isActive ? "2px solid var(--asc-accent)" : "2px solid transparent",
-                  marginBottom: -2,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {tab.label}
-                {tab.badge !== undefined && tab.badge > 0 && (
-                  <span
-                    className="inline-flex h-[18px] min-w-[18px] items-center justify-center px-1 text-[9px] font-black"
-                    style={{ background: "var(--asc-accent)", color: "#000" }}
-                  >
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+        {tabs.map((tab) => {
+          const isActive = tab.id === activeTab;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className="flex w-1/3 cursor-pointer items-center justify-center gap-2 whitespace-nowrap px-2 text-[10px] tracking-[0.06em] font-black uppercase transition-colors sm:w-auto sm:justify-start sm:px-5 sm:text-xs sm:tracking-[0.12em]"
+              style={{
+                height: 48,
+                pointerEvents: "auto",
+                color: isActive ? "var(--asc-fg-0)" : "var(--asc-fg-3)",
+                background: isActive ? "var(--asc-accent-dim)" : "transparent",
+                borderBottom: "1px solid var(--asc-line-soft)",
+                boxShadow: isActive ? "inset 0 -3px 0 var(--asc-accent)" : "none",
+              }}
+            >
+              {tab.label}
+              {tab.badge !== undefined && tab.badge > 0 && (
+                <span
+                  className="inline-flex h-[18px] min-w-[18px] items-center justify-center px-1 text-[9px] font-black"
+                  style={{ background: "var(--asc-accent)", color: "#000" }}
+                >
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
 
       {activeTab === "overview" && (
         <OverviewTab
