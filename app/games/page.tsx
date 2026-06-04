@@ -119,7 +119,7 @@ const gamesMessages: Record<Locale, GamesMessages> = {
   },
   ar: {
     metadata: {
-      title: "سجل الألعاب | Ascendra",
+      title: "سجل الألعاب",
       description: "استعرض الألعاب التنافسية المُعدَّة لبطولات Ascendra.",
     },
     hero: {
