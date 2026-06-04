@@ -891,7 +891,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     redirect("/login");
   }
 
-  const [teams, invitations, tournamentResults, dbGames, linkedAccounts, activeMatches, rankingPointsAgg] = await Promise.all(
+  const [teams, invitations, tournamentResults, dbGames, linkedAccounts, activeMatches, rankingPointsAgg, rawPointEvents] = await Promise.all(
     [
       prisma.team.findMany({
         where: {
@@ -1000,10 +1000,21 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         where: { userId: user.id },
         _sum: { points: true },
       }),
+
+      prisma.rankingPointEvent.findMany({
+        where: { userId: user.id },
+        select: { points: true, createdAt: true },
+        orderBy: { createdAt: "asc" },
+      }),
     ],
   );
 
   const rankingPoints = rankingPointsAgg._sum.points ?? 0;
+
+  const pointEvents = rawPointEvents.map((e) => ({
+    points: e.points,
+    createdAt: e.createdAt.toISOString(),
+  }));
 
   const bestPlacement =
     tournamentResults.length > 0
@@ -1497,6 +1508,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             rankingPoints={rankingPoints}
             bestPlacement={bestPlacement}
             activeMatchesCount={activeMatches.length}
+            pointEvents={pointEvents}
           />
         </section>
 

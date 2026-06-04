@@ -18,6 +18,8 @@ import ConfirmDialogPortal from "@/components/ConfirmDialogPortal";
 
 type TabId = "overview" | "teams" | "history" | "matches" | "achievements" | "account";
 
+type PointEvent = { points: number; createdAt: string };
+
 type TournamentResult = {
   id: string;
   placement: number;
@@ -145,6 +147,7 @@ type ProfileTabsProps = {
   rankingPoints: number;
   bestPlacement: number | null;
   activeMatchesCount: number;
+  pointEvents: PointEvent[];
 };
 
 function getCount(n: number, singular: string, plural: string) {
@@ -237,13 +240,14 @@ function OverviewTab({
   tournamentResults,
   teams,
   invitations,
+  pointEvents,
   rankingPoints,
   bestPlacement,
   labels,
   sectionLabels,
   heroLabels,
   onNavigate,
-}: Pick<ProfileTabsProps, "tournamentResults" | "teams" | "invitations" | "rankingPoints" | "bestPlacement" | "labels" | "sectionLabels" | "heroLabels"> & {
+}: Pick<ProfileTabsProps, "tournamentResults" | "teams" | "invitations" | "pointEvents" | "rankingPoints" | "bestPlacement" | "labels" | "sectionLabels" | "heroLabels"> & {
   onNavigate: (tab: TabId) => void;
 }) {
   const stats: Array<{ label: string; value: string; accent?: boolean }> = [
@@ -252,6 +256,14 @@ function OverviewTab({
     { label: labels.best, value: bestPlacement ? `#${bestPlacement}` : "—" },
     { label: heroLabels.teams, value: String(teams.length) },
   ];
+
+  const chartData = pointEvents.map((e, i) => {
+    const cumPoints = pointEvents.slice(0, i + 1).reduce((s, x) => s + x.points, 0);
+    return {
+      name: new Date(e.createdAt).toLocaleDateString("en-GB", { month: "short", day: "2-digit" }),
+      points: cumPoints,
+    };
+  });
 
   return (
     <div className="grid gap-6">
@@ -300,29 +312,55 @@ function OverviewTab({
         ))}
       </div>
 
-      {tournamentResults.length === 0 ? (
-        <div
-          className="border p-10 text-center"
-          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
-        >
-          <p
-            className="text-sm font-black uppercase tracking-[0.12em]"
-            style={{ color: "var(--asc-fg-3)", opacity: 0.6 }}
-          >
-            {sectionLabels.noTournamentResults}
-          </p>
-          <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-            {sectionLabels.noActivityDesc}
-          </p>
-          <Link
-            href="/tournaments"
-            className="mt-6 inline-flex border px-5 py-2.5 text-sm font-black uppercase tracking-[0.10em] transition hover:opacity-80"
-            style={{ borderColor: "var(--asc-accent-border)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
-          >
-            {sectionLabels.browseTournaments} →
-          </Link>
+      {/* Chart — shown whenever point events exist, regardless of tournament results */}
+      {chartData.length > 0 && (
+        <div className="border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
+          <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
+            <p
+              className="text-[10px] font-black uppercase tracking-[0.16em]"
+              style={{ color: "var(--asc-accent)" }}
+            >
+              ▲ {sectionLabels.performanceEyebrow}
+            </p>
+            <h3
+              className="mt-1 text-base font-black uppercase"
+              style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+            >
+              {sectionLabels.pointHistoryTitle}
+            </h3>
+          </div>
+          <div className="p-5">
+            <ResponsiveContainer width="100%" height={140}>
+              <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                <CartesianGrid stroke="var(--asc-line-soft)" strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 10, fill: "var(--asc-fg-3)", fontFamily: "Barlow, sans-serif", fontWeight: 700 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: "var(--asc-fg-3)", fontFamily: "Barlow, sans-serif", fontWeight: 700 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip content={<CustomTooltip ptsLabel={sectionLabels.tableColPts} />} />
+                <Line
+                  type="monotone"
+                  dataKey="points"
+                  stroke="var(--asc-accent)"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4, fill: "var(--asc-accent)", strokeWidth: 0 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      ) : (
+      )}
+
+      {/* Recent tournament results, or empty state */}
+      {tournamentResults.length > 0 ? (
         <div className="border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
           <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
             <p
@@ -369,6 +407,28 @@ function OverviewTab({
             </button>
           )}
         </div>
+      ) : (
+        <div
+          className="border p-10 text-center"
+          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+        >
+          <p
+            className="text-sm font-black uppercase tracking-[0.12em]"
+            style={{ color: "var(--asc-fg-3)", opacity: 0.6 }}
+          >
+            {sectionLabels.noTournamentResults}
+          </p>
+          <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+            {sectionLabels.noActivityDesc}
+          </p>
+          <Link
+            href="/tournaments"
+            className="mt-6 inline-flex border px-5 py-2.5 text-sm font-black uppercase tracking-[0.10em] transition hover:opacity-80"
+            style={{ borderColor: "var(--asc-accent-border)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
+          >
+            {sectionLabels.browseTournaments} →
+          </Link>
+        </div>
       )}
     </div>
   );
@@ -376,15 +436,14 @@ function OverviewTab({
 
 function HistoryTab({
   tournamentResults,
+  pointEvents,
   labels,
   sectionLabels,
-}: Pick<ProfileTabsProps, "tournamentResults" | "labels" | "sectionLabels">) {
-  const recent = tournamentResults.slice(0, 10);
-  const chronological = recent.slice().reverse();
-  const chartData = chronological.map((r, i) => {
-    const cumPoints = chronological.slice(0, i + 1).reduce((s, x) => s + x.points, 0);
+}: Pick<ProfileTabsProps, "tournamentResults" | "pointEvents" | "labels" | "sectionLabels">) {
+  const chartData = pointEvents.map((e, i) => {
+    const cumPoints = pointEvents.slice(0, i + 1).reduce((s, x) => s + x.points, 0);
     return {
-      name: new Date(r.awardedAt).toLocaleDateString("en-GB", { month: "short", day: "2-digit" }),
+      name: new Date(e.createdAt).toLocaleDateString("en-GB", { month: "short", day: "2-digit" }),
       points: cumPoints,
     };
   });
@@ -887,6 +946,7 @@ export default function ProfileTabs(props: ProfileTabsProps) {
           tournamentResults={props.tournamentResults}
           teams={props.teams}
           invitations={props.invitations}
+          pointEvents={props.pointEvents}
           rankingPoints={props.rankingPoints}
           bestPlacement={props.bestPlacement}
           labels={props.labels}
@@ -911,6 +971,7 @@ export default function ProfileTabs(props: ProfileTabsProps) {
       {activeTab === "history" && (
         <HistoryTab
           tournamentResults={props.tournamentResults}
+          pointEvents={props.pointEvents}
           labels={props.labels}
           sectionLabels={props.sectionLabels}
         />
