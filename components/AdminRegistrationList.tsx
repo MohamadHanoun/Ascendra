@@ -101,17 +101,6 @@ function DiscordRoleBadge({ status }: { status: string }) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
-    </div>
-  );
-}
-
 function formatDate(date: Date | null) {
   if (!date) {
     return "Not reviewed";
@@ -396,10 +385,6 @@ export default async function AdminRegistrationList({
     (registration) => registration.status === "approved",
   ).length;
 
-  const rejectedCount = registrations.filter(
-    (registration) => registration.status === "rejected",
-  ).length;
-
   const botQueueCount = registrations.filter((registration) =>
     ["pending_create", "pending_remove", "failed"].includes(
       registration.discordRoleStatus,
@@ -411,14 +396,10 @@ export default async function AdminRegistrationList({
       <ProfileNotice message={message} error={error} />
       <AdminRegistrationsRealtime />
 
-      <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
+          <h1 className="text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
             Registrations
-          </p>
-
-          <h1 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-            Tournament registrations
           </h1>
 
           <p className="mt-3 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
@@ -426,29 +407,33 @@ export default async function AdminRegistrationList({
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-5 lg:grid-cols-5">
-          <Stat label="Total" value={registrations.length} />
-          <Stat label="Pending" value={pendingCount} />
-          <Stat label="Approved" value={approvedCount} />
-          <Stat label="Rejected" value={rejectedCount} />
-          <Stat label="Bot queue" value={botQueueCount} />
+        <div className="flex flex-wrap gap-2 text-sm">
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: pendingCount > 0 ? "var(--asc-amber-border)" : "var(--asc-line-soft)", background: pendingCount > 0 ? "var(--asc-amber-bg)" : "transparent", color: pendingCount > 0 ? "var(--asc-amber)" : "var(--asc-fg-3)" }}>
+            {pendingCount} pending
+          </span>
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}>
+            {approvedCount} approved
+          </span>
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: botQueueCount > 0 ? "var(--asc-blue-border)" : "var(--asc-line-soft)", background: botQueueCount > 0 ? "var(--asc-blue-bg)" : "transparent", color: botQueueCount > 0 ? "var(--asc-blue)" : "var(--asc-fg-3)" }}>
+            {botQueueCount} bot queue
+          </span>
         </div>
       </div>
 
       {sortedRegistrations.length === 0 ? (
         <section
-          className="border p-6 shadow-2xl"
+          className="border p-6 shadow-xl shadow-black/15"
           style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", color: "var(--asc-fg-2)" }}
         >
           No tournament registrations found.
         </section>
       ) : (
         <section
-          className="overflow-hidden border shadow-2xl"
+          className="overflow-hidden border shadow-xl shadow-black/15"
           style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
         >
           <div
-            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_120px_120px_170px] xl:gap-5"
+            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_120px_120px_190px] xl:gap-5"
             style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-3)" }}
           >
             <span>Team</span>
@@ -526,10 +511,10 @@ export default async function AdminRegistrationList({
               return (
                 <article
                   key={registration.id}
-                  className="grid gap-4 px-5 py-4 transition"
+                  className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.025]"
                   style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                 >
-                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_120px_120px_170px] xl:items-center xl:gap-5">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_120px_120px_190px] xl:items-center xl:gap-5">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="truncate text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
@@ -635,7 +620,7 @@ export default async function AdminRegistrationList({
                       className="cursor-pointer px-4 py-3 text-sm font-black transition hover:opacity-90"
                       style={{ color: "var(--asc-fg-2)" }}
                     >
-                      More details
+                      Review details and actions
                     </summary>
 
                     <div className="grid gap-5 p-4 lg:grid-cols-[1fr_1fr_220px]" style={{ borderTop: "1px solid var(--asc-line-soft)" }}>

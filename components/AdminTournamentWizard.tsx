@@ -239,24 +239,26 @@ export default function AdminTournamentWizard({
   }
 
   return (
-    <section
-      className="overflow-hidden border shadow-2xl shadow-black/20"
+    <details
+      open={isDuplicate}
+      className="group overflow-hidden border shadow-xl shadow-black/15"
       style={{
         borderColor: "var(--asc-line-soft)",
         background: "var(--asc-bg-1)",
       }}
     >
       {/* ── Header ── */}
-      <div
-        className="px-5 py-4"
+      <summary
+        className="flex cursor-pointer list-none flex-col gap-3 px-5 py-4 transition hover:bg-white/[0.025] md:flex-row md:items-center md:justify-between"
         style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
       >
-        <div className="flex items-center gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
           <p
             className="text-xs font-black uppercase tracking-[0.16em]"
             style={{ color: "var(--asc-accent)" }}
           >
-            Tournaments
+            Tournament setup
           </p>
 
           {isDuplicate && (
@@ -271,10 +273,10 @@ export default function AdminTournamentWizard({
               Duplicate
             </span>
           )}
-        </div>
+          </div>
 
         <h2
-          className="mt-1 text-xl font-black"
+          className="mt-1 text-lg font-black"
           style={{ color: "var(--asc-fg-0)" }}
         >
           {isDuplicate ? "Duplicate tournament" : "Create tournament"}
@@ -289,7 +291,28 @@ export default function AdminTournamentWizard({
             publishing.
           </p>
         )}
-      </div>
+        {!isDuplicate && (
+          <p
+            className="mt-1 max-w-2xl text-sm leading-6"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            Open this panel only when you need to create a new tournament.
+          </p>
+        )}
+        </div>
+
+        <span
+          className="inline-flex w-fit items-center border px-4 py-2 text-xs font-black uppercase tracking-[0.1em]"
+          style={{
+            borderColor: "var(--asc-accent-border)",
+            background: "var(--asc-accent-dim)",
+            color: "var(--asc-accent)",
+          }}
+        >
+          <span className="group-open:hidden">Open form</span>
+          <span className="hidden group-open:inline">Hide form</span>
+        </span>
+      </summary>
 
       {/* ── Step progress bar ── */}
       <div
@@ -762,6 +785,6 @@ export default function AdminTournamentWizard({
           </div>
         )}
       </form>
-    </section>
+    </details>
   );
 }

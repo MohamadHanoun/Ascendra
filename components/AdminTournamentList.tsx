@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { prisma } from "@/lib/prisma";
-import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
 type Tone = "green" | "yellow" | "red" | "blue" | "gray" | "violet";
 
@@ -34,15 +33,6 @@ function StatusBadge({ status }: { status: string }) {
     <span className="inline-flex w-fit border px-3 py-1 text-xs font-black capitalize" style={toneStyleMap[tone]}>
       {status}
     </span>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>{label}</p>
-      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
-    </div>
   );
 }
 
@@ -84,9 +74,8 @@ export default async function AdminTournamentList() {
     select: {
       id: true,
       title: true,
-      game: { select: { name: true, slug: true } },
+      game: { select: { name: true } },
       startsAt: true,
-      imageUrl: true,
       maxTeams: true,
       teamSize: true,
       status: true,
@@ -114,31 +103,26 @@ export default async function AdminTournamentList() {
     0,
   );
 
-  const totalApproved = tournaments.reduce(
-    (total, t) => total + t.registrations.filter((r) => r.status === "approved").length,
-    0,
-  );
-
-  const totalResults = tournaments.reduce((total, t) => total + t.results.length, 0);
-
   return (
     <section className="grid gap-6">
-      <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--asc-accent)" }}>
-            Manage tournaments
-          </p>
-          <h2 className="mt-2 text-3xl font-black" style={{ color: "var(--asc-fg-0)" }}>Tournament list</h2>
+          <h2 className="text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>Tournaments</h2>
           <p className="mt-3 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
             Open a tournament to manage details, registrations, and results.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
-          <Stat label="Tournaments" value={tournaments.length} />
-          <Stat label="Open" value={openTournaments} />
-          <Stat label="Approved" value={totalApproved} />
-          <Stat label="Pending" value={pendingApplications} />
+        <div className="flex flex-wrap gap-2 text-sm">
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)" }}>
+            {tournaments.length} tournaments
+          </span>
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" }}>
+            {openTournaments} open
+          </span>
+          <span className="border px-3 py-2 font-bold" style={{ borderColor: pendingApplications > 0 ? "var(--asc-amber-border)" : "var(--asc-line-soft)", background: pendingApplications > 0 ? "var(--asc-amber-bg)" : "transparent", color: pendingApplications > 0 ? "var(--asc-amber)" : "var(--asc-fg-3)" }}>
+            {pendingApplications} pending
+          </span>
         </div>
       </div>
 
@@ -149,14 +133,12 @@ export default async function AdminTournamentList() {
       ) : (
         <section className="overflow-hidden border shadow-2xl shadow-black/20" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
           <div
-            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[90px_minmax(0,1fr)_170px_220px_150px_120px] xl:gap-5"
+            className="hidden px-5 py-3 text-xs font-black uppercase tracking-[0.14em] xl:grid xl:grid-cols-[minmax(0,1fr)_170px_220px_140px] xl:gap-5"
             style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-table-head-bg)", color: "var(--asc-fg-3)" }}
           >
-            <span>Image</span>
             <span>Tournament</span>
             <span>Status</span>
-            <span>Slots</span>
-            <span>Activity</span>
+            <span>Teams</span>
             <span>Action</span>
           </div>
 
@@ -167,23 +149,14 @@ export default async function AdminTournamentList() {
               const rejectedCount = tournament.registrations.filter((r) => r.status === "rejected").length;
               const applications = tournament.registrations.length;
               const remainingSlots = Math.max(tournament.maxTeams - approvedSlots, 0);
-              const tournamentImage = getTournamentImageUrl(tournament.game?.slug ?? null, tournament.imageUrl);
               const tournamentPoints = tournament.results.reduce((total, r) => total + r.points, 0);
 
               return (
                 <article
                   key={tournament.id}
-                  className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.035] xl:grid-cols-[90px_minmax(0,1fr)_170px_220px_150px_120px] xl:items-center xl:gap-5"
+                  className="grid gap-4 px-5 py-4 transition hover:bg-white/[0.025] xl:grid-cols-[minmax(0,1fr)_170px_220px_140px] xl:items-center xl:gap-5"
                   style={idx < sortedTournaments.length - 1 ? { borderBottom: "1px solid var(--asc-line-soft)" } : {}}
                 >
-                  <div
-                    className="h-16 border bg-cover bg-center xl:w-[90px]"
-                    style={{
-                      borderColor: "var(--asc-line-soft)",
-                      backgroundImage: `var(--asc-image-scrim), url("${tournamentImage}")`,
-                    }}
-                  />
-
                   <div className="min-w-0">
                     <h3 className="truncate text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>{tournament.title}</h3>
                     <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
@@ -200,11 +173,11 @@ export default async function AdminTournamentList() {
                   <div className="grid gap-2">
                     <ProgressBar approvedSlots={approvedSlots} maxSlots={tournament.maxTeams} />
                     <p className="text-xs font-bold" style={{ color: "var(--asc-fg-3)" }}>
-                      {remainingSlots} slot{remainingSlots === 1 ? "" : "s"} left
+                      {applications} application{applications === 1 ? "" : "s"} - {pendingCount} pending - {remainingSlots} slot{remainingSlots === 1 ? "" : "s"} left
                     </p>
                   </div>
 
-                  <div className="grid gap-1 text-sm">
+                  <div className="hidden">
                     <p className="font-bold" style={{ color: "var(--asc-fg-0)" }}>
                       {applications} application{applications === 1 ? "" : "s"}
                     </p>
@@ -239,12 +212,6 @@ export default async function AdminTournamentList() {
             })}
           </div>
         </section>
-      )}
-
-      {totalResults > 0 && (
-        <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
-          Saved tournament results: <span className="font-black" style={{ color: "var(--asc-fg-0)" }}>{totalResults}</span>
-        </p>
       )}
     </section>
   );
