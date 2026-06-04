@@ -65,25 +65,17 @@ const allowedTabs = [
 
 async function getAdminOverview(): Promise<AdminOverviewData> {
   const [
-    tournamentsCount,
-    openRegistrationTournamentsCount,
-    usersCount,
-    teamsCount,
     pendingRegistrationsCount,
-    tournamentMatchesCount,
-    tournamentResultsCount,
-    tournamentPoints,
-    publishedAnnouncementsCount,
-    announcementsCount,
-    rulesCount,
-    rolesCount,
-    staffCount,
-    recentTournaments,
-    recentRegistrations,
-    recentAnnouncements,
-    recentMatches,
+    openTournamentsCount,
+    playersCount,
+    teamsCount,
+    activeMatchesCount,
   ] = await Promise.all([
-    prisma.tournament.count(),
+    prisma.tournamentRegistration.count({
+      where: {
+        status: "registered",
+      },
+    }),
     prisma.tournament.count({
       where: {
         registrationStatus: "open",
@@ -91,179 +83,54 @@ async function getAdminOverview(): Promise<AdminOverviewData> {
     }),
     prisma.user.count(),
     prisma.team.count(),
-    prisma.tournamentRegistration.count({
-      where: {
-        status: "registered",
-      },
-    }),
     prisma.tournamentMatch.count({
       where: {
         isBye: false,
-      },
-    }),
-    prisma.tournamentResult.count(),
-    prisma.tournamentResult.aggregate({
-      _sum: {
-        points: true,
-      },
-    }),
-    prisma.announcement.count({
-      where: {
-        published: true,
-      },
-    }),
-    prisma.announcement.count(),
-    prisma.rule.count({
-      where: {
-        isActive: true,
-      },
-    }),
-    prisma.role.count({
-      where: {
-        isActive: true,
-      },
-    }),
-    prisma.staffMember.count({
-      where: {
-        isActive: true,
-      },
-    }),
-    prisma.tournament.findMany({
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        registrationStatus: true,
-        startsAt: true,
-        updatedAt: true,
-        game: {
-          select: {
-            name: true,
-          },
-        },
-        _count: {
-          select: {
-            registrations: true,
-            tournamentMatches: true,
-          },
+        status: {
+          in: [
+            "scheduled",
+            "ready",
+            "room_created",
+            "in_progress",
+            "result_pending",
+            "disputed",
+          ],
         },
       },
-      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
-      take: 4,
-    }),
-    prisma.tournamentRegistration.findMany({
-      select: {
-        id: true,
-        status: true,
-        createdAt: true,
-        team: {
-          select: {
-            name: true,
-          },
-        },
-        tournament: {
-          select: {
-            title: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
-    prisma.announcement.findMany({
-      select: {
-        id: true,
-        title: true,
-        category: true,
-        published: true,
-        important: true,
-        createdAt: true,
-      },
-      orderBy: [{ important: "desc" }, { createdAt: "desc" }],
-      take: 4,
-    }),
-    prisma.tournamentMatch.findMany({
-      select: {
-        id: true,
-        tournamentId: true,
-        roundNumber: true,
-        matchNumber: true,
-        status: true,
-        scheduledAt: true,
-        updatedAt: true,
-        tournament: {
-          select: {
-            title: true,
-          },
-        },
-      },
-      where: {
-        isBye: false,
-      },
-      orderBy: [{ scheduledAt: "asc" }, { updatedAt: "desc" }],
-      take: 5,
     }),
   ]);
-
-  const totalTournamentPoints = tournamentPoints._sum.points || 0;
-  const activeContentCount =
-    publishedAnnouncementsCount + rulesCount + rolesCount + staffCount;
 
   return {
     stats: [
       {
         label: "Pending registrations",
         value: pendingRegistrationsCount,
-        description: "Team applications waiting for review.",
+        description: "Waiting for admin review",
         tone: pendingRegistrationsCount > 0 ? "amber" : "green",
       },
       {
-        label: "Open registration",
-        value: openRegistrationTournamentsCount,
-        description: "Tournaments currently accepting teams.",
-        tone: openRegistrationTournamentsCount > 0 ? "green" : "gray",
+        label: "Open tournaments",
+        value: openTournamentsCount,
+        description: "Accepting team registrations",
+        tone: openTournamentsCount > 0 ? "green" : "gray",
       },
       {
         label: "Players",
-        value: usersCount,
-        description: "Discord-authenticated player accounts.",
+        value: playersCount,
+        description: "Discord-authenticated accounts",
         tone: "gold",
       },
       {
         label: "Teams",
         value: teamsCount,
-        description: "Created teams across Ascendra.",
+        description: "Player-created teams",
         tone: "gold",
-      },
-      {
-        label: "Matches",
-        value: tournamentMatchesCount,
-        description: "Generated tournament match records.",
-        tone: "blue",
-      },
-      {
-        label: "Tournament points",
-        value: totalTournamentPoints,
-        description: "Official ranking points awarded.",
-        tone: "violet",
-      },
-      {
-        label: "Public content",
-        value: activeContentCount,
-        description: "Published announcements and active content records.",
-        tone: "gold",
-      },
-      {
-        label: "Results",
-        value: tournamentResultsCount,
-        description: "Saved official tournament results.",
-        tone: "green",
       },
     ],
-    priorityActions: [
+    attentionActions: [
       {
         title: "Review registrations",
-        description: "Approve valid teams and reject incomplete applications.",
+        description: "Approve teams or reject incomplete applications.",
         href: "/admin?tab=registrations",
         label:
           pendingRegistrationsCount > 0
@@ -273,62 +140,19 @@ async function getAdminOverview(): Promise<AdminOverviewData> {
       },
       {
         title: "Manage tournaments",
-        description: "Create, publish, schedule, and monitor competitions.",
+        description: "Create, publish, and update tournament status.",
         href: "/admin?tab=tournaments",
-        label: `${openRegistrationTournamentsCount} open`,
-        tone: openRegistrationTournamentsCount > 0 ? "green" : "gold",
+        label: `${openTournamentsCount} open`,
+        tone: openTournamentsCount > 0 ? "green" : "gold",
       },
       {
         title: "Monitor matches",
-        description: "Check brackets, match rooms, check-ins, and results.",
+        description: "Check live match operations, disputes, and results.",
         href: "/admin/match-operations",
-        label: `${tournamentMatchesCount} matches`,
+        label: `${activeMatchesCount} active`,
         tone: "blue",
       },
-      {
-        title: "Update public content",
-        description: "Keep announcements, rules, roles, staff, and games current.",
-        href: "/admin?tab=announcements",
-        label: `${publishedAnnouncementsCount}/${announcementsCount} published`,
-        tone: "gold",
-      },
     ],
-    recentTournaments: recentTournaments.map((tournament) => ({
-      id: tournament.id,
-      title: tournament.title,
-      status: tournament.status,
-      registrationStatus: tournament.registrationStatus,
-      startsAt: tournament.startsAt,
-      updatedAt: tournament.updatedAt,
-      gameName: tournament.game?.name ?? null,
-      registrationsCount: tournament._count.registrations,
-      matchesCount: tournament._count.tournamentMatches,
-    })),
-    recentRegistrations: recentRegistrations.map((registration) => ({
-      id: registration.id,
-      status: registration.status,
-      createdAt: registration.createdAt,
-      teamName: registration.team.name,
-      tournamentTitle: registration.tournament.title,
-    })),
-    recentAnnouncements: recentAnnouncements.map((announcement) => ({
-      id: announcement.id,
-      title: announcement.title,
-      category: announcement.category,
-      published: announcement.published,
-      important: announcement.important,
-      createdAt: announcement.createdAt,
-    })),
-    recentMatches: recentMatches.map((match) => ({
-      id: match.id,
-      tournamentId: match.tournamentId,
-      tournamentTitle: match.tournament.title,
-      roundNumber: match.roundNumber,
-      matchNumber: match.matchNumber,
-      status: match.status,
-      scheduledAt: match.scheduledAt,
-      updatedAt: match.updatedAt,
-    })),
   };
 }
 
@@ -692,8 +516,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   return (
     <AdminShell
       userName={session.user.name}
-      title="Manage Ascendra"
-      description="Control tournaments, registrations, teams, players, content, and community tools from one protected dashboard."
+      title="Admin Dashboard"
+      description="A simple control center for Ascendra operations."
     >
       {shouldShowGlobalToast && (
         <AdminToast message={params.message} type={toastType} />
