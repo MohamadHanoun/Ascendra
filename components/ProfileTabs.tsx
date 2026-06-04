@@ -144,6 +144,7 @@ type ProfileTabsProps = {
   accountNode: ReactNode;
   rankingPoints: number;
   bestPlacement: number | null;
+  activeMatchesCount: number;
 };
 
 function getCount(n: number, singular: string, plural: string) {
@@ -800,7 +801,7 @@ function AchievementsTab({ sectionLabels }: { sectionLabels: ProfileTabsProps["s
   return (
     <Card>
       <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-        <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
+        <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
           ▲ {sectionLabels.achievementsEyebrow}
         </p>
         <h3
@@ -810,16 +811,23 @@ function AchievementsTab({ sectionLabels }: { sectionLabels: ProfileTabsProps["s
           {sectionLabels.achievementsTitle}
         </h3>
       </div>
-      <div className="p-10 text-center">
+      <div className="px-6 py-14 text-center">
         <p
-          className="text-4xl font-black uppercase"
-          style={{ color: "var(--asc-fg-3)", fontFamily: "'Barlow Condensed', sans-serif", opacity: 0.4 }}
+          className="text-xs font-black uppercase tracking-[0.18em]"
+          style={{ color: "var(--asc-fg-3)", opacity: 0.45 }}
         >
           {sectionLabels.comingSoon}
         </p>
-        <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+        <p className="mx-auto mt-3 max-w-xs text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
           {sectionLabels.comingSoonDesc}
         </p>
+        <Link
+          href="/tournaments"
+          className="mt-6 inline-flex border px-5 py-2.5 text-xs font-black uppercase tracking-[0.10em] transition hover:opacity-80"
+          style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" }}
+        >
+          {sectionLabels.browseTournaments}
+        </Link>
       </div>
     </Card>
   );
@@ -832,7 +840,7 @@ export default function ProfileTabs(props: ProfileTabsProps) {
     { id: "overview", label: props.tabLabels.overview },
     { id: "teams", label: props.tabLabels.teams, badge: props.invitations.length || undefined },
     { id: "history", label: props.tabLabels.history },
-    { id: "matches", label: props.tabLabels.matches },
+    { id: "matches", label: props.tabLabels.matches, badge: props.activeMatchesCount || undefined },
     { id: "achievements", label: props.tabLabels.achievements },
     { id: "account", label: props.tabLabels.account },
   ];
@@ -841,7 +849,7 @@ export default function ProfileTabs(props: ProfileTabsProps) {
     <div className="relative z-20">
       <nav
         className="relative z-20 mb-6 flex flex-wrap"
-        style={{ pointerEvents: "auto" }}
+        style={{ pointerEvents: "auto", background: "var(--asc-bg-1)" }}
       >
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab;

@@ -1043,16 +1043,16 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       </div>
       <div className="p-5">
         {activeMatches.length === 0 ? (
-          <div className="flex flex-col gap-3">
-            <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
+          <div className="flex flex-col items-start gap-4 py-4">
+            <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
               {messages.activeMatches.empty}
             </p>
             <Link
               href="/tournaments"
-              className="inline-flex w-fit border px-4 py-2 text-sm font-black transition hover:opacity-90"
+              className="inline-flex border px-5 py-2.5 text-xs font-black uppercase tracking-[0.10em] transition hover:opacity-80"
               style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
             >
-              {messages.activeMatches.browseTournaments}
+              {messages.activeMatches.browseTournaments} →
             </Link>
           </div>
         ) : (
@@ -1096,10 +1096,10 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             className="text-[10px] font-black uppercase tracking-[0.16em]"
             style={{ color: "var(--asc-accent)" }}
           >
-            ▲ {messages.labels.linkedAccounts}
+            ▲ {messages.sections.accountTitle}
           </p>
           <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
-            {messages.labels.connectedGameAccounts}
+            {messages.labels.linkedAccounts}
           </h2>
         </div>
 
@@ -1317,10 +1317,10 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           >
             <button
               type="submit"
-              className="border px-5 py-2.5 text-sm font-black uppercase tracking-[0.10em] transition hover:opacity-80"
+              className="border px-5 py-2.5 text-sm font-black uppercase tracking-[0.10em] transition hover:opacity-70"
               style={{
-                borderColor: "var(--asc-live-border)",
-                color: "var(--asc-live)",
+                borderColor: "var(--asc-line-soft)",
+                color: "var(--asc-fg-2)",
                 background: "transparent",
               }}
             >
@@ -1496,6 +1496,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             accountNode={accountNode}
             rankingPoints={rankingPoints}
             bestPlacement={bestPlacement}
+            activeMatchesCount={activeMatches.length}
           />
         </section>
 
