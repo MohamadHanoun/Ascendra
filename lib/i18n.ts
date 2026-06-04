@@ -1376,7 +1376,6 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         },
       },
     },
-
     community: {
       metadata: {
         title: "المجتمع ",
