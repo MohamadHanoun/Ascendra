@@ -3,11 +3,20 @@
 import { useRef, useState, useTransition } from "react";
 import type { ReactNode } from "react";
 
-export function CopyLinkButton({ label, copiedLabel }: { label: string; copiedLabel: string }) {
+export function CopyLinkButton({
+  label,
+  copiedLabel,
+  path,
+}: {
+  label: string;
+  copiedLabel: string;
+  path?: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   function handleCopy() {
-    navigator.clipboard.writeText(window.location.href).catch(() => {});
+    const url = path ? `${window.location.origin}${path}` : window.location.href;
+    navigator.clipboard.writeText(url).catch(() => {});
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1500);
   }

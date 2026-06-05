@@ -1326,10 +1326,10 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 {copyLinkLabel}
               </p>
               <p className="mt-0.5 text-xs" style={{ color: "var(--asc-fg-3)" }}>
-                /profile
+                /players/{user.id}
               </p>
             </div>
-            <CopyLinkButton label={copyLinkLabel} copiedLabel={linkCopiedLabel} />
+            <CopyLinkButton label={copyLinkLabel} copiedLabel={linkCopiedLabel} path={`/players/${user.id}`} />
           </div>
         </div>
       </div>

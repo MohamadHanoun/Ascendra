@@ -1300,7 +1300,10 @@ export default async function TeamDetailsPage({
                               : "none",
                         }}
                       >
-                        <div className="flex items-center gap-4">
+                        <Link
+                          href={`/players/${member.user.id}`}
+                          className="flex items-center gap-4 transition hover:opacity-80"
+                        >
                           <AvatarBadge
                             username={member.user.username}
                             avatar={member.user.avatar}
@@ -1321,7 +1324,7 @@ export default async function TeamDetailsPage({
                               {member.user.discordId ?? "—"}
                             </p>
                           </div>
-                        </div>
+                        </Link>
 
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <StatusBadge

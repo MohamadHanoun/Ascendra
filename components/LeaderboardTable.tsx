@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import LeaderboardAvatar from "@/components/LeaderboardAvatar";
 import type { LeaderboardUser } from "@/data/leaderboard";
 import type { LeaderboardMessages } from "@/lib/i18n";
@@ -123,25 +125,30 @@ function RankingRow({
       </span>
 
       <div className="flex min-w-0 items-center gap-3">
-        <LeaderboardAvatar name={user.username} src={user.avatar} size={38} />
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="truncate font-black" style={{ color: "var(--asc-fg-0)" }}>
-              {user.username}
-            </p>
-            {isCurrentUser && (
-              <span
-                className="text-[9px] font-black uppercase tracking-[0.14em]"
-                style={{ color: "var(--asc-accent)" }}
-              >
-                {messages.youBadge}
-              </span>
-            )}
+        <Link
+          href={`/players/${user.id}`}
+          className="flex min-w-0 items-center gap-3 transition hover:opacity-80"
+        >
+          <LeaderboardAvatar name={user.username} src={user.avatar} size={38} />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="truncate font-black" style={{ color: "var(--asc-fg-0)" }}>
+                {user.username}
+              </p>
+              {isCurrentUser && (
+                <span
+                  className="text-[9px] font-black uppercase tracking-[0.14em]"
+                  style={{ color: "var(--asc-accent)" }}
+                >
+                  {messages.youBadge}
+                </span>
+              )}
+            </div>
+            <div className="mt-2 md:hidden">
+              <TierBadge tier={user.tier} />
+            </div>
           </div>
-          <div className="mt-2 md:hidden">
-            <TierBadge tier={user.tier} />
-          </div>
-        </div>
+        </Link>
       </div>
 
       <div className="hidden md:block">
@@ -267,39 +274,44 @@ function PodiumCard({
       </div>
 
       <div className="relative mt-5 flex items-center gap-3">
-        <LeaderboardAvatar
-          name={user.username}
-          src={user.avatar}
-          size={isFirst ? 64 : 52}
-        />
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <p
-              className="truncate font-black uppercase"
-              style={{
-                color: "var(--asc-fg-0)",
-                fontSize: isFirst ? 22 : 18,
-                fontFamily: "var(--font-display)",
-                fontWeight: 700,
-                letterSpacing: "0.04em",
-                lineHeight: 1.1,
-              }}
-            >
-              {user.username}
-            </p>
-            {isCurrentUser && (
-              <span
-                className="text-[9px] font-black uppercase tracking-[0.14em]"
-                style={{ color: "var(--asc-accent)" }}
+        <Link
+          href={`/players/${user.id}`}
+          className="flex min-w-0 items-center gap-3 transition hover:opacity-80"
+        >
+          <LeaderboardAvatar
+            name={user.username}
+            src={user.avatar}
+            size={isFirst ? 64 : 52}
+          />
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <p
+                className="truncate font-black uppercase"
+                style={{
+                  color: "var(--asc-fg-0)",
+                  fontSize: isFirst ? 22 : 18,
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  lineHeight: 1.1,
+                }}
               >
-                {messages.youBadge}
-              </span>
-            )}
+                {user.username}
+              </p>
+              {isCurrentUser && (
+                <span
+                  className="text-[9px] font-black uppercase tracking-[0.14em]"
+                  style={{ color: "var(--asc-accent)" }}
+                >
+                  {messages.youBadge}
+                </span>
+              )}
+            </div>
+            <div className="mt-2">
+              <TierBadge tier={user.tier} />
+            </div>
           </div>
-          <div className="mt-2">
-            <TierBadge tier={user.tier} />
-          </div>
-        </div>
+        </Link>
       </div>
 
       <div
