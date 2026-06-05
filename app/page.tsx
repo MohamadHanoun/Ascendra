@@ -10,6 +10,7 @@ import SectionReveal from "@/components/SectionReveal";
 import Navbar from "@/components/Navbar";
 import HomeCinematicBackdrop from "@/components/home/HomeCinematicBackdrop";
 import HomePremiumSurface from "@/components/home/HomePremiumSurface";
+import HomeSectionShell from "@/components/home/HomeSectionShell";
 import HomeSignalRail from "@/components/home/HomeSignalRail";
 import { getDictionary, type HomeMessages, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
@@ -194,9 +195,9 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
         }
       : normalized === "upcoming" || normalized === "registered"
         ? {
-            color: "var(--asc-blue)",
-            borderColor: "var(--asc-blue-border)",
-            background: "var(--asc-blue-bg)",
+            color: "var(--asc-silver)",
+            borderColor: "rgba(183, 187, 193, 0.34)",
+            background: "rgba(183, 187, 193, 0.10)",
           }
         : normalized === "closed" || normalized === "rejected"
           ? {
@@ -206,9 +207,9 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
             }
           : normalized === "ended"
             ? {
-                color: "var(--asc-blue)",
-                borderColor: "var(--asc-blue-border)",
-                background: "var(--asc-blue-bg)",
+                color: "var(--asc-fg-3)",
+                borderColor: "var(--asc-line)",
+                background: "var(--asc-card-muted)",
               }
             : {
                 color: "var(--asc-fg-3)",
@@ -223,56 +224,6 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
     >
       {label || status}
     </span>
-  );
-}
-
-function PrimaryLink({
-  href,
-  children,
-  locale = "en",
-}: {
-  href: string;
-  children: ReactNode;
-  locale?: Locale;
-}) {
-  const arrow = getNavArrow(locale);
-  return (
-    <Link
-      href={href}
-      className="inline-flex items-center justify-center px-6 py-3 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:opacity-90"
-      style={{
-        background: "var(--asc-accent-2)",
-        boxShadow: "0 0 20px var(--asc-accent-glow)",
-        clipPath:
-          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-      }}
-    >
-      {children}
-      <span className={locale === "ar" ? "mr-2" : "ml-2"}>{arrow}</span>
-    </Link>
-  );
-}
-
-function SecondaryLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className="inline-flex items-center justify-center border px-6 py-3 text-sm font-black uppercase tracking-[0.08em] transition hover:opacity-80"
-      style={{
-        borderColor: "var(--asc-line)",
-        color: "var(--asc-fg-2)",
-        clipPath:
-          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-      }}
-    >
-      {children}
-    </Link>
   );
 }
 
@@ -475,7 +426,15 @@ function LiveMatchCard({
   match: LiveMatchData;
   messages: HomeMessages;
 }) {
-  const isLive = match.status === "live";
+  const statusKey = match.status.toLowerCase();
+  const isLive = statusKey === "live";
+  const isCompleted = statusKey === "completed";
+  const matchTone = isLive ? "live" : isCompleted ? "completed" : "standby";
+  const statusLabel = isLive
+    ? "LIVE"
+    : isCompleted
+      ? messages.matches.completed
+      : match.status;
   const teamATag = match.teamA
     ? match.teamA.name.slice(0, 2).toUpperCase()
     : "??";
@@ -485,51 +444,23 @@ function LiveMatchCard({
 
   return (
     <article
-      className="relative overflow-hidden border"
-      style={{
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        clipPath:
-          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
-      }}
+      className={`asc-home-broadcast-card asc-home-broadcast-card--${matchTone}`}
     >
-      <div
-        className="flex items-center gap-3 px-4 py-3"
-        style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-      >
-        {isLive ? (
-          <span
-            className="inline-flex items-center gap-2 border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
-            style={{
-              color: "var(--asc-live)",
-              borderColor: "var(--asc-live-border)",
-              background: "var(--asc-live-bg)",
-            }}
-          >
-            <span className="asc-live-dot" />
-            LIVE
-          </span>
-        ) : (
-          <span
-            className="inline-flex border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
-            style={{
-              color: "var(--asc-fg-3)",
-              borderColor: "var(--asc-line-soft)",
-            }}
-          >
-            {messages.matches.completed}
-          </span>
-        )}
+      <div aria-hidden="true" className="asc-home-broadcast-card__grid" />
+      <div aria-hidden="true" className="asc-home-broadcast-card__signal" />
 
-        <span
-          className="truncate text-[10px] font-black uppercase tracking-[0.12em]"
-          style={{ color: "var(--asc-fg-3)" }}
-        >
+      <div className="asc-home-broadcast-card__header">
+        <span className="asc-home-broadcast-card__status">
+          {isLive && <span className="asc-live-dot" />}
+          <span>{statusLabel}</span>
+        </span>
+
+        <span className="asc-home-broadcast-card__tournament">
           {match.tournament.title}
         </span>
       </div>
 
-      <div className="grid gap-4 px-5 py-5">
+      <div className="asc-home-broadcast-card__body">
         {[
           {
             tag: teamATag,
@@ -542,73 +473,34 @@ function LiveMatchCard({
             score: match.scoreB,
           },
         ].map((team, index) => (
-          <div key={`${team.tag}-${index}`} className="flex items-center gap-3">
-            <div
-              className="grid h-9 w-9 shrink-0 place-items-center text-[11px] font-black text-white"
-              style={{
-                background:
-                  index === 0 ? "var(--asc-accent-2)" : "var(--asc-blue)",
-                clipPath:
-                  "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
-              }}
-            >
+          <div
+            key={`${team.tag}-${index}`}
+            className="asc-home-broadcast-team"
+          >
+            <div className={`asc-home-broadcast-team__tag asc-home-broadcast-team__tag--${index + 1}`}>
               {team.tag}
             </div>
 
             <div className="min-w-0 flex-1">
-              <p
-                className="truncate text-sm font-black"
-                style={{ color: "var(--asc-fg-0)" }}
-              >
+              <p className="asc-home-broadcast-team__name">
                 {team.name}
               </p>
-              <p
-                className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
-                style={{ color: "var(--asc-fg-3)" }}
-              >
+              <p className="asc-home-broadcast-team__label">
                 {messages.matches.team}
               </p>
             </div>
 
-            <p
-              className="text-3xl font-black tabular-nums"
-              style={{
-                color: "var(--asc-fg-0)",
-                fontFamily: "var(--font-display)",
-              }}
-            >
+            <p className="asc-home-broadcast-team__score">
               {team.score}
             </p>
           </div>
         ))}
       </div>
 
-      <div
-        className="flex items-center gap-3 px-4 py-3"
-        style={{
-          borderTop: "1px solid var(--asc-line-soft)",
-          background: "var(--asc-bg-2)",
-        }}
-      >
-        <span
-          className="text-[10px] font-black uppercase tracking-[0.12em]"
-          style={{ color: "var(--asc-fg-2)" }}
-        >
-          Round {match.round}
-        </span>
-        <span style={{ color: "var(--asc-line)" }}>·</span>
-        <span
-          className="text-[10px] font-black uppercase tracking-[0.12em]"
-          style={{ color: "var(--asc-fg-2)" }}
-        >
-          BO{match.bestOf}
-        </span>
-        <span
-          className="ml-auto text-[10px] font-black uppercase tracking-[0.12em]"
-          style={{ color: "var(--asc-accent)" }}
-        >
-          Match {match.matchNumber}
-        </span>
+      <div className="asc-home-broadcast-card__footer">
+        <span>Round {match.round}</span>
+        <span>BO{match.bestOf}</span>
+        <span>Match {match.matchNumber}</span>
       </div>
     </article>
   );
@@ -649,41 +541,30 @@ function TournamentFeatureCard({
     tournament.game?.slug ?? null,
     tournament.imageUrl,
   );
+  const registrationLabel = getRegistrationStatusLabel(
+    tournament.registrationStatus,
+    messages.statuses,
+  );
 
   return (
     <Link
       href={`/tournaments/${tournament.id}`}
-      className="group relative block min-h-[240px] overflow-hidden border transition hover:opacity-95"
-      style={{
-        minHeight: compact ? 190 : 285,
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        clipPath:
-          "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
-      }}
+      className={`asc-home-command-card ${compact ? "asc-home-command-card--compact" : "asc-home-command-card--featured"} group`}
     >
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-105"
+        className="asc-home-command-card__image"
         style={{
           backgroundImage: `url("${imageSrc}")`,
-          opacity: 0.82,
         }}
       />
 
-      <div
-        aria-hidden="true"
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(180deg, rgb(var(--asc-scrim-rgb) / 0.22) 0%, rgb(var(--asc-scrim-rgb) / 0.96) 100%)",
-        }}
-      />
-
+      <div aria-hidden="true" className="asc-home-command-card__scrim" />
+      <div aria-hidden="true" className="asc-home-command-card__grid" />
       <div aria-hidden="true" className="asc-corner-mark" />
 
-      <div className="relative z-10 flex h-full min-h-[inherit] flex-col p-5">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="asc-home-command-card__content">
+        <div className="asc-home-command-card__topbar">
           <StatusBadge
             status={tournament.status}
             label={getTournamentStatusLabel(
@@ -691,137 +572,112 @@ function TournamentFeatureCard({
               messages.statuses,
             )}
           />
-          <span
-            className="text-[10px] font-black uppercase tracking-[0.14em]"
-            style={{ color: "var(--asc-fg-2)" }}
-          >
-            {tournament.game?.name ?? "—"}
+          <span className="asc-home-command-card__registration">
+            {registrationLabel}
           </span>
         </div>
 
-        <div className="mt-auto">
-          <h3
-            className="text-2xl md:text-3xl"
-            style={{ color: "var(--asc-fg-0)" }}
-          >
+        <div className="asc-home-command-card__body">
+          <p className="asc-home-command-card__game">
+            {tournament.game?.name ?? "—"}
+          </p>
+
+          <h3 className="asc-home-command-card__title">
             {tournament.title}
           </h3>
 
-          <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-2)" }}>
+          <p className="asc-home-command-card__meta">
             {tournament.startsAt?.toLocaleDateString() ?? "—"} ·{" "}
             {tournament.teamSize}v{tournament.teamSize} ·{" "}
             {formatApplications(applications, messages.tournaments, locale)}
           </p>
 
-          <div className="mt-5 grid grid-cols-3 gap-4">
-            <div>
-              <p
-                className="text-[9px] font-black uppercase tracking-[0.14em]"
-                style={{ color: "var(--asc-fg-3)" }}
-              >
+          <div className="asc-home-command-card__stats">
+            <div className="asc-home-command-card__stat">
+              <p className="asc-home-command-card__stat-label">
                 {messages.tournaments.prize}
               </p>
-              <p
-                className="mt-1 text-sm font-black"
-                style={{ color: "var(--asc-prize)" }}
-              >
+              <p className="asc-home-command-card__stat-value asc-home-command-card__stat-value--prize">
                 {tournament.prize ?? "—"}
               </p>
             </div>
 
-            <div>
-              <p
-                className="text-[9px] font-black uppercase tracking-[0.14em]"
-                style={{ color: "var(--asc-fg-3)" }}
-              >
+            <div className="asc-home-command-card__stat">
+              <p className="asc-home-command-card__stat-label">
                 {messages.tournaments.teamsLabel}
               </p>
-              <p
-                className="mt-1 text-sm font-black"
-                style={{ color: "var(--asc-fg-0)" }}
-              >
+              <p className="asc-home-command-card__stat-value">
                 {approvedSlots}
-                <span style={{ color: "var(--asc-fg-3)" }}>
-                  /{tournament.maxTeams}
-                </span>
+                <span>/{tournament.maxTeams}</span>
               </p>
             </div>
 
-            <div>
-              <p
-                className="text-[9px] font-black uppercase tracking-[0.14em]"
-                style={{ color: "var(--asc-fg-3)" }}
-              >
+            <div className="asc-home-command-card__stat">
+              <p className="asc-home-command-card__stat-label">
                 {messages.tournaments.formatLabel}
               </p>
-              <p
-                className="mt-1 text-sm font-black"
-                style={{ color: "var(--asc-fg-0)" }}
-              >
+              <p className="asc-home-command-card__stat-value">
                 {tournament.teamSize}v{tournament.teamSize}
               </p>
             </div>
           </div>
+
+          {!compact && (
+            <div className="asc-home-command-card__progress">
+              <ProgressBar
+                approvedSlots={approvedSlots}
+                maxSlots={tournament.maxTeams}
+                approvedLabel={messages.featured.locked}
+              />
+            </div>
+          )}
         </div>
       </div>
     </Link>
   );
 }
 
-function GameTile({ game, messages }: { game: GameData; messages: HomeMessages }) {
+function GameTile({
+  game,
+  index,
+  messages,
+}: {
+  game: GameData;
+  index: number;
+  messages: HomeMessages;
+}) {
   const imageSrc = getTournamentImageUrl(game.slug, null);
 
   return (
     <Link
       href="/games"
-      className="asc-image-card group relative block aspect-[3/4] overflow-hidden border transition hover:opacity-95"
-      style={{
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        clipPath:
-          "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
-      }}
+      className="asc-home-registry-tile group"
     >
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-105"
+        className="asc-home-registry-tile__image"
         style={{ backgroundImage: `url("${imageSrc}")` }}
       />
 
-      <div
-        aria-hidden="true"
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(180deg, transparent 25%, rgb(var(--asc-scrim-rgb) / 0.96) 100%)",
-        }}
-      />
-
+      <div aria-hidden="true" className="asc-home-registry-tile__scrim" />
+      <div aria-hidden="true" className="asc-home-registry-tile__grid" />
       <div aria-hidden="true" className="asc-corner-mark" />
 
+      <div className="asc-home-registry-tile__index">
+        {String(index + 1).padStart(2, "0")}
+      </div>
+
       {game._count.tournaments > 0 && (
-        <div className="absolute right-4 top-4">
-          <span
-            className="border px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
-            style={{
-              color: "var(--asc-fg-2)",
-              borderColor: "var(--asc-line-soft)",
-              background: "var(--asc-card-muted)",
-            }}
-          >
+        <div className="asc-home-registry-tile__badge">
+          <span>
             {game._count.tournaments} {messages.games.tournamentsLabel}
           </span>
         </div>
       )}
 
-      <div className="absolute inset-x-0 bottom-0 p-5">
-        <h3 className="text-lg" style={{ color: "var(--asc-fg-0)" }}>
-          {game.name}
-        </h3>
-        <p
-          className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em]"
-          style={{ color: "var(--asc-fg-3)" }}
-        >
+      <div className="asc-home-registry-tile__content">
+        <h3>{game.name}</h3>
+        <p>
           {game.defaultTeamSize}v{game.defaultTeamSize} · {game._count.teams}{" "}
           {messages.games.teamsLabel}
         </p>
@@ -832,19 +688,12 @@ function GameTile({ game, messages }: { game: GameData; messages: HomeMessages }
 
 function DiscordGlyph() {
   return (
-    <div
-      className="grid h-12 w-12 shrink-0 place-items-center"
-      style={{
-        background: "linear-gradient(135deg, #c9a24a, #9c6f33)",
-        clipPath:
-          "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-      }}
-    >
+    <div aria-hidden="true" className="asc-home-discord-glyph">
       <svg
         width="24"
         height="18"
         viewBox="0 0 24 18"
-        fill="#ffffff"
+        fill="currentColor"
       >
         <path d="M20.3 1.8a18 18 0 0 0-4.5-1.4l-.2.4c1.6.3 3 .9 4.3 1.7-1.6-.9-3.4-1.4-5.3-1.4S10.9.6 9.3 1.5c1.3-.8 2.7-1.4 4.3-1.7l-.2-.4A18 18 0 0 0 8.9 1.8C5.7 6.7 4.9 11.4 5.3 16c1.8 1.3 3.6 2 5.4 2.5l.4-.6a11 11 0 0 1-2.2-1.1c.2-.1.4-.2.5-.3 4.1 1.9 8.5 1.9 12.5 0 .2.1.4.2.5.3-.7.4-1.4.8-2.2 1.1l.4.6c1.8-.5 3.6-1.2 5.4-2.5.5-5.4-.8-10-2.7-14.2zM9.7 13.5c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2zm6.6 0c-1 0-1.9-1-1.9-2.2s.9-2.2 1.9-2.2 1.9 1 1.9 2.2-.9 2.2-1.9 2.2z" />
       </svg>
@@ -875,72 +724,37 @@ function DiscordPreviewCard({
   );
 
   return (
-    <div
-      className="relative overflow-hidden border p-0"
-      style={{
-        borderColor: "var(--asc-line-soft)",
-        background:
-          "var(--asc-discord-card-bg)",
-        clipPath:
-          "polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)",
-      }}
-    >
+    <article className="asc-home-community-card">
+      <div aria-hidden="true" className="asc-home-community-card__grid" />
+      <div aria-hidden="true" className="asc-home-community-card__flare" />
       <div aria-hidden="true" className="asc-corner-mark" />
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(circle at 82% 18%, rgba(201, 162, 74, 0.18), transparent 42%)",
-        }}
-      />
 
-      <div className="relative z-10 p-5 md:p-6">
-        <div className="flex items-start gap-4">
+      <div className="asc-home-community-card__content">
+        <div className="asc-home-community-card__header">
           <DiscordGlyph />
 
           <div>
-            <p
-              className="text-[10px] font-black uppercase tracking-[0.18em]"
-              style={{ color: "var(--asc-fg-2)" }}
-            >
+            <p className="asc-home-community-card__label">
               {d.label}
             </p>
-            <h3 className="text-xl" style={{ color: "var(--asc-fg-0)" }}>
+            <h3 className="asc-home-community-card__title">
               {d.title}
             </h3>
           </div>
         </div>
 
-        <p
-          className="mt-4 text-sm leading-6"
-          style={{ color: "var(--asc-fg-1)" }}
-        >
+        <p className="asc-home-community-card__description">
           {d.description}
         </p>
 
         {metrics.length > 0 && (
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="asc-home-community-card__metrics">
             {metrics.map((metric) => (
-              <div
-                key={metric.label}
-                className="border px-3 py-3"
-                style={{
-                  borderColor: "var(--asc-line-soft)",
-                  background: "var(--asc-card-muted)",
-                  clipPath:
-                    "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
-                }}
-              >
-                <p
-                  className="text-[9px] font-black uppercase tracking-[0.12em]"
-                  style={{ color: "var(--asc-fg-3)" }}
-                >
+              <div key={metric.label} className="asc-home-community-metric">
+                <p className="asc-home-community-metric__label">
                   {metric.label}
                 </p>
-                <p
-                  className="mt-1 text-lg font-black tabular-nums"
-                  style={{ color: "var(--asc-fg-0)", fontFamily: "var(--font-display)" }}
-                >
+                <p className="asc-home-community-metric__value">
                   {metric.value}
                 </p>
               </div>
@@ -948,15 +762,10 @@ function DiscordPreviewCard({
           </div>
         )}
 
-        <div className="mt-7 flex flex-wrap gap-3">
+        <div className="asc-home-community-card__actions">
           <Link
             href="/discord"
-            className="inline-flex items-center justify-center px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-white transition hover:opacity-90"
-            style={{
-              background: "linear-gradient(135deg, #c9a24a, #9c6f33)",
-              clipPath:
-                "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-            }}
+            className="asc-home-community-cta asc-home-community-cta--primary"
           >
             {d.openHub}
           </Link>
@@ -966,20 +775,14 @@ function DiscordPreviewCard({
               href={stats.inviteUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center border px-5 py-3 text-xs font-black uppercase tracking-[0.14em] transition hover:opacity-90"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                color: "var(--asc-fg-2)",
-                clipPath:
-                  "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-              }}
+              className="asc-home-community-cta asc-home-community-cta--secondary"
             >
               {d.joinServer}
             </a>
           )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -993,35 +796,18 @@ function HomeMetricTile({
   sub: string;
 }) {
   return (
-    <div
-      className="relative border p-5"
-      style={{
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        clipPath:
-          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
-      }}
-    >
+    <div className="asc-home-command-metric">
       <div aria-hidden="true" className="asc-corner-mark" />
 
-      <p
-        className="text-[10px] font-black uppercase tracking-[0.18em]"
-        style={{ color: "var(--asc-fg-3)" }}
-      >
+      <p className="asc-home-command-metric__label">
         {label}
       </p>
 
-      <p
-        className="mt-3 text-3xl font-black tabular-nums"
-        style={{ color: "var(--asc-fg-0)", fontFamily: "var(--font-display)" }}
-      >
+      <p className="asc-home-command-metric__value">
         {value}
       </p>
 
-      <p
-        className="mt-2 text-[10px] font-bold"
-        style={{ color: "var(--asc-green)" }}
-      >
+      <p className="asc-home-command-metric__sub">
         {sub}
       </p>
     </div>
@@ -1041,7 +827,7 @@ function LeaderboardPreview({
   const arrow = getNavArrow(locale);
 
   const displayPlayers: LadderPreviewPlayer[] = players.map(
-    (player, index) => ({
+    (player) => ({
       id: player.userId,
       rank: player.rank,
       name: player.username,
@@ -1055,33 +841,23 @@ function LeaderboardPreview({
   );
 
   return (
-    <div>
+    <div className="asc-home-ranking-stage">
       <SectionHeader label={lp.label} title={lp.title}>
         <Link
           href="/leaderboard"
-          className="border px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] transition hover:opacity-75"
-          style={{
-            borderColor: "var(--asc-line-soft)",
-            color: "var(--asc-fg-2)",
-          }}
+          className="asc-mini-button"
         >
           {lp.viewAll} {arrow}
         </Link>
       </SectionHeader>
 
-      <div
-        className="relative overflow-hidden border"
-        style={{
-          borderColor: "var(--asc-line-soft)",
-          background: "var(--asc-bg-1)",
-        }}
-      >
+      <div className="asc-home-ranking-board">
+        <div aria-hidden="true" className="asc-home-ranking-board__grid" />
+        <div aria-hidden="true" className="asc-home-ranking-board__rail" />
+
         {displayPlayers.length === 0 ? (
-          <div className="px-5 py-10 text-center">
-            <p
-              className="text-sm font-black uppercase tracking-[0.12em]"
-              style={{ color: "var(--asc-fg-0)" }}
-            >
+          <div className="asc-home-ranking-empty">
+            <p>
               {lp.emptyTitle}
             </p>
           </div>
@@ -1090,52 +866,28 @@ function LeaderboardPreview({
             <Link
               key={player.id}
               href="/leaderboard"
-              className="flex items-center gap-4 px-5 py-4 transition hover:opacity-90"
-              style={{
-                borderTop: index ? "1px solid var(--asc-line-soft)" : "0",
-                background:
-                  index === 0
-                    ? "var(--asc-hover-soft)"
-                    : "transparent",
-              }}
+              className={`asc-home-ranking-row ${index === 0 ? "asc-home-ranking-row--leader" : ""}`}
             >
-              <span
-                className="w-8 shrink-0 text-sm font-black tabular-nums"
-                style={{
-                  color: index < 3 ? "var(--asc-accent)" : "var(--asc-fg-3)",
-                }}
-              >
+              <span className="asc-home-ranking-row__rank">
                 {String(player.rank).padStart(2, "0")}
               </span>
 
               <LeaderboardAvatar name={player.name} src={player.avatar} size={36} />
 
-              <span className="min-w-0 flex-1">
-                <span
-                  className="block truncate text-sm font-black"
-                  style={{ color: "var(--asc-fg-0)" }}
-                >
+              <span className="asc-home-ranking-row__identity">
+                <span className="asc-home-ranking-row__name">
                   {player.name}
                 </span>
-                <span
-                  className="mt-1 block truncate text-[10px] font-bold uppercase tracking-[0.12em]"
-                  style={{ color: "var(--asc-fg-3)" }}
-                >
+                <span className="asc-home-ranking-row__meta">
                   {player.meta}
                 </span>
               </span>
 
-              <span className="w-20 shrink-0 text-right">
-                <span
-                  className="block text-lg font-black tabular-nums"
-                  style={{ color: "var(--asc-fg-0)" }}
-                >
+              <span className="asc-home-ranking-row__score">
+                <span>
                   {player.score.toLocaleString()}
                 </span>
-                <span
-                  className="text-[9px] font-black uppercase tracking-[0.14em]"
-                  style={{ color: "var(--asc-fg-3)" }}
-                >
+                <span>
                   {player.scoreLabel}
                 </span>
               </span>
@@ -1166,45 +918,30 @@ function AnnouncementCard({
   return (
     <Link
       href="/announcements"
-      className="relative flex gap-4 overflow-hidden border p-5 transition hover:opacity-90"
-      style={{
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        clipPath:
-          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
-      }}
+      className="asc-home-briefing-card group"
     >
-      <p
-        className="shrink-0 text-5xl font-black leading-none tabular-nums"
-        style={{
-          color: "var(--asc-accent)",
-          fontFamily: "var(--font-display)",
-        }}
-      >
+      <div aria-hidden="true" className="asc-home-briefing-card__grid" />
+
+      <p className="asc-home-briefing-card__index">
         {String(index + 1).padStart(2, "0")}
       </p>
 
-      <div className="min-w-0 flex-1">
-        <p
-          className="text-[10px] font-black uppercase tracking-[0.18em]"
-          style={{ color: "var(--asc-fg-3)" }}
-        >
-          {item.category} · {timeLabel}
+      <div className="asc-home-briefing-card__body">
+        <p className="asc-home-briefing-card__meta">
+          <span>{item.category}</span>
+          <span>{timeLabel}</span>
         </p>
 
-        <h3
-          className="mt-2 text-lg leading-tight"
-          style={{ color: "var(--asc-fg-0)" }}
-        >
+        <h3>
           {item.title}
         </h3>
 
+        <p className="asc-home-briefing-card__description">
+          {item.description}
+        </p>
       </div>
 
-      <span
-        className="mt-1 shrink-0 text-lg"
-        style={{ color: "var(--asc-fg-3)" }}
-      >
+      <span className="asc-home-briefing-card__arrow">
         {getNavArrow(locale)}
       </span>
     </Link>
@@ -1456,55 +1193,33 @@ export default async function HomePage() {
         <HomeSignalRail segments={signalSegments} />
 
         {/* How it works */}
-        <section className="relative py-16 lg:py-20">
-          <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
-            <div
-              className="mb-8 h-px w-full"
-              style={{ background: "var(--asc-line-soft)" }}
-            >
-              <span
-                className="relative -top-2 bg-[var(--asc-bg-0)] pr-4 text-xs font-black uppercase tracking-[0.18em]"
-                style={{ color: "var(--asc-accent)" }}
-              >
-                ▲ {messages.flow.label}
-              </span>
-            </div>
-
-            <SectionReveal>
-              <div className="grid gap-8 md:grid-cols-3">
-                {messages.flow.steps.map((step, index) => (
-                  <article key={index}>
-                    <p
-                      className="text-6xl font-black leading-none"
-                      style={{
-                        color: "var(--asc-accent)",
-                        fontFamily: "var(--font-display)",
-                      }}
-                    >
-                      {String(index + 1).padStart(2, "0")}
-                    </p>
-                    <h3
-                      className="mt-4 text-lg"
-                      style={{ color: "var(--asc-fg-0)" }}
-                    >
-                      {step.title}
-                    </h3>
-                    <p
-                      className="mt-3 max-w-sm text-sm leading-6"
-                      style={{ color: "var(--asc-fg-2)" }}
-                    >
-                      {step.description}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </SectionReveal>
+        <HomeSectionShell variant="flow" className="asc-home-flow-section">
+          <div className="asc-home-flow-heading">
+            <p className="asc-section-label">
+              ▲ {messages.flow.label}
+            </p>
+            <h2>{messages.flow.title}</h2>
+            <p>{messages.flow.description}</p>
           </div>
-        </section>
+
+          <SectionReveal>
+            <div className="asc-home-flow-grid">
+              {messages.flow.steps.map((step, index) => (
+                <article className="asc-home-flow-card" key={index}>
+                  <div aria-hidden="true" className="asc-home-flow-card__rail" />
+                  <p className="asc-home-flow-card__index">
+                    {String(index + 1).padStart(2, "0")}
+                  </p>
+                  <h3>{step.title}</h3>
+                  <p>{step.description}</p>
+                </article>
+              ))}
+            </div>
+          </SectionReveal>
+        </HomeSectionShell>
 
         {/* Live Matches */}
-        <section className="relative py-16 lg:py-20">
-          <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
+        <HomeSectionShell variant="broadcast" className="asc-home-broadcast-section">
             <SectionHeader
               label={messages.matches.label}
               title={messages.matches.title}
@@ -1520,42 +1235,26 @@ export default async function HomePage() {
 
             <SectionReveal>
               {sortedMatches.length === 0 ? (
-                <div
-                  className="relative border p-8 text-center"
-                  style={{
-                    borderColor: "var(--asc-line-soft)",
-                    background: "var(--asc-bg-1)",
-                    clipPath:
-                      "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
-                  }}
-                >
-                  <p
-                    className="text-sm font-black uppercase tracking-[0.12em]"
-                    style={{ color: "var(--asc-fg-0)" }}
-                  >
+                <HomePremiumSurface className="asc-home-empty-panel asc-home-empty-panel--broadcast p-8 text-center">
+                  <p className="asc-home-empty-panel__title">
                     {messages.matches.emptyTitle}
                   </p>
-                  <p
-                    className="mt-2 text-xs"
-                    style={{ color: "var(--asc-fg-3)" }}
-                  >
+                  <p className="asc-home-empty-panel__text">
                     {messages.matches.emptySub}
                   </p>
-                </div>
+                </HomePremiumSurface>
               ) : (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="asc-home-broadcast-wall">
                   {sortedMatches.map((match) => (
                     <LiveMatchCard key={match.id} match={match} messages={messages} />
                   ))}
                 </div>
               )}
             </SectionReveal>
-          </div>
-        </section>
+        </HomeSectionShell>
 
         {/* Tournaments */}
-        <section className="relative py-16 lg:py-20">
-          <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
+        <HomeSectionShell variant="command" className="asc-home-command-section">
             <SectionHeader
               label={messages.tournaments.label}
               title={messages.tournaments.title}
@@ -1570,19 +1269,12 @@ export default async function HomePage() {
 
             <SectionReveal>
               {tournaments.length === 0 ? (
-                <div
-                  className="border p-6"
-                  style={{
-                    borderColor: "var(--asc-line-soft)",
-                    background: "var(--asc-bg-1)",
-                    color: "var(--asc-fg-2)",
-                  }}
-                >
+                <HomePremiumSurface className="asc-home-empty-panel p-8">
                   {messages.tournaments.empty}
-                </div>
+                </HomePremiumSurface>
               ) : (
-                <>
-                  <div className="grid gap-5 lg:grid-cols-2">
+                <div className="asc-home-command-deck">
+                  <div className="asc-home-command-deck__primary">
                     {tournaments.slice(0, 2).map((tournament) => (
                       <TournamentFeatureCard
                         key={tournament.id}
@@ -1594,7 +1286,7 @@ export default async function HomePage() {
                   </div>
 
                   {tournaments.length > 2 && (
-                    <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                    <div className="asc-home-command-deck__secondary">
                       {tournaments.slice(2, 4).map((tournament) => (
                         <TournamentFeatureCard
                           key={tournament.id}
@@ -1606,15 +1298,13 @@ export default async function HomePage() {
                       ))}
                     </div>
                   )}
-                </>
+                </div>
               )}
             </SectionReveal>
-          </div>
-        </section>
+        </HomeSectionShell>
 
         {/* Games */}
-        <section className="relative py-16 lg:py-20">
-          <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
+        <HomeSectionShell variant="registry" className="asc-home-registry-section">
             <SectionHeader
               label={`${messages.games.label} · ${String(displayGames.length).padStart(2, "0")}`}
               title={messages.games.title}
@@ -1629,44 +1319,36 @@ export default async function HomePage() {
 
             <SectionReveal>
               {displayGames.length === 0 ? (
-                <div
-                  className="border p-6 text-center"
-                  style={{
-                    borderColor: "var(--asc-line-soft)",
-                    background: "var(--asc-bg-1)",
-                    clipPath:
-                      "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
-                  }}
-                >
-                  <p
-                    className="text-sm font-black uppercase tracking-[0.12em]"
-                    style={{ color: "var(--asc-fg-0)" }}
-                  >
+                <HomePremiumSurface className="asc-home-empty-panel p-8 text-center">
+                  <p className="asc-home-empty-panel__title">
                     {messages.games.emptyTitle}
                   </p>
-                </div>
+                </HomePremiumSurface>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-                  {displayGames.slice(0, 5).map((game) => (
-                    <GameTile key={game.id} game={game} messages={messages} />
+                <div className="asc-home-registry-grid">
+                  {displayGames.slice(0, 5).map((game, index) => (
+                    <GameTile
+                      key={game.id}
+                      game={game}
+                      index={index}
+                      messages={messages}
+                    />
                   ))}
                 </div>
               )}
             </SectionReveal>
-          </div>
-        </section>
+        </HomeSectionShell>
 
         {/* Leaderboard + Community */}
-        <section className="relative py-16 lg:py-20">
-          <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
-            <SectionReveal>
-            <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-start">
+        <HomeSectionShell variant="rankings" className="asc-home-rankings-section">
+          <SectionReveal>
+            <div className="asc-home-rankings-layout">
               <LeaderboardPreview players={topPlayers} messages={messages} locale={locale} />
 
-              <div className="grid gap-4">
+              <aside className="asc-home-community-command">
                 <DiscordPreviewCard stats={discordStats} messages={messages} />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="asc-home-command-metrics-grid">
                   <HomeMetricTile
                     label={messages.metrics.players}
                     value={formatCompact(totalUsers)}
@@ -1688,40 +1370,27 @@ export default async function HomePage() {
                     sub={messages.metrics.resultsSub}
                   />
                 </div>
-              </div>
+              </aside>
             </div>
-            </SectionReveal>
-          </div>
-        </section>
+          </SectionReveal>
+        </HomeSectionShell>
 
         {/* Announcements */}
-        <section className="relative py-16 lg:py-20">
-          <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
+        <HomeSectionShell variant="briefing" className="asc-home-briefing-section">
             <SectionHeader label={messages.announcements.label} title={messages.announcements.title} />
 
             <SectionReveal>
               {displayAnnouncements.length === 0 ? (
-                <div
-                  className="border p-6 text-center"
-                  style={{
-                    borderColor: "var(--asc-line-soft)",
-                    background: "var(--asc-bg-1)",
-                    clipPath:
-                      "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
-                  }}
-                >
-                  <p
-                    className="text-sm font-black uppercase tracking-[0.12em]"
-                    style={{ color: "var(--asc-fg-0)" }}
-                  >
+                <HomePremiumSurface className="asc-home-empty-panel p-8 text-center">
+                  <p className="asc-home-empty-panel__title">
                     {messages.announcements.emptyTitle}
                   </p>
-                  <p className="mt-2 text-xs" style={{ color: "var(--asc-fg-3)" }}>
+                  <p className="asc-home-empty-panel__text">
                     {messages.announcements.emptySub}
                   </p>
-                </div>
+                </HomePremiumSurface>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="asc-home-briefing-grid">
                   {displayAnnouncements.map((item, index) => (
                     <AnnouncementCard key={item.id} item={item} index={index} locale={locale} now={now} />
                   ))}
@@ -1729,13 +1398,46 @@ export default async function HomePage() {
               )}
             </SectionReveal>
 
-            <div className="mt-8 flex justify-center">
-              <SecondaryLink href="/announcements">
+            <div className="asc-home-briefing-actions">
+              <Link href="/announcements" className="asc-mini-button">
                 {messages.announcements.viewAll} {getNavArrow(locale)}
-              </SecondaryLink>
+              </Link>
             </div>
-          </div>
-        </section>
+        </HomeSectionShell>
+
+        {/* Final CTA */}
+        <HomeSectionShell variant="final" className="asc-home-final-section">
+          <SectionReveal>
+            <div className="asc-home-final-cta">
+              <div aria-hidden="true" className="asc-home-final-cta__grid" />
+              <div aria-hidden="true" className="asc-home-final-cta__flare" />
+              <div aria-hidden="true" className="asc-corner-mark" />
+
+              <div className="asc-home-final-cta__copy">
+                <p className="asc-section-label">
+                  ▲ {messages.playerHub.label}
+                </p>
+                <h2>{messages.playerHub.guestTitle}</h2>
+                <p>{messages.playerHub.guestDescription}</p>
+              </div>
+
+              <div className="asc-home-final-cta__actions">
+                <Link
+                  href="/login"
+                  className="asc-home-final-cta__button asc-home-final-cta__button--primary"
+                >
+                  {messages.playerHub.loginWithDiscord}
+                </Link>
+                <Link
+                  href="/tournaments"
+                  className="asc-home-final-cta__button asc-home-final-cta__button--secondary"
+                >
+                  {messages.playerHub.viewTournaments}
+                </Link>
+              </div>
+            </div>
+          </SectionReveal>
+        </HomeSectionShell>
 
         <Footer />
       </div>
