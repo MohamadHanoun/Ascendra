@@ -291,30 +291,15 @@ function StatCard({
   accent?: boolean;
 }) {
   return (
-    <div
-      className="relative border p-5"
-      style={{
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        clipPath:
-          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
-      }}
-    >
+    <div className="asc-pub-stat">
       <div aria-hidden="true" className="asc-corner-mark" />
 
-      <p
-        className="text-[10px] font-black uppercase tracking-[0.18em]"
-        style={{ color: "var(--asc-fg-3)" }}
-      >
-        {label}
-      </p>
+      <p className="asc-pub-stat__label">{label}</p>
 
       <p
-        className="mt-3 text-3xl font-black tabular-nums"
-        style={{
-          color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
-          fontFamily: "var(--font-display)",
-        }}
+        className={`asc-pub-stat__value tabular-nums${
+          accent ? " asc-pub-stat__value--accent" : ""
+        }`}
       >
         {value}
       </p>
@@ -446,7 +431,7 @@ function FeaturedTournament({
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(90deg, rgb(12 11 9 / 0.98) 0%, rgb(12 11 9 / 0.72) 48%, rgb(12 11 9 / 0.18) 100%)",
+            "linear-gradient(90deg, rgb(var(--asc-scrim-rgb) / 0.98) 0%, rgb(var(--asc-scrim-rgb) / 0.72) 48%, rgb(var(--asc-scrim-rgb) / 0.18) 100%)",
         }}
       />
 
@@ -616,7 +601,7 @@ function TournamentDesktopRow({
           className="h-12 w-12 shrink-0 border bg-cover bg-center"
           style={{
             borderColor: "var(--asc-line-soft)",
-            backgroundImage: `linear-gradient(to bottom, rgb(12 11 9 / 0.05), rgb(12 11 9 / 0.55)), url("${tournamentImage}")`,
+            backgroundImage: `linear-gradient(to bottom, rgb(var(--asc-scrim-rgb) / 0.05), rgb(var(--asc-scrim-rgb) / 0.55)), url("${tournamentImage}")`,
             clipPath:
               "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
           }}
@@ -712,18 +697,12 @@ function TournamentMobileCard({
   return (
     <Link
       href={`/tournaments/${tournament.id}`}
-      className="block overflow-hidden border lg:hidden"
-      style={{
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        clipPath:
-          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
-      }}
+      className="asc-pub-panel block lg:hidden"
     >
       <div
         className="h-40 bg-cover bg-center"
         style={{
-          backgroundImage: `linear-gradient(to bottom, rgb(12 11 9 / 0.08), rgb(12 11 9 / 0.86)), url("${tournamentImage}")`,
+          backgroundImage: `linear-gradient(to bottom, rgb(var(--asc-scrim-rgb) / 0.08), rgb(var(--asc-scrim-rgb) / 0.86)), url("${tournamentImage}")`,
         }}
       />
 
@@ -870,11 +849,7 @@ function TournamentDirectory({
       ) : (
         <>
           <div
-            className="hidden overflow-hidden border lg:block"
-            style={{
-              borderColor: "var(--asc-line-soft)",
-              background: "var(--asc-bg-1)",
-            }}
+            className="asc-pub-surface hidden lg:block"
           >
             <div
               className="grid grid-cols-[2fr_1fr_0.8fr_0.8fr_0.9fr_0.9fr_1fr_0.4fr] gap-4 px-5 py-3"
@@ -1045,8 +1020,8 @@ export default async function TournamentsPage({
             className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, rgb(12 11 9 / 0.36) 0%, rgb(12 11 9 / 0.70) 58%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.46) 38%, transparent 72%)",
+                "linear-gradient(180deg, rgb(var(--asc-scrim-rgb) / 0.36) 0%, rgb(var(--asc-scrim-rgb) / 0.70) 58%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(var(--asc-scrim-rgb) / 0.46) 38%, transparent 72%)",
               ].join(", "),
             }}
           />
@@ -1075,7 +1050,7 @@ export default async function TournamentsPage({
           </div>
         </section>
 
-        <section className="relative -mt-12 mx-auto grid max-w-[1680px] gap-10 px-6 pb-16 lg:px-10 2xl:px-14">
+        <section className="asc-pub-shell relative -mt-12 mx-auto grid max-w-[1680px] gap-10 px-6 pb-16 lg:px-10 2xl:px-14">
           <ProfileNotice message={params.message} error={params.error} />
 
           {/* Stats */}

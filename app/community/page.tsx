@@ -301,7 +301,7 @@ function DiscordGlyph({ size = 48 }: { size?: number }) {
       style={{
         width: size,
         height: size,
-        background: "linear-gradient(135deg, #b8893d, #8f642f)",
+        background: "linear-gradient(135deg, #c9a24a, #9c6f33)",
         clipPath:
           "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
       }}
@@ -345,11 +345,11 @@ function ButtonLink({
     textDecoration: "none",
     border:
       variant === "discord"
-        ? "1px solid rgba(184, 137, 61, 0.45)"
+        ? "1px solid rgba(201, 162, 74, 0.45)"
         : "1px solid var(--asc-line)",
     background:
-      variant === "discord" ? "linear-gradient(135deg, #b8893d, #8f642f)" : "transparent",
-    color: "#ffffff",
+      variant === "discord" ? "linear-gradient(135deg, #c9a24a, #9c6f33)" : "transparent",
+    color: variant === "discord" ? "#0a0a0b" : "var(--asc-fg-0)",
   };
 
   if (external) {
@@ -378,13 +378,8 @@ function Panel({
 }) {
   return (
     <section
-      className={`relative overflow-hidden border shadow-2xl shadow-black/20 ${className}`}
-      style={{
-        ...clippedStyle,
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        ...style,
-      }}
+      className={`asc-pub-surface shadow-2xl shadow-black/20 ${className}`}
+      style={style}
     >
       <CornerMark />
       {children}
@@ -461,7 +456,7 @@ function DiscordCard({
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle at 82% 18%, rgba(184, 137, 61, 0.18), transparent 42%)",
+            "radial-gradient(circle at 82% 18%, rgba(201, 162, 74, 0.18), transparent 42%)",
         }}
       />
       <div className="relative z-10 p-6 md:p-8">
@@ -673,15 +668,15 @@ export default async function CommunityPage() {
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(circle at 70% 50%, rgba(184, 137, 61, 0.12), transparent 60%)",
+                "radial-gradient(circle at 70% 50%, rgba(201, 162, 74, 0.12), transparent 60%)",
             }}
           />
           <div
             className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, rgb(12 11 9 / 0.34) 0%, rgb(12 11 9 / 0.58) 45%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.42) 35%, transparent 70%)",
+                "linear-gradient(180deg, rgb(var(--asc-scrim-rgb) / 0.34) 0%, rgb(var(--asc-scrim-rgb) / 0.58) 45%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(var(--asc-scrim-rgb) / 0.42) 35%, transparent 70%)",
               ].join(", "),
             }}
           />
@@ -706,7 +701,7 @@ export default async function CommunityPage() {
               <span
                 style={{
                   background:
-                    "linear-gradient(90deg, #b8893d, #f6eee5, #8f642f)",
+                    "linear-gradient(90deg, #c9a24a, #f0e2c0, #9c6f33)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                 }}

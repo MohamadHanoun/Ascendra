@@ -369,11 +369,9 @@ function GameRow({
 
   return (
     <article
-      className="relative min-h-[180px] overflow-hidden border"
+      className="asc-pub-panel min-h-[180px]"
       style={{
         ...clippedCardStyle,
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
         boxShadow: "0 26px 80px rgb(0 0 0 / 0.22)",
       }}
     >
@@ -606,8 +604,8 @@ export default async function GamesPage() {
             className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, rgb(12 11 9 / 0.35) 0%, rgb(12 11 9 / 0.56) 45%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.42) 35%, transparent 70%)",
+                "linear-gradient(180deg, rgb(var(--asc-scrim-rgb) / 0.35) 0%, rgb(var(--asc-scrim-rgb) / 0.56) 45%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(var(--asc-scrim-rgb) / 0.42) 35%, transparent 70%)",
               ].join(", "),
             }}
           />
@@ -634,7 +632,7 @@ export default async function GamesPage() {
           </div>
         </section>
 
-        <section className="mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 pt-10 lg:px-10 2xl:px-14">
+        <section className="asc-pub-shell mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 pt-10 lg:px-10 2xl:px-14">
           <SectionReveal>
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>

@@ -4130,6 +4130,123 @@ article.overflow-hidden[class*="border"]::before {
   .asc-loader-status > span:first-child { opacity: 1; }
 }
 
+/* ═══ Public pages — shared premium surfaces (Batch 5a) ══════════════════════ */
+
+/* Section backdrop: faint grid + gold/silver flare. Theme-aware, static. */
+.asc-pub-shell {
+  position: relative;
+  isolation: isolate;
+}
+.asc-pub-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--asc-line-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--asc-line-soft) 1px, transparent 1px);
+  background-size: 54px 54px;
+  -webkit-mask-image: radial-gradient(ellipse 82% 60% at 50% 0%, #000, transparent 72%);
+  mask-image: radial-gradient(ellipse 82% 60% at 50% 0%, #000, transparent 72%);
+  opacity: 0.28;
+}
+.asc-pub-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 60% 42% at 82% 8%, var(--asc-accent-glow), transparent 60%);
+  opacity: 0.5;
+}
+.asc-pub-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Premium clipped surfaces. `surface` is static (large containers);
+   `panel` adds a hover lift (interactive cards). Both gain a gold top edge. */
+.asc-pub-surface,
+.asc-pub-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--asc-line-soft);
+  background: var(--asc-bg-1);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+.asc-pub-surface::before,
+.asc-pub-panel::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--asc-accent), transparent);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 2;
+}
+.asc-pub-panel {
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.asc-pub-panel:hover {
+  border-color: var(--asc-accent-border);
+  box-shadow: 0 0 20px var(--asc-accent-dim), 0 16px 44px rgba(0, 0, 0, 0.34);
+  transform: translateY(-2px);
+}
+
+/* Stat tile */
+.asc-pub-stat {
+  position: relative;
+  border: 1px solid var(--asc-line-soft);
+  background: var(--asc-bg-1);
+  padding: 1.25rem;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: border-color 160ms ease;
+}
+.asc-pub-stat:hover {
+  border-color: var(--asc-accent-border);
+}
+.asc-pub-stat__label {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--asc-fg-3);
+}
+.asc-pub-stat__value {
+  margin-top: 0.6rem;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--asc-fg-0);
+}
+.asc-pub-stat__value--accent {
+  color: var(--asc-accent);
+}
+
+/* Command row hover (directories / tables) */
+.asc-pub-row {
+  transition: background 140ms ease;
+}
+.asc-pub-row:hover {
+  background: var(--asc-hover-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asc-pub-panel,
+  .asc-pub-stat,
+  .asc-pub-row {
+    transition: none;
+  }
+  .asc-pub-panel:hover {
+    transform: none;
+  }
+}
+
 /* ═══ Global chrome — command navbar & status footer ═════════════════════════ */
 
 /* ── Command navbar ──────────────────────────────────────────────────────── */
