@@ -6,6 +6,7 @@ import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import SectionReveal from "@/components/SectionReveal";
+import CommandRail from "@/components/public/CommandRail";
 import TournamentsRealtimeRefresh from "@/components/TournamentsRealtimeRefresh";
 import ProfileNotice from "@/components/ProfileNotice";
 import {
@@ -278,32 +279,6 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
     >
       {label || status}
     </span>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  accent?: boolean;
-}) {
-  return (
-    <div className="asc-pub-stat">
-      <div aria-hidden="true" className="asc-corner-mark" />
-
-      <p className="asc-pub-stat__label">{label}</p>
-
-      <p
-        className={`asc-pub-stat__value tabular-nums${
-          accent ? " asc-pub-stat__value--accent" : ""
-        }`}
-      >
-        {value}
-      </p>
-    </div>
   );
 }
 
@@ -1027,11 +1002,12 @@ export default async function TournamentsPage({
           />
 
           <div className="asc-image-hero-content relative z-10 mx-auto max-w-[1680px] px-6 pb-24 pt-20 lg:px-10 2xl:px-14">
-            <p
-              className="asc-section-label mb-4"
-            >
-              ▲ {copy.heroEyebrow} · {activeTournaments.length}{" "}
-              {copy.activeEvents.toUpperCase()}
+            <p className="mb-4">
+              <span className="asc-cmd-eyebrow">
+                <span aria-hidden="true" className="asc-cmd-eyebrow__dot" />
+                {copy.heroEyebrow} · {activeTournaments.length}{" "}
+                {copy.activeEvents.toUpperCase()}
+              </span>
             </p>
 
             <h1
@@ -1053,21 +1029,21 @@ export default async function TournamentsPage({
         <section className="asc-pub-shell relative -mt-12 mx-auto grid max-w-[1680px] gap-10 px-6 pb-16 lg:px-10 2xl:px-14">
           <ProfileNotice message={params.message} error={params.error} />
 
-          {/* Stats */}
+          {/* Command rail */}
           <SectionReveal>
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <StatCard label={copy.totalEvents} value={tournaments.length} />
-              <StatCard
-                label={copy.activeEventsStat}
-                value={openTournamentCount}
-              />
-              <StatCard
-                label={copy.openRegistration}
-                value={openRegistrationCount}
-                accent
-              />
-              <StatCard label={copy.approvedTeams} value={approvedSlotsCount} />
-            </section>
+            <CommandRail
+              columns={4}
+              items={[
+                { label: copy.totalEvents, value: tournaments.length },
+                { label: copy.activeEventsStat, value: openTournamentCount },
+                {
+                  label: copy.openRegistration,
+                  value: openRegistrationCount,
+                  accent: true,
+                },
+                { label: copy.approvedTeams, value: approvedSlotsCount },
+              ]}
+            />
           </SectionReveal>
 
           {/* Featured */}

@@ -4247,6 +4247,120 @@ article.overflow-hidden[class*="border"]::before {
   }
 }
 
+/* ── Command rail (cohesive stat bar) ────────────────────────────────────── */
+.asc-cmd-rail {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--asc-line-soft);
+  border: 1px solid var(--asc-line-soft);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  overflow: hidden;
+}
+.asc-cmd-rail::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 2px;
+  z-index: 3;
+  background: linear-gradient(90deg, transparent, var(--asc-accent), transparent);
+  opacity: 0.6;
+  pointer-events: none;
+}
+@media (min-width: 900px) {
+  .asc-cmd-rail--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .asc-cmd-rail--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .asc-cmd-rail--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+.asc-cmd-rail__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.2rem 1.35rem;
+  background: var(--asc-bg-1);
+  transition: background 160ms ease;
+}
+.asc-cmd-rail__item:hover { background: var(--asc-bg-2); }
+.asc-cmd-rail__label {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--asc-fg-3);
+}
+.asc-cmd-rail__value {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--asc-fg-0);
+}
+.asc-cmd-rail__value--accent { color: var(--asc-accent); }
+.asc-cmd-rail__sub {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--asc-green);
+}
+
+/* ── Eyebrow chip ────────────────────────────────────────────────────────── */
+.asc-cmd-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--asc-accent-border);
+  background: var(--asc-accent-dim);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--asc-accent);
+}
+.asc-cmd-eyebrow__dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  background: var(--asc-accent);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
+/* ── CTA band ────────────────────────────────────────────────────────────── */
+.asc-cmd-cta {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--asc-accent-border);
+  background: linear-gradient(135deg, var(--asc-bg-2), var(--asc-bg-1) 60%, var(--asc-bg-2));
+  clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+}
+.asc-cmd-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 50% 80% at 85% 20%, var(--asc-accent-glow), transparent 60%);
+  opacity: 0.6;
+}
+.asc-cmd-cta > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asc-cmd-rail__item {
+    transition: none;
+  }
+}
+
 /* ═══ Global chrome — command navbar & status footer ═════════════════════════ */
 
 /* ── Command navbar ──────────────────────────────────────────────────────── */

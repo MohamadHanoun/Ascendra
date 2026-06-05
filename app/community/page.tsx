@@ -5,6 +5,7 @@ import Link from "next/link";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import SectionReveal from "@/components/SectionReveal";
+import CommandRail from "@/components/public/CommandRail";
 import { prisma } from "@/lib/prisma";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
@@ -400,45 +401,6 @@ function SectionRule({ label }: { label: string }) {
   );
 }
 
-function StatTile({
-  label,
-  value,
-  sub,
-  accent = false,
-}: {
-  label: string;
-  value: string | number;
-  sub: string;
-  accent?: boolean;
-}) {
-  return (
-    <Panel className="p-6">
-      <div className="relative z-10">
-        <p
-          className="text-[10px] uppercase tracking-[0.14em]"
-          style={{ ...monoStyle, color: "var(--asc-fg-3)" }}
-        >
-          {label}
-        </p>
-        <p
-          className="mt-3 text-[32px] font-black leading-none tabular-nums"
-          style={{
-            fontFamily: "var(--font-display)",
-            color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
-          }}
-        >
-          {value}
-        </p>
-        <p
-          className="mt-3 text-[10px] uppercase tracking-[0.08em]"
-          style={{ ...monoStyle, color: "var(--asc-green)" }}
-        >
-          {sub}
-        </p>
-      </div>
-    </Panel>
-  );
-}
 
 function DiscordCard({
   messages,
@@ -731,29 +693,32 @@ export default async function CommunityPage() {
 
         <section className="mx-auto grid max-w-[1480px] gap-12 px-6 pb-20 pt-10 lg:px-10 2xl:px-14">
           <SectionReveal>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <StatTile
-                label={messages.stats.activeTournaments.label}
-                value={stats.activeTournaments}
-                sub={messages.stats.activeTournaments.sub}
-                accent
-              />
-              <StatTile
-                label={messages.stats.players.label}
-                value={stats.totalUsers}
-                sub={messages.stats.players.sub}
-              />
-              <StatTile
-                label={messages.stats.teams.label}
-                value={stats.totalTeams}
-                sub={messages.stats.teams.sub}
-              />
-              <StatTile
-                label={messages.stats.results.label}
-                value={stats.tournamentResults}
-                sub={messages.stats.results.sub}
-              />
-            </div>
+            <CommandRail
+              columns={4}
+              items={[
+                {
+                  label: messages.stats.activeTournaments.label,
+                  value: stats.activeTournaments,
+                  sub: messages.stats.activeTournaments.sub,
+                  accent: true,
+                },
+                {
+                  label: messages.stats.players.label,
+                  value: stats.totalUsers,
+                  sub: messages.stats.players.sub,
+                },
+                {
+                  label: messages.stats.teams.label,
+                  value: stats.totalTeams,
+                  sub: messages.stats.teams.sub,
+                },
+                {
+                  label: messages.stats.results.label,
+                  value: stats.tournamentResults,
+                  sub: messages.stats.results.sub,
+                },
+              ]}
+            />
           </SectionReveal>
 
           <SectionReveal delay={0.08}>
@@ -846,6 +811,41 @@ export default async function CommunityPage() {
               />
             </Panel>
           </section>
+          </SectionReveal>
+
+          <SectionReveal delay={0.16}>
+            <div className="asc-cmd-cta p-8 md:p-12">
+              <div className="flex flex-col items-start gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="max-w-2xl">
+                  <span className="asc-cmd-eyebrow">
+                    <span aria-hidden="true" className="asc-cmd-eyebrow__dot" />
+                    {messages.discordCard.eyebrow}
+                  </span>
+                  <h2
+                    className="mt-4 text-3xl md:text-4xl"
+                    style={{ color: "var(--asc-fg-0)" }}
+                  >
+                    {messages.hero.titleLine1} {messages.hero.titleLine2}
+                  </h2>
+                  <p
+                    className="mt-3 text-sm leading-6"
+                    style={{ color: "var(--asc-fg-2)" }}
+                  >
+                    {messages.discordCard.description}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <ButtonLink href="/discord" variant="discord">
+                    <DiscordGlyph size={22} />
+                    {messages.hero.openDiscordHub}
+                  </ButtonLink>
+                  <ButtonLink href="/tournaments">
+                    {messages.hero.viewTournaments}
+                  </ButtonLink>
+                </div>
+              </div>
+            </div>
           </SectionReveal>
         </section>
 

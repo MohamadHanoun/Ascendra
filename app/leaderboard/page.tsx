@@ -224,18 +224,18 @@ export default async function LeaderboardPage({
             className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, rgb(12 11 9 / 0.35) 0%, rgb(12 11 9 / 0.58) 45%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.42) 35%, transparent 70%)",
+                "linear-gradient(180deg, rgb(var(--asc-scrim-rgb) / 0.35) 0%, rgb(var(--asc-scrim-rgb) / 0.58) 45%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(var(--asc-scrim-rgb) / 0.42) 35%, transparent 70%)",
               ].join(", "),
             }}
           />
 
           <div className="asc-image-hero-content relative z-10 mx-auto w-full max-w-[1480px] px-6 pb-7 pt-24 lg:px-8">
-            <p
-              className="asc-section-label mb-[14px]"
-            >
-              <span style={{ color: "var(--asc-accent)" }}>&#9650;</span>{" "}
-              {messages.hero.label}
+            <p className="mb-[14px]">
+              <span className="asc-cmd-eyebrow">
+                <span aria-hidden="true" className="asc-cmd-eyebrow__dot" />
+                {messages.hero.label}
+              </span>
             </p>
 
             <h1
@@ -327,7 +327,7 @@ export default async function LeaderboardPage({
         </section>
 
         <SectionReveal>
-          <div className="relative z-20 mx-auto -mt-5 max-w-[1480px] px-6 pb-24 lg:px-8">
+          <div className="asc-pub-shell relative z-20 mx-auto -mt-5 max-w-[1480px] px-6 pb-24 lg:px-8">
             <LeaderboardDisclaimer text={messages.disclaimer} />
             <LeaderboardContent
               type={leaderboard.type}

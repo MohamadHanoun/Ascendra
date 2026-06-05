@@ -5,6 +5,7 @@ import Link from "next/link";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import SectionReveal from "@/components/SectionReveal";
+import CommandRail from "@/components/public/CommandRail";
 import { prisma } from "@/lib/prisma";
 import { getGameImageUrl } from "@/lib/tournamentImages";
 import type { Locale } from "@/lib/i18n";
@@ -611,11 +612,11 @@ export default async function GamesPage() {
           />
 
           <div className="asc-image-hero-content relative z-10 mx-auto w-full max-w-[1680px] px-6 pb-9 pt-24 lg:px-10 2xl:px-14">
-            <p
-              className="asc-section-label mb-[18px]"
-            >
-              <span style={{ color: "var(--asc-accent)" }}>▲</span>{" "}
-              {messages.hero.eyebrowLeft} {activeGamesCount} {messages.hero.eyebrowRight}
+            <p className="mb-[18px]">
+              <span className="asc-cmd-eyebrow">
+                <span aria-hidden="true" className="asc-cmd-eyebrow__dot" />
+                {messages.hero.eyebrowLeft} {activeGamesCount} {messages.hero.eyebrowRight}
+              </span>
             </p>
             <h1
               className="max-w-5xl text-[clamp(48px,6.4vw,108px)] leading-[0.92]"
@@ -634,23 +635,28 @@ export default async function GamesPage() {
 
         <section className="asc-pub-shell mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 pt-10 lg:px-10 2xl:px-14">
           <SectionReveal>
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <p
-                  className="asc-section-label"
-                >
-                  ▲ {messages.section.eyebrow}
-                </p>
-                <h2 className="mt-2 text-2xl" style={{ color: "var(--asc-fg-0)" }}>
-                  {messages.section.title}
-                </h2>
+            <div className="grid gap-6">
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <p className="asc-section-label">▲ {messages.section.eyebrow}</p>
+                  <h2 className="mt-2 text-2xl" style={{ color: "var(--asc-fg-0)" }}>
+                    {messages.section.title}
+                  </h2>
+                </div>
               </div>
 
-              <div className="flex flex-wrap gap-6">
-                <StatBlock label={messages.stats.games} value={games.length} />
-                <StatBlock label={messages.stats.active} value={activeGamesCount} accent />
-                <StatBlock label={messages.stats.tournaments} value={totalTournaments} />
-              </div>
+              <CommandRail
+                columns={3}
+                items={[
+                  { label: messages.stats.games, value: games.length },
+                  {
+                    label: messages.stats.active,
+                    value: activeGamesCount,
+                    accent: true,
+                  },
+                  { label: messages.stats.tournaments, value: totalTournaments },
+                ]}
+              />
             </div>
           </SectionReveal>
 

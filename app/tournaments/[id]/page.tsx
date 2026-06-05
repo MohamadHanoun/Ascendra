@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import CommandRail from "@/components/public/CommandRail";
 import ProfileNotice from "@/components/ProfileNotice";
 import TournamentDetailsRealtime from "@/components/TournamentDetailsRealtime";
 import TournamentLifecycleRefresh from "@/components/TournamentLifecycleRefresh";
@@ -878,7 +879,7 @@ export default async function TournamentDetailsPage({
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(90deg, rgb(12 11 9 / 0.96) 0%, rgb(12 11 9 / 0.76) 44%, rgb(12 11 9 / 0.28) 100%)",
+                "linear-gradient(90deg, rgb(var(--asc-scrim-rgb) / 0.96) 0%, rgb(var(--asc-scrim-rgb) / 0.76) 44%, rgb(var(--asc-scrim-rgb) / 0.28) 100%)",
             }}
           />
 
@@ -1039,7 +1040,7 @@ export default async function TournamentDetailsPage({
           </div>
         </div>
 
-        <section className="relative mx-auto grid max-w-[1680px] gap-10 px-6 py-10 lg:px-10 2xl:px-14">
+        <section className="asc-pub-shell relative mx-auto grid max-w-[1680px] gap-10 px-6 py-10 lg:px-10 2xl:px-14">
           <ProfileNotice
             message={noticeParams.message}
             error={noticeParams.error}
@@ -1056,6 +1057,37 @@ export default async function TournamentDetailsPage({
             endsAt={tournament.endsAt?.toISOString() ?? null}
           />
 
+          {/* Operations command rail */}
+          <CommandRail
+            columns={5}
+            items={[
+              {
+                label: copy.prizePool,
+                value: tournament.prize ?? "—",
+                accent: true,
+              },
+              {
+                label: copy.teams,
+                value: `${approvedSlots}/${tournament.maxTeams}`,
+              },
+              {
+                label: copy.teamSize,
+                value: `${tournament.teamSize}v${tournament.teamSize}`,
+              },
+              {
+                label: copy.date,
+                value: formatDateOnly(tournament.startsAt, locale),
+              },
+              {
+                label: copy.registrationStatus,
+                value: getRegistrationStatusLabel(
+                  tournament.registrationStatus,
+                  messages.statuses,
+                ),
+              },
+            ]}
+          />
+
           {/* Overview */}
           <section id="overview" className="scroll-mt-24">
             <div
@@ -1063,11 +1095,7 @@ export default async function TournamentDetailsPage({
               style={{ alignItems: "start" }}
             >
               <div
-                className="relative overflow-hidden border"
-                style={{
-                  borderColor: "var(--asc-line-soft)",
-                  background: "var(--asc-bg-1)",
-                }}
+                className="asc-pub-surface"
               >
                 <PanelHeader
                   eyebrow={copy.summaryEyebrow}
@@ -1131,11 +1159,7 @@ export default async function TournamentDetailsPage({
 
               <div
                 id="registration"
-                className="scroll-mt-28 overflow-hidden border shadow-2xl"
-                style={{
-                  borderColor: "var(--asc-line-soft)",
-                  background: "var(--asc-bg-1)",
-                }}
+                className="asc-pub-surface scroll-mt-28 shadow-2xl"
               >
                 <PanelHeader
                   eyebrow={copy.registrationEyebrow}
@@ -1175,11 +1199,7 @@ export default async function TournamentDetailsPage({
           {/* Schedule */}
           <section id="schedule" className="scroll-mt-28">
             <div
-              className="overflow-hidden border"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                background: "var(--asc-bg-1)",
-              }}
+              className="asc-pub-surface"
             >
               <PanelHeader eyebrow={copy.schedule} title={copy.schedule} />
 
@@ -1262,11 +1282,7 @@ export default async function TournamentDetailsPage({
           {/* Teams */}
           <section id="teams" className="scroll-mt-28">
             <div
-              className="overflow-hidden border shadow-2xl"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                background: "var(--asc-bg-1)",
-              }}
+              className="asc-pub-surface shadow-2xl"
             >
               <PanelHeader
                 eyebrow={copy.teamsEyebrow}
@@ -1367,11 +1383,7 @@ export default async function TournamentDetailsPage({
           {/* Prizes / Results */}
           <section id="prizes" className="scroll-mt-28">
             <div
-              className="overflow-hidden border shadow-2xl"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                background: "var(--asc-bg-1)",
-              }}
+              className="asc-pub-surface shadow-2xl"
             >
               <PanelHeader
                 eyebrow={copy.resultsEyebrow}
@@ -1446,11 +1458,7 @@ export default async function TournamentDetailsPage({
           {/* Rules */}
           <section id="rules" className="scroll-mt-28">
             <div
-              className="overflow-hidden border"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                background: "var(--asc-bg-1)",
-              }}
+              className="asc-pub-surface"
             >
               <PanelHeader eyebrow={copy.rules} title={copy.rules} />
 
