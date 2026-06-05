@@ -44,6 +44,12 @@ model User {
   lastGuildCheckAt DateTime?
   lastLoginAt      DateTime?
 
+  // Public profile privacy controls
+  publicProfileEnabled  Boolean @default(true)
+  showDiscordId         Boolean @default(true)
+  showTeams             Boolean @default(true)
+  showTournamentHistory Boolean @default(true)
+
   // FACEIT integration
   faceitPlayerId      String?   @unique
   faceitNickname      String?

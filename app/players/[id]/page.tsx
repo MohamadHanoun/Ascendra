@@ -64,6 +64,8 @@ type PublicMessages = {
   notFoundTitle: string;
   notFoundDesc: string;
   backToLeaderboard: string;
+  privateTitle: string;
+  privateDesc: string;
 };
 
 const messagesByLocale: Record<Locale, PublicMessages> = {
@@ -115,6 +117,8 @@ const messagesByLocale: Record<Locale, PublicMessages> = {
     notFoundTitle: "Player not found",
     notFoundDesc: "This player profile does not exist or is no longer available.",
     backToLeaderboard: "Back to leaderboard",
+    privateTitle: "This profile is private",
+    privateDesc: "This player has chosen to keep their public profile hidden.",
   },
   ar: {
     hero: {
@@ -164,6 +168,8 @@ const messagesByLocale: Record<Locale, PublicMessages> = {
     notFoundTitle: "لم يتم العثور على اللاعب",
     notFoundDesc: "هذا الملف الشخصي غير موجود أو لم يعد متاحًا.",
     backToLeaderboard: "العودة إلى المتصدرين",
+    privateTitle: "هذا الملف الشخصي خاص",
+    privateDesc: "اختار هذا اللاعب إبقاء ملفه العام مخفيًا.",
   },
 };
 
@@ -354,11 +360,59 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
       role: true,
       discordId: true,
       isGuildMember: true,
+      publicProfileEnabled: true,
+      showDiscordId: true,
+      showTeams: true,
+      showTournamentHistory: true,
     },
   });
 
   if (!user) {
     notFound();
+  }
+
+  // Whole profile hidden — show a calm private state, skip all other queries.
+  if (!user.publicProfileEnabled) {
+    return (
+      <main
+        className="asc-public-page asc-ambient min-h-screen overflow-hidden"
+        style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
+      >
+        <div className="relative z-10 flex min-h-screen flex-col">
+          <Navbar />
+          <section className="mx-auto flex w-full max-w-[1440px] flex-1 items-center justify-center px-6 py-24 lg:px-10">
+            <div
+              className="relative w-full max-w-md border p-8 text-center"
+              style={{
+                borderColor: "var(--asc-line-soft)",
+                background: "var(--asc-bg-1)",
+                clipPath:
+                  "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+              }}
+            >
+              <CornerMark />
+              <div className="flex justify-center">
+                <Avatar username={user.username} avatar={user.avatar} />
+              </div>
+              <h1 className="mt-6 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>
+                {messages.privateTitle}
+              </h1>
+              <p className="mx-auto mt-3 max-w-xs text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
+                {messages.privateDesc}
+              </p>
+              <Link
+                href="/leaderboard"
+                className="mt-6 inline-flex border px-5 py-2.5 text-xs font-black uppercase tracking-[0.10em] transition hover:opacity-80"
+                style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" }}
+              >
+                {messages.backToLeaderboard}
+              </Link>
+            </div>
+          </section>
+          <Footer />
+        </div>
+      </main>
+    );
   }
 
   const [tournamentResults, teams, rankingPointsAgg, rawPointEvents] = await Promise.all([
@@ -501,7 +555,8 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                   </div>
                 </div>
 
-                {/* Discord ID — calm profile identifier */}
+                {/* Discord ID — calm profile identifier, gated by showDiscordId */}
+                {user.showDiscordId && (
                 <div className="grid gap-2 lg:justify-items-end">
                   <p
                     className="text-[10px] font-black uppercase tracking-[0.16em]"
@@ -527,6 +582,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                     />
                   </div>
                 </div>
+                )}
               </div>
 
               <div className="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-4">
@@ -542,7 +598,8 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
         {/* Content */}
         <section className="relative z-20 -mt-16 mx-auto max-w-[1440px] px-6 pb-20 lg:px-10">
           <div className="grid gap-10">
-            {/* Player Progress */}
+            {/* Player Progress — gated by showTournamentHistory */}
+            {user.showTournamentHistory && (
             <SectionCard
               eyebrow={messages.progress.eyebrow}
               title={messages.progress.title}
@@ -558,8 +615,10 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                 )}
               </div>
             </SectionCard>
+            )}
 
-            {/* Tournament History */}
+            {/* Tournament History — gated by showTournamentHistory */}
+            {user.showTournamentHistory && (
             <SectionCard eyebrow={messages.history.eyebrow} title={messages.history.title}>
               {tournamentResults.length === 0 ? (
                 <p className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>
@@ -618,8 +677,10 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                 </>
               )}
             </SectionCard>
+            )}
 
-            {/* Teams (read-only) */}
+            {/* Teams (read-only) — gated by showTeams */}
+            {user.showTeams && (
             <SectionCard eyebrow={messages.teams.eyebrow} title={messages.teams.title}>
               {teams.length === 0 ? (
                 <p className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>
@@ -648,6 +709,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                 </div>
               )}
             </SectionCard>
+            )}
 
             {/* Achievements — Coming Soon */}
             <SectionCard eyebrow={messages.achievements.eyebrow} title={messages.achievements.title}>

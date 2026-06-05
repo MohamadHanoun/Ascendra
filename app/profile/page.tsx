@@ -12,6 +12,7 @@ import Footer from "@/components/Footer";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LinkedAccountRow from "@/components/LinkedAccountRow";
 import Navbar from "@/components/Navbar";
+import PrivacyToggles from "@/components/PrivacyToggles";
 import ProfileIdentityActions from "@/components/ProfileIdentityActions";
 import ProfileNotice from "@/components/ProfileNotice";
 import ProfileRealtime from "@/components/ProfileRealtime";
@@ -1020,6 +1021,27 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const linkCopiedLabel = locale === "ar" ? "تم النسخ!" : "Copied!";
   const themeLabel = locale === "ar" ? "المظهر" : "Theme";
 
+  const privacyToggleLabels =
+    locale === "ar"
+      ? {
+          masterTitle: "الملف العام مفعّل",
+          masterDesc: "عند الإيقاف، لن يتمكن الآخرون من رؤية ملفك العام.",
+          showDiscordId: "إظهار معرّف Discord",
+          showTeams: "إظهار الفرق",
+          showTournamentHistory: "إظهار سجل البطولات",
+          save: "حفظ",
+          saving: "جارٍ الحفظ...",
+        }
+      : {
+          masterTitle: "Public profile enabled",
+          masterDesc: "When off, other users cannot view your public profile.",
+          showDiscordId: "Show Discord ID",
+          showTeams: "Show teams",
+          showTournamentHistory: "Show tournament history",
+          save: "Save",
+          saving: "Saving...",
+        };
+
   const pointEvents = rawPointEvents.map((e) => ({
     points: e.points,
     createdAt: e.createdAt.toISOString(),
@@ -1268,27 +1290,25 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         </div>
       </div>
 
-      {/* Privacy placeholder */}
-      <div
-        className="border px-5 py-5"
-        style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
-              {messages.sections.privacyTitle}
-            </p>
-            <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-              {messages.sections.privacyDesc}
-            </p>
-          </div>
-          <span
-            className="shrink-0 border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
-            style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-3)" }}
-          >
-            {messages.sections.comingSoon}
-          </span>
+      {/* Privacy & Visibility — real controls */}
+      <div>
+        <div className="mb-3">
+          <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
+            {messages.sections.privacyTitle}
+          </p>
+          <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+            {messages.sections.privacyDesc}
+          </p>
         </div>
+        <PrivacyToggles
+          initial={{
+            publicProfileEnabled: user.publicProfileEnabled,
+            showDiscordId: user.showDiscordId,
+            showTeams: user.showTeams,
+            showTournamentHistory: user.showTournamentHistory,
+          }}
+          labels={privacyToggleLabels}
+        />
       </div>
 
       {/* Preferences — real controls */}
