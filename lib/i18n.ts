@@ -639,7 +639,7 @@ export const dictionaries: Record<Locale, I18nMessages> = {
         primary: "Browse tournaments",
         secondary: "Create a team",
         seasonLabel: "Current season",
-        platformTagline: "A premium esports platform",
+        platformTagline: "A esports platform",
         discordButton: "Join Discord",
       },
       statuses: {

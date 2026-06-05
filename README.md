@@ -1,6 +1,6 @@
 # Ascendra
 
-Ascendra is a premium esports platform for Discord-based gaming communities, tournaments, teams, rankings, match operations, and admin-controlled community management.
+Ascendra is a esports platform for Discord-based gaming communities, tournaments, teams, rankings, match operations, and admin-controlled community management.
 
 The project is built with **Next.js**, **TypeScript**, **Prisma**, **PostgreSQL**, **NextAuth Discord authentication**, and a prepared **Discord bot operations layer**.
 

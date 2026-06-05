@@ -178,7 +178,7 @@ function HeroSplit({ hero, go }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', alignItems: 'end', gap: 'var(--pad-5)' }}>
           <div>
             <div className="eyebrow" style={{ marginBottom: 22 }}>
-              <span className="dot">▲</span> ASCENDRA · SEASON 07 · A PREMIUM ESPORTS PLATFORM
+              <span className="dot">▲</span> ASCENDRA · SEASON 07 · A  ESPORTS PLATFORM
             </div>
             <h1 className="title">
               Rise<br/>
