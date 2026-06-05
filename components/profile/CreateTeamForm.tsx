@@ -45,7 +45,7 @@ export function CreateTeamForm({
               name="name"
               required
               placeholder={labels.teamNamePlaceholder}
-              className="border px-4 py-3 outline-none transition"
+              className="asc-profile-input px-4 py-3 outline-none transition"
               style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-0)" }}
             />
           </label>
@@ -70,12 +70,7 @@ export function CreateTeamForm({
         <button
           type="submit"
           disabled={pending}
-          className="w-fit px-5 py-3 font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-          style={{
-            background: "var(--asc-accent-2)",
-            boxShadow: "0 0 20px var(--asc-accent-glow)",
-            clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-          }}
+          className="asc-profile-action asc-profile-action--solid w-fit px-5 py-3 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? labels.creatingLabel : labels.createTeam}
         </button>

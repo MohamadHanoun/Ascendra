@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { CornerMark } from "@/components/profile/shared";
+import { Card } from "@/components/profile/shared";
 import type { ProfileMessages } from "@/lib/profile/profileMessages";
 import type { Locale } from "@/lib/i18n";
 import { getPlayerMatchStatusLabel, type MatchHubCard } from "@/lib/playerMatchHub";
@@ -61,8 +61,7 @@ function ActiveMatchCard({
 }) {
   return (
     <div
-      className="relative flex flex-col gap-4 border p-4"
-      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+      className="asc-profile-match-card flex flex-col gap-4 p-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
@@ -135,7 +134,7 @@ function ActiveMatchCard({
               href={card.faceitMatchUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1 inline-flex items-center gap-1 border px-3 py-1 text-[10px] font-black uppercase tracking-[0.10em] transition hover:opacity-80"
+              className="asc-profile-action mt-1 inline-flex min-h-0 items-center gap-1 px-3 py-1 text-[10px] tracking-[0.10em]"
               style={{
                 color: "var(--asc-green)",
                 borderColor: "oklch(0.55 0.14 150 / 0.40)",
@@ -174,14 +173,7 @@ function ActiveMatchCard({
 
       <a
         href={card.matchHref}
-        className="mt-auto border px-4 py-2 text-center text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80"
-        style={{
-          borderColor: "var(--asc-accent-border-strong)",
-          color: "var(--asc-accent)",
-          background: "var(--asc-accent-dim)",
-          clipPath:
-            "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)",
-        }}
+        className="asc-profile-action mt-auto px-4 py-2 text-center text-xs tracking-[0.08em]"
       >
         {msgs.openMatch}
       </a>
@@ -199,34 +191,24 @@ export function ActiveMatchesPanel({
   locale: Locale;
 }) {
   return (
-    <div
-      className="relative overflow-hidden border"
-      style={{
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        clipPath:
-          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
-      }}
-    >
-      <CornerMark />
-      <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
-        <p
-          className="text-[10px] font-black uppercase tracking-[0.16em]"
-          style={{ color: "var(--asc-accent)" }}
-        >
-          ▲ {messages.heading}
+    <Card>
+      <div className="asc-profile-card-header">
+        <p className="asc-profile-eyebrow">
+          {messages.heading}
         </p>
       </div>
       <div className="p-5">
         {cards.length === 0 ? (
-          <div className="flex flex-col items-start gap-4 py-4">
-            <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
+          <div className="asc-profile-empty asc-profile-empty--inline">
+            <span className="asc-profile-empty__mark" aria-hidden="true">
+              00
+            </span>
+            <p className="asc-profile-empty__text">
               {messages.empty}
             </p>
             <Link
               href="/tournaments"
-              className="inline-flex border px-5 py-2.5 text-xs font-black uppercase tracking-[0.10em] transition hover:opacity-80"
-              style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-accent)" }}
+              className="asc-profile-action mt-5 px-5 py-2.5 text-xs tracking-[0.10em]"
             >
               {messages.browseTournaments} →
             </Link>
@@ -239,6 +221,6 @@ export function ActiveMatchesPanel({
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

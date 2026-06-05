@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { buildChartData } from "@/components/profile/chartData";
 import { PointHistoryChart } from "@/components/profile/PointHistoryChart";
-import { Pill } from "@/components/profile/shared";
+import { Card, Pill } from "@/components/profile/shared";
 import type {
   PointEvent,
   ProfileHeroLabels,
@@ -42,44 +42,34 @@ export function OverviewPanel({
   const chartData = buildChartData(pointEvents);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-7">
       {invitationCount > 0 && (
         <div
-          className="flex flex-wrap items-center justify-between gap-3 border p-4"
-          style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}
+          className="asc-profile-alert flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5"
         >
           <p className="font-black" style={{ color: "var(--asc-accent)" }}>
             {invitationCount} {sectionLabels.teamInvitations}
           </p>
           <Link
             href="/profile/teams"
-            className="shrink-0 border px-4 py-2 text-xs font-black uppercase tracking-[0.10em] transition hover:opacity-80"
-            style={{ borderColor: "var(--asc-accent-border)", color: "var(--asc-accent)", background: "transparent" }}
+            className="asc-profile-action shrink-0 px-4 py-2 text-xs tracking-[0.10em]"
           >
             {sectionLabels.invitations} →
           </Link>
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="asc-profile-stat-rail asc-profile-stat-rail--4">
         {stats.map(({ label, value, accent }) => (
           <div
             key={label}
-            className="border p-4"
-            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+            className="asc-profile-stat"
           >
-            <p
-              className="text-[10px] font-black uppercase tracking-[0.14em]"
-              style={{ color: "var(--asc-fg-3)" }}
-            >
+            <p className="asc-profile-stat__label">
               {label}
             </p>
             <p
-              className="mt-2 text-2xl font-black tabular-nums"
-              style={{
-                color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
-                fontFamily: "var(--font-display)",
-              }}
+              className={`asc-profile-stat__value tabular-nums${accent ? " asc-profile-stat__value--accent" : ""}`}
             >
               {value}
             </p>
@@ -89,36 +79,29 @@ export function OverviewPanel({
 
       {/* Chart — shown whenever point events exist, regardless of tournament results */}
       {chartData.length > 0 && (
-        <div className="border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
-          <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
-            <p
-              className="text-[10px] font-black uppercase tracking-[0.16em]"
-              style={{ color: "var(--asc-accent)" }}
-            >
-              ▲ {sectionLabels.performanceEyebrow}
+        <Card>
+          <div className="asc-profile-card-header">
+            <p className="asc-profile-eyebrow">
+              {sectionLabels.performanceEyebrow}
             </p>
             <h3
-              className="mt-1 text-base font-black uppercase"
-              style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+              className="asc-profile-section-title"
             >
               {sectionLabels.pointHistoryTitle}
             </h3>
           </div>
-          <div className="p-5">
-            <PointHistoryChart data={chartData} ptsLabel={sectionLabels.tableColPts} height={140} />
+          <div className="p-5 md:p-6">
+            <PointHistoryChart data={chartData} ptsLabel={sectionLabels.tableColPts} height={160} />
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Recent tournament results, or empty state */}
       {tournamentResults.length > 0 ? (
-        <div className="border" style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}>
-          <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
-            <p
-              className="text-[10px] font-black uppercase tracking-[0.16em]"
-              style={{ color: "var(--asc-accent)" }}
-            >
-              ▲ {sectionLabels.recentMatchesEyebrow}
+        <Card>
+          <div className="asc-profile-card-header">
+            <p className="asc-profile-eyebrow">
+              {sectionLabels.recentMatchesEyebrow}
             </p>
           </div>
           {tournamentResults.slice(0, 3).map((r) => {
@@ -131,7 +114,7 @@ export function OverviewPanel({
               <Link
                 key={r.id}
                 href={`/tournaments/${r.tournament.id}`}
-                className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition hover:bg-white/[0.02]"
+                className="asc-profile-row flex flex-wrap items-center justify-between gap-3 px-5 py-4"
                 style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
               >
                 <div className="min-w-0">
@@ -141,7 +124,7 @@ export function OverviewPanel({
                   <p className="text-xs" style={{ color: "var(--asc-fg-3)" }}>{date}</p>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <Pill label={`#${r.placement}`} tone="blue" />
+                  <Pill label={`#${r.placement}`} tone="bronze" />
                   <Pill label={`${r.points} ${labels.pts}`} tone="green" />
                 </div>
               </Link>
@@ -150,31 +133,27 @@ export function OverviewPanel({
           {tournamentResults.length > 3 && (
             <Link
               href="/profile/history"
-              className="block w-full px-5 py-4 text-left text-xs font-black uppercase tracking-[0.12em] transition hover:bg-white/[0.02]"
+              className="asc-profile-row block w-full px-5 py-4 text-left text-xs font-black uppercase tracking-[0.12em] rtl:text-right"
               style={{ color: "var(--asc-fg-3)", borderTop: "1px solid var(--asc-line-soft)" }}
             >
               {sectionLabels.tournamentHistoryTitle} · {tournamentResults.length} {labels.results} →
             </Link>
           )}
-        </div>
+        </Card>
       ) : (
-        <div
-          className="border p-10 text-center"
-          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
-        >
-          <p
-            className="text-sm font-black uppercase tracking-[0.12em]"
-            style={{ color: "var(--asc-fg-3)", opacity: 0.6 }}
-          >
+        <div className="asc-profile-empty">
+          <span className="asc-profile-empty__mark" aria-hidden="true">
+            00
+          </span>
+          <p className="asc-profile-empty__title">
             {sectionLabels.noTournamentResults}
           </p>
-          <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+          <p className="asc-profile-empty__text">
             {sectionLabels.noActivityDesc}
           </p>
           <Link
             href="/tournaments"
-            className="mt-6 inline-flex border px-5 py-2.5 text-sm font-black uppercase tracking-[0.10em] transition hover:opacity-80"
-            style={{ borderColor: "var(--asc-accent-border)", color: "var(--asc-accent)", background: "var(--asc-accent-dim)" }}
+            className="asc-profile-action mt-6 px-5 py-2.5 text-sm tracking-[0.10em]"
           >
             {sectionLabels.browseTournaments} →
           </Link>

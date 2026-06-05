@@ -35,10 +35,7 @@ function Badge({ value }: { value: number }) {
   }
 
   return (
-    <span
-      className="inline-flex h-[18px] min-w-[18px] items-center justify-center px-1 text-[9px] font-black"
-      style={{ background: "var(--asc-accent)", color: "#000" }}
-    >
+    <span className="asc-profile-nav-badge">
       {value}
     </span>
   );
@@ -47,22 +44,25 @@ function Badge({ value }: { value: number }) {
 function MobileItem({
   item,
   active,
+  index,
 }: {
   item: ProfileSubnavItem;
   active: boolean;
+  index: number;
 }) {
   return (
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
-      className="inline-flex h-12 shrink-0 items-center justify-center gap-2 whitespace-nowrap px-4 text-[10px] font-black uppercase tracking-[0.10em] transition-colors motion-reduce:transition-none"
-      style={{
-        color: active ? "var(--asc-fg-0)" : "var(--asc-fg-3)",
-        background: active ? "var(--asc-accent-dim)" : "transparent",
-        boxShadow: active ? "inset 0 -3px 0 var(--asc-accent)" : "none",
-      }}
+      data-active={active ? "true" : undefined}
+      className="asc-profile-nav-item min-w-[9.5rem] shrink-0 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.10em]"
     >
-      <span>{item.label}</span>
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="asc-profile-nav-item__index">
+          {String(index + 1).padStart(2, "0")}
+        </span>
+        <span className="truncate">{item.label}</span>
+      </span>
       <Badge value={item.badge ?? 0} />
     </Link>
   );
@@ -71,22 +71,25 @@ function MobileItem({
 function DesktopItem({
   item,
   active,
+  index,
 }: {
   item: ProfileSubnavItem;
   active: boolean;
+  index: number;
 }) {
   return (
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
-      className="flex min-h-12 items-center justify-between gap-3 border px-4 py-3 text-sm font-black uppercase tracking-[0.10em] transition-colors motion-reduce:transition-none"
-      style={{
-        borderColor: active ? "var(--asc-accent-border)" : "transparent",
-        color: active ? "var(--asc-fg-0)" : "var(--asc-fg-3)",
-        background: active ? "var(--asc-accent-dim)" : "transparent",
-      }}
+      data-active={active ? "true" : undefined}
+      className="asc-profile-nav-item text-sm font-black uppercase tracking-[0.10em]"
     >
-      <span>{item.label}</span>
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="asc-profile-nav-item__index">
+          {String(index + 1).padStart(2, "0")}
+        </span>
+        <span className="truncate">{item.label}</span>
+      </span>
       <Badge value={item.badge ?? 0} />
     </Link>
   );
@@ -121,17 +124,14 @@ export default function ProfileSubnav({
       <nav
         aria-label="Profile sections"
         dir={dir}
-        className="lg:hidden"
-        style={{
-          border: "1px solid var(--asc-line-soft)",
-          background: "var(--asc-bg-1)",
-        }}
+        className="asc-profile-mobile-nav lg:hidden"
       >
-        <div className="flex overflow-x-auto">
-          {items.map((item) => (
+        <div className="asc-profile-mobile-nav__track">
+          {items.map((item, index) => (
             <MobileItem
               key={item.href}
               item={item}
+              index={index}
               active={isActivePath(pathname, item.href)}
             />
           ))}
@@ -140,24 +140,22 @@ export default function ProfileSubnav({
 
       <aside
         dir={dir}
-        className="hidden lg:block"
-        style={{ position: "sticky", top: 96, alignSelf: "start" }}
+        className="hidden lg:sticky lg:top-24 lg:block lg:self-start"
       >
         <nav
           aria-label="Profile sections"
-          className="grid gap-1 border p-2"
-          style={{
-            borderColor: "var(--asc-line-soft)",
-            background: "var(--asc-bg-1)",
-          }}
+          className="asc-profile-subnav"
         >
-          {items.map((item) => (
-            <DesktopItem
-              key={item.href}
-              item={item}
-              active={isActivePath(pathname, item.href)}
-            />
-          ))}
+          <div className="asc-profile-subnav__inner">
+            {items.map((item, index) => (
+              <DesktopItem
+                key={item.href}
+                item={item}
+                index={index}
+                active={isActivePath(pathname, item.href)}
+              />
+            ))}
+          </div>
         </nav>
       </aside>
     </>

@@ -66,7 +66,7 @@ export default function LinkedAccountRow({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 bg-[var(--asc-bg-1)] px-5 py-4">
+    <div className="asc-profile-row flex flex-wrap items-center justify-between gap-4 bg-[var(--asc-bg-1)] px-5 py-4">
       <div className="flex items-center gap-4">
         <div
           className="grid h-10 w-10 shrink-0 place-items-center border text-xs font-black"
@@ -108,7 +108,7 @@ export default function LinkedAccountRow({
             )}
           </div>
           <span
-            className="border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
+            className="asc-profile-pill border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
             style={{
               borderColor: "var(--asc-green-border)",
               background: "var(--asc-green-bg)",
@@ -122,12 +122,7 @@ export default function LinkedAccountRow({
               type="button"
               disabled={pending}
               onClick={() => setConfirmOpen(true)}
-              className="border px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
-              style={{
-                borderColor: "var(--asc-live-border)",
-                background: "transparent",
-                color: "var(--asc-live)",
-              }}
+              className="asc-profile-action asc-profile-action--danger px-3 py-1 text-[10px] tracking-[0.08em] disabled:opacity-40"
             >
               {pending ? labels.unlinking : labels.unlink}
             </button>
@@ -158,12 +153,7 @@ export default function LinkedAccountRow({
         <div className="flex flex-col items-end gap-1">
           <a
             href={connectHref}
-            className="border px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80"
-            style={{
-              borderColor: "var(--asc-accent-border)",
-              background: "var(--asc-accent-dim)",
-              color: "var(--asc-accent)",
-            }}
+            className="asc-profile-action px-4 py-2 text-xs tracking-[0.08em]"
           >
             {labels.connect} →
           </a>

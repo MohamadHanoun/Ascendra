@@ -45,21 +45,19 @@ function Switch({
         type="button"
         role="switch"
         aria-checked={checked}
+        data-checked={checked ? "true" : undefined}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className="relative inline-flex h-6 w-11 shrink-0 items-center border transition disabled:opacity-40"
+        className="asc-profile-switch disabled:opacity-40"
         style={{
-          borderColor: checked && !disabled ? "var(--asc-accent-border)" : "var(--asc-line-soft)",
-          background: checked && !disabled ? "var(--asc-accent-dim)" : "transparent",
           cursor: disabled ? "not-allowed" : "pointer",
         }}
       >
         <span
           aria-hidden="true"
-          className="inline-block h-4 w-4 transition-transform"
+          className="asc-profile-switch__knob"
           style={{
-            background: checked && !disabled ? "var(--asc-accent)" : "var(--asc-fg-3)",
-            transform: checked ? "translateX(22px)" : "translateX(3px)",
+            opacity: disabled ? 0.55 : 1,
           }}
         />
       </button>
@@ -106,11 +104,10 @@ export default function PrivacyToggles({ initial, labels }: PrivacyTogglesProps)
   return (
     <form
       action={formAction}
-      className="border"
-      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+      className="asc-profile-form"
     >
       {/* Master toggle */}
-      <div className="flex items-start justify-between gap-4 border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
+      <div className="asc-profile-card-header flex items-start justify-between gap-4">
         <div>
           <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
             {labels.masterTitle}
@@ -129,31 +126,37 @@ export default function PrivacyToggles({ initial, labels }: PrivacyTogglesProps)
       {/* Sub-toggles */}
       <div className="grid gap-px" style={{ background: "var(--asc-line-soft)" }}>
         <div style={{ background: "var(--asc-bg-1)" }}>
-          <ToggleRow
-            label={labels.showDiscordId}
-            name="showDiscordId"
-            checked={showDiscordId}
-            disabled={subDisabled}
-            onChange={setShowDiscordId}
-          />
+          <div className="asc-profile-row">
+            <ToggleRow
+              label={labels.showDiscordId}
+              name="showDiscordId"
+              checked={showDiscordId}
+              disabled={subDisabled}
+              onChange={setShowDiscordId}
+            />
+          </div>
         </div>
         <div style={{ background: "var(--asc-bg-1)" }}>
-          <ToggleRow
-            label={labels.showTeams}
-            name="showTeams"
-            checked={showTeams}
-            disabled={subDisabled}
-            onChange={setShowTeams}
-          />
+          <div className="asc-profile-row">
+            <ToggleRow
+              label={labels.showTeams}
+              name="showTeams"
+              checked={showTeams}
+              disabled={subDisabled}
+              onChange={setShowTeams}
+            />
+          </div>
         </div>
         <div style={{ background: "var(--asc-bg-1)" }}>
-          <ToggleRow
-            label={labels.showTournamentHistory}
-            name="showTournamentHistory"
-            checked={showHistory}
-            disabled={subDisabled}
-            onChange={setShowHistory}
-          />
+          <div className="asc-profile-row">
+            <ToggleRow
+              label={labels.showTournamentHistory}
+              name="showTournamentHistory"
+              checked={showHistory}
+              disabled={subDisabled}
+              onChange={setShowHistory}
+            />
+          </div>
         </div>
       </div>
 
@@ -162,12 +165,7 @@ export default function PrivacyToggles({ initial, labels }: PrivacyTogglesProps)
         <button
           type="submit"
           disabled={pending}
-          className="border px-5 py-2.5 text-xs font-black uppercase tracking-[0.10em] transition hover:opacity-80 disabled:opacity-40"
-          style={{
-            borderColor: "var(--asc-accent-border)",
-            color: "var(--asc-accent)",
-            background: "var(--asc-accent-dim)",
-          }}
+          className="asc-profile-action px-5 py-2.5 text-xs tracking-[0.10em] disabled:opacity-40"
         >
           {pending ? labels.saving : labels.save}
         </button>

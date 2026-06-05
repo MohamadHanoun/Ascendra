@@ -14,7 +14,7 @@ import PrivacyToggles from "@/components/PrivacyToggles";
 import ProfileInfoForm from "@/components/ProfileInfoForm";
 import PublicThemeToggle from "@/components/PublicThemeToggle";
 import { CopyLinkButton } from "@/components/profile/CopyLinkButton";
-import { CornerMark } from "@/components/profile/shared";
+import { Card } from "@/components/profile/shared";
 import { getCountryOptions } from "@/lib/countries";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import type {
@@ -130,42 +130,26 @@ export default function AccountPanel({
   return (
     <div className="grid gap-6">
       <div>
-        <p
-          className="text-[10px] font-black uppercase tracking-[0.16em]"
-          style={{ color: "var(--asc-accent)" }}
-        >
-          ▲ {messages.sections.accountTitle}
+        <p className="asc-profile-eyebrow">
+          {messages.sections.accountTitle}
         </p>
         <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
           {messages.sections.connectedAccountsDesc}
         </p>
       </div>
 
-      <div
-        className="relative overflow-hidden border"
-        style={{
-          borderColor: "var(--asc-line-soft)",
-          background: "var(--asc-bg-1)",
-        }}
-      >
-        <CornerMark />
-        <div
-          className="border-b px-5 py-4"
-          style={{ borderColor: "var(--asc-line-soft)" }}
-        >
-          <p
-            className="text-[10px] font-black uppercase tracking-[0.16em]"
-            style={{ color: "var(--asc-accent)" }}
-          >
-            ▲ {messages.sections.accountTitle}
+      <Card>
+        <div className="asc-profile-card-header">
+          <p className="asc-profile-eyebrow">
+            {messages.sections.accountTitle}
           </p>
-          <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
+          <h2 className="asc-profile-section-title">
             {messages.labels.linkedAccounts}
           </h2>
         </div>
 
         <div className="grid gap-px" style={{ background: "var(--asc-line-soft)" }}>
-          <div className="flex flex-wrap items-center justify-between gap-4 bg-[var(--asc-bg-1)] px-5 py-4">
+          <div className="asc-profile-row flex flex-wrap items-center justify-between gap-4 bg-[var(--asc-bg-1)] px-5 py-4">
             <div className="flex items-center gap-4">
               <div
                 className="grid h-10 w-10 shrink-0 place-items-center border text-xs font-black"
@@ -189,7 +173,7 @@ export default function AccountPanel({
             <div className="flex flex-wrap items-center gap-2">
               {user.isGuildMember && (
                 <span
-                  className="border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
+                  className="asc-profile-pill border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
                   style={{
                     borderColor: "var(--asc-green-border)",
                     background: "var(--asc-green-bg)",
@@ -200,7 +184,7 @@ export default function AccountPanel({
                 </span>
               )}
               <span
-                className="border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
+                className="asc-profile-pill border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
                 style={{
                   borderColor: "var(--asc-green-border)",
                   background: "var(--asc-green-bg)",
@@ -321,7 +305,7 @@ export default function AccountPanel({
             }}
           />
         </div>
-      </div>
+      </Card>
 
       <ProfileInfoForm
         initial={{
@@ -356,17 +340,8 @@ export default function AccountPanel({
         />
       </div>
 
-      <div
-        className="border"
-        style={{
-          borderColor: "var(--asc-line-soft)",
-          background: "var(--asc-bg-1)",
-        }}
-      >
-        <div
-          className="border-b px-5 py-4"
-          style={{ borderColor: "var(--asc-line-soft)" }}
-        >
+      <Card>
+        <div className="asc-profile-card-header">
           <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
             {messages.sections.preferencesTitle}
           </p>
@@ -375,7 +350,7 @@ export default function AccountPanel({
           </p>
         </div>
         <div className="grid gap-px" style={{ background: "var(--asc-line-soft)" }}>
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--asc-bg-1)] px-5 py-4">
+          <div className="asc-profile-row flex flex-wrap items-center justify-between gap-3 bg-[var(--asc-bg-1)] px-5 py-4">
             <p className="text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
               {navDictionary.navbar.language.label}
             </p>
@@ -384,13 +359,13 @@ export default function AccountPanel({
               labels={navDictionary.navbar.language}
             />
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--asc-bg-1)] px-5 py-4">
+          <div className="asc-profile-row flex flex-wrap items-center justify-between gap-3 bg-[var(--asc-bg-1)] px-5 py-4">
             <p className="text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
               {interfaceLabels.theme}
             </p>
             <PublicThemeToggle />
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--asc-bg-1)] px-5 py-4">
+          <div className="asc-profile-row flex flex-wrap items-center justify-between gap-3 bg-[var(--asc-bg-1)] px-5 py-4">
             <div>
               <p className="text-sm font-black" style={{ color: "var(--asc-fg-0)" }}>
                 {interfaceLabels.copyLink}
@@ -406,19 +381,10 @@ export default function AccountPanel({
             />
           </div>
         </div>
-      </div>
+      </Card>
 
-      <div
-        className="border"
-        style={{
-          borderColor: "var(--asc-line-soft)",
-          background: "var(--asc-bg-1)",
-        }}
-      >
-        <div
-          className="border-b px-5 py-4"
-          style={{ borderColor: "var(--asc-line-soft)" }}
-        >
+      <Card>
+        <div className="asc-profile-card-header">
           <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
             {messages.sections.securityTitle}
           </p>
@@ -436,18 +402,13 @@ export default function AccountPanel({
           >
             <button
               type="submit"
-              className="border px-5 py-2.5 text-sm font-black uppercase tracking-[0.10em] transition hover:opacity-70 motion-reduce:transition-none"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                color: "var(--asc-fg-2)",
-                background: "transparent",
-              }}
+              className="asc-profile-action asc-profile-action--ghost px-5 py-2.5 text-sm tracking-[0.10em]"
             >
               {messages.labels.signOut}
             </button>
           </form>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

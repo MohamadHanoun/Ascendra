@@ -4,38 +4,24 @@ import ProfileIdentityActions from "@/components/ProfileIdentityActions";
 import { CornerMark } from "@/components/profile/shared";
 import type { ProfileMessages } from "@/lib/profile/profileMessages";
 
-function getAvatarHue(username: string) {
-  let hue = 0;
-  for (const character of username) {
-    hue = (hue << 5) - hue + character.charCodeAt(0);
-  }
-  return Math.abs(hue) % 360;
-}
-
 function Avatar({ username, avatar }: { username: string; avatar: string | null }) {
-  const hue = getAvatarHue(username);
-  const clipPath =
-    "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)";
-
   if (avatar) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={avatar}
         alt={username}
-        className="h-24 w-24 shrink-0 object-cover md:h-32 md:w-32"
-        style={{ clipPath, border: "1px solid var(--asc-line-soft)" }}
+        className="asc-profile-avatar h-24 w-24 shrink-0 object-cover md:h-32 md:w-32"
       />
     );
   }
 
   return (
     <div
-      className="grid h-24 w-24 shrink-0 place-items-center md:h-32 md:w-32"
+      className="asc-profile-avatar grid h-24 w-24 shrink-0 place-items-center md:h-32 md:w-32"
       style={{
-        clipPath,
-        background: `linear-gradient(135deg, oklch(0.55 0.22 ${hue}), oklch(0.30 0.16 ${hue + 40}))`,
-        boxShadow: `inset 0 0 0 1px oklch(0.65 0.22 ${hue} / 0.4)`,
+        background:
+          "linear-gradient(135deg, var(--asc-gold-bright), var(--asc-accent) 54%, var(--asc-bronze))",
       }}
     >
       <span
@@ -62,10 +48,7 @@ function GuildBadge({
     : { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" };
 
   return (
-    <span
-      className="inline-flex w-fit border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
-      style={style}
-    >
+    <span className="asc-profile-pill inline-flex w-fit border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]" style={style}>
       {isMember ? memberLabel : notMemberLabel}
     </span>
   );
@@ -81,16 +64,12 @@ function HeroStat({
   accent?: boolean;
 }) {
   return (
-    <div>
-      <p
-        className="text-[10px] font-black uppercase tracking-[0.16em]"
-        style={{ color: "var(--asc-fg-3)" }}
-      >
+    <div className="asc-profile-stat">
+      <p className="asc-profile-stat__label">
         {label}
       </p>
       <p
-        className="mt-1 text-4xl font-black tabular-nums md:text-5xl"
-        style={{ color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)", fontFamily: "var(--font-display)" }}
+        className={`asc-profile-stat__value tabular-nums${accent ? " asc-profile-stat__value--accent" : ""}`}
       >
         {value}
       </p>
@@ -120,7 +99,7 @@ export default function ProfileHero({
   messages: ProfileMessages;
 }) {
   return (
-    <section className="asc-image-hero relative min-h-[520px] overflow-hidden">
+    <section className="asc-image-hero asc-profile-hero relative overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: 'url("/images/backgrounds/profile-hero.webp")' }}
@@ -139,16 +118,9 @@ export default function ProfileHero({
         style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }}
       />
 
-      <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-32 pt-24 lg:px-10">
+      <div className="relative z-10 mx-auto max-w-[1440px] px-4 pb-24 pt-20 sm:px-6 md:pb-28 md:pt-24 lg:px-10">
         <section
-          className="relative mt-4 overflow-hidden border p-6 shadow-2xl shadow-black/20 md:p-8"
-          style={{
-            borderColor: "var(--asc-line-soft)",
-            background: "var(--asc-card)",
-            backdropFilter: "blur(16px)",
-            clipPath:
-              "polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px)",
-          }}
+          className="asc-profile-hero-panel relative mt-4 p-5 md:p-7"
         >
           <CornerMark />
 
@@ -157,15 +129,12 @@ export default function ProfileHero({
               <Avatar username={username} avatar={avatar} />
 
               <div className="min-w-0">
-                <p
-                  className="text-xs font-black uppercase tracking-[0.2em]"
-                  style={{ color: "var(--asc-accent)" }}
-                >
-                  ▲ {messages.hero.label}
+                <p className="asc-profile-eyebrow">
+                  {messages.hero.label}
                 </p>
 
                 <h1
-                  className="mt-3 truncate text-5xl md:text-7xl"
+                  className="mt-4 max-w-full break-words text-4xl leading-none sm:text-5xl md:text-7xl"
                   style={{ color: "var(--asc-fg-0)" }}
                 >
                   {displayName}
@@ -179,7 +148,7 @@ export default function ProfileHero({
                   />
 
                   <span
-                    className="inline-flex border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
+                    className="asc-profile-pill inline-flex border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
                     style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-3)" }}
                   >
                     {resultsCount} {messages.labels.results}
@@ -200,7 +169,7 @@ export default function ProfileHero({
             </div>
           </div>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+          <div className="asc-profile-stat-rail asc-profile-stat-rail--hero mt-7 md:mt-8">
             <HeroStat label={messages.hero.points} value={rankingPoints.toLocaleString()} accent />
             <HeroStat label={messages.labels.results} value={resultsCount} />
             <HeroStat label={messages.labels.best} value={bestPlacement ? `#${bestPlacement}` : "—"} />

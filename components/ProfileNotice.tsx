@@ -30,7 +30,7 @@ export default async function ProfileNotice({
 
   return (
     <div
-      className="mb-8 p-5 shadow-2xl shadow-black/20"
+      className="asc-profile-alert mb-8 p-5"
       style={
         isError
           ? { border: "1px solid var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" }

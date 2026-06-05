@@ -24,7 +24,7 @@ export function CopyLinkButton({
     <button
       type="button"
       onClick={handleCopy}
-      className="border px-4 py-2 text-xs font-black uppercase tracking-[0.10em] transition hover:opacity-80 motion-reduce:transition-none"
+      className="asc-profile-action asc-profile-action--ghost px-4 py-2 text-xs tracking-[0.10em]"
       style={{
         borderColor: copied
           ? "var(--asc-green-border)"

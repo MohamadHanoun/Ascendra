@@ -45,7 +45,7 @@ const INITIAL: ProfileInfoActionResult = { ok: false, message: "" };
 
 const fieldLabelClass = "text-[10px] font-black uppercase tracking-[0.16em]";
 const inputClass =
-  "w-full border px-3 py-2.5 text-sm outline-none transition focus:border-[var(--asc-accent-border)]";
+  "asc-profile-input w-full px-3 py-2.5 text-sm outline-none transition";
 const inputStyle = {
   borderColor: "var(--asc-line-soft)",
   background: "var(--asc-bg-2)",
@@ -72,10 +72,9 @@ export default function ProfileInfoForm({
   return (
     <form
       action={formAction}
-      className="border"
-      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+      className="asc-profile-form"
     >
-      <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
+      <div className="asc-profile-card-header">
         <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
           {labels.title}
         </p>
@@ -155,7 +154,7 @@ export default function ProfileInfoForm({
             value={bio}
             onChange={(event) => setBio(event.target.value)}
             placeholder={labels.bioPlaceholder}
-            className="w-full resize-y border px-3 py-2.5 text-sm leading-6 outline-none transition focus:border-[var(--asc-accent-border)]"
+            className="asc-profile-input w-full resize-y px-3 py-2.5 text-sm leading-6 outline-none transition"
             style={inputStyle}
           />
         </div>
@@ -169,12 +168,7 @@ export default function ProfileInfoForm({
         <button
           type="submit"
           disabled={pending}
-          className="border px-5 py-2.5 text-xs font-black uppercase tracking-[0.10em] transition hover:opacity-80 disabled:opacity-40"
-          style={{
-            borderColor: "var(--asc-accent-border)",
-            color: "var(--asc-accent)",
-            background: "var(--asc-accent-dim)",
-          }}
+          className="asc-profile-action px-5 py-2.5 text-xs tracking-[0.10em] disabled:opacity-40"
         >
           {pending ? labels.saving : labels.save}
         </button>

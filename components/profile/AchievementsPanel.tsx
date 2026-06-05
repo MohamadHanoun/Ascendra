@@ -10,31 +10,29 @@ export function AchievementsPanel({
 }) {
   return (
     <Card>
-      <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-        <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-          ▲ {sectionLabels.achievementsEyebrow}
+      <div className="asc-profile-card-header">
+        <p className="asc-profile-eyebrow">
+          {sectionLabels.achievementsEyebrow}
         </p>
         <h3
-          className="mt-1 text-xl font-black uppercase"
-          style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+          className="asc-profile-section-title"
         >
           {sectionLabels.achievementsTitle}
         </h3>
       </div>
-      <div className="px-6 py-14 text-center">
-        <p
-          className="text-xs font-black uppercase tracking-[0.18em]"
-          style={{ color: "var(--asc-fg-3)", opacity: 0.45 }}
-        >
+      <div className="asc-profile-empty asc-profile-empty--inline px-6 py-14">
+        <span className="asc-profile-empty__mark" aria-hidden="true">
+          00
+        </span>
+        <p className="asc-profile-empty__title">
           {sectionLabels.comingSoon}
         </p>
-        <p className="mx-auto mt-3 max-w-xs text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
+        <p className="asc-profile-empty__text">
           {sectionLabels.comingSoonDesc}
         </p>
         <Link
           href="/tournaments"
-          className="mt-6 inline-flex border px-5 py-2.5 text-xs font-black uppercase tracking-[0.10em] transition hover:opacity-80"
-          style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" }}
+          className="asc-profile-action asc-profile-action--ghost mt-6 px-5 py-2.5 text-xs tracking-[0.10em]"
         >
           {sectionLabels.browseTournaments}
         </Link>

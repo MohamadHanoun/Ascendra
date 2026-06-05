@@ -2,6 +2,8 @@ import type { CSSProperties, ReactNode } from "react";
 
 import type { ProfileStatuses } from "@/components/profile/types";
 
+type PillTone = "green" | "bronze" | "red" | "gray" | "accent";
+
 export function getCount(n: number, singular: string, plural: string) {
   return n === 1 ? singular : plural;
 }
@@ -14,11 +16,11 @@ export function CornerMark() {
       style={{
         position: "absolute",
         top: 10,
-        left: 10,
+        insetInlineStart: 10,
         width: 12,
         height: 12,
         borderTop: "1.5px solid var(--asc-accent)",
-        borderLeft: "1.5px solid var(--asc-accent)",
+        borderInlineStart: "1.5px solid var(--asc-accent)",
         opacity: 0.9,
         pointerEvents: "none",
         zIndex: 30,
@@ -29,20 +31,20 @@ export function CornerMark() {
 
 export function Pill({
   label,
-  tone = "violet",
+  tone = "accent",
 }: {
   label: string;
-  tone?: "green" | "blue" | "red" | "gray" | "violet";
+  tone?: PillTone;
 }) {
-  const styleMap: Record<string, CSSProperties> = {
+  const styleMap: Record<PillTone, CSSProperties> = {
     green: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
-    blue: { color: "var(--asc-blue)", borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" },
+    bronze: { color: "var(--asc-amber)", borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" },
     red: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
     gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
-    violet: { color: "var(--asc-accent)", borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" },
+    accent: { color: "var(--asc-accent)", borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" },
   };
   return (
-    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={styleMap[tone]}>
+    <span className="asc-profile-pill inline-flex w-fit border px-3 py-1 text-xs font-black" style={styleMap[tone]}>
       {label}
     </span>
   );
@@ -58,7 +60,7 @@ export function StatusBadge({
   const s = status.toLowerCase();
   const tone =
     s === "approved" || s === "member" ? "green"
-    : s === "pending" ? "blue"
+    : s === "pending" ? "bronze"
     : s === "rejected" || s === "not member" ? "red"
     : "gray";
   const map: Record<string, string> = {
@@ -71,19 +73,27 @@ export function StatusBadge({
   return <Pill label={map[s] ?? status} tone={tone} />;
 }
 
-export function Card({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+export function Card({
+  children,
+  className,
+  style,
+}: {
+  children: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+}) {
   return (
     <div
-      className="relative overflow-hidden border"
-      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)", ...style }}
+      className={`asc-profile-card ${className ?? ""}`.trim()}
+      style={style}
     >
       <div
         aria-hidden="true"
         style={{
-          position: "absolute", top: -1, left: -1,
+          position: "absolute", top: -1, insetInlineStart: -1,
           width: 14, height: 14,
           borderTop: "1px solid var(--asc-accent)",
-          borderLeft: "1px solid var(--asc-accent)",
+          borderInlineStart: "1px solid var(--asc-accent)",
           opacity: 0.6, zIndex: 1,
         }}
       />

@@ -68,7 +68,7 @@ export default function FaceitConnectRow({
   const pending = connectPending || unlinkPending;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 bg-[var(--asc-bg-1)] px-5 py-4">
+    <div className="asc-profile-row flex flex-wrap items-center justify-between gap-4 bg-[var(--asc-bg-1)] px-5 py-4">
       <div className="flex min-w-0 flex-1 items-start gap-4">
         <div
           className="grid h-10 w-10 shrink-0 place-items-center border text-xs font-black"
@@ -131,7 +131,7 @@ export default function FaceitConnectRow({
             </p>
           </div>
           <span
-            className="border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
+            className="asc-profile-pill border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
             style={{
               borderColor: "var(--asc-green-border)",
               background: "var(--asc-green-bg)",
@@ -145,12 +145,7 @@ export default function FaceitConnectRow({
               type="button"
               disabled={pending}
               onClick={() => setConfirmOpen(true)}
-              className="border px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
-              style={{
-                borderColor: "var(--asc-live-border)",
-                background: "transparent",
-                color: "var(--asc-live)",
-              }}
+              className="asc-profile-action asc-profile-action--danger px-3 py-1 text-[10px] tracking-[0.08em] disabled:opacity-40"
             >
               {unlinkPending ? labels.unlinking : labels.unlink}
             </button>
@@ -189,11 +184,8 @@ export default function FaceitConnectRow({
               required
               placeholder={labels.nicknamePlaceholder}
               disabled={connectPending}
-              className="text-xs font-mono px-3 py-2 disabled:opacity-50"
+              className="asc-profile-input px-3 py-2 text-xs font-mono disabled:opacity-50"
               style={{
-                background: "var(--asc-bg-2, #111827)",
-                border: "1px solid var(--asc-line-soft)",
-                color: "var(--asc-fg-0)",
                 outline: "none",
                 width: "min(100%, 220px)",
               }}
@@ -201,12 +193,7 @@ export default function FaceitConnectRow({
             <button
               type="submit"
               disabled={connectPending}
-              className="whitespace-nowrap border px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
-              style={{
-                borderColor: "var(--asc-accent-border)",
-                background: "var(--asc-accent-dim)",
-                color: "var(--asc-accent)",
-              }}
+              className="asc-profile-action whitespace-nowrap px-4 py-2 text-xs tracking-[0.08em] disabled:opacity-40"
             >
               {connectPending ? labels.connecting : `${labels.connect} →`}
             </button>

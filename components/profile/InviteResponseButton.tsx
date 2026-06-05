@@ -37,12 +37,11 @@ export function InviteResponseButton({
         type="button"
         onClick={() => setOpen(true)}
         disabled={pending}
-        className={`px-4 py-2 text-sm font-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${isAccept ? "" : "border"}`}
+        className={`asc-profile-action px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 ${isAccept ? "asc-profile-action--solid" : "asc-profile-action--danger"}`}
         style={{
           ...(isAccept
-            ? { background: "var(--asc-green)", color: "#fff" }
-            : { borderColor: "var(--asc-live-border)", color: "var(--asc-live)", background: "transparent" }),
-          clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
+            ? { background: "var(--asc-green)", color: "#fff", boxShadow: "none" }
+            : {}),
         }}
       >
         {isAccept ? labels.accept : labels.decline}

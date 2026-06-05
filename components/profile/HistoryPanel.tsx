@@ -26,22 +26,24 @@ export function HistoryPanel({
   return (
     <div className="grid gap-6">
       <Card>
-        <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-            ▲ {sectionLabels.performanceEyebrow}
+        <div className="asc-profile-card-header">
+          <p className="asc-profile-eyebrow">
+            {sectionLabels.performanceEyebrow}
           </p>
           <h3
-            className="mt-1 text-xl font-black uppercase"
-            style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+            className="asc-profile-section-title"
           >
             {sectionLabels.pointHistoryTitle}
           </h3>
         </div>
         <div className="p-5">
           {chartData.length === 0 ? (
-            <p className="py-8 text-center text-sm" style={{ color: "var(--asc-fg-3)" }}>
-              {sectionLabels.noTournamentData}
-            </p>
+            <div className="asc-profile-empty asc-profile-empty--inline">
+              <span className="asc-profile-empty__mark" aria-hidden="true">
+                00
+              </span>
+              <p className="asc-profile-empty__text">{sectionLabels.noTournamentData}</p>
+            </div>
           ) : (
             <PointHistoryChart data={chartData} ptsLabel={sectionLabels.tableColPts} height={200} />
           )}
@@ -49,20 +51,24 @@ export function HistoryPanel({
       </Card>
 
       <Card>
-        <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-            ▲ {sectionLabels.fullRecordEyebrow}
+        <div className="asc-profile-card-header">
+          <p className="asc-profile-eyebrow">
+            {sectionLabels.fullRecordEyebrow}
           </p>
           <h3
-            className="mt-1 text-xl font-black uppercase"
-            style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+            className="asc-profile-section-title"
           >
             {sectionLabels.tournamentHistoryTitle} · {tournamentResults.length}{" "}
             {getCount(tournamentResults.length, labels.result, labels.results)}
           </h3>
         </div>
         {tournamentResults.length === 0 ? (
-          <p className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>{sectionLabels.noTournamentResults}</p>
+          <div className="asc-profile-empty asc-profile-empty--inline">
+            <span className="asc-profile-empty__mark" aria-hidden="true">
+              00
+            </span>
+            <p className="asc-profile-empty__text">{sectionLabels.noTournamentResults}</p>
+          </div>
         ) : (
           <>
             <div
@@ -85,7 +91,7 @@ export function HistoryPanel({
                 <Link
                   key={r.id}
                   href={`/tournaments/${r.tournament.id}`}
-                  className="grid gap-2 px-5 py-4 transition hover:bg-white/[0.02] md:grid-cols-[minmax(0,1fr)_130px_80px_80px_110px] md:items-center"
+                  className="asc-profile-row grid gap-2 px-5 py-4 md:grid-cols-[minmax(0,1fr)_130px_80px_80px_110px] md:items-center"
                   style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                 >
                   <div className="min-w-0">
@@ -93,7 +99,7 @@ export function HistoryPanel({
                     <p className="mt-0.5 text-xs" style={{ color: "var(--asc-fg-3)" }}>{gameName}</p>
                   </div>
                   <p className="truncate text-sm" style={{ color: "var(--asc-fg-2)" }}>{teamName}</p>
-                  <Pill label={`#${r.placement}`} tone="blue" />
+                  <Pill label={`#${r.placement}`} tone="bronze" />
                   <Pill label={`${r.points} ${labels.pts}`} tone="green" />
                   <p className="text-xs tabular-nums" style={{ color: "var(--asc-fg-3)" }}>{date}</p>
                 </Link>

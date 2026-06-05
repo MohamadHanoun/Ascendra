@@ -38,13 +38,12 @@ export function TeamsPanel({
     <div className="grid gap-6">
       {invitations.length > 0 && (
         <Card>
-          <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-            <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-              ▲ {sectionLabels.invitations}
+          <div className="asc-profile-card-header">
+            <p className="asc-profile-eyebrow">
+              {sectionLabels.invitations}
             </p>
             <h3
-              className="mt-1 text-xl font-black uppercase"
-              style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+              className="asc-profile-section-title"
             >
               {sectionLabels.teamInvitations}
             </h3>
@@ -52,7 +51,7 @@ export function TeamsPanel({
           {invitations.map((inv) => (
             <div
               key={inv.id}
-              className="grid gap-4 px-5 py-4 md:grid-cols-[1fr_auto] md:items-center"
+              className="asc-profile-row grid gap-4 px-5 py-4 md:grid-cols-[1fr_auto] md:items-center"
               style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
             >
               <div>
@@ -73,44 +72,35 @@ export function TeamsPanel({
       )}
 
       <Card>
-        <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-            ▲ {sectionLabels.myTeams}
+        <div className="asc-profile-card-header">
+          <p className="asc-profile-eyebrow">
+            {sectionLabels.myTeams}
           </p>
           <h3
-            className="mt-1 text-xl font-black uppercase"
-            style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+            className="asc-profile-section-title"
           >
             {sectionLabels.myTeams} · {teams.length}{" "}
             {getCount(teams.length, heroLabels.team, heroLabels.teams)}
           </h3>
         </div>
         {teams.length === 0 ? (
-          <div className="p-5">
-            <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>{sectionLabels.noTeamsTitle}</p>
-            <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>{sectionLabels.noTeamsDescription}</p>
+          <div className="asc-profile-empty asc-profile-empty--inline">
+            <span className="asc-profile-empty__mark" aria-hidden="true">
+              00
+            </span>
+            <p className="asc-profile-empty__title">{sectionLabels.noTeamsTitle}</p>
+            <p className="asc-profile-empty__text">{sectionLabels.noTeamsDescription}</p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2">
+          <div className="grid gap-4 p-5 md:grid-cols-2">
             {teams.map((team) => {
               const membership = team.members.find((m) => m.userId === userId);
               const isLeader = team.leaderId === userId;
               return (
                 <article
                   key={team.id}
-                  className="relative border-b p-5 transition"
-                  style={{ borderColor: "var(--asc-line-soft)" }}
+                  className="asc-profile-team-card p-5"
                 >
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      position: "absolute", top: 9, left: 9,
-                      width: 8, height: 8,
-                      borderTop: "1px solid var(--asc-accent)",
-                      borderLeft: "1px solid var(--asc-accent)",
-                      opacity: 0.5,
-                    }}
-                  />
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p
@@ -135,8 +125,7 @@ export function TeamsPanel({
                     </p>
                     <Link
                       href={`/profile/teams/${team.id}`}
-                      className="px-4 py-2 text-xs font-black transition hover:opacity-90"
-                      style={{ background: "var(--asc-accent-2)", color: "#fff" }}
+                      className="asc-profile-action px-4 py-2 text-xs tracking-[0.08em]"
                     >
                       {labels.open}
                     </Link>
@@ -149,13 +138,12 @@ export function TeamsPanel({
       </Card>
 
       <Card>
-        <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
-          <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-            ▲ {sectionLabels.createTeam}
+        <div className="asc-profile-card-header">
+          <p className="asc-profile-eyebrow">
+            {sectionLabels.createTeam}
           </p>
           <h3
-            className="mt-1 text-xl font-black uppercase"
-            style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
+            className="asc-profile-section-title"
           >
             {sectionLabels.startNewTeam}
           </h3>
@@ -167,7 +155,7 @@ export function TeamsPanel({
           <CreateTeamForm dbGames={dbGames} labels={labels} />
         ) : (
           <div className="p-5">
-            <div className="border p-4" style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}>
+            <div className="asc-profile-alert p-4">
               <p className="font-black" style={{ color: "var(--asc-accent)" }}>{labels.ascendraDiscordRequired}</p>
               <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>{labels.discordRequiredDescription}</p>
             </div>

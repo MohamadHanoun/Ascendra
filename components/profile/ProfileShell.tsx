@@ -33,7 +33,7 @@ export default function ProfileShell({
 
   return (
     <main
-      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
+      className="asc-public-page asc-ambient asc-profile-hub min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
     >
       <div className="relative z-10">
@@ -52,8 +52,8 @@ export default function ProfileShell({
           messages={messages}
         />
 
-        <section className="relative z-20 -mt-16 mx-auto max-w-[1440px] px-6 pb-20 lg:px-10">
-          <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+        <section className="asc-profile-stage relative z-20 -mt-8 mx-auto max-w-[1440px] px-4 pb-24 sm:px-6 lg:-mt-10 lg:px-10">
+          <div className="grid gap-7 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-8">
             <ProfileSubnav
               labels={messages.tabLabels}
               invitationCount={invitationCount}
@@ -61,7 +61,7 @@ export default function ProfileShell({
               dir={dir}
             />
 
-            <div className="min-w-0">{children}</div>
+            <div className="asc-profile-content min-w-0">{children}</div>
           </div>
         </section>
 
