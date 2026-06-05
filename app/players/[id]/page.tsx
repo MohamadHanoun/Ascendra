@@ -194,67 +194,74 @@ export async function generateMetadata({ params }: PublicProfilePageProps): Prom
   };
 }
 
-function getAvatarHue(username: string) {
-  let hue = 0;
-  for (const character of username) {
-    hue = (hue << 5) - hue + character.charCodeAt(0);
-  }
-  return Math.abs(hue) % 360;
-}
+const avatarClipPath =
+  "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)";
 
-function CornerMark() {
-  return (
-    <div
-      aria-hidden="true"
-      className="asc-corner-mark"
-      style={{
-        position: "absolute",
-        top: 10,
-        left: 10,
-        width: 12,
-        height: 12,
-        borderTop: "1.5px solid var(--asc-accent)",
-        borderLeft: "1.5px solid var(--asc-accent)",
-        opacity: 0.9,
-        pointerEvents: "none",
-        zIndex: 30,
-      }}
-    />
-  );
+function getAvatarInitials(username: string) {
+  const trimmed = username.trim();
+  return (trimmed.slice(0, 2) || "?").toUpperCase();
 }
 
 function Avatar({ username, avatar }: { username: string; avatar: string | null }) {
-  const hue = getAvatarHue(username);
-  const clipPath =
-    "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)";
-
   if (avatar) {
     return (
       <img
         src={avatar}
         alt={username}
-        className="h-24 w-24 shrink-0 object-cover md:h-32 md:w-32"
-        style={{ clipPath, border: "1px solid var(--asc-line-soft)" }}
+        className="asc-profile-avatar h-24 w-24 shrink-0 object-cover md:h-32 md:w-32"
+        style={{ clipPath: avatarClipPath, border: "1px solid var(--asc-line-soft)" }}
       />
     );
   }
 
   return (
     <div
-      className="grid h-24 w-24 shrink-0 place-items-center md:h-32 md:w-32"
+      className="asc-profile-avatar grid h-24 w-24 shrink-0 place-items-center md:h-32 md:w-32"
       style={{
-        clipPath,
-        background: `linear-gradient(135deg, oklch(0.55 0.22 ${hue}), oklch(0.30 0.16 ${hue + 40}))`,
-        boxShadow: `inset 0 0 0 1px oklch(0.65 0.22 ${hue} / 0.4)`,
+        clipPath: avatarClipPath,
+        background:
+          "linear-gradient(135deg, rgb(232 198 106 / 0.24), rgb(156 111 51 / 0.32)), linear-gradient(145deg, var(--asc-bg-2), var(--asc-bg-1))",
+        boxShadow: "inset 0 0 0 1px var(--asc-accent-border), 0 18px 44px rgb(0 0 0 / 0.34)",
       }}
     >
       <span
         className="text-3xl font-black uppercase md:text-5xl"
-        style={{ color: "white", fontFamily: "var(--font-display)" }}
+        style={{ color: "var(--asc-gold-bright)", fontFamily: "var(--font-display)" }}
       >
-        {username.slice(0, 2)}
+        {getAvatarInitials(username)}
       </span>
     </div>
+  );
+}
+
+type PillTone = "bronze" | "green" | "gray";
+
+const pillToneStyles: Record<PillTone, CSSProperties> = {
+  bronze: {
+    color: "var(--asc-accent)",
+    borderColor: "var(--asc-accent-border)",
+    background: "var(--asc-accent-dim)",
+  },
+  green: {
+    color: "var(--asc-green)",
+    borderColor: "var(--asc-green-border)",
+    background: "var(--asc-green-bg)",
+  },
+  gray: {
+    color: "var(--asc-fg-2)",
+    borderColor: "var(--asc-line-soft)",
+    background: "rgb(255 255 255 / 0.025)",
+  },
+};
+
+function Pill({ label, tone = "gray" }: { label: string; tone?: PillTone }) {
+  return (
+    <span
+      className="asc-profile-pill inline-flex min-h-7 w-fit items-center border px-3 py-1 text-[10px] font-black tracking-[0.12em]"
+      style={pillToneStyles[tone]}
+    >
+      {label}
+    </span>
   );
 }
 
@@ -267,48 +274,17 @@ function GuildBadge({
   memberLabel: string;
   notMemberLabel: string;
 }) {
-  const style: CSSProperties = isMember
-    ? { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" }
-    : { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" };
-
-  return (
-    <span
-      className="inline-flex w-fit border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
-      style={style}
-    >
-      {isMember ? memberLabel : notMemberLabel}
-    </span>
-  );
+  return <Pill label={isMember ? memberLabel : notMemberLabel} tone={isMember ? "green" : "gray"} />;
 }
 
 function HeroStat({ label, value, accent }: { label: string; value: ReactNode; accent?: boolean }) {
   return (
-    <div>
-      <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-fg-3)" }}>
-        {label}
-      </p>
-      <p
-        className="mt-1 text-4xl font-black tabular-nums md:text-5xl"
-        style={{
-          color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
-          fontFamily: "var(--font-display)",
-        }}
-      >
+    <div className="asc-profile-stat">
+      <p className="asc-profile-stat__label">{label}</p>
+      <p className={`asc-profile-stat__value tabular-nums ${accent ? "asc-profile-stat__value--accent" : ""}`}>
         {value}
       </p>
     </div>
-  );
-}
-
-function Pill({ label, tone }: { label: string; tone: "blue" | "green" }) {
-  const styleMap: Record<string, CSSProperties> = {
-    blue: { color: "var(--asc-blue)", borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" },
-    green: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
-  };
-  return (
-    <span className="inline-flex w-fit border px-3 py-1 text-xs font-black" style={styleMap[tone]}>
-      {label}
-    </span>
   );
 }
 
@@ -324,28 +300,28 @@ function SectionCard({
   children: ReactNode;
 }) {
   return (
-    <div
-      className="relative overflow-hidden border"
-      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-    >
-      <CornerMark />
-      <div className="border-b px-5 py-4" style={{ borderColor: "var(--asc-line-soft)" }}>
-        <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
-          ▲ {eyebrow}
+    <div className="asc-profile-card">
+      <div className="asc-profile-card-header">
+        <p className="asc-profile-eyebrow">
+          {eyebrow}
         </p>
-        <h2
-          className="mt-1 text-xl font-black uppercase"
-          style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif" }}
-        >
-          {title}
-        </h2>
+        <h2 className="asc-profile-section-title">{title}</h2>
         {description && (
-          <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+          <p className="mt-2 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
             {description}
           </p>
         )}
       </div>
       {children}
+    </div>
+  );
+}
+
+function EmptyState({ children }: { children: ReactNode }) {
+  return (
+    <div className="asc-profile-empty asc-profile-empty--inline">
+      <span aria-hidden="true" className="asc-profile-empty__mark" />
+      <p className="asc-profile-empty__text">{children}</p>
     </div>
   );
 }
@@ -382,22 +358,13 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
   if (!user.publicProfileEnabled) {
     return (
       <main
-        className="asc-public-page asc-ambient min-h-screen overflow-hidden"
+        className="asc-public-page asc-profile-hub asc-ambient min-h-screen overflow-hidden"
         style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
       >
         <div className="relative z-10 flex min-h-screen flex-col">
           <Navbar />
           <section className="mx-auto flex w-full max-w-[1440px] flex-1 items-center justify-center px-6 py-24 lg:px-10">
-            <div
-              className="relative w-full max-w-md border p-8 text-center"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                background: "var(--asc-bg-1)",
-                clipPath:
-                  "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
-              }}
-            >
-              <CornerMark />
+            <div className="asc-profile-card w-full max-w-md p-8 text-center">
               <div className="flex justify-center">
                 <Avatar username={user.username} avatar={user.avatar} />
               </div>
@@ -409,8 +376,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
               </p>
               <Link
                 href="/leaderboard"
-                className="mt-6 inline-flex border px-5 py-2.5 text-xs font-black uppercase tracking-[0.10em] transition hover:opacity-80"
-                style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)", background: "transparent" }}
+                className="asc-profile-action asc-profile-action--ghost mt-6 px-5 py-2.5 text-xs tracking-[0.10em]"
               >
                 {messages.backToLeaderboard}
               </Link>
@@ -503,7 +469,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
 
   return (
     <main
-      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
+      className="asc-public-page asc-profile-hub asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
     >
       <div className="relative z-10">
@@ -530,31 +496,18 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
           />
 
           <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-32 pt-24 lg:px-10">
-            <section
-              className="relative mt-4 overflow-hidden border p-6 shadow-2xl shadow-black/20 md:p-8"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                background: "var(--asc-card)",
-                backdropFilter: "blur(16px)",
-                clipPath:
-                  "polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px)",
-              }}
-            >
-              <CornerMark />
-
+            <section className="asc-profile-hero-panel mt-4 p-6 md:p-8">
               <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
                 <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-center">
                   <Avatar username={user.username} avatar={user.avatar} />
 
                   <div className="min-w-0">
-                    <p
-                      className="text-xs font-black uppercase tracking-[0.2em]"
-                      style={{ color: "var(--asc-accent)" }}
-                    >
-                      ▲ {messages.hero.label}
-                    </p>
+                    <p className="asc-profile-eyebrow">{messages.hero.label}</p>
 
-                    <h1 className="mt-3 truncate text-5xl md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
+                    <h1
+                      className="mt-4 break-words text-4xl sm:text-5xl md:text-7xl"
+                      style={{ color: "var(--asc-fg-0)" }}
+                    >
                       {displayName}
                     </h1>
 
@@ -564,31 +517,12 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                         memberLabel={messages.hero.member}
                         notMemberLabel={messages.hero.notMember}
                       />
-                      <span
-                        className="inline-flex border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
-                        style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-3)" }}
-                      >
-                        {user.role}
-                      </span>
+                      <Pill label={user.role} />
                       {countryLabel && (
-                        <span
-                          className="inline-flex items-center gap-1 border px-3 py-1 text-xs font-bold"
-                          style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-2)" }}
-                        >
-                          {countryLabel}
-                        </span>
+                        <Pill label={countryLabel} />
                       )}
                       {favoriteGameName && (
-                        <span
-                          className="inline-flex border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
-                          style={{
-                            borderColor: "var(--asc-accent-border)",
-                            color: "var(--asc-accent)",
-                            background: "var(--asc-accent-dim)",
-                          }}
-                        >
-                          {favoriteGameName}
-                        </span>
+                        <Pill label={favoriteGameName} tone="bronze" />
                       )}
                     </div>
 
@@ -633,7 +567,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                 )}
               </div>
 
-              <div className="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-4">
+              <div className="asc-profile-stat-rail asc-profile-stat-rail--4 mt-10">
                 <HeroStat label={messages.stats.points} value={rankingPoints.toLocaleString()} accent />
                 <HeroStat label={messages.stats.results} value={tournamentResults.length} />
                 <HeroStat label={messages.stats.best} value={bestPlacement ? `#${bestPlacement}` : "—"} />
@@ -655,9 +589,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
             >
               <div className="p-5">
                 {chartData.length === 0 ? (
-                  <p className="py-8 text-center text-sm" style={{ color: "var(--asc-fg-3)" }}>
-                    {messages.progress.empty}
-                  </p>
+                  <EmptyState>{messages.progress.empty}</EmptyState>
                 ) : (
                   <PublicProgressChart data={chartData} ptsLabel={messages.history.colPts} />
                 )}
@@ -669,9 +601,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
             {user.showTournamentHistory && (
             <SectionCard eyebrow={messages.history.eyebrow} title={messages.history.title}>
               {tournamentResults.length === 0 ? (
-                <p className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-                  {messages.history.empty}
-                </p>
+                <EmptyState>{messages.history.empty}</EmptyState>
               ) : (
                 <>
                   <div
@@ -700,7 +630,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                       <Link
                         key={result.id}
                         href={`/tournaments/${result.tournament.id}`}
-                        className="grid gap-2 px-5 py-4 transition hover:bg-white/[0.02] md:grid-cols-[minmax(0,1fr)_130px_80px_80px_110px] md:items-center"
+                        className="asc-profile-row grid gap-2 px-5 py-4 md:grid-cols-[minmax(0,1fr)_130px_80px_80px_110px] md:items-center"
                         style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                       >
                         <div className="min-w-0">
@@ -714,7 +644,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                         <p className="truncate text-sm" style={{ color: "var(--asc-fg-2)" }}>
                           {teamName}
                         </p>
-                        <Pill label={`#${result.placement}`} tone="blue" />
+                        <Pill label={`#${result.placement}`} tone="bronze" />
                         <Pill label={`${result.points} ${messages.history.pts}`} tone="green" />
                         <p className="text-xs tabular-nums" style={{ color: "var(--asc-fg-3)" }}>
                           {date}
@@ -731,20 +661,17 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
             {user.showTeams && (
             <SectionCard eyebrow={messages.teams.eyebrow} title={messages.teams.title}>
               {teams.length === 0 ? (
-                <p className="p-5 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-                  {messages.teams.empty}
-                </p>
+                <EmptyState>{messages.teams.empty}</EmptyState>
               ) : (
-                <div className="grid md:grid-cols-2">
+                <div className="grid gap-4 p-5 md:grid-cols-2">
                   {teams.map((team) => (
                     <div
                       key={team.id}
-                      className="border-b p-5 md:odd:border-r"
-                      style={{ borderColor: "var(--asc-line-soft)" }}
+                      className="asc-profile-team-card p-5"
                     >
                       <p
-                        className="truncate font-black"
-                        style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18 }}
+                        className="truncate text-lg font-black"
+                        style={{ color: "var(--asc-fg-0)", fontFamily: "var(--font-display)" }}
                       >
                         {team.name}
                       </p>
@@ -761,16 +688,12 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
 
             {/* Achievements — Coming Soon */}
             <SectionCard eyebrow={messages.achievements.eyebrow} title={messages.achievements.title}>
-              <div className="px-6 py-14 text-center">
-                <p
-                  className="text-xs font-black uppercase tracking-[0.18em]"
-                  style={{ color: "var(--asc-fg-3)", opacity: 0.45 }}
-                >
+              <div className="asc-profile-empty asc-profile-empty--inline">
+                <span aria-hidden="true" className="asc-profile-empty__mark" />
+                <p className="asc-profile-empty__title" style={{ color: "var(--asc-fg-3)", opacity: 0.72 }}>
                   {messages.achievements.comingSoon}
                 </p>
-                <p className="mx-auto mt-3 max-w-xs text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
-                  {messages.achievements.comingSoonDesc}
-                </p>
+                <p className="asc-profile-empty__text">{messages.achievements.comingSoonDesc}</p>
               </div>
             </SectionCard>
           </div>
