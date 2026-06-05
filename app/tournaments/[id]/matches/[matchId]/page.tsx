@@ -340,7 +340,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
       include: {
         games: { orderBy: { gameNumber: "asc" } },
         reports: {
-          include: { submittedBy: { select: { id: true, username: true } } },
+          include: { submittedBy: { select: { id: true, username: true, displayName: true } } },
           orderBy: { createdAt: "desc" },
         },
         room: true,
@@ -483,14 +483,14 @@ export default async function MatchDetailPage({ params }: PageProps) {
 
       const checkIns = await prisma.tournamentMatchCheckIn.findMany({
         where: { matchId: match.id },
-        include: { user: { select: { username: true } } },
+        include: { user: { select: { username: true, displayName: true } } },
         orderBy: { createdAt: "asc" },
       });
       const checkInRecords: MatchCheckInRecord[] = checkIns.map((checkIn) => ({
         id: checkIn.id,
         userId: checkIn.userId,
         teamId: checkIn.teamId,
-        username: checkIn.user.username,
+        username: checkIn.user.displayName?.trim() || checkIn.user.username,
         createdAt: checkIn.createdAt.toISOString(),
       }));
 
@@ -1165,7 +1165,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                               {reportTeamName}
                             </span>
                             <span className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
-                              · {report.submittedBy.username}
+                              · {report.submittedBy.displayName?.trim() || report.submittedBy.username}
                             </span>
                           </div>
                           <span

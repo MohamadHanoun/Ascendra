@@ -194,7 +194,7 @@ async function getTeamDetails(teamIds: string[]) {
     where: { id: { in: teamIds } },
     select: {
       id: true,
-      leader: { select: { username: true } },
+      leader: { select: { username: true, displayName: true } },
       _count: { select: { members: true } },
     },
   });
@@ -203,7 +203,7 @@ async function getTeamDetails(teamIds: string[]) {
     teams.map((team) => [
       team.id,
       {
-        leaderName: team.leader.username,
+        leaderName: team.leader.displayName?.trim() || team.leader.username,
         membersCount: team._count.members,
       },
     ]),
@@ -276,6 +276,7 @@ export async function getLeaderboardData(options: LeaderboardDataOptions) {
     return {
       id: entry.userId,
       username: entry.user?.username ?? "Unknown player",
+      displayName: entry.user?.displayName ?? null,
       avatar: entry.user?.avatar ?? null,
       role: "player",
       tournamentPoints: entry.totalPoints,

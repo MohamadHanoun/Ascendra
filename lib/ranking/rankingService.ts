@@ -54,6 +54,7 @@ export type PlayerLeaderboardEntry = {
   user: {
     id: string;
     username: string;
+    displayName: string | null;
     avatar: string | null;
     discordId: string;
   } | null;
@@ -213,6 +214,7 @@ export async function aggregatePlayerLeaderboard(
           select: {
             id: true,
             username: true,
+            displayName: true,
             avatar: true,
             discordId: true,
           },

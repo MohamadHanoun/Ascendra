@@ -133,7 +133,7 @@ function RankingRow({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <p className="truncate font-black" style={{ color: "var(--asc-fg-0)" }}>
-                {user.username}
+                {user.displayName?.trim() || user.username}
               </p>
               {isCurrentUser && (
                 <span
@@ -296,7 +296,7 @@ function PodiumCard({
                   lineHeight: 1.1,
                 }}
               >
-                {user.username}
+                {user.displayName?.trim() || user.username}
               </p>
               {isCurrentUser && (
                 <span

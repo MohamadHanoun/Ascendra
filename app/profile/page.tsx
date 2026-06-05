@@ -1577,6 +1577,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               },
               invitedBy: {
                 username: invitation.invitedBy.username,
+                displayName: invitation.invitedBy.displayName,
               },
             }))}
             userId={user.id}

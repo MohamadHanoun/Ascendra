@@ -981,7 +981,7 @@ export default async function TeamDetailsPage({
                 <div className="grid gap-5 sm:grid-cols-3 lg:grid-cols-1 lg:text-right">
                   <StatBlock
                     label={messages.common.leader}
-                    value={team.leader.username}
+                    value={team.leader.displayName?.trim() || team.leader.username}
                   />
                   <StatBlock
                     label={messages.common.results}
@@ -1314,7 +1314,7 @@ export default async function TeamDetailsPage({
                               className="truncate font-black"
                               style={{ color: "var(--asc-fg-0)" }}
                             >
-                              {member.user.username}
+                              {member.user.displayName?.trim() || member.user.username}
                             </p>
 
                             <p
@@ -1343,7 +1343,7 @@ export default async function TeamDetailsPage({
                                 confirmTitle={messages.roster.transferTitle}
                                 confirmDescription={formatTemplate(
                                   messages.roster.transferDescription,
-                                  { username: member.user.username },
+                                  { username: member.user.displayName?.trim() || member.user.username },
                                 )}
                                 confirmLabel={messages.roster.transferConfirm}
                                 cancelLabel={messages.modal.cancel}
@@ -1369,7 +1369,7 @@ export default async function TeamDetailsPage({
                                 confirmTitle={messages.roster.removeTitle}
                                 confirmDescription={formatTemplate(
                                   messages.roster.removeDescription,
-                                  { username: member.user.username },
+                                  { username: member.user.displayName?.trim() || member.user.username },
                                 )}
                                 confirmLabel={messages.roster.removeConfirm}
                                 cancelLabel={messages.modal.cancel}
@@ -1421,7 +1421,7 @@ export default async function TeamDetailsPage({
                             className="truncate font-black"
                             style={{ color: "var(--asc-fg-0)" }}
                           >
-                            {invite.invitedUser.username}
+                            {invite.invitedUser.displayName?.trim() || invite.invitedUser.username}
                           </p>
 
                           <p
@@ -1446,7 +1446,7 @@ export default async function TeamDetailsPage({
                             confirmTitle={messages.roster.cancelInviteTitle}
                             confirmDescription={formatTemplate(
                               messages.roster.cancelInviteDescription,
-                              { username: invite.invitedUser.username },
+                              { username: invite.invitedUser.displayName?.trim() || invite.invitedUser.username },
                             )}
                             confirmLabel={messages.roster.cancelInviteConfirm}
                             cancelLabel={messages.modal.cancel}

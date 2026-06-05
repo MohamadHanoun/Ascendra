@@ -1,6 +1,7 @@
 export type LeaderboardUser = {
   id: number | string;
   username: string;
+  displayName: string | null;
   avatar: string | null;
   role: string;
   tournamentPoints: number;

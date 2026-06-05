@@ -83,7 +83,7 @@ type Invitation = {
     game: { name: string } | null;
     members: Array<{ userId: string }>;
   };
-  invitedBy: { username: string };
+  invitedBy: { username: string; displayName: string | null };
 };
 
 type Game = { slug: string; name: string };
@@ -772,7 +772,7 @@ function TeamsTab({
                 <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
                   {inv.team.game?.name ?? "—"} · {inv.team.members.length}{" "}
                   {getCount(inv.team.members.length, labels.member, labels.members)}{" "}
-                  · {labels.by} {inv.invitedBy.username}
+                  · {labels.by} {inv.invitedBy.displayName?.trim() || inv.invitedBy.username}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
