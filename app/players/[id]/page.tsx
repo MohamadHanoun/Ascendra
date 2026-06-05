@@ -178,16 +178,18 @@ export async function generateMetadata({ params }: PublicProfilePageProps): Prom
 
   const user = await prisma.user.findUnique({
     where: { id },
-    select: { username: true },
+    select: { username: true, displayName: true },
   });
 
   if (!user) {
     return { title: "Player profile" };
   }
 
+  const name = user.displayName?.trim() || user.username;
+
   return {
-    title: `${user.username} | Ascendra`,
-    description: `View ${user.username}'s Ascendra player profile, ranking points, and tournament history.`,
+    title: `${name} | Ascendra`,
+    description: `View ${name}'s Ascendra player profile, ranking points, and tournament history.`,
   };
 }
 
@@ -356,6 +358,8 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     select: {
       id: true,
       username: true,
+      displayName: true,
+      bio: true,
       avatar: true,
       role: true,
       discordId: true,
@@ -482,6 +486,8 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     };
   });
 
+  const displayName = user.displayName?.trim() || user.username;
+
   return (
     <main
       className="asc-public-page asc-ambient min-h-screen overflow-hidden"
@@ -536,7 +542,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                     </p>
 
                     <h1 className="mt-3 truncate text-5xl md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
-                      {user.username}
+                      {displayName}
                     </h1>
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -552,6 +558,15 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                         {user.role}
                       </span>
                     </div>
+
+                    {user.bio && (
+                      <p
+                        className="mt-4 max-w-prose whitespace-pre-line text-sm leading-6"
+                        style={{ color: "var(--asc-fg-2)" }}
+                      >
+                        {user.bio}
+                      </p>
+                    )}
                   </div>
                 </div>
 

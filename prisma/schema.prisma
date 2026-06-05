@@ -50,6 +50,10 @@ model User {
   showTeams             Boolean @default(true)
   showTournamentHistory Boolean @default(true)
 
+  // Editable public profile info
+  displayName String?
+  bio         String?
+
   // FACEIT integration
   faceitPlayerId      String?   @unique
   faceitNickname      String?

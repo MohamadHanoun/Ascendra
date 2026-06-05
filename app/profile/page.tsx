@@ -14,6 +14,7 @@ import LinkedAccountRow from "@/components/LinkedAccountRow";
 import Navbar from "@/components/Navbar";
 import PrivacyToggles from "@/components/PrivacyToggles";
 import ProfileIdentityActions from "@/components/ProfileIdentityActions";
+import ProfileInfoForm from "@/components/ProfileInfoForm";
 import ProfileNotice from "@/components/ProfileNotice";
 import ProfileRealtime from "@/components/ProfileRealtime";
 import ProfileTabs, { CopyLinkButton } from "@/components/ProfileTabs";
@@ -1042,6 +1043,33 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           saving: "Saving...",
         };
 
+  const profileInfoLabels =
+    locale === "ar"
+      ? {
+          title: "معلومات الملف الشخصي",
+          description: "خصّص اسمك المعروض ونبذتك التي تظهر في ملفك العام.",
+          displayNameLabel: "الاسم المعروض",
+          displayNamePlaceholder: user.username,
+          displayNameHelp: "إذا تُرك فارغًا، سيُستخدم اسم Discord الخاص بك.",
+          bioLabel: "نبذة",
+          bioPlaceholder: "اكتب نبذة قصيرة عنك...",
+          save: "حفظ",
+          saving: "جارٍ الحفظ...",
+        }
+      : {
+          title: "Profile information",
+          description: "Customize the display name and bio shown on your public profile.",
+          displayNameLabel: "Display name",
+          displayNamePlaceholder: user.username,
+          displayNameHelp: "If left empty, your Discord username is used.",
+          bioLabel: "Bio",
+          bioPlaceholder: "Write a short bio about yourself...",
+          save: "Save",
+          saving: "Saving...",
+        };
+
+  const displayName = user.displayName?.trim() || user.username;
+
   const pointEvents = rawPointEvents.map((e) => ({
     points: e.points,
     createdAt: e.createdAt.toISOString(),
@@ -1290,6 +1318,16 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         </div>
       </div>
 
+      {/* Profile information — editable display name + bio */}
+      <ProfileInfoForm
+        initial={{
+          displayName: user.displayName ?? "",
+          bio: user.bio ?? "",
+        }}
+        usernameFallback={user.username}
+        labels={profileInfoLabels}
+      />
+
       {/* Privacy & Visibility — real controls */}
       <div>
         <div className="mb-3">
@@ -1457,7 +1495,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                       className="mt-3 truncate text-5xl md:text-7xl"
                       style={{ color: "var(--asc-fg-0)" }}
                     >
-                      {user.username}
+                      {displayName}
                     </h1>
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">
