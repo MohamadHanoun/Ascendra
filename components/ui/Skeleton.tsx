@@ -108,6 +108,32 @@ export function SkeletonCard({
   );
 }
 
+/**
+ * Stat-card placeholder matching the notched stat cards used across
+ * the tournaments list and detail hero (small label bar + big number).
+ */
+export function SkeletonStat({
+  className = "",
+}: {
+  className?: string;
+}) {
+  return (
+    <div
+      className={`relative border p-5${className ? ` ${className}` : ""}`}
+      style={{
+        borderColor: "var(--asc-line-soft)",
+        background: "var(--asc-bg-1)",
+        clipPath:
+          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
+      }}
+    >
+      <div aria-hidden="true" className="asc-corner-mark" />
+      <Skeleton width="55%" height={10} />
+      <Skeleton className="mt-3" width="42%" height={30} />
+    </div>
+  );
+}
+
 /** Leaderboard / list row placeholder: rank + avatar + name + score. */
 export function SkeletonRow({ className = "" }: { className?: string }) {
   return (

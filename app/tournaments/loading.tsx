@@ -1,5 +1,5 @@
-import LoadingScreen from "@/components/LoadingScreen";
+import TournamentsListSkeleton from "@/components/skeletons/TournamentsListSkeleton";
 
 export default function TournamentsLoading() {
-  return <LoadingScreen />;
+  return <TournamentsListSkeleton />;
 }
