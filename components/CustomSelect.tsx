@@ -27,6 +27,9 @@ type DropdownPosition = {
   maxHeight: number;
 };
 
+// Reset the typeahead buffer if the user pauses this long between keystrokes.
+const TYPEAHEAD_RESET_MS = 700;
+
 function getCookieValue(name: string) {
   const cookies = document.cookie
     .split(";")
@@ -52,6 +55,24 @@ function getDefaultEmptyLabel() {
   return locale === "ar" ? "لا توجد خيارات متاحة" : "No options available";
 }
 
+// Normalizes a label for typeahead matching: drops leading flag emoji (regional
+// indicators) and variation selectors so "🇸🇪 Sweden" matches on "swe".
+function getSearchText(label: string): string {
+  return label
+    .replace(/[\u{1F1E6}-\u{1F1FF}\u{FE0F}]/gu, "")
+    .trim()
+    .toLowerCase();
+}
+
+function isPrintableKey(event: React.KeyboardEvent): boolean {
+  return (
+    event.key.length === 1 &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey
+  );
+}
+
 export default function CustomSelect({
   name,
   options,
@@ -62,11 +83,17 @@ export default function CustomSelect({
 }: CustomSelectProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const typeaheadRef = useRef<{ buffer: string; timer: ReturnType<typeof setTimeout> | null }>({
+    buffer: "",
+    timer: null,
+  });
 
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [open, setOpen] = useState(false);
   const [selectedValue, setSelectedValue] = useState(defaultValue);
   const [prevDefaultValue, setPrevDefaultValue] = useState(defaultValue);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [position, setPosition] = useState<DropdownPosition>({
     top: 0,
     left: 0,
@@ -111,12 +138,123 @@ export default function CustomSelect({
     });
   }
 
+  function openMenu() {
+    updateDropdownPosition();
+    const selectedIndex = options.findIndex((option) => option.value === selectedValue);
+    setHighlightedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+    setOpen(true);
+  }
+
+  function selectOption(value: string) {
+    setSelectedValue(value);
+    setOpen(false);
+  }
+
+  function moveHighlight(direction: 1 | -1) {
+    if (options.length === 0) {
+      return;
+    }
+    setHighlightedIndex((current) => {
+      const start = current < 0 ? (direction === 1 ? -1 : 0) : current;
+      const next = start + direction;
+      if (next < 0) {
+        return 0;
+      }
+      if (next > options.length - 1) {
+        return options.length - 1;
+      }
+      return next;
+    });
+  }
+
+  function runTypeahead(char: string) {
+    const state = typeaheadRef.current;
+    const buffer = state.buffer + char.toLowerCase();
+    state.buffer = buffer;
+
+    if (state.timer) {
+      clearTimeout(state.timer);
+    }
+    state.timer = setTimeout(() => {
+      state.buffer = "";
+    }, TYPEAHEAD_RESET_MS);
+
+    const startsWithIndex = options.findIndex((option) =>
+      getSearchText(option.label).startsWith(buffer),
+    );
+    const matchIndex =
+      startsWithIndex >= 0
+        ? startsWithIndex
+        : options.findIndex((option) => getSearchText(option.label).includes(buffer));
+
+    if (matchIndex >= 0) {
+      setHighlightedIndex(matchIndex);
+    }
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent) {
+    if (options.length === 0) {
+      return;
+    }
+
+    const { key } = event;
+
+    if (key === "Escape") {
+      setOpen(false);
+      return;
+    }
+
+    if (!open) {
+      if (key === "ArrowDown" || key === "ArrowUp" || key === "Enter" || key === " ") {
+        event.preventDefault();
+        openMenu();
+        return;
+      }
+      if (!isPrintableKey(event)) {
+        return;
+      }
+      // Printable key while closed: open, then fall through to typeahead.
+      openMenu();
+    }
+
+    if (key === "ArrowDown") {
+      event.preventDefault();
+      moveHighlight(1);
+      return;
+    }
+    if (key === "ArrowUp") {
+      event.preventDefault();
+      moveHighlight(-1);
+      return;
+    }
+    if (key === "Enter") {
+      event.preventDefault();
+      if (highlightedIndex >= 0 && highlightedIndex < options.length) {
+        selectOption(options[highlightedIndex].value);
+      }
+      return;
+    }
+    if (isPrintableKey(event)) {
+      // Stop Space from triggering the trigger button's click toggle.
+      if (key === " ") {
+        event.preventDefault();
+      }
+      runTypeahead(key);
+    }
+  }
 
   useLayoutEffect(() => {
     if (open) {
       updateDropdownPosition();
     }
   }, [open]);
+
+  // Keep the highlighted option scrolled into view during keyboard navigation.
+  useEffect(() => {
+    if (open && highlightedIndex >= 0) {
+      optionRefs.current[highlightedIndex]?.scrollIntoView({ block: "nearest" });
+    }
+  }, [open, highlightedIndex]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -181,23 +319,29 @@ export default function CustomSelect({
                   {emptyLabel || getDefaultEmptyLabel()}
                 </div>
               ) : (
-                options.map((option) => {
+                options.map((option, index) => {
                   const active = option.value === selectedValue;
+                  const highlighted = index === highlightedIndex;
+
+                  const style = active
+                    ? { border: "1px solid var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }
+                    : highlighted
+                      ? { background: "var(--asc-bg-2)", color: "var(--asc-fg-0)" }
+                      : { color: "var(--asc-fg-2)" };
 
                   return (
                     <button
                       key={option.value}
+                      ref={(element) => {
+                        optionRefs.current[index] = element;
+                      }}
                       type="button"
                       onClick={() => {
-                        setSelectedValue(option.value);
-                        setOpen(false);
+                        selectOption(option.value);
                       }}
+                      onMouseEnter={() => setHighlightedIndex(index)}
                       className="grid w-full gap-1 px-4 py-3 text-left transition"
-                      style={
-                        active
-                          ? { border: "1px solid var(--asc-accent-border)", background: "var(--asc-accent-dim)", color: "var(--asc-fg-0)" }
-                          : { color: "var(--asc-fg-2)" }
-                      }
+                      style={style}
                     >
                       <span className="font-black">{option.label}</span>
 
@@ -229,9 +373,13 @@ export default function CustomSelect({
         ref={buttonRef}
         type="button"
         onClick={() => {
-          updateDropdownPosition();
-          setOpen((current) => !current);
+          if (open) {
+            setOpen(false);
+          } else {
+            openMenu();
+          }
         }}
+        onKeyDown={handleKeyDown}
         className="flex w-full items-center justify-between gap-4 border px-4 py-3 text-left transition"
         style={
           open

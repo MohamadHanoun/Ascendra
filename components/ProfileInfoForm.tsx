@@ -10,7 +10,6 @@ import CustomSelect from "@/components/CustomSelect";
 
 const DISPLAY_NAME_MAX = 32;
 const BIO_MAX = 280;
-const TAGLINE_MAX = 60;
 
 type SelectOption = { value: string; label: string };
 
@@ -18,7 +17,6 @@ type ProfileInfoFormProps = {
   initial: {
     displayName: string;
     bio: string;
-    tagline: string;
     country: string;
     favoriteGame: string;
   };
@@ -33,8 +31,6 @@ type ProfileInfoFormProps = {
     displayNameHelp: string;
     bioLabel: string;
     bioPlaceholder: string;
-    taglineLabel: string;
-    taglinePlaceholder: string;
     countryLabel: string;
     countryPlaceholder: string;
     favoriteGameLabel: string;
@@ -67,7 +63,6 @@ export default function ProfileInfoForm({
 
   const [displayName, setDisplayName] = useState(initial.displayName);
   const [bio, setBio] = useState(initial.bio);
-  const [tagline, setTagline] = useState(initial.tagline);
 
   // Prepend an explicit "None" option so users can clear the selection.
   const noneOption: SelectOption = { value: "", label: labels.none };
@@ -114,29 +109,6 @@ export default function ProfileInfoForm({
           <p className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
             {labels.displayNameHelp}
           </p>
-        </div>
-
-        {/* Tagline */}
-        <div className="grid gap-2">
-          <div className="flex items-baseline justify-between gap-3">
-            <label htmlFor="profile-tagline" className={fieldLabelClass} style={{ color: "var(--asc-fg-3)" }}>
-              {labels.taglineLabel}
-            </label>
-            <span className="text-[10px] tabular-nums" style={{ color: "var(--asc-fg-3)" }}>
-              {tagline.length}/{TAGLINE_MAX}
-            </span>
-          </div>
-          <input
-            id="profile-tagline"
-            name="tagline"
-            type="text"
-            maxLength={TAGLINE_MAX}
-            value={tagline}
-            onChange={(event) => setTagline(event.target.value)}
-            placeholder={labels.taglinePlaceholder}
-            className={inputClass}
-            style={inputStyle}
-          />
         </div>
 
         {/* Country */}

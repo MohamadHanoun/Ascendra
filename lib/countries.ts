@@ -1,38 +1,40 @@
 import type { Locale } from "@/lib/i18n";
 
-export type Country = {
-  /** ISO 3166-1 alpha-2 code, uppercase. */
-  code: string;
-  /** Flag emoji. */
-  flag: string;
-  /** English name. */
-  nameEn: string;
-  /** Arabic name. */
-  nameAr: string;
-};
-
-// Fixed allowlist of supported countries. ISO 3166-1 alpha-2 codes only.
-export const COUNTRIES: Country[] = [
-  { code: "SE", flag: "🇸🇪", nameEn: "Sweden", nameAr: "السويد" },
-  { code: "SA", flag: "🇸🇦", nameEn: "Saudi Arabia", nameAr: "السعودية" },
-  { code: "SY", flag: "🇸🇾", nameEn: "Syria", nameAr: "سوريا" },
-  { code: "LB", flag: "🇱🇧", nameEn: "Lebanon", nameAr: "لبنان" },
-  { code: "DE", flag: "🇩🇪", nameEn: "Germany", nameAr: "ألمانيا" },
-  { code: "DK", flag: "🇩🇰", nameEn: "Denmark", nameAr: "الدنمارك" },
-  { code: "NO", flag: "🇳🇴", nameEn: "Norway", nameAr: "النرويج" },
-  { code: "FI", flag: "🇫🇮", nameEn: "Finland", nameAr: "فنلندا" },
-  { code: "NL", flag: "🇳🇱", nameEn: "Netherlands", nameAr: "هولندا" },
-  { code: "FR", flag: "🇫🇷", nameEn: "France", nameAr: "فرنسا" },
-  { code: "GB", flag: "🇬🇧", nameEn: "United Kingdom", nameAr: "المملكة المتحدة" },
-  { code: "US", flag: "🇺🇸", nameEn: "United States", nameAr: "الولايات المتحدة" },
-  { code: "TR", flag: "🇹🇷", nameEn: "Turkey", nameAr: "تركيا" },
-  { code: "IQ", flag: "🇮🇶", nameEn: "Iraq", nameAr: "العراق" },
-  { code: "JO", flag: "🇯🇴", nameEn: "Jordan", nameAr: "الأردن" },
-  { code: "EG", flag: "🇪🇬", nameEn: "Egypt", nameAr: "مصر" },
-  { code: "AE", flag: "🇦🇪", nameEn: "United Arab Emirates", nameAr: "الإمارات العربية المتحدة" },
+// Full ISO 3166-1 alpha-2 country code allowlist.
+export const COUNTRY_CODES: string[] = [
+  "AD", "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS", "AT", "AU", "AW", "AX", "AZ",
+  "BA", "BB", "BD", "BE", "BF", "BG", "BH", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ", "BR", "BS",
+  "BT", "BV", "BW", "BY", "BZ",
+  "CA", "CC", "CD", "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CN", "CO", "CR", "CU", "CV", "CW",
+  "CX", "CY", "CZ",
+  "DE", "DJ", "DK", "DM", "DO", "DZ",
+  "EC", "EE", "EG", "EH", "ER", "ES", "ET",
+  "FI", "FJ", "FK", "FM", "FO", "FR",
+  "GA", "GB", "GD", "GE", "GF", "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS", "GT",
+  "GU", "GW", "GY",
+  "HK", "HM", "HN", "HR", "HT", "HU",
+  "ID", "IE", "IL", "IM", "IN", "IO", "IQ", "IR", "IS", "IT",
+  "JE", "JM", "JO", "JP",
+  "KE", "KG", "KH", "KI", "KM", "KN", "KP", "KR", "KW", "KY", "KZ",
+  "LA", "LB", "LC", "LI", "LK", "LR", "LS", "LT", "LU", "LV", "LY",
+  "MA", "MC", "MD", "ME", "MF", "MG", "MH", "MK", "ML", "MM", "MN", "MO", "MP", "MQ", "MR", "MS",
+  "MT", "MU", "MV", "MW", "MX", "MY", "MZ",
+  "NA", "NC", "NE", "NF", "NG", "NI", "NL", "NO", "NP", "NR", "NU", "NZ",
+  "OM",
+  "PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM", "PN", "PR", "PS", "PT", "PW", "PY",
+  "QA",
+  "RE", "RO", "RS", "RU", "RW",
+  "SA", "SB", "SC", "SD", "SE", "SG", "SH", "SI", "SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS",
+  "ST", "SV", "SX", "SY", "SZ",
+  "TC", "TD", "TF", "TG", "TH", "TJ", "TK", "TL", "TM", "TN", "TO", "TR", "TT", "TV", "TW", "TZ",
+  "UA", "UG", "UM", "US", "UY", "UZ",
+  "VA", "VC", "VE", "VG", "VI", "VN", "VU",
+  "WF", "WS",
+  "YE", "YT",
+  "ZA", "ZM", "ZW",
 ];
 
-const COUNTRY_BY_CODE = new Map(COUNTRIES.map((country) => [country.code, country]));
+const COUNTRY_CODE_SET = new Set(COUNTRY_CODES);
 
 /**
  * Normalizes a raw input to a valid uppercase country code, or null if it is
@@ -43,20 +45,61 @@ export function normalizeCountryCode(raw: string | null | undefined): string | n
     return null;
   }
   const code = raw.trim().toUpperCase();
-  return COUNTRY_BY_CODE.has(code) ? code : null;
+  return COUNTRY_CODE_SET.has(code) ? code : null;
 }
 
 export function isValidCountryCode(raw: string | null | undefined): boolean {
   return normalizeCountryCode(raw) !== null;
 }
 
-export function getCountry(code: string | null | undefined): Country | null {
+/**
+ * Builds the flag emoji from a country code by mapping each ASCII letter to its
+ * Regional Indicator Symbol. Returns "" for invalid codes.
+ */
+export function getCountryFlag(code: string | null | undefined): string {
   const normalized = normalizeCountryCode(code);
-  return normalized ? COUNTRY_BY_CODE.get(normalized) ?? null : null;
+  if (!normalized) {
+    return "";
+  }
+  const codePoints = [...normalized].map(
+    (char) => 0x1f1e6 + (char.charCodeAt(0) - 65),
+  );
+  return String.fromCodePoint(...codePoints);
 }
 
-export function getCountryName(country: Country, locale: Locale): string {
-  return locale === "ar" ? country.nameAr : country.nameEn;
+// Cache Intl.DisplayNames instances per locale (they are relatively expensive).
+const displayNamesCache = new Map<string, Intl.DisplayNames>();
+
+function getDisplayNames(locale: Locale): Intl.DisplayNames | null {
+  const resolved = locale === "ar" ? "ar" : "en";
+  const cached = displayNamesCache.get(resolved);
+  if (cached) {
+    return cached;
+  }
+  try {
+    const instance = new Intl.DisplayNames([resolved], { type: "region" });
+    displayNamesCache.set(resolved, instance);
+    return instance;
+  } catch {
+    return null;
+  }
+}
+
+/** Localized country name for a code, or null if the code is invalid. */
+export function getCountryName(
+  code: string | null | undefined,
+  locale: Locale,
+): string | null {
+  const normalized = normalizeCountryCode(code);
+  if (!normalized) {
+    return null;
+  }
+  const displayNames = getDisplayNames(locale);
+  try {
+    return displayNames?.of(normalized) ?? normalized;
+  } catch {
+    return normalized;
+  }
 }
 
 /** Returns "🇸🇪 Sweden" / "🇸🇦 السعودية", or null when the code is unknown. */
@@ -64,17 +107,30 @@ export function formatCountryLabel(
   code: string | null | undefined,
   locale: Locale,
 ): string | null {
-  const country = getCountry(code);
-  if (!country) {
+  const name = getCountryName(code, locale);
+  if (!name) {
     return null;
   }
-  return `${country.flag} ${getCountryName(country, locale)}`;
+  return `${getCountryFlag(code)} ${name}`;
 }
+
+// Cache the built+sorted option list per locale.
+const optionsCache = new Map<string, Array<{ value: string; label: string }>>();
 
 /** Options for a select control, localized and sorted by display name. */
 export function getCountryOptions(locale: Locale): Array<{ value: string; label: string }> {
-  return COUNTRIES.map((country) => ({
-    value: country.code,
-    label: `${country.flag} ${getCountryName(country, locale)}`,
-  })).sort((a, b) => a.label.localeCompare(b.label, locale === "ar" ? "ar" : "en"));
+  const resolved = locale === "ar" ? "ar" : "en";
+  const cached = optionsCache.get(resolved);
+  if (cached) {
+    return cached;
+  }
+  const options = COUNTRY_CODES.map((code) => ({
+    value: code,
+    label: `${getCountryFlag(code)} ${getCountryName(code, locale) ?? code}`,
+    name: getCountryName(code, locale) ?? code,
+  }))
+    .sort((a, b) => a.name.localeCompare(b.name, resolved))
+    .map(({ value, label }) => ({ value, label }));
+  optionsCache.set(resolved, options);
+  return options;
 }

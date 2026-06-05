@@ -1054,8 +1054,6 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           displayNameHelp: "إذا تُرك فارغًا، سيُستخدم اسم Discord الخاص بك.",
           bioLabel: "نبذة",
           bioPlaceholder: "اكتب نبذة قصيرة عنك...",
-          taglineLabel: "وصف مختصر",
-          taglinePlaceholder: "سطر قصير يصفك...",
           countryLabel: "الدولة",
           countryPlaceholder: "اختر دولتك",
           favoriteGameLabel: "اللعبة المفضلة",
@@ -1072,8 +1070,6 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           displayNameHelp: "If left empty, your Discord username is used.",
           bioLabel: "Bio",
           bioPlaceholder: "Write a short bio about yourself...",
-          taglineLabel: "Tagline",
-          taglinePlaceholder: "A short line that describes you...",
           countryLabel: "Country",
           countryPlaceholder: "Select your country",
           favoriteGameLabel: "Favorite game",
@@ -1341,7 +1337,6 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         initial={{
           displayName: user.displayName ?? "",
           bio: user.bio ?? "",
-          tagline: user.tagline ?? "",
           country: user.country ?? "",
           favoriteGame: user.favoriteGame ?? "",
         }}
