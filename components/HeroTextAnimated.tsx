@@ -11,26 +11,26 @@ interface HeroTextAnimatedProps {
   secondaryHref: string;
   secondaryLabel: string;
   locale: string;
+  stats?: { label: string; value: string }[];
 }
 
 const container = {
   hidden: {},
   visible: {
     transition: {
-      staggerChildren: 0.13,
-      delayChildren: 0.15,
+      staggerChildren: 0.08,
+      delayChildren: 0.08,
     },
   },
 };
 
 const item = {
-  hidden: { opacity: 0, y: 22, filter: 'blur(6px)' },
+  hidden: { opacity: 0, y: 18 },
   visible: {
     opacity: 1,
     y: 0,
-    filter: 'blur(0px)',
     transition: {
-      duration: 0.9,
+      duration: 0.58,
       ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
     },
   },
@@ -44,9 +44,10 @@ export default function HeroTextAnimated({
   secondaryHref,
   secondaryLabel,
   locale,
+  stats = [],
 }: HeroTextAnimatedProps) {
   const shouldReduceMotion = useReducedMotion();
-  const arrow = locale === 'ar' ? '‹' : '›';
+  const arrow = locale === 'ar' ? '<' : '>';
   const isRtl = locale === 'ar';
 
   const containerVariants = shouldReduceMotion ? undefined : container;
@@ -62,6 +63,7 @@ export default function HeroTextAnimated({
     >
       <motion.p
         variants={itemVariants}
+        className="asc-home-hero-eyebrow"
         style={{
           marginBottom: '1.25rem',
           fontSize: '0.75rem',
@@ -83,25 +85,18 @@ export default function HeroTextAnimated({
           lineHeight: 1,
           color: 'var(--asc-fg-0)',
         }}
-        className="text-6xl md:text-8xl"
+        className="asc-home-hero-title text-6xl md:text-8xl"
       >
         RISE
         <br />
-        <span
-          style={{
-            background: 'linear-gradient(100deg, #c9a24a 0%, #f0e2c0 42%, #9c6f33 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            filter: 'drop-shadow(0 0 32px rgba(201, 162, 74, 0.30))',
-          }}
-        >
+        <span className="asc-home-hero-title__accent">
           BEYOND LIMITS.
         </span>
       </motion.h1>
 
       <motion.p
         variants={itemVariants}
+        className="asc-home-hero-description"
         style={{
           marginTop: '1.5rem',
           maxWidth: '36rem',
@@ -113,8 +108,33 @@ export default function HeroTextAnimated({
         {description}
       </motion.p>
 
+      {stats.length > 0 && (
+        <motion.div
+          variants={itemVariants}
+          className="asc-home-hero-stats"
+        >
+          {stats.map((stat) => (
+            <span className="asc-home-hero-stat" key={stat.label}>
+              <span className="asc-home-hero-stat__value">{stat.value}</span>
+              <span className="asc-home-hero-stat__label">{stat.label}</span>
+            </span>
+          ))}
+        </motion.div>
+      )}
+
+      <motion.div
+        aria-hidden="true"
+        className="asc-home-hero-power-strip"
+        variants={itemVariants}
+      >
+        <span />
+        <span />
+        <span />
+      </motion.div>
+
       <motion.div
         variants={itemVariants}
+        className="asc-home-hero-actions"
         style={{
           marginTop: '2rem',
           display: 'flex',
@@ -124,22 +144,7 @@ export default function HeroTextAnimated({
       >
         <Link
           href={primaryHref}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '0.75rem 1.5rem',
-            fontSize: '0.875rem',
-            fontWeight: 900,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: '#0a0a0b',
-            background: 'linear-gradient(135deg, #e8c66a 0%, #c9a24a 55%, #9c6f33 100%)',
-            boxShadow: '0 0 28px rgba(201, 162, 74, 0.42), 0 4px 20px rgba(0,0,0,0.45)',
-            clipPath:
-              'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)',
-            transition: 'opacity 0.2s ease, box-shadow 0.2s ease',
-          }}
+          className="asc-home-hero-cta asc-home-hero-cta--primary"
         >
           {primaryLabel}
           <span
@@ -154,21 +159,7 @@ export default function HeroTextAnimated({
 
         <Link
           href={secondaryHref}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '0.75rem 1.5rem',
-            fontSize: '0.875rem',
-            fontWeight: 900,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: 'var(--asc-fg-2)',
-            border: '1px solid var(--asc-line)',
-            clipPath:
-              'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)',
-            transition: 'opacity 0.2s ease',
-          }}
+          className="asc-home-hero-cta asc-home-hero-cta--secondary"
         >
           {secondaryLabel}
         </Link>

@@ -32,7 +32,7 @@ function ScanGrid({ paused }: { paused: boolean }) {
 
   useFrame((_, delta) => {
     if (paused || !groupRef.current) return;
-    groupRef.current.position.z += delta * 0.5;
+    groupRef.current.position.z += delta * 0.25;
     if (groupRef.current.position.z > STEP) {
       groupRef.current.position.z -= STEP;
     }
@@ -47,33 +47,76 @@ function ScanGrid({ paused }: { paused: boolean }) {
   );
 }
 
-function Crystal({
-  position,
-  speed,
-  rotSpeed,
-  scale,
-  paused,
-}: {
-  position: [number, number, number];
-  speed: number;
-  rotSpeed: number;
-  scale: number;
-  paused: boolean;
-}) {
-  const meshRef = useRef<THREE.Mesh>(null!);
-  const initY = position[1];
+function SignalBeams() {
+  const geometry = useMemo(() => {
+    const positions = [
+      -18, -1.9, -14, 18, -1.9, -14,
+      -16, -0.4, -12, 15, 2.4, -8,
+      -14, 2.8, -13, 14, 0.1, -7,
+      -12, 4.4, -15, 10, 4.0, -6,
+      2, -2.6, -16, 12, 5.6, -9,
+    ];
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    return geo;
+  }, []);
+
+  useEffect(() => {
+    return () => { geometry.dispose(); };
+  }, [geometry]);
+
+  return (
+    <lineSegments geometry={geometry}>
+      <lineBasicMaterial
+        color="#e8c66a"
+        transparent
+        opacity={0.055}
+        depthWrite={false}
+      />
+    </lineSegments>
+  );
+}
+
+function EnergyGate({ paused }: { paused: boolean }) {
+  const groupRef = useRef<THREE.Group>(null!);
 
   useFrame(({ clock }) => {
-    if (paused || !meshRef.current) return;
+    if (paused || !groupRef.current) return;
     const t = clock.elapsedTime;
-    meshRef.current.position.y = initY + Math.sin(t * speed) * 0.38;
-    meshRef.current.rotation.x += rotSpeed * 0.28;
-    meshRef.current.rotation.y += rotSpeed;
-    meshRef.current.rotation.z += rotSpeed * 0.14;
+    groupRef.current.rotation.z = Math.sin(t * 0.22) * 0.045;
+    groupRef.current.position.y = 2.3 + Math.sin(t * 0.36) * 0.16;
   });
 
   return (
-    <mesh ref={meshRef} position={position} scale={scale}>
+    <group ref={groupRef} position={[7.4, 2.3, -10.2]} rotation={[0, 0, -0.08]}>
+      <mesh scale={[1.22, 0.54, 1]}>
+        <torusGeometry args={[3.05, 0.018, 8, 96]} />
+        <meshBasicMaterial color="#e8c66a" transparent opacity={0.12} depthWrite={false} />
+      </mesh>
+      <mesh scale={[0.88, 0.38, 1]}>
+        <torusGeometry args={[3.05, 0.014, 8, 96]} />
+        <meshBasicMaterial color="#9c6f33" transparent opacity={0.13} depthWrite={false} />
+      </mesh>
+      <mesh position={[0, 0, -0.03]} scale={[1.02, 0.46, 1]}>
+        <ringGeometry args={[2.74, 2.76, 64]} />
+        <meshBasicMaterial color="#f2d47a" transparent opacity={0.055} depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
+}
+
+function Crystal({
+  position,
+  scale,
+  rotation = [0, 0, 0],
+}: {
+  position: [number, number, number];
+  scale: number;
+  rotation?: [number, number, number];
+}) {
+  return (
+    <mesh position={position} rotation={rotation} scale={scale}>
       <octahedronGeometry args={[0.5, 0]} />
       <meshStandardMaterial
         color="#c9a24a"
@@ -136,19 +179,17 @@ function Scene({ paused }: { paused: boolean }) {
   return (
     <>
       <ambientLight intensity={0.4} color="#d8d6d2" />
-      <pointLight position={[8, 14, 6]} intensity={2} color="#e8c66a" />
-      <pointLight position={[-12, 5, -3]} intensity={0.6} color="#4a4a52" />
+      <pointLight position={[8, 14, 6]} intensity={1.45} color="#e8c66a" />
+      <pointLight position={[-12, 5, -3]} intensity={0.35} color="#5a5143" />
 
       <ScanGrid paused={paused} />
+      <SignalBeams />
+      <EnergyGate paused={paused} />
 
-      <Crystal position={[-7.5, 1.5, -5]} speed={0.27} rotSpeed={0.004} scale={1.1} paused={paused} />
-      <Crystal position={[8.5, 2.5, -7]} speed={0.21} rotSpeed={0.003} scale={0.85} paused={paused} />
-      <Crystal position={[-3.5, 3.2, -11]} speed={0.34} rotSpeed={0.005} scale={0.65} paused={paused} />
-      <Crystal position={[11.5, 0.5, -4]} speed={0.31} rotSpeed={0.004} scale={1.15} paused={paused} />
-      <Crystal position={[4.5, 4.2, -13]} speed={0.18} rotSpeed={0.003} scale={1.4} paused={paused} />
-      <Crystal position={[-10.5, 2.2, -6]} speed={0.40} rotSpeed={0.003} scale={0.62} paused={paused} />
-      <Crystal position={[2.5, 1.2, -3]} speed={0.26} rotSpeed={0.006} scale={0.42} paused={paused} />
-      <Crystal position={[-5.5, 0.9, -14]} speed={0.35} rotSpeed={0.002} scale={1.05} paused={paused} />
+      <Crystal position={[-7.5, 1.5, -5]} rotation={[0.35, 0.4, 0.1]} scale={1.1} />
+      <Crystal position={[8.5, 2.5, -7]} rotation={[0.2, 0.7, 0.32]} scale={0.85} />
+      <Crystal position={[4.5, 4.2, -13]} rotation={[0.52, 0.1, 0.4]} scale={1.25} />
+      <Crystal position={[-5.5, 0.9, -14]} rotation={[0.1, 0.55, 0.2]} scale={0.9} />
 
       <AccentCrystal position={[9.5, 3.2, -8.5]} paused={paused} />
     </>
@@ -170,7 +211,7 @@ export default function HeroScene3D() {
     >
       <Canvas
         camera={{ position: [0, 6, 14], fov: 58, near: 0.1, far: 100 }}
-        dpr={[1, 1.5]}
+        dpr={1}
         gl={{ alpha: true, antialias: false, powerPreference: 'low-power' }}
         style={{ background: 'transparent' }}
       >

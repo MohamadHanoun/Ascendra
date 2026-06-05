@@ -8,6 +8,9 @@ import HeroTextAnimated from "@/components/HeroTextAnimated";
 import HeroScene3DWrapper from "@/components/HeroScene3DWrapper";
 import SectionReveal from "@/components/SectionReveal";
 import Navbar from "@/components/Navbar";
+import HomeCinematicBackdrop from "@/components/home/HomeCinematicBackdrop";
+import HomePremiumSurface from "@/components/home/HomePremiumSurface";
+import HomeSignalRail from "@/components/home/HomeSignalRail";
 import { getDictionary, type HomeMessages, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { getDiscordStats, type DiscordStats } from "@/lib/discordStats";
@@ -367,10 +370,18 @@ function FeaturedEventCard({
     { value: countdown.hours, label: f.hours },
     { value: countdown.minutes, label: f.minutes },
   ];
+  const emptyValue = "—";
+  const eventMeta = featuredTournament?.game?.name
+    ? `${featuredTournament.game.name} · ${f.qualifierSuffix}`
+    : f.noFeaturedSub;
+  const eventStatus = featuredTournament
+    ? getTournamentStatusLabel(featuredTournament.status, messages.statuses)
+    : emptyValue;
 
   return (
-    <div
-      className="asc-hero-light-card relative border p-6 shadow-2xl backdrop-blur"
+    <HomePremiumSurface
+      className="asc-hero-light-card asc-home-featured-event p-0 shadow-2xl backdrop-blur"
+      tone="hero"
       style={{
         borderColor: "var(--asc-line-soft)",
         background: "var(--asc-card)",
@@ -378,142 +389,82 @@ function FeaturedEventCard({
           "polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)",
       }}
     >
-      <div aria-hidden="true" className="asc-corner-mark" />
+      <div className="asc-home-event-shell">
+        <div className="asc-home-event-topbar">
+          <span className="asc-home-event-live">
+            <span className="asc-live-dot" />
+            <span>{f.label}</span>
+          </span>
+          <span className="asc-home-event-status">{eventStatus}</span>
+        </div>
 
-      <div className="flex items-center gap-2">
-        <span className="asc-live-dot" />
-        <span
-          className="text-xs font-black uppercase tracking-[0.14em]"
-          style={{ color: "var(--asc-accent)" }}
-        >
-          {f.label}
-        </span>
-      </div>
+        <div className="asc-home-event-title-block">
+          <h2 className="asc-home-event-title">
+            {featuredTournament?.title ?? f.noFeaturedTitle}
+          </h2>
+          <p className="asc-home-event-meta">{eventMeta}</p>
+        </div>
 
-      <h2
-        className="mt-4 text-2xl font-black uppercase leading-tight md:text-3xl"
-        style={{ color: "var(--asc-fg-0)" }}
-      >
-        {featuredTournament?.title ?? f.noFeaturedTitle}
-      </h2>
+        <div className="asc-home-event-countdown-wrap">
+          <p className="asc-home-event-kicker">{f.startsIn}</p>
+          <div className="asc-home-event-countdown">
+            {countdownItems.map((item) => (
+              <div className="asc-home-event-countdown-item" key={item.label}>
+                <p className="asc-home-event-countdown-value">{item.value}</p>
+                <p className="asc-home-event-countdown-label">{item.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
 
-      <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-2)" }}>
-        {featuredTournament?.game?.name
-          ? `${featuredTournament.game.name} · ${f.qualifierSuffix}`
-          : f.noFeaturedSub}
-      </p>
+        <div className="asc-home-event-divider" />
 
-      <p
-        className="mt-5 text-xs font-black uppercase tracking-[0.16em]"
-        style={{ color: "var(--asc-accent)" }}
-      >
-        ▲ {f.startsIn}
-      </p>
-
-      <div className="mt-2 flex gap-5">
-        {countdownItems.map((item) => (
-          <div key={item.label} className="text-center">
-            <p
-              className="text-3xl font-black tabular-nums"
-              style={{ color: "var(--asc-fg-0)" }}
-            >
-              {item.value}
-            </p>
-            <p
-              className="text-[9px] font-black uppercase tracking-[0.14em]"
-              style={{ color: "var(--asc-fg-3)" }}
-            >
-              {item.label}
+        <div className="asc-home-event-stats">
+          <div className="asc-home-event-stat">
+            <p className="asc-home-event-stat-label">{f.prize}</p>
+            <p className="asc-home-event-stat-value asc-home-event-stat-value--prize">
+              {featuredTournament?.prize ?? emptyValue}
             </p>
           </div>
-        ))}
+
+          <div className="asc-home-event-stat">
+            <p className="asc-home-event-stat-label">{f.slots}</p>
+            <p className="asc-home-event-stat-value">
+              {featuredTournament
+                ? `${approvedSlots}/${featuredTournament.maxTeams}`
+                : emptyValue}
+            </p>
+          </div>
+
+          <div className="asc-home-event-stat">
+            <p className="asc-home-event-stat-label">{f.status}</p>
+            <p className="asc-home-event-stat-value">{eventStatus}</p>
+          </div>
+        </div>
+
+        {featuredTournament && (
+          <div className="asc-home-event-progress">
+            <ProgressBar
+              approvedSlots={approvedSlots}
+              maxSlots={featuredTournament.maxTeams}
+              approvedLabel={f.locked}
+            />
+          </div>
+        )}
+
+        <Link
+          href={
+            featuredTournament
+              ? `/tournaments/${featuredTournament.id}`
+              : "/tournaments"
+          }
+          className="asc-home-event-cta"
+        >
+          <span>{f.registerButton}</span>
+          <span aria-hidden="true">{arrow}</span>
+        </Link>
       </div>
-
-      <div
-        style={{
-          margin: "22px 0 16px",
-          height: 1,
-          background: "var(--asc-line-soft)",
-        }}
-      />
-
-      <div className="grid grid-cols-3 gap-3">
-        <div>
-          <p
-            className="text-[9px] font-black uppercase tracking-[0.14em]"
-            style={{ color: "var(--asc-fg-3)" }}
-          >
-            {f.prize}
-          </p>
-          <p
-            className="mt-1 text-sm font-black"
-            style={{ color: "var(--asc-prize)" }}
-          >
-            {featuredTournament?.prize ?? "—"}
-          </p>
-        </div>
-
-        <div>
-          <p
-            className="text-[9px] font-black uppercase tracking-[0.14em]"
-            style={{ color: "var(--asc-fg-3)" }}
-          >
-            {f.slots}
-          </p>
-          <p
-            className="mt-1 text-sm font-black"
-            style={{ color: "var(--asc-fg-0)" }}
-          >
-            {featuredTournament
-              ? `${approvedSlots}/${featuredTournament.maxTeams}`
-              : "—"}
-          </p>
-        </div>
-
-        <div>
-          <p
-            className="text-[9px] font-black uppercase tracking-[0.14em]"
-            style={{ color: "var(--asc-fg-3)" }}
-          >
-            {f.status}
-          </p>
-          <p
-            className="mt-1 text-sm font-black"
-            style={{ color: "var(--asc-fg-0)" }}
-          >
-            {featuredTournament
-              ? getTournamentStatusLabel(featuredTournament.status, messages.statuses)
-              : "—"}
-          </p>
-        </div>
-      </div>
-
-      {featuredTournament && (
-        <div className="mt-5">
-          <ProgressBar
-            approvedSlots={approvedSlots}
-            maxSlots={featuredTournament.maxTeams}
-            approvedLabel={f.locked}
-          />
-        </div>
-      )}
-
-      <Link
-        href={
-          featuredTournament
-            ? `/tournaments/${featuredTournament.id}`
-            : "/tournaments"
-        }
-        className="mt-5 flex w-full items-center justify-center gap-2 py-3 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:opacity-90"
-        style={{
-          background: "var(--asc-accent-2)",
-          clipPath:
-            "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
-        }}
-      >
-        {f.registerButton} {arrow}
-      </Link>
-    </div>
+    </HomePremiumSurface>
   );
 }
 
@@ -1415,6 +1366,33 @@ export default async function HomePage() {
   const featuredCountdown = getCountdownParts(
     featuredTournament?.startsAt ?? null,
   );
+
+  const heroStats = [
+    { label: messages.metrics.players, value: formatCompact(totalUsers) },
+    { label: messages.metrics.teams, value: formatCompact(totalTeams) },
+    {
+      label: messages.metrics.activeTournaments,
+      value: formatCompact(activeTournamentCount),
+    },
+  ];
+
+  const signalSegments = [
+    { label: messages.tournaments.label, value: formatCompact(tournaments.length) },
+    { label: messages.matches.label, value: formatCompact(sortedMatches.length) },
+    { label: messages.games.label, value: formatCompact(displayGames.length) },
+    {
+      label: messages.leaderboardPreview.label,
+      value: formatCompact(topPlayers.length),
+    },
+    { label: messages.metrics.players, value: formatCompact(totalUsers) },
+    { label: messages.metrics.teams, value: formatCompact(totalTeams) },
+    { label: messages.metrics.results, value: formatCompact(totalResults) },
+    {
+      label: messages.announcements.label,
+      value: formatCompact(displayAnnouncements.length),
+    },
+  ];
+
   return (
     <main
       className="asc-public-page asc-ambient min-h-screen overflow-hidden"
@@ -1424,12 +1402,17 @@ export default async function HomePage() {
         <Navbar />
 
         {/* Hero */}
-        <section className="asc-image-hero relative min-h-[720px] overflow-hidden">
+        <section className="asc-image-hero asc-home-hero relative min-h-[760px] overflow-hidden">
           <div
             className="asc-hero-media absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage: 'url("/images/backgrounds/home-hero.webp")',
             }}
+          />
+
+          <HomeCinematicBackdrop
+            eventLabel={featuredTournament?.title ?? messages.featured.noFeaturedTitle}
+            seasonLabel={activeSeason?.name ?? messages.hero.seasonLabel}
           />
 
           <HeroScene3DWrapper />
@@ -1445,16 +1428,17 @@ export default async function HomePage() {
             }}
           />
 
-          <div className="asc-image-hero-content relative z-10 mx-auto flex min-h-[720px] max-w-[1680px] items-end px-6 pb-20 pt-24 lg:px-10 2xl:px-14">
-            <div className="grid w-full gap-10 lg:grid-cols-[3fr_2fr] lg:items-end">
+          <div className="asc-image-hero-content asc-home-hero-content relative z-10 mx-auto flex min-h-[760px] max-w-[1680px] items-end px-6 pb-20 pt-24 lg:px-10 2xl:px-14">
+            <div className="asc-home-hero-grid grid w-full gap-10 lg:grid-cols-[3fr_2fr] lg:items-end">
               <HeroTextAnimated
-                eyebrow={`▲ ASCENDRA · ${activeSeason?.name ?? messages.hero.seasonLabel} · ${messages.hero.platformTagline}`}
+                eyebrow={`ASCENDRA / ${activeSeason?.name ?? messages.hero.seasonLabel} / ${messages.hero.platformTagline}`}
                 description={messages.hero.description}
                 primaryHref="/tournaments"
                 primaryLabel={messages.hero.primary}
                 secondaryHref="/discord"
                 secondaryLabel={messages.hero.discordButton}
                 locale={locale}
+                stats={heroStats}
               />
 
               <FeaturedEventCard
@@ -1468,58 +1452,8 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Ticker */}
-        <div
-          className="asc-ticker-track"
-          style={{
-            background: "var(--asc-card-muted)",
-            borderTop: "1px solid var(--asc-line-soft)",
-            borderBottom: "1px solid var(--asc-line-soft)",
-            padding: "10px 0",
-          }}
-        >
-          <div className="asc-ticker-inner">
-            {[0, 1].map((copy) => (
-              <span
-                key={copy}
-                className="inline-flex items-center gap-0"
-                aria-hidden={copy === 1 ? true : undefined}
-              >
-                {[
-                  { text: "◈ TOURNAMENTS", highlight: true },
-                  { text: "  REGISTER YOUR TEAM AND COMPETE", highlight: false },
-                  { text: "  ◈ RANKINGS", highlight: true },
-                  { text: "  SEASONAL LEADERBOARD", highlight: false },
-                  { text: "  ◈ RESULTS", highlight: true },
-                  { text: "  VERIFIED MATCH RESULTS", highlight: false },
-                  { text: "  ◈ GAMES", highlight: true },
-                  { text: "  MULTI-TITLE COMPETITIVE PLATFORM", highlight: false },
-                  { text: "  ◈ COMMUNITY", highlight: true },
-                  { text: "  TEAM MANAGEMENT AND MATCH CENTER", highlight: false },
-                  { text: "  ◈ ASCENDRA", highlight: true },
-                  { text: "  PREMIUM ESPORTS PLATFORM", highlight: false },
-                  { text: "  ✦ ", highlight: false },
-                ].map((segment, index) => (
-                  <span
-                    key={index}
-                    style={{
-                      fontSize: "0.62rem",
-                      fontWeight: 700,
-                      letterSpacing: "0.14em",
-                      textTransform: "uppercase",
-                      padding: "0 4px",
-                      color: segment.highlight
-                        ? "var(--asc-accent)"
-                        : "var(--asc-fg-3)",
-                    }}
-                  >
-                    {segment.text}
-                  </span>
-                ))}
-              </span>
-            ))}
-          </div>
-        </div>
+        {/* Live signal rail */}
+        <HomeSignalRail segments={signalSegments} />
 
         {/* How it works */}
         <section className="relative py-16 lg:py-20">
