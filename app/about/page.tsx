@@ -218,11 +218,6 @@ export default async function AboutPage() {
   const locale = await getLocale();
   const messages = aboutMessages[locale];
 
-  const clipPath14 =
-    "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)";
-  const clipPath16 =
-    "polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)";
-
   return (
     <main
       className="asc-public-page asc-ambient min-h-screen overflow-hidden"
@@ -244,8 +239,8 @@ export default async function AboutPage() {
             className="absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, rgb(12 11 9 / 0.22) 0%, rgb(12 11 9 / 0.58) 52%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.42) 40%, transparent 68%)",
+                "linear-gradient(180deg, rgb(var(--asc-scrim-rgb) / 0.22) 0%, rgb(var(--asc-scrim-rgb) / 0.58) 52%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(var(--asc-scrim-rgb) / 0.42) 40%, transparent 68%)",
               ].join(", "),
             }}
           />
@@ -256,11 +251,11 @@ export default async function AboutPage() {
           />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
-            <p
-              className="mb-4 text-xs font-black uppercase tracking-[0.22em]"
-              style={{ color: "var(--asc-accent)" }}
-            >
-              ▲ {messages.hero.label}
+            <p className="mb-4">
+              <span className="asc-cmd-eyebrow">
+                <span aria-hidden="true" className="asc-cmd-eyebrow__dot" />
+                {messages.hero.label}
+              </span>
             </p>
 
             <h1
@@ -283,14 +278,7 @@ export default async function AboutPage() {
 
           {/* Purpose + Stats */}
           <SectionReveal>
-            <section
-              className="relative overflow-hidden border p-6 shadow-2xl shadow-black/20 backdrop-blur"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                background: "var(--asc-bg-1)",
-                clipPath: clipPath16,
-              }}
-            >
+            <section className="asc-pub-surface p-6 shadow-2xl shadow-black/20 backdrop-blur">
               <CornerMark />
 
               <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
@@ -329,14 +317,7 @@ export default async function AboutPage() {
 
           {/* Core areas */}
           <SectionReveal delay={0.08}>
-            <section
-              className="relative overflow-hidden border shadow-2xl shadow-black/20 backdrop-blur"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                background: "var(--asc-bg-1)",
-                clipPath: clipPath14,
-              }}
-            >
+            <section className="asc-pub-surface shadow-2xl shadow-black/20 backdrop-blur">
               <CornerMark />
 
               <div
@@ -372,14 +353,7 @@ export default async function AboutPage() {
 
           {/* CTA */}
           <SectionReveal delay={0.14}>
-            <section
-              className="relative overflow-hidden flex flex-col justify-between gap-4 border p-6 shadow-2xl shadow-black/20 md:flex-row md:items-center"
-              style={{
-                borderColor: "var(--asc-accent-border)",
-                background: "linear-gradient(135deg, var(--asc-accent-dim) 0%, rgba(184,137,61,0.06) 100%)",
-                clipPath: clipPath14,
-              }}
-            >
+            <section className="asc-cmd-cta flex flex-col justify-between gap-4 p-6 md:flex-row md:items-center">
               <CornerMark />
 
               <div className="relative z-10">
@@ -400,10 +374,11 @@ export default async function AboutPage() {
 
               <Link
                 href="/tournaments"
-                className="relative z-10 w-fit px-6 py-3 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:opacity-90"
+                className="relative z-10 w-fit px-6 py-3 text-sm font-black uppercase tracking-[0.08em] transition hover:opacity-90"
                 style={{
-                  background: "linear-gradient(135deg, #c9933e 0%, #b8893d 55%, #9a6a2a 100%)",
-                  boxShadow: "0 0 22px rgba(184, 137, 61, 0.36), 0 4px 16px rgba(0,0,0,0.4)",
+                  color: "#0a0a0b",
+                  background: "linear-gradient(135deg, #e8c66a 0%, #c9a24a 55%, #9c6f33 100%)",
+                  boxShadow: "0 0 22px var(--asc-accent-glow), 0 4px 16px rgba(0,0,0,0.4)",
                   clipPath:
                     "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
                 }}

@@ -5,6 +5,7 @@ import EmptyState from "@/components/EmptyState";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import SectionReveal from "@/components/SectionReveal";
+import CommandRail from "@/components/public/CommandRail";
 import { getDictionary, type Locale, type NewsMessages } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
@@ -131,47 +132,6 @@ function Pill({
 
 function CornerMark() {
   return <div aria-hidden="true" className="asc-corner-mark" />;
-}
-
-function StatCard({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  accent?: boolean;
-}) {
-  return (
-    <div
-      className="relative border p-5"
-      style={{
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        clipPath:
-          "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
-      }}
-    >
-      <CornerMark />
-
-      <p
-        className="text-[10px] font-black uppercase tracking-[0.18em]"
-        style={{ color: "var(--asc-fg-3)" }}
-      >
-        {label}
-      </p>
-
-      <p
-        className="mt-3 text-4xl font-black tabular-nums"
-        style={{
-          color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
-          fontFamily: "var(--font-display)",
-        }}
-      >
-        {value}
-      </p>
-    </div>
-  );
 }
 
 function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
@@ -391,8 +351,8 @@ export default async function AnnouncementsPage() {
             className="absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, rgb(12 11 9 / 0.28) 0%, rgb(12 11 9 / 0.62) 52%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.42) 38%, transparent 72%)",
+                "linear-gradient(180deg, rgb(var(--asc-scrim-rgb) / 0.28) 0%, rgb(var(--asc-scrim-rgb) / 0.62) 52%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(var(--asc-scrim-rgb) / 0.42) 38%, transparent 72%)",
               ].join(", "),
             }}
           />
@@ -406,11 +366,11 @@ export default async function AnnouncementsPage() {
           />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
-            <p
-              className="mb-4 text-xs font-black uppercase tracking-[0.22em]"
-              style={{ color: "var(--asc-accent)" }}
-            >
-              ▲ {messages.hero.label}
+            <p className="mb-4">
+              <span className="asc-cmd-eyebrow">
+                <span aria-hidden="true" className="asc-cmd-eyebrow__dot" />
+                {messages.hero.label}
+              </span>
             </p>
 
             <h1
@@ -431,21 +391,24 @@ export default async function AnnouncementsPage() {
 
         <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-10 px-6 pb-16 lg:px-10 2xl:px-14">
           <SectionReveal>
-            <section className="grid gap-4 md:grid-cols-3">
-              <StatCard
-                label={messages.stats.published}
-                value={announcements.length}
-              />
-              <StatCard
-                label={messages.stats.important}
-                value={importantCount}
-                accent
-              />
-              <StatCard
-                label={messages.stats.categories}
-                value={categoriesCount}
-              />
-            </section>
+            <CommandRail
+              columns={3}
+              items={[
+                {
+                  label: messages.stats.published,
+                  value: announcements.length,
+                },
+                {
+                  label: messages.stats.important,
+                  value: importantCount,
+                  accent: true,
+                },
+                {
+                  label: messages.stats.categories,
+                  value: categoriesCount,
+                },
+              ]}
+            />
           </SectionReveal>
 
           {announcements.length === 0 ? (

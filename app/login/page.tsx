@@ -156,13 +156,8 @@ function Panel({
 }) {
   return (
     <section
-      className={`relative overflow-hidden border shadow-2xl shadow-black/25 ${className}`}
-      style={{
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        clipPath: panelClip,
-        ...style,
-      }}
+      className={`asc-pub-surface shadow-2xl shadow-black/25 ${className}`}
+      style={style}
     >
       <CornerMark />
       {children}
@@ -188,14 +183,7 @@ function Pill({ children }: { children: ReactNode }) {
 
 function FeatureCard({ number, title }: { number: string; title: string }) {
   return (
-    <div
-      className="relative overflow-hidden border p-4"
-      style={{
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-card-muted)",
-        clipPath: panelClip,
-      }}
-    >
+    <div className="asc-pub-panel p-4">
       <CornerMark />
 
       <p
@@ -223,10 +211,10 @@ function DiscordGlyph() {
     <div
       className="grid h-14 w-14 shrink-0 place-items-center"
       style={{
-        background: "linear-gradient(135deg, #b8893d, #8f642f)",
+        background: "linear-gradient(135deg, #c9a24a, #9c6f33)",
         clipPath:
           "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
-        boxShadow: "0 0 24px rgba(184, 137, 61, 0.36)",
+        boxShadow: "0 0 24px var(--asc-accent-glow)",
       }}
     >
       <svg
@@ -271,8 +259,8 @@ export default async function LoginPage() {
             className="absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, rgb(12 11 9 / 0.26) 0%, rgb(12 11 9 / 0.64) 54%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.42) 42%, transparent 74%)",
+                "linear-gradient(180deg, rgb(var(--asc-scrim-rgb) / 0.26) 0%, rgb(var(--asc-scrim-rgb) / 0.64) 54%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(var(--asc-scrim-rgb) / 0.42) 42%, transparent 74%)",
               ].join(", "),
             }}
           />
@@ -287,11 +275,11 @@ export default async function LoginPage() {
 
           <div className="relative z-10 mx-auto grid min-h-[720px] max-w-[1440px] gap-10 px-6 pb-32 pt-24 lg:grid-cols-[minmax(0,1fr)_460px] lg:items-center lg:px-10">
             <section>
-              <p
-                className="mb-5 text-xs font-black uppercase tracking-[0.22em]"
-                style={{ color: "var(--asc-accent)" }}
-              >
-                ▲ {messages.hero.label}
+              <p className="mb-5">
+                <span className="asc-cmd-eyebrow">
+                  <span aria-hidden="true" className="asc-cmd-eyebrow__dot" />
+                  {messages.hero.label}
+                </span>
               </p>
 
               <h1

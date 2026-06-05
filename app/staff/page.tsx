@@ -120,14 +120,30 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-function getAvatarHue(name: string) {
-  let hue = 0;
+function getStaffStatusStyle(status: string) {
+  const normalized = status.toLowerCase();
 
-  for (const character of name) {
-    hue = (hue << 5) - hue + character.charCodeAt(0);
+  if (normalized === "active" || normalized === "available" || normalized === "online") {
+    return {
+      borderColor: "var(--asc-green-border)",
+      background: "var(--asc-green-bg)",
+      color: "var(--asc-green)",
+    };
   }
 
-  return Math.abs(hue) % 360;
+  if (normalized === "busy" || normalized === "away") {
+    return {
+      borderColor: "var(--asc-amber-border)",
+      background: "var(--asc-amber-bg)",
+      color: "var(--asc-amber)",
+    };
+  }
+
+  return {
+    borderColor: "var(--asc-line-soft)",
+    background: "var(--asc-card-muted)",
+    color: "var(--asc-fg-3)",
+  };
 }
 
 function CornerMark() {
@@ -229,23 +245,19 @@ function SummaryCard({
 }
 
 function StaffAvatar({ name }: { name: string }) {
-  const hue = getAvatarHue(name);
-
   return (
     <div
       className="grid h-16 w-16 shrink-0 place-items-center"
       style={{
-        background: `linear-gradient(135deg, oklch(0.55 0.22 ${hue}), oklch(0.30 0.16 ${
-          hue + 40
-        }))`,
+        background: "linear-gradient(135deg, #e8c66a, #c9a24a 55%, #9c6f33)",
         clipPath:
           "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
-        boxShadow: `inset 0 0 0 1px oklch(0.75 0.20 ${hue} / 0.35)`,
+        boxShadow: "inset 0 0 0 1px rgba(232, 198, 106, 0.4)",
       }}
     >
       <span
         className="text-xl font-black uppercase"
-        style={{ color: "white", fontFamily: "var(--font-display)" }}
+        style={{ color: "#0a0a0b", fontFamily: "var(--font-display)" }}
       >
         {getInitials(name)}
       </span>
@@ -268,21 +280,26 @@ function StaffCard({
 }) {
   return (
     <article
-      className="relative overflow-hidden border p-6"
+      className="asc-pub-panel p-6"
       style={{
-        borderColor: "var(--asc-line-soft)",
         background:
           "linear-gradient(135deg, var(--asc-accent-dim), var(--asc-bg-1))",
-        clipPath: panelClip,
       }}
     >
       <CornerMark />
+
+      <span
+        aria-hidden="true"
+        className="absolute inset-y-0 w-1"
+        style={{ insetInlineStart: 0, background: "var(--asc-accent)", opacity: 0.7 }}
+      />
 
       <div
         aria-hidden="true"
         className="absolute -right-5 -top-6 text-[120px] font-black leading-none"
         style={{
-          color: "oklch(1 0 0 / 0.035)",
+          color: "var(--asc-fg-0)",
+          opacity: 0.04,
           fontFamily: "var(--font-display)",
         }}
       >
@@ -315,13 +332,14 @@ function StaffCard({
           </p>
 
           <span
-            className="mt-5 inline-flex w-fit border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
-            style={{
-              borderColor: "var(--asc-green-border)",
-              background: "var(--asc-green-bg)",
-              color: "var(--asc-green)",
-            }}
+            className="mt-5 inline-flex w-fit items-center gap-2 border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
+            style={getStaffStatusStyle(status)}
           >
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5"
+              style={{ background: "currentColor" }}
+            />
             {status}
           </span>
         </div>
@@ -358,8 +376,8 @@ export default async function StaffPage() {
             className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, rgb(12 11 9 / 0.28) 0%, rgb(12 11 9 / 0.65) 54%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.45) 42%, transparent 74%)",
+                "linear-gradient(180deg, rgb(var(--asc-scrim-rgb) / 0.28) 0%, rgb(var(--asc-scrim-rgb) / 0.65) 54%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(var(--asc-scrim-rgb) / 0.45) 42%, transparent 74%)",
               ].join(", "),
             }}
           />
@@ -373,10 +391,11 @@ export default async function StaffPage() {
           />
 
           <div className="asc-image-hero-content relative z-10 mx-auto max-w-[1680px] px-6 pb-32 pt-24 lg:px-10 2xl:px-14">
-            <p
-              className="asc-section-label mb-4"
-            >
-              ▲ {messages.hero.label}
+            <p className="mb-4">
+              <span className="asc-cmd-eyebrow">
+                <span aria-hidden="true" className="asc-cmd-eyebrow__dot" />
+                {messages.hero.label}
+              </span>
             </p>
 
             <h1

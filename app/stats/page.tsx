@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import CommandRail from "@/components/public/CommandRail";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
@@ -102,18 +103,6 @@ export async function generateMetadata(): Promise<Metadata> {
     title: messages.title,
     description: messages.description,
   };
-}
-
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-        {label}
-      </p>
-
-      <p className="mt-1 text-2xl font-black" style={{ color: "var(--asc-fg-0)" }}>{value}</p>
-    </div>
-  );
 }
 
 function Pill({
@@ -236,12 +225,15 @@ export default async function StatsPage() {
             }}
           />
 
-          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,rgb(12 11 9 / 0.92) 0%,rgb(12 11 9 / 0.62) 44%,rgb(12 11 9 / 0.80) 100%)" }} />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,rgb(var(--asc-scrim-rgb) / 0.92) 0%,rgb(var(--asc-scrim-rgb) / 0.62) 44%,rgb(var(--asc-scrim-rgb) / 0.80) 100%)" }} />
           <div className="absolute inset-x-0 bottom-0 h-40" style={{ background: "linear-gradient(to bottom, transparent, var(--asc-bg-0))" }} />
 
           <div className="relative z-10 mx-auto max-w-[1680px] px-6 pb-28 pt-20 lg:px-10 2xl:px-14">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--asc-accent)" }}>
-              ▲ {messages.hero.label}
+            <p className="mb-4">
+              <span className="asc-cmd-eyebrow">
+                <span aria-hidden="true" className="asc-cmd-eyebrow__dot" />
+                {messages.hero.label}
+              </span>
             </p>
 
             <h1 className="text-5xl font-black uppercase tracking-tight md:text-7xl" style={{ color: "var(--asc-fg-0)" }}>
@@ -254,11 +246,8 @@ export default async function StatsPage() {
           </div>
         </section>
 
-        <section className="relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
-          <section
-            className="p-5 shadow-2xl shadow-black/20"
-            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-          >
+        <section className="asc-pub-shell relative -mt-16 mx-auto grid max-w-[1680px] gap-8 px-6 pb-16 lg:px-10 2xl:px-14">
+          <section className="asc-pub-surface p-5 shadow-2xl shadow-black/20">
             <div className="pb-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
               <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
                 {messages.overview.label}
@@ -269,17 +258,18 @@ export default async function StatsPage() {
               </h2>
             </div>
 
-            <div className="grid gap-5 pt-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-              {overviewStats.map((item) => (
-                <Stat key={item.label} label={item.label} value={item.value} />
-              ))}
+            <div className="pt-5">
+              <CommandRail
+                columns={5}
+                items={overviewStats.map((item) => ({
+                  label: item.label,
+                  value: item.value,
+                }))}
+              />
             </div>
           </section>
 
-          <section
-            className="overflow-hidden shadow-2xl shadow-black/20"
-            style={{ border: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-          >
+          <section className="asc-pub-surface overflow-hidden shadow-2xl shadow-black/20">
             <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--asc-line-soft)" }}>
               <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
                 {messages.labels.gameActivity}
@@ -294,7 +284,7 @@ export default async function StatsPage() {
               {gameStats.map((item) => (
                 <article
                   key={item.game}
-                  className="grid gap-4 px-5 py-4 transition md:grid-cols-[minmax(0,1fr)_120px_120px_120px] md:items-center"
+                  className="asc-pub-row grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_120px_120px_120px] md:items-center"
                   style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
                 >
                   <div>

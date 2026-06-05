@@ -212,21 +212,26 @@ function RoleCard({
 }) {
   return (
     <article
-      className="relative overflow-hidden border p-6"
+      className="asc-pub-panel p-6"
       style={{
-        borderColor: "var(--asc-line-soft)",
         background:
           "linear-gradient(135deg, var(--asc-accent-dim), var(--asc-bg-1))",
-        clipPath: panelClip,
       }}
     >
       <CornerMark />
+
+      <span
+        aria-hidden="true"
+        className="absolute inset-y-0 w-1"
+        style={{ insetInlineStart: 0, backgroundColor: color, opacity: 0.85 }}
+      />
 
       <div
         aria-hidden="true"
         className="absolute -right-5 -top-6 text-[120px] font-black leading-none"
         style={{
-          color: "oklch(1 0 0 / 0.035)",
+          color: "var(--asc-fg-0)",
+          opacity: 0.04,
           fontFamily: "var(--font-display)",
         }}
       >
@@ -234,7 +239,13 @@ function RoleCard({
       </div>
 
       <div className="relative z-10">
-        <div className="flex items-center gap-4">
+        <p
+          className="text-[10px] font-black uppercase tracking-[0.18em]"
+          style={{ fontFamily: "var(--font-mono, monospace)", color: "var(--asc-fg-3)" }}
+        >
+          {String(index + 1).padStart(2, "0")}
+        </p>
+        <div className="mt-3 flex items-center gap-4">
           <span
             className="h-4 w-4 shrink-0"
             style={{
@@ -288,8 +299,8 @@ export default async function RolesPage() {
             className="asc-hero-overlay absolute inset-0"
             style={{
               background: [
-                "linear-gradient(180deg, rgb(12 11 9 / 0.28) 0%, rgb(12 11 9 / 0.65) 54%, var(--asc-bg-0) 100%)",
-                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(12 11 9 / 0.45) 42%, transparent 74%)",
+                "linear-gradient(180deg, rgb(var(--asc-scrim-rgb) / 0.28) 0%, rgb(var(--asc-scrim-rgb) / 0.65) 54%, var(--asc-bg-0) 100%)",
+                "linear-gradient(90deg, var(--asc-bg-0) 0%, rgb(var(--asc-scrim-rgb) / 0.45) 42%, transparent 74%)",
               ].join(", "),
             }}
           />
@@ -303,10 +314,11 @@ export default async function RolesPage() {
           />
 
           <div className="asc-image-hero-content relative z-10 mx-auto max-w-[1680px] px-6 pb-32 pt-24 lg:px-10 2xl:px-14">
-            <p
-              className="asc-section-label mb-4"
-            >
-              ▲ {messages.hero.label}
+            <p className="mb-4">
+              <span className="asc-cmd-eyebrow">
+                <span aria-hidden="true" className="asc-cmd-eyebrow__dot" />
+                {messages.hero.label}
+              </span>
             </p>
 
             <h1
