@@ -13,21 +13,14 @@ function FooterColumn({
 }) {
   return (
     <div>
-      <h3
-        className="mb-4 text-xs font-black uppercase tracking-[0.18em]"
-        style={{ color: "var(--asc-accent)" }}
-      >
+      <h3 className="asc-footer-col__title mb-4">
+        <span aria-hidden="true">▲</span>
         {title}
       </h3>
 
       <div className="grid gap-3">
         {links.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="text-sm font-bold transition"
-            style={{ color: "var(--asc-fg-3)" }}
-          >
+          <Link key={link.href} href={link.href} className="asc-footer-link">
             {link.label}
           </Link>
         ))}
@@ -66,16 +59,20 @@ export default async function Footer() {
   ];
 
   return (
-    <footer
-      style={{
-        borderTop: "1px solid var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        color: "var(--asc-fg-1)",
-      }}
-    >
-      <div className="grid gap-10 px-6 py-14 lg:grid-cols-[1.25fr_0.75fr_0.75fr_0.75fr_1fr] lg:px-10 2xl:px-14">
+    <footer className="asc-footer">
+      <span aria-hidden="true" className="asc-footer__edge" />
+      <span aria-hidden="true" className="asc-footer__watermark">
+        ASCENDRA
+      </span>
+
+      <div className="asc-footer__inner grid gap-10 px-6 py-14 lg:grid-cols-[1.25fr_0.75fr_0.75fr_0.75fr_1fr] lg:px-10 2xl:px-14">
         <div>
-          <Link href="/" className="inline-flex items-center gap-3">
+          <span className="asc-footer-status">
+            <span aria-hidden="true">▲</span>
+            {messages.columns.platform}
+          </span>
+
+          <Link href="/" className="mt-4 inline-flex items-center gap-3">
             <Image
               src="/images/brand/ascendra-logo-mark.png"
               alt="Ascendra"
@@ -100,24 +97,16 @@ export default async function Footer() {
             {messages.description}
           </p>
 
-          <div
-            className="mt-6 h-px w-12"
-            style={{ background: "var(--asc-accent)" }}
-          />
+          <div className="asc-footer-brand-divider" />
         </div>
 
         <FooterColumn title={messages.columns.platform} links={platformLinks} />
-        <FooterColumn
-          title={messages.columns.community}
-          links={communityLinks}
-        />
+        <FooterColumn title={messages.columns.community} links={communityLinks} />
         <FooterColumn title={messages.columns.legal} links={legalLinks} />
 
         <div>
-          <h3
-            className="mb-4 text-xs font-black uppercase tracking-[0.18em]"
-            style={{ color: "var(--asc-accent)" }}
-          >
+          <h3 className="asc-footer-col__title mb-4">
+            <span aria-hidden="true">▲</span>
             {messages.columns.discord}
           </h3>
 
@@ -128,39 +117,16 @@ export default async function Footer() {
             {messages.discordDescription}
           </p>
 
-          <Link
-            href="/discord"
-            className="inline-flex px-5 py-3 text-sm font-black text-white transition"
-            style={{ background: "var(--asc-accent-2)" }}
-          >
+          <Link href="/discord" className="asc-footer-discord-cta">
             {messages.openDiscordHub}
           </Link>
         </div>
       </div>
 
-      <div
-        className="px-6 py-5 lg:px-10 2xl:px-14"
-        style={{ borderTop: "1px solid var(--asc-line-soft)" }}
-      >
-        <div
-          className="flex flex-col gap-3 text-sm md:flex-row md:items-center md:justify-between"
-          style={{ color: "var(--asc-fg-3)" }}
-        >
-          <p>
-            © {new Date().getFullYear()}{" "}
-            <span className="font-bold" style={{ color: "var(--asc-fg-2)" }}>
-              Ascendra
-            </span>
-            . {messages.rights}
-          </p>
-
-          <p>
-            {messages.developedBy}{" "}
-            <span className="font-bold" style={{ color: "var(--asc-accent)" }}>
-              Abu 3Day
-            </span>
-          </p>
-        </div>
+      <div className="asc-footer__base px-6 py-6 lg:px-10 2xl:px-14">
+        <p className="asc-footer__copy text-sm">
+          © 2026 <strong>Ascendra</strong>. {messages.rights}
+        </p>
       </div>
     </footer>
   );

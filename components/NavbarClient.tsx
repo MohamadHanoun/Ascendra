@@ -21,6 +21,8 @@ type NavbarClientProps = {
   userImage: string | null;
 };
 
+const CUT6 = "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)";
+
 function BrandLogo() {
   return (
     <Link href="/" className="flex shrink-0 items-center gap-3">
@@ -44,8 +46,6 @@ function BrandLogo() {
   );
 }
 
-const CUT8 = "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)";
-
 function NavAvatarPill({
   userName,
   userImage,
@@ -66,50 +66,66 @@ function NavAvatarPill({
     <button
       type="button"
       onClick={onClick}
-      style={{
-        display: "flex", alignItems: "center", gap: 8,
-        padding: "4px 10px 4px 4px",
-        background: isOpen ? "var(--asc-bg-2)" : "var(--asc-bg-1)",
-        border: "1px solid var(--asc-line-soft)",
-        clipPath: CUT8,
-        cursor: "pointer",
-        flexShrink: 0,
-        transition: "background 120ms ease",
-      }}
+      className="asc-nav-profile"
+      data-open={isOpen ? "true" : undefined}
+      aria-expanded={isOpen}
     >
       {userImage ? (
         <Image
           src={userImage}
           alt={userName || ""}
-          width={28} height={28}
-          style={{ objectFit: "cover", flexShrink: 0, clipPath: "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)" }}
+          width={28}
+          height={28}
+          style={{ objectFit: "cover", flexShrink: 0, clipPath: CUT6 }}
         />
       ) : (
-        <span style={{
-          display: "grid", placeItems: "center",
-          width: 28, height: 28, flexShrink: 0,
-          background: "linear-gradient(135deg, var(--asc-accent), var(--asc-accent-2))",
-          color: "#ffffff",
-          fontFamily: "var(--font-display, sans-serif)",
-          fontWeight: 700, fontSize: 11, letterSpacing: "0.04em",
-          clipPath: "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)",
-        }}>{initials}</span>
+        <span
+          style={{
+            display: "grid",
+            placeItems: "center",
+            width: 28,
+            height: 28,
+            flexShrink: 0,
+            background: "linear-gradient(135deg, var(--asc-gold-bright, #e8c66a), var(--asc-bronze, #9c6f33))",
+            color: "#0a0a0b",
+            fontFamily: "var(--font-display, sans-serif)",
+            fontWeight: 800,
+            fontSize: 11,
+            letterSpacing: "0.04em",
+            clipPath: CUT6,
+          }}
+        >
+          {initials}
+        </span>
       )}
-      <div style={{ display: "flex", flexDirection: "column", lineHeight: 1, gap: 3, textAlign: "start" }}>
-        <span style={{
-          fontFamily: "var(--font-display, sans-serif)",
-          fontWeight: 600, fontSize: 12,
-          letterSpacing: "0.08em",
-          color: "var(--asc-fg-0)",
-          maxWidth: 96, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          textTransform: "uppercase",
-        }}>{userName || fallbackName}</span>
-        <span style={{
-          fontFamily: "var(--font-mono, monospace)",
-          fontSize: 9, color: "var(--asc-accent)",
-          letterSpacing: "0.08em",
-        }}>▲ {playerLabel}</span>
-      </div>
+      <span style={{ display: "flex", flexDirection: "column", lineHeight: 1, gap: 3, textAlign: "start" }}>
+        <span
+          style={{
+            fontFamily: "var(--font-display, sans-serif)",
+            fontWeight: 700,
+            fontSize: 12,
+            letterSpacing: "0.08em",
+            color: "var(--asc-fg-0)",
+            maxWidth: 96,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            textTransform: "uppercase",
+          }}
+        >
+          {userName || fallbackName}
+        </span>
+        <span
+          style={{
+            fontFamily: "var(--font-mono, monospace)",
+            fontSize: 9,
+            color: "var(--asc-accent)",
+            letterSpacing: "0.08em",
+          }}
+        >
+          ▲ {playerLabel}
+        </span>
+      </span>
     </button>
   );
 }
@@ -119,13 +135,33 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function NavLink({
+function DesktopNavLink({ href, label }: { href: string; label: string }) {
+  const pathname = usePathname();
+  const isActive = isActivePath(pathname, href);
+
+  return (
+    <Link
+      href={href}
+      className="asc-nav-link"
+      data-active={isActive ? "true" : undefined}
+      aria-current={isActive ? "page" : undefined}
+    >
+      {label}
+    </Link>
+  );
+}
+
+function MobileNavLink({
   href,
   label,
+  index,
+  arrow,
   onClick,
 }: {
   href: string;
   label: string;
+  index: number;
+  arrow: string;
   onClick?: () => void;
 }) {
   const pathname = usePathname();
@@ -135,36 +171,20 @@ function NavLink({
     <Link
       href={href}
       onClick={onClick}
-      className="relative px-4 py-2 transition"
-      style={{
-        color: isActive ? "var(--asc-accent)" : "var(--asc-fg-2)",
-        fontFamily: "var(--font-display)",
-        fontWeight: 600,
-        fontSize: "0.8rem",
-        letterSpacing: "0.14em",
-        textTransform: "uppercase",
-      }}
+      className="asc-nav-mobile-link"
+      data-active={isActive ? "true" : undefined}
+      aria-current={isActive ? "page" : undefined}
     >
+      <span className="asc-nav-mobile-link__index">
+        {String(index + 1).padStart(2, "0")}
+      </span>
       {label}
-      {isActive && (
-        <span
-          className="nav-active-line"
-          style={{
-            position: "absolute",
-            bottom: "-1px",
-            insetInlineStart: 0,
-            insetInlineEnd: 0,
-            height: "2px",
-            background: "var(--asc-accent)",
-            boxShadow: "0 0 10px var(--asc-accent-glow)",
-          }}
-        />
-      )}
+      <span aria-hidden="true" className="asc-nav-mobile-link__arrow">
+        {arrow}
+      </span>
     </Link>
   );
 }
-
-const CUT6 = "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)";
 
 function UserAvatar({
   userName,
@@ -224,6 +244,7 @@ export default function NavbarClient({
   const pathname = usePathname();
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
+  const arrow = locale === "ar" ? "‹" : "›";
 
   const mainLinks = [
     { href: "/", label: labels.links.home },
@@ -280,20 +301,13 @@ export default function NavbarClient({
 
   return (
     <>
-      <header
-        className="sticky top-0 z-40"
-        style={{
-          borderBottom: "1px solid var(--asc-line-soft)",
-          background: "var(--asc-nav-bg, rgb(10 10 11 / 0.92))",
-          backdropFilter: "blur(18px) saturate(140%)",
-        }}
-      >
+      <header className="asc-nav asc-navbar sticky top-0 z-40">
         <nav className="flex w-full items-center gap-4 px-6 py-3 lg:px-10 2xl:px-14">
           <BrandLogo />
 
           <div className="hidden flex-1 items-center justify-center gap-1 lg:flex">
             {mainLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} label={link.label} />
+              <DesktopNavLink key={link.href} href={link.href} label={link.label} />
             ))}
           </div>
 
@@ -301,30 +315,12 @@ export default function NavbarClient({
             {/* Search bar */}
             <GlobalSearch labels={labels.search} />
 
+            <span aria-hidden="true" className="asc-nav-divider" />
+
             {/* Discord */}
-            <Link
-              href="/discord"
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "8px 12px",
-                background: "linear-gradient(135deg, #c9a24a, #9c6f33)",
-                color: "#f5f4f2",
-                fontFamily: "var(--font-display, sans-serif)",
-                fontWeight: 600, fontSize: 12,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                clipPath: CUT8,
-                textDecoration: "none",
-                flexShrink: 0,
-                transition: "background 120ms ease",
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #9c6f33, #7a5526)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #c9a24a, #9c6f33)"; }}
-            >
+            <Link href="/discord" className="asc-nav-discord">
               DISCORD
             </Link>
-
-            <PublicThemeToggle />
 
             {/* Bell */}
             <NotificationsDropdown isLoggedIn={isLoggedIn} />
@@ -342,17 +338,8 @@ export default function NavbarClient({
                 />
 
                 {isProfileOpen && (
-                  <div
-                    className="absolute mt-2 w-64 p-2 shadow-2xl ltr:right-0 rtl:left-0"
-                    style={{
-                      border: "1px solid var(--asc-line)",
-                      background: "var(--asc-bg-2)",
-                    }}
-                  >
-                    <div
-                      className="mb-2 flex items-center gap-3 p-3"
-                      style={{ background: "var(--asc-accent-dim)" }}
-                    >
+                  <div className="asc-nav-panel ltr:right-0 rtl:left-0">
+                    <div className="asc-nav-panel__head">
                       <UserAvatar
                         userName={userName}
                         userImage={userImage}
@@ -371,82 +358,43 @@ export default function NavbarClient({
                       </div>
                     </div>
 
-                    <Link
-                      href="/profile"
-                      className="block px-4 py-2.5 text-sm font-bold transition"
-                      style={{ color: "var(--asc-fg-2)" }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = "var(--asc-fg-0)";
-                        e.currentTarget.style.borderInlineStart = "2px solid var(--asc-accent)";
-                        e.currentTarget.style.paddingInlineStart = "calc(1rem - 2px)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = "var(--asc-fg-2)";
-                        e.currentTarget.style.borderInlineStart = "";
-                        e.currentTarget.style.paddingInlineStart = "";
-                      }}
-                    >
+                    <Link href="/profile" className="asc-nav-panel__row">
                       {labels.links.profile}
                     </Link>
 
                     {isAdmin && (
                       <>
-                        <div
-                          className="my-1"
-                          style={{ borderTop: "1px solid var(--asc-line-soft)" }}
-                        />
-                        <Link
-                          href="/admin"
-                          className="block px-4 py-2.5 text-sm font-bold transition"
-                          style={{ color: "var(--asc-fg-2)" }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = "var(--asc-fg-0)";
-                            e.currentTarget.style.borderInlineStart = "2px solid var(--asc-accent)";
-                            e.currentTarget.style.paddingInlineStart = "calc(1rem - 2px)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = "var(--asc-fg-2)";
-                            e.currentTarget.style.borderInlineStart = "";
-                            e.currentTarget.style.paddingInlineStart = "";
-                          }}
-                        >
+                        <div className="asc-nav-panel__divider" />
+                        <Link href="/admin" className="asc-nav-panel__row">
                           {labels.links.adminPanel}
                         </Link>
                         <Link
                           href="/admin/bot"
-                          className="block px-4 py-2.5 text-sm font-bold transition"
-                          style={{ color: "var(--asc-green)" }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = "var(--asc-fg-0)";
-                            e.currentTarget.style.borderInlineStart = "2px solid var(--asc-green)";
-                            e.currentTarget.style.paddingInlineStart = "calc(1rem - 2px)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = "var(--asc-green)";
-                            e.currentTarget.style.borderInlineStart = "";
-                            e.currentTarget.style.paddingInlineStart = "";
-                          }}
+                          className="asc-nav-panel__row asc-nav-panel__row--bot"
                         >
                           {labels.links.botDashboard}
                         </Link>
                       </>
                     )}
 
-                    <div
-                      className="my-1"
-                      style={{ borderTop: "1px solid var(--asc-line-soft)" }}
-                    />
+                    <div className="asc-nav-panel__divider" />
+                    <div className="asc-nav-panel__section">
+                      <span className="asc-nav-panel__section-title">Interface</span>
+                      <div className="asc-nav-panel__settings">
+                        <PublicThemeToggle compact />
+                        <LanguageSwitcher
+                          locale={locale}
+                          labels={labels.language}
+                          compact
+                        />
+                      </div>
+                    </div>
+
+                    <div className="asc-nav-panel__divider" />
                     <button
                       type="button"
                       onClick={confirmLogout}
-                      className="w-full px-4 py-2.5 text-left text-sm font-bold transition rtl:text-right"
-                      style={{ color: "var(--asc-live)" }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "var(--asc-live-bg)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "";
-                      }}
+                      className="asc-nav-panel__row asc-nav-panel__row--danger"
                     >
                       {labels.actions.logout}
                     </button>
@@ -454,56 +402,38 @@ export default function NavbarClient({
                 )}
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="px-4 py-2 text-sm font-bold transition"
-                style={{
-                  border: "1px solid var(--asc-line)",
-                  color: "var(--asc-fg-2)",
-                  clipPath: "polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)",
-                }}
-              >
+              <Link href="/login" className="asc-nav-login">
                 {labels.actions.login}
               </Link>
             )}
-
-            <LanguageSwitcher locale={locale} labels={labels.language} />
           </div>
 
           <button
             type="button"
             onClick={() => setIsMenuOpen((v) => !v)}
             aria-expanded={isMenuOpen}
-            className="px-4 py-2 text-sm font-bold transition ltr:ml-auto rtl:mr-auto lg:hidden"
-            style={{
-              border: "1px solid var(--asc-line-soft)",
-              color: "var(--asc-fg-1)",
-            }}
+            className="asc-nav-menu-btn ltr:ml-auto rtl:mr-auto"
           >
             {isMenuOpen ? labels.actions.close : labels.actions.menu}
           </button>
         </nav>
 
         {isMenuOpen && (
-          <div
-            className="px-6 py-5 lg:hidden"
-            style={{
-              borderTop: "1px solid var(--asc-line-soft)",
-              background: "var(--asc-bg-1)",
-            }}
-          >
+          <div className="asc-nav-mobile px-6 py-5 lg:hidden">
             <div className="grid gap-1">
-              {mainLinks.map((link) => (
-                <NavLink
+              {mainLinks.map((link, index) => (
+                <MobileNavLink
                   key={link.href}
                   href={link.href}
                   label={link.label}
+                  index={index}
+                  arrow={arrow}
                   onClick={() => setIsMenuOpen(false)}
                 />
               ))}
 
               <div
-                className="mt-3 grid gap-2 pt-4"
+                className="mt-4 grid gap-2 pt-4"
                 style={{ borderTop: "1px solid var(--asc-line-soft)" }}
               >
                 {isLoggedIn ? (
@@ -513,8 +443,10 @@ export default function NavbarClient({
                       onClick={() => setIsMenuOpen(false)}
                       className="flex items-center justify-center gap-3 px-4 py-3 text-center"
                       style={{
-                        border: "1px solid var(--asc-line-soft)",
+                        border: "1px solid var(--asc-accent-border)",
                         background: "var(--asc-accent-dim)",
+                        clipPath:
+                          "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
                       }}
                     >
                       <UserAvatar
@@ -524,8 +456,8 @@ export default function NavbarClient({
                         small
                       />
                       <span
-                        className="text-sm font-bold"
-                        style={{ color: "var(--asc-fg-1)" }}
+                        className="text-sm font-bold uppercase tracking-[0.08em]"
+                        style={{ color: "var(--asc-fg-0)" }}
                       >
                         {labels.links.profile}
                       </span>
@@ -536,22 +468,20 @@ export default function NavbarClient({
                         <Link
                           href="/admin"
                           onClick={() => setIsMenuOpen(false)}
-                          className="px-4 py-3 text-center text-sm font-bold transition"
-                          style={{
-                            border: "1px solid var(--asc-line-soft)",
-                            color: "var(--asc-fg-2)",
-                          }}
+                          className="asc-nav-menu-btn justify-center"
                         >
                           {labels.links.adminPanel}
                         </Link>
                         <Link
                           href="/admin/bot"
                           onClick={() => setIsMenuOpen(false)}
-                          className="px-4 py-3 text-center text-sm font-bold transition"
+                          className="px-4 py-3 text-center text-sm font-bold uppercase tracking-[0.12em] transition"
                           style={{
                             border: "1px solid var(--asc-green-border)",
                             background: "var(--asc-green-bg)",
                             color: "var(--asc-green)",
+                            clipPath:
+                              "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
                           }}
                         >
                           {labels.links.botDashboard}
@@ -562,10 +492,12 @@ export default function NavbarClient({
                     <button
                       type="button"
                       onClick={confirmLogout}
-                      className="px-4 py-3 text-center text-sm font-bold transition"
+                      className="px-4 py-3 text-center text-sm font-bold uppercase tracking-[0.12em] transition"
                       style={{
                         border: "1px solid var(--asc-live-border)",
                         color: "var(--asc-live)",
+                        clipPath:
+                          "polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px)",
                       }}
                     >
                       {labels.actions.logout}
@@ -575,11 +507,7 @@ export default function NavbarClient({
                   <Link
                     href="/login"
                     onClick={() => setIsMenuOpen(false)}
-                    className="px-4 py-3 text-center text-sm font-bold transition"
-                    style={{
-                      border: "1px solid var(--asc-line-soft)",
-                      color: "var(--asc-fg-2)",
-                    }}
+                    className="asc-nav-menu-btn justify-center"
                   >
                     {labels.actions.login}
                   </Link>
@@ -588,8 +516,8 @@ export default function NavbarClient({
                 <Link
                   href="/discord"
                   onClick={() => setIsMenuOpen(false)}
-                  className="px-4 py-3 text-center text-sm font-black text-white transition"
-                  style={{ background: "var(--asc-accent-2)" }}
+                  className="asc-nav-discord justify-center"
+                  style={{ padding: "0.85rem 1rem" }}
                 >
                   {labels.actions.joinDiscord}
                 </Link>
@@ -610,12 +538,12 @@ export default function NavbarClient({
             style={{
               border: "1px solid var(--asc-line)",
               background: "var(--asc-bg-2)",
+              clipPath:
+                "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
             }}
           >
-            <h2
-              className="mb-3 text-2xl"
-              style={{ color: "var(--asc-fg-0)" }}
-            >
+            <span aria-hidden="true" className="asc-corner-mark" />
+            <h2 className="mb-3 text-2xl" style={{ color: "var(--asc-fg-0)" }}>
               {labels.account.logoutTitle}
             </h2>
             <p className="mb-6 leading-7" style={{ color: "var(--asc-fg-2)" }}>
