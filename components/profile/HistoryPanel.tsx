@@ -1,7 +1,8 @@
 import Link from "next/link";
 
+import { buildChartData } from "@/components/profile/chartData";
+import { PointHistoryChart } from "@/components/profile/PointHistoryChart";
 import { Card, Pill, getCount } from "@/components/profile/shared";
-import { PointHistoryChart, buildChartData } from "@/components/profile/PointHistoryChart";
 import type {
   PointEvent,
   ProfileLabels,

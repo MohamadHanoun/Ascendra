@@ -1,68 +1,63 @@
 import Link from "next/link";
 
+import { buildChartData } from "@/components/profile/chartData";
+import { PointHistoryChart } from "@/components/profile/PointHistoryChart";
 import { Pill } from "@/components/profile/shared";
-import { PointHistoryChart, buildChartData } from "@/components/profile/PointHistoryChart";
 import type {
-  Invitation,
   PointEvent,
   ProfileHeroLabels,
   ProfileLabels,
   ProfileSectionLabels,
-  ProfileTabId,
-  Team,
   TournamentResult,
 } from "@/components/profile/types";
 
 export function OverviewPanel({
   tournamentResults,
-  teams,
-  invitations,
+  teamsCount,
+  invitationCount,
   pointEvents,
   rankingPoints,
   bestPlacement,
   labels,
   sectionLabels,
   heroLabels,
-  onNavigate,
 }: {
   tournamentResults: TournamentResult[];
-  teams: Team[];
-  invitations: Invitation[];
+  teamsCount: number;
+  invitationCount: number;
   pointEvents: PointEvent[];
   rankingPoints: number;
   bestPlacement: number | null;
   labels: ProfileLabels;
   sectionLabels: ProfileSectionLabels;
   heroLabels: ProfileHeroLabels;
-  onNavigate: (tab: ProfileTabId) => void;
 }) {
   const stats: Array<{ label: string; value: string; accent?: boolean }> = [
     { label: sectionLabels.tableColPts, value: rankingPoints.toLocaleString(), accent: true },
     { label: labels.results, value: String(tournamentResults.length) },
     { label: labels.best, value: bestPlacement ? `#${bestPlacement}` : "—" },
-    { label: heroLabels.teams, value: String(teams.length) },
+    { label: heroLabels.teams, value: String(teamsCount) },
   ];
 
   const chartData = buildChartData(pointEvents);
 
   return (
     <div className="grid gap-6">
-      {invitations.length > 0 && (
+      {invitationCount > 0 && (
         <div
           className="flex flex-wrap items-center justify-between gap-3 border p-4"
           style={{ borderColor: "var(--asc-accent-border)", background: "var(--asc-accent-dim)" }}
         >
           <p className="font-black" style={{ color: "var(--asc-accent)" }}>
-            {invitations.length} {sectionLabels.teamInvitations}
+            {invitationCount} {sectionLabels.teamInvitations}
           </p>
-          <button
-            type="button"
-            onClick={() => onNavigate("teams")}
+          <Link
+            href="/profile/teams"
             className="shrink-0 border px-4 py-2 text-xs font-black uppercase tracking-[0.10em] transition hover:opacity-80"
             style={{ borderColor: "var(--asc-accent-border)", color: "var(--asc-accent)", background: "transparent" }}
           >
             {sectionLabels.invitations} →
-          </button>
+          </Link>
         </div>
       )}
 
@@ -153,14 +148,13 @@ export function OverviewPanel({
             );
           })}
           {tournamentResults.length > 3 && (
-            <button
-              type="button"
-              onClick={() => onNavigate("history")}
-              className="w-full px-5 py-4 text-left text-xs font-black uppercase tracking-[0.12em] transition hover:bg-white/[0.02]"
+            <Link
+              href="/profile/history"
+              className="block w-full px-5 py-4 text-left text-xs font-black uppercase tracking-[0.12em] transition hover:bg-white/[0.02]"
               style={{ color: "var(--asc-fg-3)", borderTop: "1px solid var(--asc-line-soft)" }}
             >
               {sectionLabels.tournamentHistoryTitle} · {tournamentResults.length} {labels.results} →
-            </button>
+            </Link>
           )}
         </div>
       ) : (

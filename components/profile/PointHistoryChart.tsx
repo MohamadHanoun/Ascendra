@@ -10,25 +10,15 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+import type { ProfileChartDataPoint } from "@/components/profile/chartData";
 import { CustomTooltip } from "@/components/profile/shared";
-import type { PointEvent } from "@/components/profile/types";
-
-export function buildChartData(pointEvents: PointEvent[]) {
-  return pointEvents.map((e, i) => {
-    const cumPoints = pointEvents.slice(0, i + 1).reduce((s, x) => s + x.points, 0);
-    return {
-      name: new Date(e.createdAt).toLocaleDateString("en-GB", { month: "short", day: "2-digit" }),
-      points: cumPoints,
-    };
-  });
-}
 
 export function PointHistoryChart({
   data,
   ptsLabel,
   height,
 }: {
-  data: Array<{ name: string; points: number }>;
+  data: ProfileChartDataPoint[];
   ptsLabel: string;
   height: number;
 }) {

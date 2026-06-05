@@ -1,13 +1,3 @@
-import type { ReactNode } from "react";
-
-export type ProfileTabId =
-  | "overview"
-  | "teams"
-  | "history"
-  | "matches"
-  | "achievements"
-  | "account";
-
 export type PointEvent = { points: number; createdAt: string };
 
 export type TournamentResult = {
@@ -129,23 +119,3 @@ export type ProfileStatuses = {
 };
 
 export type ProfileHeroLabels = { team: string; teams: string };
-
-export type ProfileTabsProps = {
-  tournamentResults: TournamentResult[];
-  teams: Team[];
-  invitations: Invitation[];
-  userId: string;
-  isGuildMember: boolean;
-  dbGames: Game[];
-  tabLabels: ProfileTabLabels;
-  labels: ProfileLabels;
-  sectionLabels: ProfileSectionLabels;
-  statuses: ProfileStatuses;
-  heroLabels: ProfileHeroLabels;
-  matchesNode: ReactNode;
-  accountNode: ReactNode;
-  rankingPoints: number;
-  bestPlacement: number | null;
-  activeMatchesCount: number;
-  pointEvents: PointEvent[];
-};
