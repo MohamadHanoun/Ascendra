@@ -89,11 +89,11 @@ export default function HeroTextAnimated({
         <br />
         <span
           style={{
-            background: 'linear-gradient(100deg, #c9933e 0%, #f0e2ca 42%, #8f642f 100%)',
+            background: 'linear-gradient(100deg, #c9a24a 0%, #f0e2c0 42%, #9c6f33 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
-            filter: 'drop-shadow(0 0 32px rgba(184, 137, 61, 0.28))',
+            filter: 'drop-shadow(0 0 32px rgba(201, 162, 74, 0.30))',
           }}
         >
           BEYOND LIMITS.
@@ -133,9 +133,9 @@ export default function HeroTextAnimated({
             fontWeight: 900,
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
-            color: '#151412',
-            background: 'linear-gradient(135deg, #c9933e 0%, #b8893d 55%, #9a6a2a 100%)',
-            boxShadow: '0 0 28px rgba(184, 137, 61, 0.42), 0 4px 20px rgba(0,0,0,0.45)',
+            color: '#0a0a0b',
+            background: 'linear-gradient(135deg, #e8c66a 0%, #c9a24a 55%, #9c6f33 100%)',
+            boxShadow: '0 0 28px rgba(201, 162, 74, 0.42), 0 4px 20px rgba(0,0,0,0.45)',
             clipPath:
               'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)',
             transition: 'opacity 0.2s ease, box-shadow 0.2s ease',

@@ -41,7 +41,7 @@ function ScanGrid({ paused }: { paused: boolean }) {
   return (
     <group ref={groupRef} position={[0, -3.2, 0]}>
       <lineSegments geometry={geometry}>
-        <lineBasicMaterial color="#b8893d" transparent opacity={0.065} depthWrite={false} />
+        <lineBasicMaterial color="#c9a24a" transparent opacity={0.065} depthWrite={false} />
       </lineSegments>
     </group>
   );
@@ -76,7 +76,7 @@ function Crystal({
     <mesh ref={meshRef} position={position} scale={scale}>
       <octahedronGeometry args={[0.5, 0]} />
       <meshStandardMaterial
-        color="#c49040"
+        color="#c9a24a"
         transparent
         opacity={0.08}
         wireframe
@@ -109,11 +109,11 @@ function AccentCrystal({
       <mesh scale={2.1}>
         <octahedronGeometry args={[0.5, 0]} />
         <meshPhongMaterial
-          color="#c49040"
+          color="#e8c66a"
           transparent
           opacity={0.13}
           shininess={90}
-          emissive="#5a3d10"
+          emissive="#4a3814"
           emissiveIntensity={0.5}
           depthWrite={false}
         />
@@ -121,7 +121,7 @@ function AccentCrystal({
       <mesh scale={2.35}>
         <octahedronGeometry args={[0.5, 0]} />
         <meshStandardMaterial
-          color="#b8893d"
+          color="#c9a24a"
           transparent
           opacity={0.055}
           wireframe
@@ -135,9 +135,9 @@ function AccentCrystal({
 function Scene({ paused }: { paused: boolean }) {
   return (
     <>
-      <ambientLight intensity={0.45} color="#c9933e" />
-      <pointLight position={[8, 14, 6]} intensity={2} color="#d4a050" />
-      <pointLight position={[-12, 5, -3]} intensity={0.6} color="#7a4c18" />
+      <ambientLight intensity={0.4} color="#d8d6d2" />
+      <pointLight position={[8, 14, 6]} intensity={2} color="#e8c66a" />
+      <pointLight position={[-12, 5, -3]} intensity={0.6} color="#4a4a52" />
 
       <ScanGrid paused={paused} />
 

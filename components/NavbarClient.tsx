@@ -284,7 +284,7 @@ export default function NavbarClient({
         className="sticky top-0 z-40"
         style={{
           borderBottom: "1px solid var(--asc-line-soft)",
-          background: "var(--asc-nav-bg, rgb(12 11 9 / 0.92))",
+          background: "var(--asc-nav-bg, rgb(10 10 11 / 0.92))",
           backdropFilter: "blur(18px) saturate(140%)",
         }}
       >
@@ -307,8 +307,8 @@ export default function NavbarClient({
               style={{
                 display: "flex", alignItems: "center", gap: 6,
                 padding: "8px 12px",
-                background: "linear-gradient(135deg, #b8893d, #8f642f)",
-                color: "#f6eee5",
+                background: "linear-gradient(135deg, #c9a24a, #9c6f33)",
+                color: "#f5f4f2",
                 fontFamily: "var(--font-display, sans-serif)",
                 fontWeight: 600, fontSize: 12,
                 letterSpacing: "0.14em",
@@ -318,8 +318,8 @@ export default function NavbarClient({
                 flexShrink: 0,
                 transition: "background 120ms ease",
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #8f642f, #6b4a23)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #b8893d, #8f642f)"; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #9c6f33, #7a5526)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #c9a24a, #9c6f33)"; }}
             >
               DISCORD
             </Link>
