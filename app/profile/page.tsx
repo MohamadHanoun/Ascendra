@@ -19,6 +19,7 @@ import ProfileNotice from "@/components/ProfileNotice";
 import ProfileRealtime from "@/components/ProfileRealtime";
 import ProfileTabs, { CopyLinkButton } from "@/components/ProfileTabs";
 import PublicThemeToggle from "@/components/PublicThemeToggle";
+import { getCountryOptions } from "@/lib/countries";
 import { getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
@@ -1047,26 +1048,43 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     locale === "ar"
       ? {
           title: "معلومات الملف الشخصي",
-          description: "خصّص اسمك المعروض ونبذتك التي تظهر في ملفك العام.",
+          description: "خصّص المعلومات التي تظهر في ملفك العام.",
           displayNameLabel: "الاسم المعروض",
           displayNamePlaceholder: user.username,
           displayNameHelp: "إذا تُرك فارغًا، سيُستخدم اسم Discord الخاص بك.",
           bioLabel: "نبذة",
           bioPlaceholder: "اكتب نبذة قصيرة عنك...",
+          taglineLabel: "وصف مختصر",
+          taglinePlaceholder: "سطر قصير يصفك...",
+          countryLabel: "الدولة",
+          countryPlaceholder: "اختر دولتك",
+          favoriteGameLabel: "اللعبة المفضلة",
+          favoriteGamePlaceholder: "اختر لعبتك المفضلة",
+          none: "بدون",
           save: "حفظ",
           saving: "جارٍ الحفظ...",
         }
       : {
           title: "Profile information",
-          description: "Customize the display name and bio shown on your public profile.",
+          description: "Customize the information shown on your public profile.",
           displayNameLabel: "Display name",
           displayNamePlaceholder: user.username,
           displayNameHelp: "If left empty, your Discord username is used.",
           bioLabel: "Bio",
           bioPlaceholder: "Write a short bio about yourself...",
+          taglineLabel: "Tagline",
+          taglinePlaceholder: "A short line that describes you...",
+          countryLabel: "Country",
+          countryPlaceholder: "Select your country",
+          favoriteGameLabel: "Favorite game",
+          favoriteGamePlaceholder: "Select your favorite game",
+          none: "None",
           save: "Save",
           saving: "Saving...",
         };
+
+  const countryOptions = getCountryOptions(locale);
+  const gameOptions = dbGames.map((game) => ({ value: game.slug, label: game.name }));
 
   const displayName = user.displayName?.trim() || user.username;
 
@@ -1323,8 +1341,13 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         initial={{
           displayName: user.displayName ?? "",
           bio: user.bio ?? "",
+          tagline: user.tagline ?? "",
+          country: user.country ?? "",
+          favoriteGame: user.favoriteGame ?? "",
         }}
         usernameFallback={user.username}
+        countryOptions={countryOptions}
+        gameOptions={gameOptions}
         labels={profileInfoLabels}
       />
 

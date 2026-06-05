@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { CopyIdButton, PublicProgressChart } from "@/components/PublicProfileClient";
+import { formatCountryLabel } from "@/lib/countries";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
@@ -360,6 +361,9 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
       username: true,
       displayName: true,
       bio: true,
+      tagline: true,
+      country: true,
+      favoriteGame: true,
       avatar: true,
       role: true,
       discordId: true,
@@ -419,7 +423,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     );
   }
 
-  const [tournamentResults, teams, rankingPointsAgg, rawPointEvents] = await Promise.all([
+  const [tournamentResults, teams, rankingPointsAgg, rawPointEvents, favoriteGameRecord] = await Promise.all([
     prisma.tournamentResult.findMany({
       where: { team: { members: { some: { userId: user.id } } } },
       select: {
@@ -469,6 +473,14 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
       select: { points: true, createdAt: true },
       orderBy: { createdAt: "asc" },
     }),
+
+    // Resolve favoriteGame slug to an active game name; null if invalid/inactive.
+    user.favoriteGame
+      ? prisma.game.findFirst({
+          where: { slug: user.favoriteGame, isActive: true },
+          select: { name: true },
+        })
+      : Promise.resolve(null),
   ]);
 
   const rankingPoints = rankingPointsAgg._sum.points ?? 0;
@@ -487,6 +499,9 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
   });
 
   const displayName = user.displayName?.trim() || user.username;
+  const tagline = user.tagline?.trim() || null;
+  const countryLabel = formatCountryLabel(user.country, locale);
+  const favoriteGameName = favoriteGameRecord?.name ?? null;
 
   return (
     <main
@@ -545,6 +560,12 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                       {displayName}
                     </h1>
 
+                    {tagline && (
+                      <p className="mt-2 text-sm font-bold" style={{ color: "var(--asc-fg-2)" }}>
+                        {tagline}
+                      </p>
+                    )}
+
                     <div className="mt-4 flex flex-wrap items-center gap-2">
                       <GuildBadge
                         isMember={user.isGuildMember}
@@ -557,6 +578,26 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                       >
                         {user.role}
                       </span>
+                      {countryLabel && (
+                        <span
+                          className="inline-flex border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
+                          style={{ borderColor: "var(--asc-line-soft)", color: "var(--asc-fg-3)" }}
+                        >
+                          {countryLabel}
+                        </span>
+                      )}
+                      {favoriteGameName && (
+                        <span
+                          className="inline-flex border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
+                          style={{
+                            borderColor: "var(--asc-accent-border)",
+                            color: "var(--asc-accent)",
+                            background: "var(--asc-accent-dim)",
+                          }}
+                        >
+                          {favoriteGameName}
+                        </span>
+                      )}
                     </div>
 
                     {user.bio && (

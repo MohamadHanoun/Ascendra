@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
 
+import { normalizeCountryCode } from "@/lib/countries";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
@@ -96,10 +97,12 @@ type ProfileInfoActionMessages = {
   failed: string;
   displayNameTooLong: string;
   bioTooLong: string;
+  taglineTooLong: string;
 };
 
 const DISPLAY_NAME_MAX = 32;
 const BIO_MAX = 280;
+const TAGLINE_MAX = 60;
 
 const profileInfoActionMessages: Record<Locale, ProfileInfoActionMessages> = {
   en: {
@@ -108,6 +111,7 @@ const profileInfoActionMessages: Record<Locale, ProfileInfoActionMessages> = {
     failed: "Could not save your profile info. Please try again.",
     displayNameTooLong: `Display name must be ${DISPLAY_NAME_MAX} characters or fewer.`,
     bioTooLong: `Bio must be ${BIO_MAX} characters or fewer.`,
+    taglineTooLong: `Tagline must be ${TAGLINE_MAX} characters or fewer.`,
   },
   ar: {
     loginRequired: "يرجى تسجيل الدخول أولًا.",
@@ -115,6 +119,7 @@ const profileInfoActionMessages: Record<Locale, ProfileInfoActionMessages> = {
     failed: "تعذّر حفظ معلومات الملف الشخصي. يرجى المحاولة مرة أخرى.",
     displayNameTooLong: `يجب ألا يتجاوز الاسم المعروض ${DISPLAY_NAME_MAX} حرفًا.`,
     bioTooLong: `يجب ألا تتجاوز النبذة ${BIO_MAX} حرفًا.`,
+    taglineTooLong: `يجب ألا يتجاوز الوصف المختصر ${TAGLINE_MAX} حرفًا.`,
   },
 };
 
@@ -144,6 +149,12 @@ function cleanDisplayName(raw: string): string {
   return stripControlChars(stripHtml(raw), false).trim();
 }
 
+// Tagline is a single line: strip HTML and all control chars (incl. newlines),
+// then trim.
+function cleanTagline(raw: string): string {
+  return stripControlChars(stripHtml(raw), false).trim();
+}
+
 function cleanBio(raw: string): string {
   // Normalize CRLF, strip control chars (keeping newlines), collapse runs of 3+
   // newlines down to a single blank line, then trim ends.
@@ -165,12 +176,30 @@ export async function updateProfileInfo(
 
   const displayName = cleanDisplayName(String(formData.get("displayName") ?? ""));
   const bio = cleanBio(String(formData.get("bio") ?? ""));
+  const tagline = cleanTagline(String(formData.get("tagline") ?? ""));
 
   if (displayName.length > DISPLAY_NAME_MAX) {
     return { ok: false, message: messages.displayNameTooLong };
   }
   if (bio.length > BIO_MAX) {
     return { ok: false, message: messages.bioTooLong };
+  }
+  if (tagline.length > TAGLINE_MAX) {
+    return { ok: false, message: messages.taglineTooLong };
+  }
+
+  // Country: only persist a valid ISO code from the allowlist, else null.
+  const country = normalizeCountryCode(String(formData.get("country") ?? ""));
+
+  // Favorite game: only persist a slug that matches an active game, else null.
+  const favoriteGameRaw = String(formData.get("favoriteGame") ?? "").trim();
+  let favoriteGame: string | null = null;
+  if (favoriteGameRaw.length > 0) {
+    const game = await prisma.game.findFirst({
+      where: { slug: favoriteGameRaw, isActive: true },
+      select: { slug: true },
+    });
+    favoriteGame = game?.slug ?? null;
   }
 
   try {
@@ -180,6 +209,9 @@ export async function updateProfileInfo(
         // Empty string stores null.
         displayName: displayName.length > 0 ? displayName : null,
         bio: bio.length > 0 ? bio : null,
+        tagline: tagline.length > 0 ? tagline : null,
+        country,
+        favoriteGame,
       },
     });
   } catch {

@@ -51,8 +51,11 @@ model User {
   showTournamentHistory Boolean @default(true)
 
   // Editable public profile info
-  displayName String?
-  bio         String?
+  displayName  String?
+  bio          String?
+  tagline      String?
+  country      String?
+  favoriteGame String?
 
   // FACEIT integration
   faceitPlayerId      String?   @unique
