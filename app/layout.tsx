@@ -82,7 +82,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description: messages.openGraphDescription,
       images: [
         {
-          url: "/images/brand/og-cover.png",
+          url: "/images/brand/og-cover-gold.png",
           width: 1200,
           height: 630,
           alt: "Ascendra",
@@ -94,7 +94,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: "Ascendra",
       description: messages.twitterDescription,
-      images: ["/images/brand/og-cover.png"],
+      images: ["/images/brand/og-cover-gold.png"],
     },
   };
 }
