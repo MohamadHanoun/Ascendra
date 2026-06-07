@@ -225,6 +225,36 @@ type TournamentJourneyCopy = {
   viewTournamentMatches: string;
   viewYourMatch: string;
   noMatches: string;
+  matchDiscovery: {
+    eyebrow: string;
+    title: string;
+    yourMatchTitle: string;
+    yourMatchLabel: string;
+    opponent: string;
+    status: string;
+    scheduledTime: string;
+    notScheduled: string;
+    winner: string;
+    matchNumber: string;
+    openYourMatch: string;
+    viewMatch: string;
+    approvedNoMatch: string;
+    pendingNoMatch: string;
+    emptyRegistrationOpen: string;
+    emptyBracketPending: string;
+    emptyNeedsApprovedTeams: string;
+    statuses: {
+      waitingOpponent: string;
+      waitingSchedule: string;
+      scheduled: string;
+      roomReady: string;
+      inProgress: string;
+      resultPending: string;
+      adminReview: string;
+      completed: string;
+      cancelled: string;
+    };
+  };
   stages: {
     registrationOpen: string;
     registrationClosed: string;
@@ -279,6 +309,39 @@ const journeyCopy: Record<Locale, TournamentJourneyCopy> = {
     viewTournamentMatches: "View tournament matches",
     viewYourMatch: "View your match",
     noMatches: "Matches will appear after the bracket is generated.",
+    matchDiscovery: {
+      eyebrow: "Match discovery",
+      title: "Tournament matches",
+      yourMatchTitle: "Your tournament match",
+      yourMatchLabel: "Your match",
+      opponent: "Opponent",
+      status: "Status",
+      scheduledTime: "Scheduled time",
+      notScheduled: "Waiting for schedule",
+      winner: "Winner",
+      matchNumber: "Match",
+      openYourMatch: "Open your match",
+      viewMatch: "View match",
+      approvedNoMatch:
+        "Your team is approved. Your match will appear after the bracket is generated.",
+      pendingNoMatch:
+        "Your registration is pending. Pending teams are not added to the bracket.",
+      emptyRegistrationOpen:
+        "Matches will appear after registration closes and the bracket is generated.",
+      emptyBracketPending: "The bracket has not been generated yet.",
+      emptyNeedsApprovedTeams: "Matches require at least 2 approved teams.",
+      statuses: {
+        waitingOpponent: "Waiting for opponent",
+        waitingSchedule: "Waiting for schedule",
+        scheduled: "Scheduled",
+        roomReady: "Room ready",
+        inProgress: "In progress",
+        resultPending: "Result pending",
+        adminReview: "Admin review",
+        completed: "Completed",
+        cancelled: "Cancelled",
+      },
+    },
     stages: {
       registrationOpen: "Registration open",
       registrationClosed: "Registration closed",
@@ -332,6 +395,39 @@ const journeyCopy: Record<Locale, TournamentJourneyCopy> = {
     viewTournamentMatches: "عرض مباريات البطولة",
     viewYourMatch: "عرض مباراتك",
     noMatches: "ستظهر المباريات بعد إنشاء القوس.",
+    matchDiscovery: {
+      eyebrow: "اكتشاف المباريات",
+      title: "مباريات البطولة",
+      yourMatchTitle: "مباراتك في البطولة",
+      yourMatchLabel: "مباراتك",
+      opponent: "الخصم",
+      status: "الحالة",
+      scheduledTime: "وقت المباراة",
+      notScheduled: "بانتظار الجدولة",
+      winner: "الفائز",
+      matchNumber: "المباراة",
+      openYourMatch: "فتح مباراتك",
+      viewMatch: "عرض المباراة",
+      approvedNoMatch:
+        "تم قبول فريقك. ستظهر مباراتك بعد إنشاء القوس.",
+      pendingNoMatch:
+        "تسجيلك قيد المراجعة. لا تتم إضافة الفرق المعلقة إلى القوس.",
+      emptyRegistrationOpen:
+        "ستظهر المباريات بعد إغلاق التسجيل وإنشاء القوس.",
+      emptyBracketPending: "لم يتم إنشاء القوس بعد.",
+      emptyNeedsApprovedTeams: "تتطلب المباريات فريقين مقبولين على الأقل.",
+      statuses: {
+        waitingOpponent: "بانتظار الخصم",
+        waitingSchedule: "بانتظار الجدولة",
+        scheduled: "مجدولة",
+        roomReady: "الغرفة جاهزة",
+        inProgress: "جارية",
+        resultPending: "بانتظار النتيجة",
+        adminReview: "مراجعة إدارية",
+        completed: "مكتملة",
+        cancelled: "ملغاة",
+      },
+    },
     stages: {
       registrationOpen: "التسجيل مفتوح",
       registrationClosed: "التسجيل مغلق",
@@ -926,6 +1022,7 @@ export default async function TournamentDetailsPage({
         teamBId: true,
         winnerTeamId: true,
         scheduledAt: true,
+        room: { select: { id: true } },
       },
       orderBy: [{ roundNumber: "asc" }, { matchNumber: "asc" }],
     }),
@@ -963,6 +1060,7 @@ export default async function TournamentDetailsPage({
     teamBId: m.teamBId,
     winnerTeamId: m.winnerTeamId,
     scheduledAt: m.scheduledAt,
+    hasRoom: Boolean(m.room),
     teamAName: m.teamAId ? (matchTeamName.get(m.teamAId) ?? null) : null,
     teamBName: m.teamBId ? (matchTeamName.get(m.teamBId) ?? null) : null,
     winnerName: m.winnerTeamId ? (matchTeamName.get(m.winnerTeamId) ?? null) : null,
@@ -1195,6 +1293,106 @@ export default async function TournamentDetailsPage({
     ...registration,
     matchHref: matchHrefByTeamId.get(registration.teamId) ?? null,
   }));
+  const approvedUserRegistration = playerRegistrationCards.find(
+    (registration) => registration.status === "approved",
+  );
+  const pendingUserRegistration = playerRegistrationCards.find(
+    (registration) => registration.status === "registered",
+  );
+
+  const getPublicMatchStatus = (
+    match: (typeof tournamentMatches)[number],
+  ): { label: string; tone: JourneyTone } => {
+    const status = match.status.toLowerCase();
+
+    if (status === "cancelled") {
+      return { label: journey.matchDiscovery.statuses.cancelled, tone: "red" };
+    }
+
+    if (status === "disputed") {
+      return { label: journey.matchDiscovery.statuses.adminReview, tone: "red" };
+    }
+
+    if (status === "result_pending") {
+      return {
+        label: journey.matchDiscovery.statuses.resultPending,
+        tone: "amber",
+      };
+    }
+
+    if (status === "in_progress") {
+      return { label: journey.matchDiscovery.statuses.inProgress, tone: "amber" };
+    }
+
+    if (["confirmed", "completed", "forfeit", "bye"].includes(status)) {
+      return { label: journey.matchDiscovery.statuses.completed, tone: "green" };
+    }
+
+    if (!match.teamAId || (!match.teamBId && !match.isBye)) {
+      return {
+        label: journey.matchDiscovery.statuses.waitingOpponent,
+        tone: "neutral",
+      };
+    }
+
+    if (["ready", "room_created"].includes(status) && match.hasRoom) {
+      return { label: journey.matchDiscovery.statuses.roomReady, tone: "green" };
+    }
+
+    if (!match.scheduledAt) {
+      return {
+        label: journey.matchDiscovery.statuses.waitingSchedule,
+        tone: "amber",
+      };
+    }
+
+    return { label: journey.matchDiscovery.statuses.scheduled, tone: "neutral" };
+  };
+
+  const getUserOpponentName = (match: (typeof tournamentMatches)[number]) => {
+    const userTeamId = [match.teamAId, match.teamBId].find(
+      (teamId): teamId is string => Boolean(teamId && participantTeamIdSet.has(teamId)),
+    );
+
+    if (!userTeamId) {
+      return null;
+    }
+
+    if (userTeamId === match.teamAId) {
+      return match.isBye
+        ? "BYE"
+        : match.teamBName ?? journey.matchDiscovery.statuses.waitingOpponent;
+    }
+
+    return match.teamAName ?? journey.matchDiscovery.statuses.waitingOpponent;
+  };
+
+  const matchRoundsByNumber = new Map<number, typeof tournamentMatches>();
+  for (const match of tournamentMatches) {
+    matchRoundsByNumber.set(match.roundNumber, [
+      ...(matchRoundsByNumber.get(match.roundNumber) ?? []),
+      match,
+    ]);
+  }
+  const tournamentMatchRounds = Array.from(matchRoundsByNumber.entries()).map(
+    ([roundNumber, matches]) => ({ roundNumber, matches }),
+  );
+  const matchEmptyMessage =
+    tournament.registrationStatus === "open"
+      ? journey.matchDiscovery.emptyRegistrationOpen
+      : approvedSlots < 2
+        ? journey.matchDiscovery.emptyNeedsApprovedTeams
+        : journey.matchDiscovery.emptyBracketPending;
+  const userFeaturedMatchStatus = userFeaturedMatch
+    ? getPublicMatchStatus(userFeaturedMatch)
+    : null;
+  const userFeaturedOpponent = userFeaturedMatch
+    ? getUserOpponentName(userFeaturedMatch)
+    : null;
+  const showApprovedNoMatchNotice =
+    Boolean(approvedUserRegistration) && !userFeaturedMatch && !hasGeneratedMatches;
+  const showPendingNoMatchNotice =
+    Boolean(pendingUserRegistration) && !userFeaturedMatch;
 
   return (
     <main
@@ -1635,7 +1833,10 @@ export default async function TournamentDetailsPage({
             <div
               className="asc-pub-surface"
             >
-              <PanelHeader eyebrow={copy.schedule} title={copy.schedule} />
+              <PanelHeader
+                eyebrow={journey.matchDiscovery.eyebrow}
+                title={journey.matchDiscovery.title}
+              />
 
               <div
                 className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
@@ -1643,12 +1844,12 @@ export default async function TournamentDetailsPage({
               >
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-                    {journey.matchesTitle}
+                    {journey.bracketSourceTitle}
                   </p>
                   <p className="mt-1 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
                     {hasGeneratedMatches
                       ? journey.registrationPanel.bracketSource
-                      : journey.noMatches}
+                      : matchEmptyMessage}
                   </p>
                 </div>
 
@@ -1664,7 +1865,7 @@ export default async function TournamentDetailsPage({
                           "polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)",
                       }}
                     >
-                      {journey.viewYourMatch}
+                      {journey.matchDiscovery.openYourMatch}
                     </Link>
                   )}
                   {hasGeneratedMatches && (
@@ -1682,77 +1883,254 @@ export default async function TournamentDetailsPage({
                 </div>
               </div>
 
+              {userFeaturedMatch &&
+                userFeaturedMatchStatus &&
+                userFeaturedMatchHref && (
+                  <div
+                    className="p-5"
+                    style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+                  >
+                    <div
+                      className="grid gap-4 border p-4 md:grid-cols-[minmax(0,1fr)_180px_140px] md:items-center"
+                      style={{
+                        borderColor: "var(--asc-accent-border)",
+                        background: "var(--asc-accent-dim)",
+                      }}
+                    >
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className="inline-flex w-fit border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
+                            style={journeyToneStyle("green")}
+                          >
+                            {journey.matchDiscovery.yourMatchLabel}
+                          </span>
+                          <span
+                            className="inline-flex w-fit border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
+                            style={journeyToneStyle(userFeaturedMatchStatus.tone)}
+                          >
+                            {userFeaturedMatchStatus.label}
+                          </span>
+                        </div>
+                        <h3
+                          className="mt-3 text-lg font-black"
+                          style={{ color: "var(--asc-fg-0)" }}
+                        >
+                          {journey.matchDiscovery.yourMatchTitle}
+                        </h3>
+                        <p
+                          className="mt-1 text-sm leading-6"
+                          style={{ color: "var(--asc-fg-2)" }}
+                        >
+                          {(userFeaturedMatch.teamAName ?? "TBD")} {copy.vs}{" "}
+                          {userFeaturedMatch.isBye
+                            ? "BYE"
+                            : (userFeaturedMatch.teamBName ?? "TBD")}
+                        </p>
+                      </div>
+
+                      <div className="grid gap-2 text-sm">
+                        <p style={{ color: "var(--asc-fg-2)" }}>
+                          <span className="font-black">
+                            {journey.matchDiscovery.opponent}:{" "}
+                          </span>
+                          {userFeaturedOpponent ??
+                            journey.matchDiscovery.statuses.waitingOpponent}
+                        </p>
+                        <p style={{ color: "var(--asc-fg-3)" }}>
+                          <span className="font-black">
+                            {journey.matchDiscovery.scheduledTime}:{" "}
+                          </span>
+                          {userFeaturedMatch.scheduledAt
+                            ? formatDate(userFeaturedMatch.scheduledAt, locale)
+                            : journey.matchDiscovery.notScheduled}
+                        </p>
+                      </div>
+
+                      <Link
+                        href={userFeaturedMatchHref}
+                        className="inline-flex items-center justify-center px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-90"
+                        style={{
+                          background: "var(--asc-accent-2)",
+                          color: "var(--asc-fg-0)",
+                          clipPath:
+                            "polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)",
+                        }}
+                      >
+                        {journey.matchDiscovery.openYourMatch}
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+              {!userFeaturedMatch &&
+                (showApprovedNoMatchNotice || showPendingNoMatchNotice) && (
+                  <div
+                    className="px-5 py-4"
+                    style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+                  >
+                    <div
+                      className="border p-4 text-sm leading-6"
+                      style={
+                        showPendingNoMatchNotice
+                          ? journeyToneStyle("amber")
+                          : journeyToneStyle("green")
+                      }
+                    >
+                      {showPendingNoMatchNotice
+                        ? journey.matchDiscovery.pendingNoMatch
+                        : journey.matchDiscovery.approvedNoMatch}
+                    </div>
+                  </div>
+                )}
+
               {tournamentMatches.length === 0 ? (
                 <div className="p-6">
                   <h3 className="text-xl" style={{ color: "var(--asc-fg-0)" }}>
-                    {copy.noScheduleTitle}
+                    {journey.matchDiscovery.title}
                   </h3>
                   <p
                     className="mt-2 max-w-2xl text-sm leading-6"
                     style={{ color: "var(--asc-fg-3)" }}
                   >
-                    {copy.noScheduleBody}
+                    {matchEmptyMessage}
                   </p>
                 </div>
               ) : (
                 <div>
-                  {tournamentMatches.slice(0, 8).map((match) => {
-                    const teamAName = match.teamAName ?? "TBD";
-                    const teamBName = match.isBye ? "BYE" : (match.teamBName ?? "TBD");
-                    const teamAWon =
-                      Boolean(match.winnerTeamId) && match.winnerTeamId === match.teamAId;
-                    const teamBWon =
-                      Boolean(match.winnerTeamId) && match.winnerTeamId === match.teamBId;
-
-                    return (
-                      <Link
-                        key={match.id}
-                        href={`/tournaments/${id}/matches/${match.id}`}
-                        className="grid gap-4 px-5 py-4 transition-colors hover:bg-white/[0.025] md:grid-cols-[100px_minmax(0,1fr)_80px_90px] md:items-center"
-                        style={{ borderTop: "1px solid var(--asc-line-soft)" }}
+                  {tournamentMatchRounds.map(({ roundNumber, matches }) => (
+                    <div key={roundNumber}>
+                      <div
+                        className="px-5 py-3 text-xs font-black uppercase tracking-[0.14em]"
+                        style={{
+                          borderTop: "1px solid var(--asc-line-soft)",
+                          color: "var(--asc-accent)",
+                        }}
                       >
-                        <p
-                          className="text-xs font-black uppercase tracking-[0.14em]"
-                          style={{ color: "var(--asc-accent)" }}
-                        >
-                          {copy.round} {match.roundNumber}
-                        </p>
-                        <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>
-                          <span
-                            style={{ color: teamAWon ? "var(--asc-green)" : undefined }}
+                        {copy.round} {roundNumber}
+                      </div>
+
+                      {matches.map((match) => {
+                        const status = getPublicMatchStatus(match);
+                        const statusStyle = journeyToneStyle(status.tone);
+                        const teamAName = match.teamAName ?? "TBD";
+                        const teamBName = match.isBye
+                          ? "BYE"
+                          : (match.teamBName ?? "TBD");
+                        const isUserMatch =
+                          (match.teamAId &&
+                            participantTeamIdSet.has(match.teamAId)) ||
+                          (match.teamBId &&
+                            participantTeamIdSet.has(match.teamBId));
+                        const teamAWon =
+                          Boolean(match.winnerTeamId) &&
+                          match.winnerTeamId === match.teamAId;
+                        const teamBWon =
+                          Boolean(match.winnerTeamId) &&
+                          match.winnerTeamId === match.teamBId;
+
+                        return (
+                          <Link
+                            key={match.id}
+                            href={`/tournaments/${id}/matches/${match.id}`}
+                            className="grid gap-4 px-5 py-4 transition-colors hover:bg-white/[0.025] md:grid-cols-[minmax(0,1fr)_180px_120px] md:items-center"
+                            style={{
+                              borderTop: "1px solid var(--asc-line-soft)",
+                              borderLeft: isUserMatch
+                                ? "3px solid var(--asc-accent)"
+                                : "3px solid transparent",
+                              background: isUserMatch
+                                ? "var(--asc-accent-dim)"
+                                : undefined,
+                            }}
                           >
-                            {teamAName}
-                          </span>
-                          {" "}
-                          <span style={{ color: "var(--asc-fg-3)" }}>{copy.vs}</span>
-                          {" "}
-                          <span
-                            style={{ color: teamBWon ? "var(--asc-green)" : undefined }}
-                          >
-                            {teamBName}
-                          </span>
-                        </p>
-                        <StatusBadge status={match.status} label={match.status} />
-                        <span
-                          className="text-xs font-black uppercase tracking-[0.08em]"
-                          style={{ color: "var(--asc-accent)" }}
-                        >
-                          {copy.view}
-                        </span>
-                      </Link>
-                    );
-                  })}
-                  {tournamentMatches.length > 8 && (
-                    <p
-                      className="px-5 py-3 text-xs"
-                      style={{
-                        borderTop: "1px solid var(--asc-line-soft)",
-                        color: "var(--asc-fg-3)",
-                      }}
-                    >
-                      +{tournamentMatches.length - 8} {copy.moreMatchesPrefix}
-                    </p>
-                  )}
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                {isUserMatch && (
+                                  <span
+                                    className="inline-flex w-fit border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
+                                    style={journeyToneStyle("green")}
+                                  >
+                                    {journey.matchDiscovery.yourMatchLabel}
+                                  </span>
+                                )}
+                                <span
+                                  className="text-[10px] font-black uppercase tracking-[0.14em]"
+                                  style={{ color: "var(--asc-fg-3)" }}
+                                >
+                                  {journey.matchDiscovery.matchNumber}{" "}
+                                  {match.matchNumber}
+                                </span>
+                              </div>
+
+                              <p
+                                className="mt-2 font-black"
+                                style={{ color: "var(--asc-fg-0)" }}
+                              >
+                                <span
+                                  style={{
+                                    color: teamAWon
+                                      ? "var(--asc-green)"
+                                      : undefined,
+                                  }}
+                                >
+                                  {teamAName}
+                                </span>{" "}
+                                <span style={{ color: "var(--asc-fg-3)" }}>
+                                  {copy.vs}
+                                </span>{" "}
+                                <span
+                                  style={{
+                                    color: teamBWon
+                                      ? "var(--asc-green)"
+                                      : undefined,
+                                  }}
+                                >
+                                  {teamBName}
+                                </span>
+                              </p>
+
+                              {match.winnerName && (
+                                <p
+                                  className="mt-1 text-xs"
+                                  style={{ color: "var(--asc-fg-3)" }}
+                                >
+                                  {journey.matchDiscovery.winner}:{" "}
+                                  {match.winnerName}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="grid gap-2">
+                              <span
+                                className="inline-flex w-fit border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
+                                style={statusStyle}
+                              >
+                                {status.label}
+                              </span>
+                              <p
+                                className="text-xs leading-5"
+                                style={{ color: "var(--asc-fg-3)" }}
+                              >
+                                {match.scheduledAt
+                                  ? formatDate(match.scheduledAt, locale)
+                                  : journey.matchDiscovery.notScheduled}
+                              </p>
+                            </div>
+
+                            <span
+                              className="text-xs font-black uppercase tracking-[0.08em] md:text-right"
+                              style={{ color: "var(--asc-accent)" }}
+                            >
+                              {isUserMatch
+                                ? journey.matchDiscovery.openYourMatch
+                                : journey.matchDiscovery.viewMatch}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
