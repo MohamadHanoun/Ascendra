@@ -256,12 +256,19 @@ async function loadMatchTournamentId(matchId: string): Promise<string | null> {
   return match?.tournamentId ?? null;
 }
 
-function revalidateMatchPaths(tournamentId: string) {
+function revalidateMatchPaths(tournamentId: string, matchId?: string) {
   revalidatePath(`/tournaments/${tournamentId}`);
+  revalidatePath(`/tournaments/${tournamentId}/matches`);
+  if (matchId) {
+    revalidatePath(`/tournaments/${tournamentId}/matches/${matchId}`);
+  }
   revalidatePath(`/admin/tournaments/${tournamentId}`);
+  revalidatePath(`/admin/tournaments/${tournamentId}/matches`);
+  revalidatePath("/admin/match-operations");
   revalidatePath("/tournaments");
   revalidatePath("/admin");
   revalidatePath("/profile");
+  revalidatePath("/profile/matches");
 }
 
 // ─── Player submits a result ─────────────────────────────────────────────────
@@ -305,7 +312,7 @@ export async function submitMatchReport(
   if (!result.ok) return fail(result.error);
 
   const tournamentId = await loadMatchTournamentId(matchId);
-  if (tournamentId) revalidateMatchPaths(tournamentId);
+  if (tournamentId) revalidateMatchPaths(tournamentId, matchId);
 
   if (result.data.autoConfirmed) {
     return success(messages.reportAutoConfirmed);
@@ -335,7 +342,7 @@ export async function confirmMatchResult(
   if (!result.ok) return fail(result.error);
 
   const tournamentId = await loadMatchTournamentId(matchId);
-  if (tournamentId) revalidateMatchPaths(tournamentId);
+  if (tournamentId) revalidateMatchPaths(tournamentId, matchId);
 
   return success("Match result confirmed.");
 }
@@ -364,7 +371,7 @@ export async function disputeMatchResult(
   if (!result.ok) return fail(result.error);
 
   const tournamentId = await loadMatchTournamentId(matchId);
-  if (tournamentId) revalidateMatchPaths(tournamentId);
+  if (tournamentId) revalidateMatchPaths(tournamentId, matchId);
 
   return success(messages.disputeFiled);
 }
@@ -407,7 +414,7 @@ export async function adminOverrideMatchResult(
   if (!result.ok) return fail(result.error);
 
   const tournamentId = await loadMatchTournamentId(matchId);
-  if (tournamentId) revalidateMatchPaths(tournamentId);
+  if (tournamentId) revalidateMatchPaths(tournamentId, matchId);
 
   return success("Match result overridden by admin.");
 }
@@ -552,7 +559,7 @@ export async function submitValorantMatchId(
   };
 
   if (v.confidence === "rejected") {
-    revalidateMatchPaths(match.tournamentId);
+    revalidateMatchPaths(match.tournamentId, matchId);
     return {
       ok: false,
       message: formatActionMessage(messages.verificationRejected, {
@@ -586,7 +593,7 @@ export async function submitValorantMatchId(
       await advanceBracketAfterMatch(matchId);
     }
 
-    revalidateMatchPaths(match.tournamentId);
+    revalidateMatchPaths(match.tournamentId, matchId);
     return {
       ok: true,
       message: messages.verifiedRecorded,
@@ -609,7 +616,7 @@ export async function submitValorantMatchId(
     });
   }
 
-  revalidateMatchPaths(match.tournamentId);
+  revalidateMatchPaths(match.tournamentId, matchId);
   return {
     ok: true,
     message: messages.mediumConfidence,
@@ -829,7 +836,7 @@ export async function submitDotaMatchId(
   };
 
   if (v.confidence === "rejected") {
-    revalidateMatchPaths(match.tournamentId);
+    revalidateMatchPaths(match.tournamentId, matchId);
     return {
       ok: false,
       message: formatActionMessage(messages.verificationRejected, {
@@ -862,7 +869,7 @@ export async function submitDotaMatchId(
       await advanceBracketAfterMatch(matchId);
     }
 
-    revalidateMatchPaths(match.tournamentId);
+    revalidateMatchPaths(match.tournamentId, matchId);
     return {
       ok: true,
       message: messages.verifiedRecorded,
@@ -885,7 +892,7 @@ export async function submitDotaMatchId(
     });
   }
 
-  revalidateMatchPaths(match.tournamentId);
+  revalidateMatchPaths(match.tournamentId, matchId);
   return {
     ok: true,
     message: messages.mediumConfidence,
@@ -1221,8 +1228,7 @@ export async function syncFaceitMatchProof(
     }).catch(() => undefined);
   }
 
-  revalidateMatchPaths(match.tournamentId);
-  revalidatePath(`/tournaments/${match.tournamentId}/matches/${matchId}`);
+  revalidateMatchPaths(match.tournamentId, matchId);
 
   void createRealtimeEvent({
     type: "tournament.match.proof_synced",
@@ -1295,8 +1301,7 @@ export async function updateTournamentMatchCommunication(
     },
   });
 
-  revalidateMatchPaths(match.tournamentId);
-  revalidatePath(`/tournaments/${match.tournamentId}/matches/${match.id}`);
+  revalidateMatchPaths(match.tournamentId, match.id);
 
   if (scheduleChanged && scheduledAt) {
     void notifyMatchScheduled(

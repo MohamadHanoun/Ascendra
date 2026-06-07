@@ -67,4 +67,8 @@ describe("notification route helpers", () => {
   it("drops unsafe external notification links", () => {
     expect(normalizeNotificationHref("https://example.com/phish")).toBeNull();
   });
+
+  it("drops protocol-relative notification links", () => {
+    expect(normalizeNotificationHref("//example.com/phish")).toBeNull();
+  });
 });

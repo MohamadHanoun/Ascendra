@@ -44,11 +44,17 @@ async function requireAdmin() {
   return { id: user.databaseId };
 }
 
-function revalidate(tournamentId: string) {
+function revalidate(tournamentId: string, matchId?: string) {
   revalidatePath(`/admin/tournaments/${tournamentId}`);
+  revalidatePath(`/admin/tournaments/${tournamentId}/matches`);
+  revalidatePath("/admin/match-operations");
   revalidatePath(`/tournaments/${tournamentId}`);
   revalidatePath(`/tournaments/${tournamentId}/matches`);
+  if (matchId) {
+    revalidatePath(`/tournaments/${tournamentId}/matches/${matchId}`);
+  }
   revalidatePath("/admin");
+  revalidatePath("/profile/matches");
 }
 
 async function writeAudit(opts: {
@@ -92,7 +98,7 @@ export async function confirmMatchInline(
     where: { id: matchId },
     select: { tournamentId: true },
   });
-  if (match) revalidate(match.tournamentId);
+  if (match) revalidate(match.tournamentId, matchId);
 
   return ok("Match result confirmed.");
 }
@@ -130,7 +136,7 @@ export async function overrideMatchInline(
     where: { id: matchId },
     select: { tournamentId: true },
   });
-  if (match) revalidate(match.tournamentId);
+  if (match) revalidate(match.tournamentId, matchId);
 
   return ok("Match result overridden.");
 }
@@ -192,7 +198,7 @@ export async function resetMatchInline(
     ok: true,
   });
 
-  revalidate(match.tournamentId);
+  revalidate(match.tournamentId, match.id);
   return ok("Match result cleared. Status reset to result pending.");
 }
 
@@ -259,7 +265,7 @@ export async function createMatchRoomInline(
     ok: true,
   });
 
-  revalidate(match.tournamentId);
+  revalidate(match.tournamentId, match.id);
   return ok("Game room created.");
 }
 

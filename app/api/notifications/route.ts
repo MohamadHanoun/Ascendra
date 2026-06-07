@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
 import { auth } from "@/auth";
-import { getNotificationSummary } from "@/lib/notifications";
+import {
+  getNotificationSummary,
+  normalizeNotificationHref,
+} from "@/lib/notifications";
 import { createRateLimiter } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
@@ -79,7 +82,7 @@ export async function GET(request: Request) {
         type: notification.type,
         title: notification.title,
         message: notification.message,
-        href: notification.href,
+        href: normalizeNotificationHref(notification.href),
         readAt: notification.readAt?.toISOString() ?? null,
         createdAt: notification.createdAt.toISOString(),
       })),
