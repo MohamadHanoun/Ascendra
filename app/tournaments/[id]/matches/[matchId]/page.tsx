@@ -94,6 +94,20 @@ type MatchDetailMessages = {
     autoConfirmEnabled: string;
     autoConfirmDisabled: string;
   };
+  nextAction: {
+    eyebrow: string;
+    completed: { title: string; desc: string };
+    cancelled: { title: string; desc: string };
+    adminReview: { title: string; desc: string };
+    waitingOpponent: { title: string; desc: string };
+    waitingSchedule: { title: string; desc: string };
+    waitingOpponentReport: { title: string; desc: string };
+    submitResult: { title: string; desc: string };
+    checkIn: { title: string; desc: string };
+    waitingRoom: { title: string; desc: string };
+    joinRoom: { title: string; desc: string; cta: string };
+    follow: { title: string; desc: string };
+  };
   backLink: string;
 };
 
@@ -160,6 +174,20 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
       autoConfirmEnabled: "Auto-confirm is enabled",
       autoConfirmDisabled: "Auto-confirm is disabled",
     },
+    nextAction: {
+      eyebrow: "Next step",
+      completed: { title: "Match completed", desc: "This match is finished." },
+      cancelled: { title: "Match cancelled", desc: "This match was cancelled. No action is needed." },
+      adminReview: { title: "Admin review required", desc: "Reports do not match. An admin will resolve this." },
+      waitingOpponent: { title: "Waiting for opponent", desc: "The opponent team has not been decided yet." },
+      waitingSchedule: { title: "Waiting for match schedule", desc: "An admin has not set the match time yet." },
+      waitingOpponentReport: { title: "Waiting for opponent report", desc: "You reported your result. Waiting for the other team to report." },
+      submitResult: { title: "Submit your result", desc: "Report your match result in the form below. Both teams must report." },
+      checkIn: { title: "Check in for the match", desc: "Check in below to confirm you are ready to play." },
+      waitingRoom: { title: "Waiting for room information", desc: "The match is scheduled. Room details will appear here when they are ready." },
+      joinRoom: { title: "Join the match room", desc: "Open the match room and get ready to play.", cta: "Open room" },
+      follow: { title: "Match scheduled", desc: "Follow this match here. There is nothing to do right now." },
+    },
     backLink: "All Matches",
   },
   ar: {
@@ -223,6 +251,20 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
       steamReady: "جاهز لـ Steam",
       autoConfirmEnabled: "التأكيد التلقائي مفعّل",
       autoConfirmDisabled: "التأكيد التلقائي غير مفعّل",
+    },
+    nextAction: {
+      eyebrow: "الخطوة التالية",
+      completed: { title: "اكتملت المباراة", desc: "انتهت هذه المباراة." },
+      cancelled: { title: "أُلغيت المباراة", desc: "تم إلغاء هذه المباراة. لا يلزم أي إجراء." },
+      adminReview: { title: "بحاجة إلى مراجعة المشرف", desc: "التقارير غير متطابقة. سيقوم أحد المشرفين بحلّ الأمر." },
+      waitingOpponent: { title: "بانتظار الخصم", desc: "لم يتحدد الفريق المنافس بعد." },
+      waitingSchedule: { title: "بانتظار موعد المباراة", desc: "لم يحدد المشرف وقت المباراة بعد." },
+      waitingOpponentReport: { title: "بانتظار تقرير الخصم", desc: "لقد أرسلت نتيجتك. بانتظار إرسال الفريق الآخر لنتيجته." },
+      submitResult: { title: "أرسل نتيجتك", desc: "أرسل نتيجة مباراتك في النموذج أدناه. يجب أن يُبلّغ كلا الفريقين." },
+      checkIn: { title: "سجّل حضورك للمباراة", desc: "سجّل حضورك أدناه لتأكيد جاهزيتك للعب." },
+      waitingRoom: { title: "بانتظار معلومات الغرفة", desc: "تمت جدولة المباراة. ستظهر تفاصيل الغرفة هنا عند جاهزيتها." },
+      joinRoom: { title: "ادخل إلى غرفة المباراة", desc: "افتح غرفة المباراة واستعد للعب.", cta: "فتح الغرفة" },
+      follow: { title: "تمت جدولة المباراة", desc: "تابِع هذه المباراة من هنا. لا يوجد إجراء مطلوب الآن." },
     },
     backLink: "كل المباريات",
   },
@@ -524,6 +566,82 @@ export default async function MatchDetailPage({ params }: PageProps) {
     match.roundNumber === 1 && match.matchNumber === 1 ? null : null;
   void roundLabel;
 
+  // ─── Player Next Action (UX clarity only — derived from existing state) ───────
+  const bothTeamsAssigned = Boolean(match.teamAId && match.teamBId);
+  const isParticipant = userTeamId !== null;
+  const opponentTeamId = userTeamId
+    ? userTeamId === match.teamAId
+      ? match.teamBId
+      : match.teamAId
+    : null;
+  const opponentReported = opponentTeamId
+    ? match.reports.some(
+        (r) => r.teamId === opponentTeamId && r.status === "submitted",
+      )
+    : false;
+  const roomAvailable = Boolean(
+    match.room?.joinUrl ||
+      match.room?.roomCode ||
+      faceitProof.faceitMatchUrl ||
+      faceitProof.faceitMatchId,
+  );
+  const roomUrl = match.room?.joinUrl ?? faceitProof.faceitMatchUrl ?? null;
+  const confirmedReport = match.reports.find((r) => r.status === "confirmed");
+  const confirmedScore = confirmedReport
+    ? `${confirmedReport.teamAScore}–${confirmedReport.teamBScore}`
+    : null;
+
+  type NextActionKey =
+    | "completed"
+    | "cancelled"
+    | "adminReview"
+    | "waitingOpponent"
+    | "waitingSchedule"
+    | "waitingOpponentReport"
+    | "submitResult"
+    | "checkIn"
+    | "waitingRoom"
+    | "joinRoom"
+    | "follow";
+
+  const nextActionKey: NextActionKey = (() => {
+    if (match.status === "cancelled") return "cancelled";
+    if (isTerminal && winnerName) return "completed";
+    if (match.status === "disputed") return "adminReview";
+    if (!bothTeamsAssigned && !match.isBye) return "waitingOpponent";
+    if (!match.scheduledAt) return "waitingSchedule";
+    if (isParticipant && userHasReport && !opponentReported)
+      return "waitingOpponentReport";
+    if (
+      isParticipant &&
+      !userHasReport &&
+      (match.status === "in_progress" || match.status === "result_pending")
+    )
+      return "submitResult";
+    if (isCs2 && isParticipant && !currentUserCheckedIn) return "checkIn";
+    if (!roomAvailable) return "waitingRoom";
+    if (isParticipant) return "joinRoom";
+    return "follow";
+  })();
+
+  const nextActionTone: Record<NextActionKey, Tone> = {
+    completed: "green",
+    cancelled: "gray",
+    adminReview: "red",
+    waitingOpponent: "blue",
+    waitingSchedule: "blue",
+    waitingOpponentReport: "amber",
+    submitResult: "amber",
+    checkIn: "amber",
+    waitingRoom: "blue",
+    joinRoom: "violet",
+    follow: "gray",
+  };
+
+  const naCopy = msgs.nextAction[nextActionKey];
+  const naTone = nextActionTone[nextActionKey];
+  const naToneStyle = tonedStyle(naTone);
+
   return (
     <main
       className="asc-public-page asc-ambient min-h-screen overflow-hidden"
@@ -674,6 +792,71 @@ export default async function MatchDetailPage({ params }: PageProps) {
                 </span>
               </div>
             )}
+          </div>
+        </section>
+
+        {/* Next action card — player clarity (UX only) */}
+        <section className="mx-auto max-w-[1680px] px-6 pb-6 lg:px-10 2xl:px-14">
+          <div
+            className="relative overflow-hidden border"
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+          >
+            <div aria-hidden className="asc-corner-mark" />
+            <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between md:gap-6 md:p-6">
+              <div className="flex items-start gap-4">
+                <span
+                  aria-hidden
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center border text-base font-black"
+                  style={naToneStyle}
+                >
+                  ▲
+                </span>
+                <div>
+                  <p
+                    className="text-[10px] font-black uppercase tracking-[0.16em]"
+                    style={{ color: naToneStyle.color }}
+                  >
+                    {msgs.nextAction.eyebrow}
+                  </p>
+                  <h2
+                    className="mt-1 text-xl font-black md:text-2xl"
+                    style={{ color: "var(--asc-fg-0)", fontFamily: "var(--font-display)" }}
+                  >
+                    {naCopy.title}
+                  </h2>
+                  <p
+                    className="mt-1 max-w-2xl text-sm leading-6"
+                    style={{ color: "var(--asc-fg-2)" }}
+                  >
+                    {naCopy.desc}
+                  </p>
+                  {nextActionKey === "completed" && winnerName && (
+                    <p className="mt-2 text-sm font-black" style={{ color: "var(--asc-green)" }}>
+                      {msgs.vs.winner}: {winnerName}
+                      {confirmedScore ? ` · ${confirmedScore}` : ""}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {nextActionKey === "joinRoom" && roomUrl && (
+                <a
+                  href={roomUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center justify-center border px-5 py-3 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80"
+                  style={{
+                    borderColor: "var(--asc-accent-border-strong)",
+                    background: "var(--asc-accent-dim)",
+                    color: "var(--asc-accent)",
+                    clipPath:
+                      "polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)",
+                  }}
+                >
+                  {msgs.nextAction.joinRoom.cta}
+                </a>
+              )}
+            </div>
           </div>
         </section>
 
