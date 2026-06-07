@@ -187,6 +187,7 @@ type Props = {
   isAdmin: boolean;
   isParticipant: boolean;
   hasFaceitConnected: boolean;
+  faceitProviderEnabled?: boolean;
   locale: Locale;
   proof: FaceitProof;
   parsedResult: FaceitParsedResultView;
@@ -209,6 +210,7 @@ export default function FaceitMatchProofForm({
   isAdmin,
   isParticipant,
   hasFaceitConnected,
+  faceitProviderEnabled = true,
   locale,
   proof,
   parsedResult,
@@ -223,8 +225,13 @@ export default function FaceitMatchProofForm({
     INITIAL,
   );
 
-  const canSync = isAdmin || (isParticipant && hasFaceitConnected);
-  const showConnectHint = isParticipant && !hasFaceitConnected && !isAdmin;
+  // The sync action calls the FACEIT Data API, so it is only offered when the
+  // provider is configured. Read-only proof display and the admin room-link
+  // form (no API call) remain available regardless.
+  const canSync =
+    faceitProviderEnabled && (isAdmin || (isParticipant && hasFaceitConnected));
+  const showConnectHint =
+    faceitProviderEnabled && isParticipant && !hasFaceitConnected && !isAdmin;
   const isVerified = Boolean(proof.faceitVerifiedAt);
   const hasPlayerStats = hasFaceitPlayerRows(parsedResult);
 

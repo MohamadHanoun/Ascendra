@@ -18,6 +18,7 @@ import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { isCs2Game } from "@/lib/isCs2Game";
 import { isFaceitAutoConfirmEnabled } from "@/lib/faceitAutoConfirm";
+import { getFaceitIntegrationStatus } from "@/lib/faceitIntegrationStatus";
 import { normalizeFaceitParsedResultView } from "@/lib/faceitParsedResultView";
 import {
   determineUserMatchTeam,
@@ -455,6 +456,13 @@ export default async function MatchDetailPage({ params }: PageProps) {
     tournament.game?.slug?.toLowerCase().includes("dota") ||
     tournament.game?.name?.toLowerCase().includes("dota");
   const isCs2 = isCs2Game(tournament.game?.slug, tournament.game?.name);
+
+  // Provider availability (server-only — only booleans reach the client).
+  // Forms that call a provider API are hidden when its key is not configured,
+  // so players never see actions that fail with raw "… is not configured" errors.
+  const faceitProviderEnabled = getFaceitIntegrationStatus().apiKeyConfigured;
+  const riotProviderEnabled = Boolean(process.env.RIOT_API_KEY?.trim());
+  const steamProviderEnabled = Boolean(process.env.STEAM_WEB_API_KEY?.trim());
 
   // Check if the current user has FACEIT connected (needed for CS2 proof panel).
   let faceitConnected = false;
@@ -1422,8 +1430,8 @@ export default async function MatchDetailPage({ params }: PageProps) {
               </Panel>
             )}
 
-            {/* VALORANT match ID */}
-            {isValorant && !isTerminal && teamA && teamB && (
+            {/* VALORANT match ID — hidden unless RIOT_API_KEY is configured */}
+            {isValorant && riotProviderEnabled && !isTerminal && teamA && teamB && (
               <Panel eyebrow="VALORANT" title={msgs.verif.submitMatchId}>
                 <ValorantMatchIdForm
                   matchId={match.id}
@@ -1475,8 +1483,8 @@ export default async function MatchDetailPage({ params }: PageProps) {
               </Panel>
             )}
 
-            {/* Dota 2 match ID */}
-            {isDota && !isTerminal && teamA && teamB && (
+            {/* Dota 2 match ID — hidden unless STEAM_WEB_API_KEY is configured */}
+            {isDota && steamProviderEnabled && !isTerminal && teamA && teamB && (
               <Panel eyebrow="Dota 2" title={msgs.verif.submitMatchId}>
                 <DotaMatchIdForm
                   matchId={match.id}
@@ -1528,14 +1536,17 @@ export default async function MatchDetailPage({ params }: PageProps) {
               </Panel>
             )}
 
-            {/* FACEIT CS2 proof */}
-            {isCs2 && (
+            {/* FACEIT CS2 proof — shown when FACEIT is configured, proof already
+                exists, or the viewer is an admin (manual room link). The sync
+                action itself is gated inside the form by faceitProviderEnabled. */}
+            {isCs2 && (faceitProviderEnabled || faceitProof.faceitMatchId || isAdmin) && (
               <Panel eyebrow={msgs.faceit.eyebrow} title={msgs.faceit.title}>
                 <FaceitMatchProofForm
                   matchId={match.id}
                   isAdmin={isAdmin}
                   isParticipant={userTeamId !== null}
                   hasFaceitConnected={faceitConnected}
+                  faceitProviderEnabled={faceitProviderEnabled}
                   locale={locale}
                   proof={faceitProof}
                   parsedResult={faceitParsedResultView}
