@@ -365,7 +365,7 @@ npm.cmd run build
 ## Recommended Next Steps
 
 1. Add and maintain `.env.example`
-2. Finish full user-flow testing
+2. Finish full user-flow testing — see the [Tournament Manual QA Runbook](docs/tournament-manual-qa.md)
 3. Fix any remaining visual inconsistencies
 4. Verify production deployment settings
 5. Harden bot production setup
