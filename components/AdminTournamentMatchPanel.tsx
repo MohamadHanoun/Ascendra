@@ -30,6 +30,7 @@ type Props = {
   tournamentTitle: string;
   tournamentMatches: TournamentMatchRow[];
   approvedTeamCount: number;
+  registrationOpen: boolean;
 };
 
 type StatusInfo = { label: string; style: React.CSSProperties };
@@ -199,6 +200,7 @@ export default function AdminTournamentMatchPanel({
   tournamentTitle,
   tournamentMatches,
   approvedTeamCount,
+  registrationOpen,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -229,7 +231,7 @@ export default function AdminTournamentMatchPanel({
     .sort((a, b) => a - b);
 
   const hasMatches = tournamentMatches.length > 0;
-  const canGenerate = approvedTeamCount >= 2;
+  const canGenerate = approvedTeamCount >= 2 && !registrationOpen;
 
   return (
     <div className="grid gap-4">
@@ -243,11 +245,26 @@ export default function AdminTournamentMatchPanel({
             No matches generated yet
           </p>
 
-          {canGenerate ? (
+          {registrationOpen ? (
+            <div
+              className="mt-4 grid gap-1 border px-4 py-3"
+              style={{
+                borderColor: "var(--asc-amber-border)",
+                background: "var(--asc-amber-bg)",
+              }}
+            >
+              <p className="text-sm font-black" style={{ color: "var(--asc-amber)" }}>
+                Close registration before generating the bracket.
+              </p>
+              <p className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
+                Generating now could exclude teams approved later.
+              </p>
+            </div>
+          ) : canGenerate ? (
             <div className="mt-4 grid gap-3">
               <p className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
                 {approvedTeamCount} approved team{approvedTeamCount === 1 ? "" : "s"} ready.
-                Generates a single-elimination bracket.
+                Generates a single-elimination bracket from approved teams only.
               </p>
 
               <button

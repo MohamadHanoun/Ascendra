@@ -427,6 +427,19 @@ export async function generateBracketInline(
   const tournamentId = str(formData, "tournamentId");
   if (!tournamentId) return fail("Tournament ID is missing.");
 
+  // Safety guard: never generate a bracket while registration is still open —
+  // teams approved after generation would be silently excluded from the bracket.
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { registrationStatus: true },
+  });
+  if (!tournament) return fail("Tournament was not found.");
+  if (tournament.registrationStatus === "open") {
+    return fail(
+      "Close registration before generating the bracket. Generating now could exclude teams approved later.",
+    );
+  }
+
   const result = await createMatchesForTournament(tournamentId);
   if (!result.ok) return fail(result.error);
 

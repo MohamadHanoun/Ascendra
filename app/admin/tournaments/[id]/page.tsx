@@ -819,6 +819,7 @@ export default async function ManageTournamentPage({
               tournamentTitle={tournament.title}
               tournamentMatches={tournamentMatches}
               approvedTeamCount={approvedRegistrations.length}
+              registrationOpen={tournament.registrationStatus === "open"}
             />
           </CollapsibleSection>
         </div>
