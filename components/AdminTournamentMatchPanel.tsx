@@ -32,6 +32,9 @@ type Props = {
   approvedTeamCount: number;
   registrationOpen: boolean;
   bracketReady?: boolean;
+  pendingRegistrationCount?: number;
+  bracketStatusLabel?: string;
+  bracketStatusTone?: "red" | "amber" | "green" | "neutral";
 };
 
 type StatusInfo = { label: string; style: React.CSSProperties };
@@ -114,6 +117,13 @@ function Notice({ result }: { result: { ok: boolean; message: string } | null })
       {result.message}
     </div>
   );
+}
+
+function bracketToneColor(tone: Props["bracketStatusTone"]) {
+  if (tone === "red") return "var(--asc-live)";
+  if (tone === "amber") return "var(--asc-amber)";
+  if (tone === "green") return "var(--asc-green)";
+  return "var(--asc-fg-2)";
 }
 
 function MatchRow({
@@ -203,6 +213,9 @@ export default function AdminTournamentMatchPanel({
   approvedTeamCount,
   registrationOpen,
   bracketReady = false,
+  pendingRegistrationCount = 0,
+  bracketStatusLabel,
+  bracketStatusTone = "neutral",
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -247,6 +260,31 @@ export default function AdminTournamentMatchPanel({
             No matches generated yet
           </p>
 
+          <div
+            className="mt-4 grid gap-2 border px-4 py-3 sm:grid-cols-2"
+            style={{
+              borderColor: "var(--asc-line-soft)",
+              background: "var(--asc-bg-2)",
+            }}
+          >
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                Bracket status
+              </p>
+              <p className="mt-1 text-sm font-black" style={{ color: bracketToneColor(bracketStatusTone) }}>
+                {bracketStatusLabel ?? (bracketReady ? "Ready to generate bracket" : "Not ready")}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                Bracket source
+              </p>
+              <p className="mt-1 text-sm font-black" style={{ color: "var(--asc-fg-1)" }}>
+                Approved registrations only
+              </p>
+            </div>
+          </div>
+
           {registrationOpen ? (
             <div
               className="mt-4 grid gap-1 border px-4 py-3"
@@ -256,11 +294,16 @@ export default function AdminTournamentMatchPanel({
               }}
             >
               <p className="text-sm font-black" style={{ color: "var(--asc-amber)" }}>
-                Close registration before generating the bracket.
+                Close registration first
               </p>
               <p className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
-                Generating now could exclude teams approved later.
+                Close registration before bracket generation.
               </p>
+              {pendingRegistrationCount > 0 && (
+                <p className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
+                  Review pending registrations before closing if they should enter the bracket.
+                </p>
+              )}
             </div>
           ) : canGenerate ? (
             <div className="mt-4 grid gap-3">
@@ -284,6 +327,36 @@ export default function AdminTournamentMatchPanel({
                 </div>
               )}
 
+              {!bracketReady && bracketStatusLabel && (
+                <div
+                  className="grid gap-1 border px-4 py-3"
+                  style={{
+                    borderColor: "var(--asc-line-soft)",
+                    background: "var(--asc-bg-2)",
+                  }}
+                >
+                  <p className="text-sm font-black" style={{ color: bracketToneColor(bracketStatusTone) }}>
+                    {bracketStatusLabel}
+                  </p>
+                  <p className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
+                    Bracket generation uses approved registrations only.
+                  </p>
+                </div>
+              )}
+
+              {pendingRegistrationCount > 0 && (
+                <div
+                  className="border px-4 py-3 text-sm"
+                  style={{
+                    borderColor: "var(--asc-amber-border)",
+                    background: "var(--asc-amber-bg)",
+                    color: "var(--asc-amber)",
+                  }}
+                >
+                  Pending registrations will not enter the bracket unless approved before generation.
+                </div>
+              )}
+
               <p className="text-sm" style={{ color: "var(--asc-fg-2)" }}>
                 {approvedTeamCount} approved team{approvedTeamCount === 1 ? "" : "s"} ready.
                 Generates a single-elimination bracket from approved teams only.
@@ -301,14 +374,14 @@ export default function AdminTournamentMatchPanel({
                     "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)",
                 }}
               >
-                {pending ? "Generating..." : "Generate bracket ▲"}
+                {pending ? "Generating..." : "Generate bracket"}
               </button>
 
               <Notice result={notice} />
             </div>
           ) : (
             <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-              At least 2 approved teams are required. Currently{" "}
+              Need at least 2 approved teams. Currently{" "}
               {approvedTeamCount === 0 ? "none" : approvedTeamCount} approved.
             </p>
           )}
@@ -317,58 +390,75 @@ export default function AdminTournamentMatchPanel({
 
       {/* Match list */}
       {hasMatches && (
-        <div
-          className="overflow-hidden border"
-          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
-        >
-          {/* Column headers */}
+        <div className="grid gap-3">
           <div
-            className="grid items-center gap-3 px-4 py-2.5 md:grid-cols-[72px_minmax(0,1fr)_130px_52px_110px]"
+            className="border px-4 py-3 text-sm"
             style={{
-              background: "var(--asc-card-muted)",
-              borderBottom: "1px solid var(--asc-line-soft)",
+              borderColor: "var(--asc-line-soft)",
+              background: "var(--asc-bg-2)",
+              color: "var(--asc-fg-3)",
             }}
           >
-            <span className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-              Slot
-            </span>
-            <span className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-              Teams
-            </span>
-            <span className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-              Status
-            </span>
-            <span className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-              Format
-            </span>
-            <span className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
-              Actions
-            </span>
+            <p className="font-black" style={{ color: "var(--asc-green)" }}>
+              Bracket generated
+            </p>
+            <p className="mt-1">
+              Existing matches prevent generating a new bracket. Use match operations to schedule rooms after bracket generation.
+            </p>
           </div>
-
-          {roundNumbers.map((round) => (
-            <div key={round}>
-              {/* Round divider */}
-              <div
-                className="px-4 py-2"
-                style={{
-                  background: "var(--asc-card-muted)",
-                  borderBottom: "1px solid var(--asc-line-soft)",
-                }}
-              >
-                <p
-                  className="text-[11px] font-black uppercase tracking-[0.14em]"
-                  style={{ color: "var(--asc-accent)" }}
-                >
-                  Round {round}
-                </p>
-              </div>
-
-              {byRound[round].map((match) => (
-                <MatchRow key={match.id} match={match} tournamentId={tournamentId} />
-              ))}
+          <div
+            className="overflow-hidden border"
+            style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+          >
+            {/* Column headers */}
+            <div
+              className="grid items-center gap-3 px-4 py-2.5 md:grid-cols-[72px_minmax(0,1fr)_130px_52px_110px]"
+              style={{
+                background: "var(--asc-card-muted)",
+                borderBottom: "1px solid var(--asc-line-soft)",
+              }}
+            >
+              <span className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                Slot
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                Teams
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                Status
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                Format
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                Actions
+              </span>
             </div>
-          ))}
+
+            {roundNumbers.map((round) => (
+              <div key={round}>
+                {/* Round divider */}
+                <div
+                  className="px-4 py-2"
+                  style={{
+                    background: "var(--asc-card-muted)",
+                    borderBottom: "1px solid var(--asc-line-soft)",
+                  }}
+                >
+                  <p
+                    className="text-[11px] font-black uppercase tracking-[0.14em]"
+                    style={{ color: "var(--asc-accent)" }}
+                  >
+                    Round {round}
+                  </p>
+                </div>
+
+                {byRound[round].map((match) => (
+                  <MatchRow key={match.id} match={match} tournamentId={tournamentId} />
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -376,7 +466,7 @@ export default function AdminTournamentMatchPanel({
         open={confirmOpen}
         eyebrow="Generate bracket"
         title="Generate bracket?"
-        description={`Creates a single-elimination bracket for "${tournamentTitle}" with ${approvedTeamCount} approved teams. This cannot be undone — all existing matches must be deleted before regenerating.`}
+        description={`Creates a single-elimination bracket for "${tournamentTitle}" with ${approvedTeamCount} approved teams. This cannot be undone - all existing matches must be deleted before regenerating.`}
         confirmLabel="Generate bracket"
         cancelLabel="Cancel"
         pendingLabel="Generating..."

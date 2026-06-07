@@ -407,6 +407,11 @@ export default async function ManageTournamentPage({
     (r: RegistrationWithTeam) => r.status === "rejected",
   );
 
+  const cancelledRegistrations = tournament.registrations.filter(
+    (r: RegistrationWithTeam) => r.status === "cancelled",
+  );
+
+  const totalRegistrationCount = tournament.registrations.length;
   const approvedSlots = approvedRegistrations.length;
   const remainingSlots = Math.max(tournament.maxTeams - approvedSlots, 0);
 
@@ -422,6 +427,7 @@ export default async function ManageTournamentPage({
 
   const isEnded = tournament.status === "ended";
   const isCancelled = tournament.status === "cancelled";
+  const supportedFormat = isSupportedTournamentFormat(tournament.format);
 
   // Readiness for bracket generation (UI-only signal; admin still clicks Generate).
   const bracketReady =
@@ -430,7 +436,7 @@ export default async function ManageTournamentPage({
     !isCancelled &&
     tournamentMatches.length === 0 &&
     approvedRegistrations.length >= 2 &&
-    isSupportedTournamentFormat(tournament.format);
+    supportedFormat;
 
   // ── Command center (read-only, scoped to this tournament) ──────────────────
   const totalMatchCount = rawTournamentMatches.length;
@@ -464,17 +470,32 @@ export default async function ManageTournamentPage({
       MATCH_SETUP_STATUSES.has(m.status),
   ).length;
 
+  const registrationReadiness: { label: string; tone: CommandTone } =
+    isEnded || isCancelled
+      ? { label: "Closed", tone: "neutral" }
+      : tournament.registrationStatus === "open" && pendingRegistrations.length > 0
+        ? { label: "Review pending registrations", tone: "amber" }
+        : tournament.registrationStatus === "open"
+          ? { label: "Registration open", tone: "green" }
+          : approvedSlots >= 2
+            ? { label: "Ready for bracket checks", tone: "green" }
+            : { label: "Need at least 2 approved teams", tone: "amber" };
+
   const bracketState: { label: string; tone: CommandTone } =
-    totalMatchCount > 0
+    isCancelled
+      ? { label: "Tournament cancelled", tone: "neutral" }
+      : isEnded
+        ? { label: "Tournament ended", tone: "green" }
+        : totalMatchCount > 0
       ? { label: "Bracket generated", tone: "green" }
       : tournament.registrationStatus === "open"
         ? { label: "Close registration first", tone: "amber" }
         : approvedSlots < 2
-          ? { label: "Need 2+ approved teams", tone: "amber" }
+          ? { label: "Need at least 2 approved teams", tone: "amber" }
           : bracketReady
-            ? { label: "Ready to generate", tone: "amber" }
-            : !isSupportedTournamentFormat(tournament.format)
-              ? { label: "Format not supported", tone: "neutral" }
+            ? { label: "Ready to generate bracket", tone: "amber" }
+            : !supportedFormat
+              ? { label: "Unsupported format", tone: "neutral" }
               : { label: "Not ready", tone: "neutral" };
 
   const reviewState: { label: string; tone: CommandTone } =
@@ -486,9 +507,44 @@ export default async function ManageTournamentPage({
           ? { label: "Pending reports", tone: "amber" }
           : { label: "No urgent review items", tone: "green" };
 
+  const activeMatchCount = rawTournamentMatches.filter((m) =>
+    [
+      "scheduled",
+      "ready",
+      "room_created",
+      "in_progress",
+      "result_pending",
+      "disputed",
+      "confirmed",
+    ].includes(m.status),
+  ).length;
+
+  const lifecycleState: { label: string; tone: CommandTone } =
+    isCancelled
+      ? { label: "Cancelled", tone: "neutral" }
+      : isEnded
+        ? { label: "Completed/ended", tone: "green" }
+        : disputedCount > 0 || reportsReadyCount > 0
+          ? { label: "Review needed", tone: disputedCount > 0 ? "red" : "amber" }
+          : activeMatchCount > 0
+            ? { label: "Matches active", tone: "amber" }
+            : totalMatchCount > 0
+              ? { label: "Bracket generated", tone: "green" }
+              : bracketReady
+                ? { label: "Bracket ready", tone: "amber" }
+                : tournament.registrationStatus === "open"
+                  ? { label: "Registration open", tone: "green" }
+                  : tournament.registrationStatus === "closed"
+                    ? { label: "Registration closed", tone: "neutral" }
+                    : { label: "Draft/setup", tone: "neutral" };
+
   const nextAction: { text: string; tone: CommandTone } =
-    tournament.registrationStatus === "open"
-      ? { text: "Review registrations and close registration when ready.", tone: "amber" }
+    isEnded || isCancelled
+      ? { text: "No immediate action.", tone: "green" }
+      : tournament.registrationStatus === "open"
+      ? pendingRegistrations.length > 0
+        ? { text: "Review pending registrations", tone: "amber" }
+        : { text: "Close registration first", tone: "amber" }
       : bracketReady && totalMatchCount === 0
         ? { text: "Generate bracket.", tone: "amber" }
         : disputedCount > 0
@@ -635,18 +691,55 @@ export default async function ManageTournamentPage({
             </div>
           </div>
 
+          <div
+            className="grid gap-3 px-5 py-4 lg:grid-cols-3"
+            style={{ borderBottom: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+          >
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                Lifecycle stage
+              </p>
+              <p className="mt-1 text-sm font-black" style={{ color: commandColor(lifecycleState.tone) }}>
+                {lifecycleState.label}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                Registration readiness
+              </p>
+              <p className="mt-1 text-sm font-black" style={{ color: commandColor(registrationReadiness.tone) }}>
+                {registrationReadiness.label}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                Bracket source
+              </p>
+              <p className="mt-1 text-sm font-black" style={{ color: "var(--asc-fg-1)" }}>
+                Approved registrations only
+              </p>
+              {tournament.registrationStatus === "closed" &&
+                pendingRegistrations.length > 0 &&
+                totalMatchCount === 0 && (
+                <p className="mt-1 text-xs" style={{ color: "var(--asc-amber)" }}>
+                  Pending registrations will not enter the bracket unless approved before generation.
+                </p>
+              )}
+            </div>
+          </div>
+
           <div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-4">
             <CommandCard
               label="Registration"
-              value={tournament.registrationStatus}
-              valueTone={tournament.registrationStatus === "open" ? "green" : "neutral"}
-              meta={`${approvedSlots} approved · ${pendingRegistrations.length} pending · ${tournament.registrations.length} total`}
+              value={registrationReadiness.label}
+              valueTone={registrationReadiness.tone}
+              meta={`${totalRegistrationCount} total - ${pendingRegistrations.length} pending - ${approvedSlots} approved - ${rejectedRegistrations.length} rejected - ${cancelledRegistrations.length} cancelled`}
             />
             <CommandCard
               label="Bracket"
               value={bracketState.label}
               valueTone={bracketState.tone}
-              meta={`${approvedSlots} approved team${approvedSlots === 1 ? "" : "s"}`}
+              meta={`Bracket source: approved registrations only - ${approvedSlots} approved team${approvedSlots === 1 ? "" : "s"}`}
             />
             <CommandCard
               label="Matches"
@@ -983,8 +1076,65 @@ export default async function ManageTournamentPage({
             id="registrations"
             label="Registrations"
             title="Applications"
-            meta={`${tournament.registrations.length} total · ${approvedRegistrations.length} approved · ${pendingRegistrations.length} pending`}
+            meta={`${totalRegistrationCount} total - ${approvedSlots} approved - ${pendingRegistrations.length} pending`}
           >
+            <div className="grid gap-4">
+              <div
+                className="grid gap-4 border p-4"
+                style={{
+                  borderColor: "var(--asc-line-soft)",
+                  background: "var(--asc-bg-2)",
+                }}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                      Registration readiness
+                    </p>
+                    <p className="mt-1 text-sm font-black" style={{ color: commandColor(registrationReadiness.tone) }}>
+                      {registrationReadiness.label}
+                    </p>
+                  </div>
+                  <span
+                    className="border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
+                    style={{
+                      borderColor: "var(--asc-line-soft)",
+                      background: "var(--asc-bg-1)",
+                      color: "var(--asc-fg-2)",
+                    }}
+                  >
+                    Registration status: {tournament.registrationStatus}
+                  </span>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <Stat label="Total" value={totalRegistrationCount} />
+                  <Stat label="Pending" value={pendingRegistrations.length} />
+                  <Stat label="Approved" value={approvedSlots} />
+                  <Stat label="Rejected" value={rejectedRegistrations.length} />
+                  <Stat label="Cancelled" value={cancelledRegistrations.length} />
+                  <Stat label="Capacity" value={`${approvedSlots}/${tournament.maxTeams}`} />
+                  <Stat label="Spots left" value={remainingSlots} />
+                  <Stat label="Source" value="Approved" />
+                </div>
+
+                <div className="grid gap-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
+                  <p>Generating a bracket creates matches from approved registrations.</p>
+                  {tournament.registrationStatus === "open" && (
+                    <p style={{ color: "var(--asc-amber)" }}>
+                      Close registration before bracket generation.
+                    </p>
+                  )}
+                  {tournament.registrationStatus === "closed" &&
+                    pendingRegistrations.length > 0 &&
+                    totalMatchCount === 0 && (
+                      <p style={{ color: "var(--asc-amber)" }}>
+                        Pending registrations will not enter the bracket unless approved before generation.
+                      </p>
+                    )}
+                </div>
+              </div>
+
             {tournament.registrations.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--asc-fg-3)" }}>
                 No registrations yet.
@@ -1120,6 +1270,7 @@ export default async function ManageTournamentPage({
                 )}
               </div>
             )}
+            </div>
           </CollapsibleSection>
 
           <CollapsibleSection
@@ -1161,6 +1312,9 @@ export default async function ManageTournamentPage({
                 approvedTeamCount={approvedRegistrations.length}
                 registrationOpen={tournament.registrationStatus === "open"}
                 bracketReady={bracketReady}
+                pendingRegistrationCount={pendingRegistrations.length}
+                bracketStatusLabel={bracketState.label}
+                bracketStatusTone={bracketState.tone}
               />
             </div>
           </CollapsibleSection>
