@@ -15,11 +15,18 @@ import {
   setTournamentUpcomingInline,
   updateTournamentInline,
 } from "@/actions/adminTournamentInlineActions";
+import {
+  approveRegistrationInline,
+  cancelRegistrationInline,
+  rejectRegistrationInline,
+} from "@/actions/adminRegistrationInlineActions";
 import { auth } from "@/auth";
+import AdminRegistrationsRealtime from "@/components/AdminRegistrationsRealtime";
 import AdminShell from "@/components/AdminShell";
 import AdminTournamentImageFields from "@/components/AdminTournamentImageFields";
 import AdminTournamentMatchPanel from "@/components/AdminTournamentMatchPanel";
 import AdminTournamentResultsPanel from "@/components/AdminTournamentResultsPanel";
+import InlineAdminRegistrationForm from "@/components/InlineAdminRegistrationForm";
 import InlineAdminTournamentForm from "@/components/InlineAdminTournamentForm";
 import TournamentLifecycleRefresh from "@/components/TournamentLifecycleRefresh";
 import { syncTournamentLifecycleForTournament } from "@/lib/jobs/tournamentLifecycleJobs";
@@ -387,6 +394,8 @@ export default async function ManageTournamentPage({
         endsAt={tournament.endsAt?.toISOString() ?? null}
       />
 
+      <AdminRegistrationsRealtime />
+
       <section className="hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -745,10 +754,14 @@ export default async function ManageTournamentPage({
                 }}
               >
                 {tournament.registrations.map(
-                  (registration: RegistrationWithTeam, idx) => (
+                  (registration: RegistrationWithTeam, idx) => {
+                    const displayedTeamName =
+                      registration.snapshotTeamName || registration.team.name;
+
+                    return (
                     <article
                       key={registration.id}
-                      className="grid gap-4 px-4 py-4 md:grid-cols-[minmax(0,1fr)_120px_140px] md:items-center"
+                      className="grid gap-4 px-4 py-4 md:grid-cols-[minmax(0,1fr)_120px_140px_minmax(0,180px)] md:items-center"
                       style={
                         idx < tournament.registrations.length - 1
                           ? { borderBottom: "1px solid var(--asc-line-soft)" }
@@ -760,8 +773,7 @@ export default async function ManageTournamentPage({
                           className="font-black"
                           style={{ color: "var(--asc-fg-0)" }}
                         >
-                          {registration.snapshotTeamName ||
-                            registration.team.name}
+                          {displayedTeamName}
                         </p>
 
                         <p
@@ -789,8 +801,78 @@ export default async function ManageTournamentPage({
                       >
                         {formatDate(registration.createdAt)}
                       </p>
+
+                      {/* Inline approve/reject/cancel — server action enforces all eligibility */}
+                      <div className="grid gap-2">
+                        {registration.status === "registered" && (
+                          <>
+                            <InlineAdminRegistrationForm
+                              action={approveRegistrationInline}
+                              buttonLabel="Approve"
+                              pendingLabel="Approving..."
+                              variant="success"
+                            >
+                              <input
+                                type="hidden"
+                                name="registrationId"
+                                value={registration.id}
+                              />
+                            </InlineAdminRegistrationForm>
+
+                            <InlineAdminRegistrationForm
+                              action={rejectRegistrationInline}
+                              buttonLabel="Reject"
+                              pendingLabel="Rejecting..."
+                              variant="danger"
+                              confirmTitle="Reject registration?"
+                              confirmDescription={`Write a clear reason for rejecting ${displayedTeamName}.`}
+                              confirmLabel="Reject"
+                              textareaName="rejectionReason"
+                              textareaLabel="Reason"
+                              textareaPlaceholder="Example: Missing players or wrong roster..."
+                              textareaRequired
+                            >
+                              <input
+                                type="hidden"
+                                name="registrationId"
+                                value={registration.id}
+                              />
+                            </InlineAdminRegistrationForm>
+                          </>
+                        )}
+
+                        {["approved", "rejected"].includes(
+                          registration.status,
+                        ) && (
+                          <InlineAdminRegistrationForm
+                            action={cancelRegistrationInline}
+                            buttonLabel="Cancel"
+                            pendingLabel="Cancelling..."
+                            variant="secondary"
+                            confirmTitle="Cancel registration?"
+                            confirmDescription={`Cancel ${displayedTeamName}'s registration?`}
+                            confirmLabel="Cancel registration"
+                          >
+                            <input
+                              type="hidden"
+                              name="registrationId"
+                              value={registration.id}
+                            />
+                          </InlineAdminRegistrationForm>
+                        )}
+
+                        {registration.status === "cancelled" && (
+                          <span
+                            className="text-xs font-black uppercase tracking-[0.12em]"
+                            style={{ color: "var(--asc-fg-3)" }}
+                          >
+                            Closed
+                          </span>
+                        )}
+                      </div>
                     </article>
-                  ),
+                    );
+                  },
                 )}
               </div>
             )}
