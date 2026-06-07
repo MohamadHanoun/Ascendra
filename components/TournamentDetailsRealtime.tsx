@@ -15,9 +15,25 @@ const tournamentEventTypes = new Set([
   "tournament.status.updated",
   "tournament.registrationStatus.updated",
   "tournament.registration.updated",
+  "tournament.bracket.generated",
   "tournament.result.updated",
+  "tournament.match.communication_updated",
+  "tournament.match.room_linked",
+  "tournament.match.report_submitted",
+  "tournament.match.confirmed",
+  "tournament.match.disputed",
+  "tournament.match.advanced",
   "leaderboard.updated",
 ]);
+
+function getPayloadString(payload: unknown, key: string) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return null;
+  }
+
+  const value = (payload as Record<string, unknown>)[key];
+  return typeof value === "string" ? value : null;
+}
 
 export default function TournamentDetailsRealtime({
   tournamentId,
@@ -53,6 +69,7 @@ export default function TournamentDetailsRealtime({
 
         return (
           event.entityId === tournamentId ||
+          getPayloadString(event.payload, "tournamentId") === tournamentId ||
           event.entityType === "registration" ||
           event.entityType === "result"
         );

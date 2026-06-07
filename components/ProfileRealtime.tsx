@@ -19,6 +19,13 @@ const profileEventTypes = new Set([
   "team.invite.rejected",
   "team.invite.cancelled",
   "tournament.registration.updated",
+  "tournament.bracket.generated",
+  "tournament.match.communication_updated",
+  "tournament.match.room_linked",
+  "tournament.match.report_submitted",
+  "tournament.match.confirmed",
+  "tournament.match.disputed",
+  "tournament.match.advanced",
   "tournament.result.updated",
   "leaderboard.updated",
 ]);

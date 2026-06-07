@@ -53,8 +53,42 @@ function normalizeRequiredText(
   return normalized;
 }
 
-function normalizeHref(value: string | null | undefined) {
+function getMetadataString(
+  metadata: Prisma.InputJsonValue | undefined,
+  key: string,
+) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return null;
+  }
+
+  const value = (metadata as Record<string, Prisma.InputJsonValue>)[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+export function normalizeNotificationHref(
+  value: string | null | undefined,
+  metadata?: Prisma.InputJsonValue,
+) {
   const normalized = (value || "").trim().slice(0, maxHrefLength);
+
+  if (normalized === "/admin?tab=registrations") {
+    const tournamentId = getMetadataString(metadata, "tournamentId");
+
+    if (tournamentId) {
+      return `/admin/tournaments/${tournamentId}#registrations`;
+    }
+  }
+
+  if (normalized === "/admin?tab=matches") {
+    const tournamentId = getMetadataString(metadata, "tournamentId");
+    const matchId = getMetadataString(metadata, "matchId");
+
+    if (tournamentId && matchId) {
+      return `/admin/tournaments/${tournamentId}/matches#match-${matchId}`;
+    }
+
+    return "/admin/match-operations?review=needs";
+  }
 
   return normalized || null;
 }
@@ -85,7 +119,7 @@ function buildNotificationData(
     type: normalizeRequiredText(input.type, "type", maxTypeLength),
     title: normalizeRequiredText(input.title, "title", maxTitleLength),
     message: normalizeRequiredText(input.message, "message", maxMessageLength),
-    href: normalizeHref(input.href),
+    href: normalizeNotificationHref(input.href, input.metadata),
     ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
   };
 }

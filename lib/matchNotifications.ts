@@ -6,6 +6,7 @@ import {
 } from "@/lib/notifications";
 import { sendDiscordNotificationsToUsers } from "@/lib/discordNotificationBridge";
 import { prisma } from "@/lib/prisma";
+import { createRealtimeEvent } from "@/lib/realtime";
 import {
   getServerLogErrorMessage,
   logServerBotError,
@@ -53,6 +54,14 @@ function uniqueStrings(values: Array<string | null | undefined>) {
 
 function matchHref(match: MatchNotificationMatch) {
   return `/tournaments/${match.tournamentId}/matches/${match.id}`;
+}
+
+export function getMatchNotificationHref(match: MatchNotificationMatch) {
+  return matchHref(match);
+}
+
+export function getAdminMatchNotificationHref(match: MatchNotificationMatch) {
+  return `/admin/tournaments/${match.tournamentId}/matches#match-${match.id}`;
 }
 
 function matchLabel(match: {
@@ -133,6 +142,11 @@ function memberIdsForTeams(
   }
 
   return uniqueStrings(userIds);
+}
+
+function excludeUserIds(userIds: string[], excludedUserIds: string[]) {
+  const excluded = new Set(excludedUserIds);
+  return userIds.filter((userId) => !excluded.has(userId));
 }
 
 function opponentTeamId(match: MatchNotificationMatch, teamId: string) {
@@ -308,6 +322,29 @@ async function createMatchNotifications({
   }
 }
 
+async function publishMatchRealtimeEvent(
+  match: MatchNotificationMatch,
+  type: string,
+  audiences: Array<"public" | "admin"> = ["public"],
+) {
+  await Promise.all(
+    audiences.map((audience) =>
+      createRealtimeEvent({
+        type,
+        audience,
+        entityType: "tournamentMatch",
+        entityId: match.id,
+        payload: {
+          matchId: match.id,
+          tournamentId: match.tournamentId,
+        },
+      }),
+    ),
+  ).catch((error) => {
+    console.error("[matchNotifications] Failed to publish realtime event:", error);
+  });
+}
+
 export async function notifyMatchScheduled(
   match: MatchNotificationMatch,
   updateKey = "initial",
@@ -348,16 +385,21 @@ export async function notifyMatchRoomReady(match: MatchNotificationMatch) {
   await createMatchNotifications({
     userIds,
     type: "match.room_ready",
-    title: "Room ready",
-    message: "Your match room/code is ready.",
+    title: "Room details are available",
+    message: "Room details are available for your match.",
     match,
     dedupeKey: `match.room.ready:${match.id}`,
   });
 
+  await publishMatchRealtimeEvent(match, "tournament.match.room_linked", [
+    "public",
+    "admin",
+  ]);
+
   void sendDiscordNotificationsToUsers({
     userIds,
-    title: "Room ready",
-    message: "Your match room/code is ready.",
+    title: "Room details are available",
+    message: "Room details are available for your match.",
     href: matchHref(match),
   }).catch(() => {});
 }
@@ -369,44 +411,86 @@ export async function notifyManualResultSubmitted(
 ) {
   const teams = await loadTeams([match.teamAId, match.teamBId, submittingTeamId]);
   const opponentId = opponentTeamId(match, submittingTeamId);
-  const userIds = uniqueStrings([
-    ...leaderIdsForTeams(teams, [opponentId]),
-    ...(await getAdminNotificationUserIds()),
-  ]);
+  const adminUserIds = await getAdminNotificationUserIds();
+  const opponentLeaderIds = excludeUserIds(
+    leaderIdsForTeams(teams, [opponentId]),
+    adminUserIds,
+  );
 
-  if (userIds.length === 0) return;
+  if (opponentLeaderIds.length > 0) {
+    await createMatchNotifications({
+      userIds: opponentLeaderIds,
+      type: "match.result_submitted",
+      title: "Waiting for opponent report",
+      message: `${teamName(teams, submittingTeamId)} submitted a result. Review the match and submit your report.`,
+      match,
+      dedupeKey: `match.report.submitted:${reportId}:opponent`,
+      metadata: {
+        reportId,
+        submittingTeamId,
+      },
+    });
+  }
 
-  await createMatchNotifications({
-    userIds,
-    type: "match.result_submitted",
-    title: "Result submitted",
-    message: `${teamName(teams, submittingTeamId)} submitted a match result.`,
-    match,
-    dedupeKey: `match.report.submitted:${reportId}`,
-    metadata: {
-      reportId,
-      submittingTeamId,
-    },
-  });
+  if (adminUserIds.length > 0) {
+    try {
+      await createNotificationsOnceForUsers({
+        userIds: adminUserIds,
+        type: "match.result_submitted",
+        title: "Result submitted",
+        message: `${teamName(teams, submittingTeamId)} submitted a match result.`,
+        href: getAdminMatchNotificationHref(match),
+        dedupeKey: `match.report.submitted:${reportId}:admin`,
+        metadata: {
+          matchId: match.id,
+          tournamentId: match.tournamentId,
+          reportId,
+          submittingTeamId,
+        },
+      });
+    } catch (error) {
+      console.error("[matchNotifications] Failed to create notification:", error);
+    }
+  }
 }
 
 export async function notifyMatchDisputed(match: MatchNotificationMatch) {
   const teams = await loadTeams([match.teamAId, match.teamBId]);
-  const userIds = uniqueStrings([
-    ...memberIdsForTeams(teams, [match.teamAId, match.teamBId]),
-    ...(await getAdminNotificationUserIds()),
-  ]);
+  const adminUserIds = await getAdminNotificationUserIds();
+  const playerUserIds = excludeUserIds(
+    memberIdsForTeams(teams, [match.teamAId, match.teamBId]),
+    adminUserIds,
+  );
 
-  if (userIds.length === 0) return;
+  if (playerUserIds.length > 0) {
+    await createMatchNotifications({
+      userIds: playerUserIds,
+      type: "match.disputed",
+      title: "Admin review required",
+      message: "Your match is under admin review.",
+      match,
+      dedupeKey: `match.disputed:${match.id}:players`,
+    });
+  }
 
-  await createMatchNotifications({
-    userIds,
-    type: "match.disputed",
-    title: "Result disputed",
-    message: "A match result was disputed and needs review.",
-    match,
-    dedupeKey: `match.disputed:${match.id}`,
-  });
+  if (adminUserIds.length > 0) {
+    try {
+      await createNotificationsOnceForUsers({
+        userIds: adminUserIds,
+        type: "match.disputed",
+        title: "Match disputed",
+        message: "Admin review required for this match.",
+        href: getAdminMatchNotificationHref(match),
+        dedupeKey: `match.disputed:${match.id}:admin`,
+        metadata: {
+          matchId: match.id,
+          tournamentId: match.tournamentId,
+        },
+      });
+    } catch (error) {
+      console.error("[matchNotifications] Failed to create notification:", error);
+    }
+  }
 }
 
 export async function notifyMatchResultReceived(
@@ -454,7 +538,7 @@ export async function notifyMatchConfirmed(
   await createMatchNotifications({
     userIds,
     type: "match.confirmed",
-    title: "Result confirmed",
+    title: "Match completed",
     message: confirmedMessage,
     match,
     dedupeKey: `match.confirmed:${match.id}`,
@@ -466,7 +550,7 @@ export async function notifyMatchConfirmed(
 
   void sendDiscordNotificationsToUsers({
     userIds,
-    title: "Result confirmed",
+    title: "Match completed",
     message: confirmedMessage,
     href: matchHref(match),
   }).catch((error) =>
@@ -490,7 +574,9 @@ export async function notifyMatchProcessingFailed(input: {
       type: "match.processing_failed",
       title: "Match automation failed",
       message: `${input.provider} result processing failed.`,
-      href: input.match ? matchHref(input.match) : "/admin?tab=matches",
+      href: input.match
+        ? getAdminMatchNotificationHref(input.match)
+        : "/admin/match-operations?review=needs",
       dedupeKey: `match.processing.failed:${input.dedupeKey}`,
       metadata: {
         provider: input.provider,
@@ -523,15 +609,19 @@ export async function notifyMatchCommunicationUpdated(
   await createMatchNotifications({
     userIds,
     type: "match.communication_updated",
-    title: "Match updated",
+    title: "Match details updated",
     message: "Match schedule or instructions were updated.",
     match,
     dedupeKey: `match.communication.updated:${match.id}:${updateKey}`,
   });
 
+  await publishMatchRealtimeEvent(match, "tournament.match.communication_updated", [
+    "public",
+  ]);
+
   void sendDiscordNotificationsToUsers({
     userIds,
-    title: "Match updated",
+    title: "Match details updated",
     message: "Match schedule or instructions were updated.",
     href: matchHref(match),
   }).catch(() => {});
@@ -546,16 +636,21 @@ export async function notifyFaceitRoomLinked(match: MatchNotificationMatch) {
   await createMatchNotifications({
     userIds,
     type: "match.faceit_linked",
-    title: "FACEIT room ready",
-    message: "FACEIT room link is available for your match.",
+    title: "Room details are available",
+    message: "Room details are available for your match.",
     match,
     dedupeKey: `match.faceit.linked:${match.id}`,
   });
 
+  await publishMatchRealtimeEvent(match, "tournament.match.room_linked", [
+    "public",
+    "admin",
+  ]);
+
   void sendDiscordNotificationsToUsers({
     userIds,
-    title: "FACEIT room ready",
-    message: "FACEIT room link is available for your match.",
+    title: "Room details are available",
+    message: "Room details are available for your match.",
     href: matchHref(match),
   }).catch(() => {});
 }
@@ -572,7 +667,7 @@ export async function notifyBracketAdvanced(
   await createMatchNotifications({
     userIds,
     type: "match.advanced",
-    title: "Bracket advanced",
+    title: "Your match is ready",
     message: `${teamName(teams, match.winnerTeamId)} advanced to the next match.`,
     match: {
       ...match,

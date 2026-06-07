@@ -25,6 +25,10 @@ const matchEventTypes = new Set([
   "tournament.match.disputed",
   "tournament.match.game_completed",
   "tournament.match.advanced",
+  "tournament.match.room_linked",
+  "tournament.match.communication_updated",
+  "tournament.match.checkin_updated",
+  "tournament.match.proof_synced",
 ]);
 
 function getPayloadString(payload: unknown, key: string) {

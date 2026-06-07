@@ -10,6 +10,7 @@ import {
   resetMatchInline,
 } from "@/actions/adminMatchInlineActions";
 import { auth } from "@/auth";
+import AdminMatchOperationsRealtime from "@/components/AdminMatchOperationsRealtime";
 import AdminShell from "@/components/AdminShell";
 import InlineAdminTournamentForm from "@/components/InlineAdminTournamentForm";
 import MatchCommunicationAdminForm from "@/components/MatchCommunicationAdminForm";
@@ -409,6 +410,8 @@ export default async function AdminTournamentMatchesPage({ params }: PageProps) 
         </>
       }
     >
+      <AdminMatchOperationsRealtime />
+
       <section className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
         {/* Back + overview */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -435,16 +438,16 @@ export default async function AdminTournamentMatchesPage({ params }: PageProps) 
             style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
           >
             <p className="text-sm font-black" style={{ color: "var(--asc-fg-3)" }}>
-              No matches generated yet.
+              No generated bracket yet.
             </p>
             <p className="mt-2 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-              Generate the bracket from the{" "}
+              Generate matches from approved registrations in the{" "}
               <Link
                 href={`/admin/tournaments/${tournament.id}`}
                 className="font-black underline transition hover:opacity-80"
                 style={{ color: "var(--asc-accent)" }}
               >
-                tournament page
+                tournament command center
               </Link>{" "}
               once registration is closed.
             </p>

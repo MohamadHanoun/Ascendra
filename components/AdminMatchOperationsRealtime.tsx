@@ -18,8 +18,13 @@ const adminMatchEventTypes = new Set([
 ]);
 
 const publicMatchEventTypes = new Set([
+  "tournament.bracket.generated",
+  "tournament.match.report_submitted",
   "tournament.match.confirmed",
+  "tournament.match.disputed",
   "tournament.match.advanced",
+  "tournament.match.room_linked",
+  "tournament.match.communication_updated",
   "tournament.result.updated",
 ]);
 

@@ -21,6 +21,7 @@ import {
   rejectRegistrationInline,
 } from "@/actions/adminRegistrationInlineActions";
 import { auth } from "@/auth";
+import AdminMatchOperationsRealtime from "@/components/AdminMatchOperationsRealtime";
 import AdminRegistrationsRealtime from "@/components/AdminRegistrationsRealtime";
 import AdminShell from "@/components/AdminShell";
 import AdminTournamentImageFields from "@/components/AdminTournamentImageFields";
@@ -585,6 +586,7 @@ export default async function ManageTournamentPage({
       />
 
       <AdminRegistrationsRealtime />
+      <AdminMatchOperationsRealtime />
 
       <section className="hidden">
         <div
