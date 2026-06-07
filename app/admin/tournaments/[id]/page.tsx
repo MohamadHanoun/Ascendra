@@ -481,7 +481,7 @@ export default async function ManageTournamentPage({
     disputedCount > 0
       ? { label: "Admin review required", tone: "red" }
       : reportsReadyCount > 0
-        ? { label: "Reports ready to confirm", tone: "amber" }
+        ? { label: "Reports ready", tone: "amber" }
         : resultPendingCount > 0
           ? { label: "Pending reports", tone: "amber" }
           : { label: "No urgent review items", tone: "green" };
@@ -492,14 +492,16 @@ export default async function ManageTournamentPage({
       : bracketReady && totalMatchCount === 0
         ? { text: "Generate bracket.", tone: "amber" }
         : disputedCount > 0
-          ? { text: "Review disputed matches.", tone: "red" }
-          : resultPendingCount > 0
-            ? { text: "Check pending reports.", tone: "amber" }
-            : missingScheduleCount > 0 || missingRoomCount > 0
-              ? { text: "Complete match setup.", tone: "amber" }
-              : totalMatchCount > 0
-                ? { text: "Monitor matches.", tone: "neutral" }
-                : { text: "No immediate action.", tone: "green" };
+          ? { text: "Review disputed matches", tone: "red" }
+          : reportsReadyCount > 0
+            ? { text: "Review submitted reports.", tone: "amber" }
+            : resultPendingCount > 0
+              ? { text: "Check pending reports", tone: "amber" }
+              : missingScheduleCount > 0 || missingRoomCount > 0
+                ? { text: "Complete match setup", tone: "amber" }
+                : totalMatchCount > 0
+                  ? { text: "Monitor matches", tone: "neutral" }
+                  : { text: "No immediate action.", tone: "green" };
 
   return (
     <AdminShell

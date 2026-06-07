@@ -157,11 +157,22 @@ function getSetupBadges(input: {
 
   if (input.status === "disputed") {
     badges.push({ label: "Admin review required", tone: "live" });
+    return badges;
   } else if (
     input.status === "result_pending" &&
     input.submittedReportTeamCount >= 2
   ) {
     badges.push({ label: "Reports ready", tone: "amber" });
+    return badges;
+  } else if (
+    input.status === "result_pending" &&
+    input.submittedReportTeamCount === 1
+  ) {
+    badges.push({ label: "Waiting for opponent report", tone: "amber" });
+    return badges;
+  } else if (input.status === "result_pending") {
+    badges.push({ label: "Waiting for player reports", tone: "amber" });
+    return badges;
   }
 
   if (!input.bothTeams) return badges;
@@ -198,14 +209,19 @@ function getMatchReviewState(
       reports.filter((r) => r.status === "submitted").map((r) => r.teamId),
     );
     if (reportedTeams.size >= 2) {
-      return { label: "Reports submitted — review/confirm if needed", tone: "amber" };
+      return { label: "Reports ready", tone: "amber" };
     }
     if (reportedTeams.size === 1) {
       return { label: "Waiting for opponent report", tone: "amber" };
     }
     return { label: "Waiting for player reports", tone: "amber" };
   }
-  if (status === "confirmed" || status === "completed") {
+  if (
+    status === "confirmed" ||
+    status === "completed" ||
+    status === "forfeit" ||
+    status === "bye"
+  ) {
     return { label: "Resolved", tone: "green" };
   }
   return null;

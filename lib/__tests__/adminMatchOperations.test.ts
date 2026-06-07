@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getMatchOperationState,
+  getMatchReviewInfo,
   getMatchSetupInfo,
   getReadinessIssues,
   normalizeAdminMatchOperationCard,
@@ -235,6 +236,44 @@ describe("getReadinessIssues", () => {
   });
 });
 
+// ─── getMatchReviewInfo ───────────────────────────────────────────────────────
+
+describe("getMatchReviewInfo", () => {
+  it("marks disputed matches as admin review required", () => {
+    const review = getMatchReviewInfo("disputed", []);
+
+    expect(review.reviewState).toBe("admin_review_required");
+    expect(review.reviewLabel).toBe("Admin review required");
+    expect(review.reviewPriority).toBe(1);
+  });
+
+  it("marks two submitted result reports as reports ready", () => {
+    const review = getMatchReviewInfo("result_pending", [
+      { teamId: "team-a" },
+      { teamId: "team-b" },
+    ]);
+
+    expect(review.reviewState).toBe("reports_ready");
+    expect(review.reviewLabel).toBe("Reports ready");
+    expect(review.reviewPriority).toBe(2);
+  });
+
+  it("keeps waiting opponent report ahead of waiting player reports", () => {
+    const waitingOpponent = getMatchReviewInfo("result_pending", [
+      { teamId: "team-a" },
+    ]);
+    const waitingPlayers = getMatchReviewInfo("result_pending", []);
+
+    expect(waitingOpponent.reviewState).toBe("waiting_opponent_report");
+    expect(waitingOpponent.reviewLabel).toBe("Waiting for opponent report");
+    expect(waitingOpponent.reviewPriority).toBeLessThan(
+      waitingPlayers.reviewPriority,
+    );
+    expect(waitingPlayers.reviewState).toBe("waiting_player_reports");
+    expect(waitingPlayers.reviewLabel).toBe("Waiting for player reports");
+  });
+});
+
 // ─── getMatchSetupInfo ────────────────────────────────────────────────────────
 
 describe("getMatchSetupInfo", () => {
@@ -253,7 +292,7 @@ describe("getMatchSetupInfo", () => {
     });
 
     expect(setup.setupState).toBe("review_blocked");
-    expect(setup.setupLabel).toBe("Review needed");
+    expect(setup.setupLabel).toBeNull();
     expect(setup.setupTone).toBe("red");
   });
 
@@ -264,7 +303,7 @@ describe("getMatchSetupInfo", () => {
     });
 
     expect(setup.setupState).toBe("review_blocked");
-    expect(setup.setupLabel).toBe("Review needed");
+    expect(setup.setupLabel).toBeNull();
     expect(setup.setupTone).toBe("amber");
   });
 
@@ -509,5 +548,55 @@ describe("normalizeAdminMatchOperationCard", () => {
     expect(card.hasRoom).toBe(true);
     expect(card.setupState).toBe("setup_ready");
     expect(card.setupLabel).toBe("Setup ready");
+  });
+
+  it("lets disputed review state beat missing setup", () => {
+    const card = normalizeAdminMatchOperationCard(
+      makeAdminMatchRow({
+        status: "disputed",
+        scheduledAt: null,
+        room: null,
+        tournament: { title: "Dota Cup", game: { slug: "dota2", name: "Dota 2" } },
+      }),
+      teamMap,
+    );
+
+    expect(card.reviewState).toBe("admin_review_required");
+    expect(card.reviewLabel).toBe("Admin review required");
+    expect(card.setupState).toBe("review_blocked");
+    expect(card.setupLabel).toBeNull();
+  });
+
+  it("lets reports ready review state beat missing setup", () => {
+    const card = normalizeAdminMatchOperationCard(
+      makeAdminMatchRow({
+        status: "result_pending",
+        scheduledAt: null,
+        reports: [{ teamId: "team-a" }, { teamId: "team-b" }],
+        room: null,
+        tournament: { title: "Dota Cup", game: { slug: "dota2", name: "Dota 2" } },
+      }),
+      teamMap,
+    );
+
+    expect(card.reviewState).toBe("reports_ready");
+    expect(card.reviewLabel).toBe("Reports ready");
+    expect(card.setupState).toBe("review_blocked");
+    expect(card.setupLabel).toBeNull();
+  });
+
+  it("marks missing manual room when schedule exists but no GameRoom exists", () => {
+    const card = normalizeAdminMatchOperationCard(
+      makeAdminMatchRow({
+        scheduledAt: new Date("2026-06-01T18:00:00Z"),
+        room: null,
+        tournament: { title: "Dota Cup", game: { slug: "dota2", name: "Dota 2" } },
+      }),
+      teamMap,
+    );
+
+    expect(card.hasRoom).toBe(false);
+    expect(card.setupState).toBe("missing_room");
+    expect(card.setupLabel).toBe("Missing room");
   });
 });

@@ -163,7 +163,7 @@ export function getMatchReviewInfo(
     if (submittedReportTeamCount >= 2) {
       return {
         reviewState: "reports_ready",
-        reviewLabel: "Reports submitted — ready to review",
+        reviewLabel: "Reports ready",
         reviewTone: "amber",
         reviewPriority: 2,
         ...base,
@@ -234,7 +234,7 @@ export function getMatchSetupInfo(input: {
   ) {
     return {
       setupState: "review_blocked",
-      setupLabel: "Review needed",
+      setupLabel: null,
       setupTone: reviewState === "admin_review_required" ? "red" : "amber",
     };
   }

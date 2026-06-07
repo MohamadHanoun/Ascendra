@@ -178,10 +178,10 @@ function SummaryStat({
 
 function IssueBadge({ issue }: { issue: ReadinessIssue }) {
   const label: Record<ReadinessIssue, string> = {
-    missing_schedule: "No schedule",
-    missing_room: "No FACEIT room",
-    missing_proof: "No proof",
-    needs_checkin: "Check-in",
+    missing_schedule: "Missing schedule",
+    missing_room: "Missing FACEIT room",
+    missing_proof: "Missing proof",
+    needs_checkin: "Needs check-in",
   };
 
   return (
@@ -516,8 +516,8 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
           <SummaryStat label="Needs action" value={needsActionCount} tone={needsActionCount > 0 ? "red" : "neutral"} />
           <SummaryStat label="Disputed" value={disputedCount} tone={disputedCount > 0 ? "red" : "neutral"} />
           <SummaryStat label="Reports ready" value={reportsReadyCount} tone={reportsReadyCount > 0 ? "accent" : "neutral"} />
-          <SummaryStat label="Waiting opponent" value={waitingOpponentCount} tone={waitingOpponentCount > 0 ? "accent" : "neutral"} />
-          <SummaryStat label="Waiting players" value={waitingPlayersCount} tone="neutral" />
+          <SummaryStat label="Waiting for opponent report" value={waitingOpponentCount} tone={waitingOpponentCount > 0 ? "accent" : "neutral"} />
+          <SummaryStat label="Waiting for player reports" value={waitingPlayersCount} tone="neutral" />
           <SummaryStat label="Missing schedule" value={missingSchedule} tone={missingSchedule > 0 ? "red" : "neutral"} />
           <SummaryStat label="Missing room" value={missingRoom} tone={missingRoom > 0 ? "red" : "neutral"} />
           <SummaryStat label="Missing proof" value={missingProof} tone={missingProof > 0 ? "red" : "neutral"} />
@@ -687,7 +687,7 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
                     "Check-in (A/B)",
                     "Proof",
                     "Auto Result",
-                    "Issues",
+                    "Readiness issues",
                     "Open",
                   ].map((h) => (
                     <th
@@ -821,11 +821,11 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
                       )}
                     </td>
 
-                    {/* Issues */}
+                    {/* Readiness issues */}
                     <td className="px-3 py-3">
                       {card.readinessIssues.length === 0 ? (
                         <span className="text-xs font-black" style={{ color: "var(--asc-green)" }}>
-                          Ready
+                          None
                         </span>
                       ) : (
                         <div className="flex flex-col gap-1">
