@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import { MatchStatus } from "@prisma/client";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -77,21 +78,17 @@ const REVIEW_FILTER_BUTTONS = [
   { key: "waiting-players", label: "Waiting players" },
 ];
 
-// Triage sort: admin attention first, then blocking readiness, then waiting
+// Triage sort: admin attention first, then manual setup gaps, then waiting
 // states, normal active, and resolved last (resolved is excluded by the query).
 function reviewSortPriority(card: AdminMatchOperationCard): number {
   if (card.reviewState === "admin_review_required") return 1;
   if (card.reviewState === "reports_ready") return 2;
   if (card.reviewState === "waiting_opponent_report") return 3;
-  if (
-    card.readinessIssues.includes("missing_schedule") ||
-    card.readinessIssues.includes("missing_room")
-  ) {
-    return 4;
-  }
-  if (card.reviewState === "waiting_player_reports") return 5;
-  if (card.reviewState === "resolved") return 7;
-  return 6;
+  if (card.setupState === "missing_schedule") return 4;
+  if (card.setupState === "missing_room") return 5;
+  if (card.reviewState === "resolved" || card.setupState === "resolved") return 8;
+  if (card.setupState === "setup_ready") return 6;
+  return 7;
 }
 
 function reviewToneColor(tone: ReviewTone): string {
@@ -99,6 +96,35 @@ function reviewToneColor(tone: ReviewTone): string {
   if (tone === "amber") return "var(--asc-amber)";
   if (tone === "green") return "var(--asc-green)";
   return "var(--asc-fg-3)";
+}
+
+function toneBadgeStyle(tone: ReviewTone): CSSProperties {
+  if (tone === "red") {
+    return {
+      borderColor: "var(--asc-live-border)",
+      background: "var(--asc-live-bg)",
+      color: "var(--asc-live)",
+    };
+  }
+  if (tone === "amber") {
+    return {
+      borderColor: "var(--asc-amber-border)",
+      background: "var(--asc-amber-bg)",
+      color: "var(--asc-amber)",
+    };
+  }
+  if (tone === "green") {
+    return {
+      borderColor: "var(--asc-green-border)",
+      background: "var(--asc-green-bg)",
+      color: "var(--asc-green)",
+    };
+  }
+  return {
+    borderColor: "var(--asc-line-soft)",
+    background: "var(--asc-bg-2)",
+    color: "var(--asc-fg-3)",
+  };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -153,7 +179,7 @@ function SummaryStat({
 function IssueBadge({ issue }: { issue: ReadinessIssue }) {
   const label: Record<ReadinessIssue, string> = {
     missing_schedule: "No schedule",
-    missing_room: "No room",
+    missing_room: "No FACEIT room",
     missing_proof: "No proof",
     needs_checkin: "Check-in",
   };
@@ -168,6 +194,25 @@ function IssueBadge({ issue }: { issue: ReadinessIssue }) {
       }}
     >
       {label[issue]}
+    </span>
+  );
+}
+
+function SetupBadge({ card }: { card: AdminMatchOperationCard }) {
+  if (!card.setupLabel) {
+    return (
+      <span className="text-xs font-black" style={{ color: "var(--asc-fg-3)" }}>
+        -
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className="inline-flex border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] whitespace-nowrap"
+      style={toneBadgeStyle(card.setupTone)}
+    >
+      {card.setupLabel}
     </span>
   );
 }
@@ -288,6 +333,7 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
         where: { status: "submitted" },
         select: { teamId: true },
       },
+      room: { select: { id: true } },
     },
     orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
     take: 100,
@@ -361,11 +407,11 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
     (c) => c.reviewState === "waiting_player_reports",
   ).length;
   const needsActionCount = disputedCount + reportsReadyCount;
-  const missingSchedule = allCards.filter((c) =>
-    c.readinessIssues.includes("missing_schedule"),
+  const missingSchedule = allCards.filter(
+    (c) => c.setupState === "missing_schedule",
   ).length;
-  const missingRoom = allCards.filter((c) =>
-    c.readinessIssues.includes("missing_room"),
+  const missingRoom = allCards.filter(
+    (c) => c.setupState === "missing_room",
   ).length;
   const missingProof = allCards.filter((c) =>
     c.readinessIssues.includes("missing_proof"),
@@ -473,7 +519,7 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
           <SummaryStat label="Waiting opponent" value={waitingOpponentCount} tone={waitingOpponentCount > 0 ? "accent" : "neutral"} />
           <SummaryStat label="Waiting players" value={waitingPlayersCount} tone="neutral" />
           <SummaryStat label="Missing schedule" value={missingSchedule} tone={missingSchedule > 0 ? "red" : "neutral"} />
-          <SummaryStat label="Missing FACEIT room" value={missingRoom} tone={missingRoom > 0 ? "red" : "neutral"} />
+          <SummaryStat label="Missing room" value={missingRoom} tone={missingRoom > 0 ? "red" : "neutral"} />
           <SummaryStat label="Missing proof" value={missingProof} tone={missingProof > 0 ? "red" : "neutral"} />
           <SummaryStat label="Needs check-in" value={needsCheckin} tone={needsCheckin > 0 ? "red" : "neutral"} />
         </div>
@@ -627,13 +673,14 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
           </div>
         ) : (
           <div className="overflow-x-auto border" style={{ borderColor: "var(--asc-line-soft)" }}>
-            <table className="w-full min-w-[1100px] text-xs">
+            <table className="w-full min-w-[1180px] text-xs">
               <thead>
                 <tr style={{ background: "var(--asc-bg-2)", borderBottom: "1px solid var(--asc-line-soft)" }}>
                   {[
                     "Tournament / Match",
                     "Teams",
                     "Status",
+                    "Setup",
                     "Schedule",
                     "Instructions",
                     "FACEIT Room",
@@ -702,6 +749,11 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
                           {card.reviewLabel}
                         </p>
                       )}
+                    </td>
+
+                    {/* Setup */}
+                    <td className="px-3 py-3">
+                      <SetupBadge card={card} />
                     </td>
 
                     {/* Schedule */}

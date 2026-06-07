@@ -70,6 +70,13 @@ const tournamentFormats = [
 
 const platforms = ["PC", "Console", "Mobile", "Cross-platform"];
 
+const MATCH_SETUP_STATUSES = new Set([
+  "scheduled",
+  "ready",
+  "room_created",
+  "in_progress",
+]);
+
 const inputStyle: React.CSSProperties = {
   borderColor: "var(--asc-line-soft)",
   background: "var(--asc-bg-2)",
@@ -341,6 +348,7 @@ export default async function ManageTournamentPage({
         winnerTeamId: true,
         scheduledAt: true,
         completedAt: true,
+        room: { select: { id: true } },
         reports: {
           where: { status: "submitted" },
           select: { id: true, teamId: true },
@@ -444,7 +452,16 @@ export default async function ManageTournamentPage({
       !m.isBye &&
       Boolean(m.teamAId && m.teamBId) &&
       m.scheduledAt === null &&
-      ["scheduled", "ready", "room_created", "in_progress"].includes(m.status),
+      MATCH_SETUP_STATUSES.has(m.status),
+  ).length;
+  // Needs room = active, scheduled, two-team, non-bye matches without a GameRoom.
+  const missingRoomCount = rawTournamentMatches.filter(
+    (m) =>
+      !m.isBye &&
+      Boolean(m.teamAId && m.teamBId) &&
+      m.scheduledAt !== null &&
+      m.room === null &&
+      MATCH_SETUP_STATUSES.has(m.status),
   ).length;
 
   const bracketState: { label: string; tone: CommandTone } =
@@ -478,7 +495,7 @@ export default async function ManageTournamentPage({
           ? { text: "Review disputed matches.", tone: "red" }
           : resultPendingCount > 0
             ? { text: "Check pending reports.", tone: "amber" }
-            : missingScheduleCount > 0
+            : missingScheduleCount > 0 || missingRoomCount > 0
               ? { text: "Complete match setup.", tone: "amber" }
               : totalMatchCount > 0
                 ? { text: "Monitor matches.", tone: "neutral" }
@@ -635,11 +652,13 @@ export default async function ManageTournamentPage({
               valueTone={
                 disputedCount > 0
                   ? "red"
-                  : resultPendingCount > 0 || missingScheduleCount > 0
+                  : resultPendingCount > 0 ||
+                      missingScheduleCount > 0 ||
+                      missingRoomCount > 0
                     ? "amber"
                     : "neutral"
               }
-              meta={`${disputedCount} disputed · ${resultPendingCount} pending · ${missingScheduleCount} need schedule`}
+              meta={`${missingScheduleCount} need schedule · ${missingRoomCount} need room`}
             />
             <CommandCard
               label="Admin review"

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getMatchOperationState,
+  getMatchSetupInfo,
   getReadinessIssues,
   normalizeAdminMatchOperationCard,
 } from "@/lib/adminMatchOperations";
@@ -234,6 +235,91 @@ describe("getReadinessIssues", () => {
   });
 });
 
+// ─── getMatchSetupInfo ────────────────────────────────────────────────────────
+
+describe("getMatchSetupInfo", () => {
+  const baseInput = {
+    status: "scheduled",
+    hasSchedule: true,
+    hasRoom: true,
+    bothTeamsAssigned: true,
+    reviewState: "active" as const,
+  };
+
+  it("blocks setup behind disputed admin review", () => {
+    const setup = getMatchSetupInfo({
+      ...baseInput,
+      reviewState: "admin_review_required",
+    });
+
+    expect(setup.setupState).toBe("review_blocked");
+    expect(setup.setupLabel).toBe("Review needed");
+    expect(setup.setupTone).toBe("red");
+  });
+
+  it("blocks setup behind reports ready for review", () => {
+    const setup = getMatchSetupInfo({
+      ...baseInput,
+      reviewState: "reports_ready",
+    });
+
+    expect(setup.setupState).toBe("review_blocked");
+    expect(setup.setupLabel).toBe("Review needed");
+    expect(setup.setupTone).toBe("amber");
+  });
+
+  it("flags missing schedule before missing room", () => {
+    const setup = getMatchSetupInfo({
+      ...baseInput,
+      hasSchedule: false,
+      hasRoom: false,
+    });
+
+    expect(setup.setupState).toBe("missing_schedule");
+    expect(setup.setupLabel).toBe("Missing schedule");
+  });
+
+  it("flags missing room after the schedule exists", () => {
+    const setup = getMatchSetupInfo({
+      ...baseInput,
+      hasRoom: false,
+    });
+
+    expect(setup.setupState).toBe("missing_room");
+    expect(setup.setupLabel).toBe("Missing room");
+  });
+
+  it("marks active scheduled matches with a room as setup ready", () => {
+    const setup = getMatchSetupInfo(baseInput);
+
+    expect(setup.setupState).toBe("setup_ready");
+    expect(setup.setupLabel).toBe("Setup ready");
+  });
+
+  it("does not ask for setup on waiting player reports", () => {
+    const setup = getMatchSetupInfo({
+      ...baseInput,
+      status: "result_pending",
+      hasRoom: false,
+      reviewState: "waiting_player_reports",
+    });
+
+    expect(setup.setupState).toBe("none");
+    expect(setup.setupLabel).toBeNull();
+  });
+
+  it("marks resolved review states as resolved", () => {
+    const setup = getMatchSetupInfo({
+      ...baseInput,
+      status: "completed",
+      reviewState: "resolved",
+    });
+
+    expect(setup.setupState).toBe("resolved");
+    expect(setup.setupLabel).toBe("Resolved");
+  });
+});
+
 // ─── normalizeAdminMatchOperationCard ─────────────────────────────────────────
 
 function makeAdminMatchRow(overrides: Partial<{
@@ -252,6 +338,8 @@ function makeAdminMatchRow(overrides: Partial<{
   faceitAutoAppliedAt: Date | null;
   tournament: { title: string; game: { slug: string; name: string } | null };
   checkIns: Array<{ id: string; teamId: string | null }>;
+  reports: Array<{ teamId: string }>;
+  room: { id: string } | null;
 }> = {}) {
   return {
     id: "match-1",
@@ -272,6 +360,8 @@ function makeAdminMatchRow(overrides: Partial<{
       game: { slug: "cs2", name: "Counter-Strike 2" },
     },
     checkIns: [],
+    reports: [],
+    room: null,
     ...overrides,
   };
 }
@@ -404,5 +494,20 @@ describe("normalizeAdminMatchOperationCard", () => {
     );
     expect(card.teamACheckIns).toBe(2);
     expect(card.teamBCheckIns).toBe(1);
+  });
+
+  it("surfaces generic manual room setup state", () => {
+    const card = normalizeAdminMatchOperationCard(
+      makeAdminMatchRow({
+        scheduledAt: new Date("2026-06-01T18:00:00Z"),
+        room: { id: "room-1" },
+        tournament: { title: "Dota Cup", game: { slug: "dota2", name: "Dota 2" } },
+      }),
+      teamMap,
+    );
+
+    expect(card.hasRoom).toBe(true);
+    expect(card.setupState).toBe("setup_ready");
+    expect(card.setupLabel).toBe("Setup ready");
   });
 });

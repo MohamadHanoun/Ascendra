@@ -49,6 +49,13 @@ const RESETTABLE = new Set([
   "forfeit",
 ]);
 
+const MATCH_SETUP_STATUSES = new Set([
+  "scheduled",
+  "ready",
+  "room_created",
+  "in_progress",
+]);
+
 // ─── Styling helpers ─────────────────────────────────────────────────────────
 
 const inputStyle: CSSProperties = {
@@ -124,6 +131,56 @@ function Tag({ children }: { children: ReactNode }) {
       {children}
     </span>
   );
+}
+
+type SetupBadgeInfo = { label: string; tone: StatusTone };
+
+function SetupBadge({ badge }: { badge: SetupBadgeInfo }) {
+  return (
+    <span
+      className="inline-flex border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] whitespace-nowrap"
+      style={toneStyle(badge.tone)}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
+function getSetupBadges(input: {
+  status: string;
+  scheduledAt: Date | null;
+  hasRoom: boolean;
+  bothTeams: boolean;
+  submittedReportTeamCount: number;
+}): SetupBadgeInfo[] {
+  const badges: SetupBadgeInfo[] = [];
+
+  if (input.status === "disputed") {
+    badges.push({ label: "Admin review required", tone: "live" });
+  } else if (
+    input.status === "result_pending" &&
+    input.submittedReportTeamCount >= 2
+  ) {
+    badges.push({ label: "Reports ready", tone: "amber" });
+  }
+
+  if (!input.bothTeams) return badges;
+
+  const activeSetupStatus = MATCH_SETUP_STATUSES.has(input.status);
+
+  if (input.scheduledAt) {
+    badges.push({ label: "Scheduled", tone: "green" });
+  } else if (activeSetupStatus) {
+    badges.push({ label: "Missing schedule", tone: "amber" });
+  }
+
+  if (input.hasRoom) {
+    badges.push({ label: "Room ready", tone: "green" });
+  } else if (activeSetupStatus && input.scheduledAt) {
+    badges.push({ label: "Missing room", tone: "amber" });
+  }
+
+  return badges;
 }
 
 // Read-only review-state label derived from match status + live report spread.
@@ -398,6 +455,9 @@ export default async function AdminTournamentMatchesPage({ params }: PageProps) 
                       : null;
 
                     const submittedReports = match.reports.filter((r) => r.status === "submitted");
+                    const submittedReportTeamCount = new Set(
+                      submittedReports.map((r) => r.teamId),
+                    ).size;
                     const reviewState = getMatchReviewState(match.status, match.reports);
 
                     const bothTeams = Boolean(teamA && teamB) && !match.isBye;
@@ -406,6 +466,13 @@ export default async function AdminTournamentMatchesPage({ params }: PageProps) 
                     const showReset = RESETTABLE.has(match.status);
                     const showRoom = bothTeams;
                     const existingRoom = match.room;
+                    const setupBadges = getSetupBadges({
+                      status: match.status,
+                      scheduledAt: match.scheduledAt,
+                      hasRoom: Boolean(existingRoom),
+                      bothTeams,
+                      submittedReportTeamCount,
+                    });
 
                     return (
                       <details
@@ -427,6 +494,9 @@ export default async function AdminTournamentMatchesPage({ params }: PageProps) 
                           </p>
                           <StatusBadge status={match.status} />
                           <Tag>BO{match.bestOf}</Tag>
+                          {setupBadges.map((badge) => (
+                            <SetupBadge key={badge.label} badge={badge} />
+                          ))}
                           {submittedReports.length > 0 && (
                             <span className="text-xs font-bold" style={{ color: "var(--asc-amber)" }}>
                               {submittedReports.length} report{submittedReports.length > 1 ? "s" : ""} pending
@@ -470,7 +540,7 @@ export default async function AdminTournamentMatchesPage({ params }: PageProps) 
                             </div>
                             <div>
                               <FieldLabel>Room</FieldLabel>
-                              <p className="mt-1 break-all text-sm font-bold" style={{ color: existingRoom?.roomCode || existingRoom?.joinUrl ? "var(--asc-fg-0)" : "var(--asc-fg-3)" }}>
+                              <p className="mt-1 break-all text-sm font-bold" style={{ color: existingRoom ? "var(--asc-fg-0)" : "var(--asc-fg-3)" }}>
                                 {existingRoom
                                   ? `${existingRoom.provider}${existingRoom.roomCode ? ` · ${existingRoom.roomCode}` : ""}`
                                   : "—"}

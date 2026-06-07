@@ -27,6 +27,22 @@ export type MatchReviewInfo = {
   submittedReportTeamCount: number;
 };
 
+// Setup state = manual readiness (schedule + GameRoom) for matches that are
+// still in an active, pre-result state. Kept separate from review state.
+export type MatchSetupState =
+  | "missing_schedule"
+  | "missing_room"
+  | "setup_ready"
+  | "review_blocked"
+  | "resolved"
+  | "none";
+
+export type MatchSetupInfo = {
+  setupState: MatchSetupState;
+  setupLabel: string | null;
+  setupTone: ReviewTone;
+};
+
 export type MatchOperationState = {
   hasSchedule: boolean;
   hasInstructions: boolean;
@@ -70,6 +86,11 @@ export type AdminMatchOperationCard = {
   reviewPriority: number;
   submittedReportCount: number;
   submittedReportTeamCount: number;
+  // Read-only manual setup readiness (schedule + GameRoom).
+  hasRoom: boolean;
+  setupState: MatchSetupState;
+  setupLabel: string | null;
+  setupTone: ReviewTone;
 };
 
 // ─── Pure helpers (exported for tests) ────────────────────────────────────────
@@ -189,6 +210,70 @@ export function getMatchReviewInfo(
   };
 }
 
+const ACTIVE_SETUP_STATUSES = new Set([
+  "scheduled",
+  "ready",
+  "room_created",
+  "in_progress",
+]);
+
+// Derives manual setup readiness. Only active, two-team, pre-result matches can
+// be "missing schedule/room"; matches in review or resolved are not setup work.
+export function getMatchSetupInfo(input: {
+  status: string;
+  hasSchedule: boolean;
+  hasRoom: boolean;
+  bothTeamsAssigned: boolean;
+  reviewState: MatchReviewState;
+}): MatchSetupInfo {
+  const { status, hasSchedule, hasRoom, bothTeamsAssigned, reviewState } = input;
+
+  if (
+    reviewState === "admin_review_required" ||
+    reviewState === "reports_ready"
+  ) {
+    return {
+      setupState: "review_blocked",
+      setupLabel: "Review needed",
+      setupTone: reviewState === "admin_review_required" ? "red" : "amber",
+    };
+  }
+
+  if (status === "cancelled" || reviewState === "resolved") {
+    return {
+      setupState: "resolved",
+      setupLabel: "Resolved",
+      setupTone: reviewState === "resolved" ? "green" : "neutral",
+    };
+  }
+
+  if (!bothTeamsAssigned || !ACTIVE_SETUP_STATUSES.has(status)) {
+    return { setupState: "none", setupLabel: null, setupTone: "neutral" };
+  }
+
+  if (!hasSchedule) {
+    return {
+      setupState: "missing_schedule",
+      setupLabel: "Missing schedule",
+      setupTone: "amber",
+    };
+  }
+
+  if (!hasRoom) {
+    return {
+      setupState: "missing_room",
+      setupLabel: "Missing room",
+      setupTone: "amber",
+    };
+  }
+
+  return {
+    setupState: "setup_ready",
+    setupLabel: "Setup ready",
+    setupTone: "green",
+  };
+}
+
 type RawAdminMatchRow = {
   id: string;
   tournamentId: string;
@@ -210,6 +295,8 @@ type RawAdminMatchRow = {
   checkIns: Array<{ id: string; teamId: string | null }>;
   // Optional: pre-filtered to submitted reports. Absent in older callers/tests.
   reports?: Array<{ teamId: string }>;
+  // Optional: presence of a manual GameRoom. Absent in older callers/tests.
+  room?: { id: string } | null;
 };
 
 export function normalizeAdminMatchOperationCard(
@@ -222,6 +309,14 @@ export function normalizeAdminMatchOperationCard(
   const state = getMatchOperationState(match);
   const issues = getReadinessIssues(state, cs2);
   const review = getMatchReviewInfo(match.status, match.reports ?? []);
+  const hasRoom = Boolean(match.room);
+  const setup = getMatchSetupInfo({
+    status: match.status,
+    hasSchedule: state.hasSchedule,
+    hasRoom,
+    bothTeamsAssigned: Boolean(match.teamAId && match.teamBId),
+    reviewState: review.reviewState,
+  });
 
   return {
     matchId: match.id,
@@ -255,5 +350,9 @@ export function normalizeAdminMatchOperationCard(
     reviewPriority: review.reviewPriority,
     submittedReportCount: review.submittedReportCount,
     submittedReportTeamCount: review.submittedReportTeamCount,
+    hasRoom,
+    setupState: setup.setupState,
+    setupLabel: setup.setupLabel,
+    setupTone: setup.setupTone,
   };
 }
