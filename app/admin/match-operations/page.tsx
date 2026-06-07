@@ -584,6 +584,22 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
                     {/* Status */}
                     <td className="px-3 py-3">
                       <StatusBadge status={card.status} />
+                      {card.status === "disputed" && (
+                        <p
+                          className="mt-1 text-[10px] font-black uppercase tracking-[0.08em]"
+                          style={{ color: "var(--asc-live)" }}
+                        >
+                          Admin review required
+                        </p>
+                      )}
+                      {card.status === "result_pending" && (
+                        <p
+                          className="mt-1 text-[10px] font-black uppercase tracking-[0.08em]"
+                          style={{ color: "var(--asc-accent)" }}
+                        >
+                          Waiting on reports
+                        </p>
+                      )}
                     </td>
 
                     {/* Schedule */}

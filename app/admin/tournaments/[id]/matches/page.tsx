@@ -126,6 +126,34 @@ function Tag({ children }: { children: ReactNode }) {
   );
 }
 
+// Read-only review-state label derived from match status + live report spread.
+type ReviewState = { label: string; tone: StatusTone };
+
+function getMatchReviewState(
+  status: string,
+  reports: Array<{ status: string; teamId: string }>,
+): ReviewState | null {
+  if (status === "disputed") {
+    return { label: "Admin review required", tone: "live" };
+  }
+  if (status === "result_pending") {
+    const reportedTeams = new Set(
+      reports.filter((r) => r.status === "submitted").map((r) => r.teamId),
+    );
+    if (reportedTeams.size >= 2) {
+      return { label: "Reports submitted — review/confirm if needed", tone: "amber" };
+    }
+    if (reportedTeams.size === 1) {
+      return { label: "Waiting for opponent report", tone: "amber" };
+    }
+    return { label: "Waiting for player reports", tone: "amber" };
+  }
+  if (status === "confirmed" || status === "completed") {
+    return { label: "Resolved", tone: "green" };
+  }
+  return null;
+}
+
 function OpSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div
@@ -370,6 +398,7 @@ export default async function AdminTournamentMatchesPage({ params }: PageProps) 
                       : null;
 
                     const submittedReports = match.reports.filter((r) => r.status === "submitted");
+                    const reviewState = getMatchReviewState(match.status, match.reports);
 
                     const bothTeams = Boolean(teamA && teamB) && !match.isBye;
                     const showConfirm = CONFIRMABLE.has(match.status);
@@ -412,6 +441,19 @@ export default async function AdminTournamentMatchesPage({ params }: PageProps) 
                         </summary>
 
                         <div className="grid gap-5 p-4" style={{ borderTop: "1px solid var(--asc-line-soft)" }}>
+                          {/* Review state (read-only) */}
+                          {reviewState && (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <FieldLabel>Review state</FieldLabel>
+                              <span
+                                className="inline-flex border px-2.5 py-0.5 text-xs font-black"
+                                style={toneStyle(reviewState.tone)}
+                              >
+                                {reviewState.label}
+                              </span>
+                            </div>
+                          )}
+
                           {/* Overview */}
                           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                             <div>
