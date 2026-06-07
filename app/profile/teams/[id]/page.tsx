@@ -379,52 +379,6 @@ function getInitials(username: string) {
     .toUpperCase();
 }
 
-function getAvatarHue(username: string) {
-  let hue = 0;
-
-  for (const character of username) {
-    hue = (hue << 5) - hue + character.charCodeAt(0);
-  }
-
-  return Math.abs(hue) % 360;
-}
-
-const inputStyle: CSSProperties = {
-  borderColor: "var(--asc-line-soft)",
-  background: "var(--asc-bg-2)",
-  color: "var(--asc-fg-0)",
-};
-
-const panelClip =
-  "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)";
-
-const heroClip =
-  "polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px)";
-
-const buttonClip =
-  "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)";
-
-function CornerMark() {
-  return (
-    <div
-      aria-hidden="true"
-      className="asc-corner-mark"
-      style={{
-        position: "absolute",
-        top: 10,
-        left: 10,
-        width: 12,
-        height: 12,
-        borderTop: "1.5px solid var(--asc-accent)",
-        borderLeft: "1.5px solid var(--asc-accent)",
-        opacity: 0.9,
-        pointerEvents: "none",
-        zIndex: 30,
-      }}
-    />
-  );
-}
-
 function Panel({
   children,
   className = "",
@@ -435,16 +389,7 @@ function Panel({
   style?: CSSProperties;
 }) {
   return (
-    <section
-      className={`relative overflow-hidden border shadow-2xl shadow-black/20 ${className}`}
-      style={{
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-1)",
-        clipPath: panelClip,
-        ...style,
-      }}
-    >
-      <CornerMark />
+    <section className={`asc-profile-card ${className}`.trim()} style={style}>
       {children}
     </section>
   );
@@ -460,27 +405,14 @@ function PanelHeader({
   meta?: string;
 }) {
   return (
-    <div
-      className="px-6 py-5"
-      style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
-    >
-      <p
-        className="text-xs font-black uppercase tracking-[0.18em]"
-        style={{ color: "var(--asc-accent)" }}
-      >
-        ▲ {label}
-      </p>
+    <div className="asc-profile-card-header">
+      <p className="asc-profile-eyebrow">{label}</p>
 
-      <h2
-        className="mt-2 text-2xl md:text-3xl"
-        style={{ color: "var(--asc-fg-0)" }}
-      >
-        {title}
-      </h2>
+      <h2 className="asc-profile-section-title">{title}</h2>
 
       {meta && (
         <p
-          className="mt-2 text-sm leading-6"
+          className="mt-2 max-w-3xl text-sm leading-6"
           style={{ color: "var(--asc-fg-3)" }}
         >
           {meta}
@@ -492,10 +424,10 @@ function PanelHeader({
 
 function Pill({
   label,
-  tone = "violet",
+  tone = "accent",
 }: {
   label: string;
-  tone?: "green" | "blue" | "red" | "gray" | "violet";
+  tone?: "green" | "blue" | "red" | "gray" | "accent";
 }) {
   const styleMap: Record<string, CSSProperties> = {
     green: {
@@ -518,7 +450,7 @@ function Pill({
       borderColor: "var(--asc-line-soft)",
       background: "transparent",
     },
-    violet: {
+    accent: {
       color: "var(--asc-accent)",
       borderColor: "var(--asc-accent-border)",
       background: "var(--asc-accent-dim)",
@@ -527,7 +459,7 @@ function Pill({
 
   return (
     <span
-      className="inline-flex w-fit border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
+      className="asc-profile-pill inline-flex min-h-7 w-fit items-center border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
       style={styleMap[tone]}
     >
       {label}
@@ -553,7 +485,7 @@ function StatusBadge({
   }
 
   if (normalizedStatus === "member") {
-    return <Pill label={messages.common.member} tone="violet" />;
+    return <Pill label={messages.common.member} tone="accent" />;
   }
 
   if (normalizedStatus === "pending") {
@@ -575,30 +507,22 @@ function StatusBadge({
   return <Pill label={status} tone="gray" />;
 }
 
-function StatBlock({
+function HeroStat({
   label,
   value,
   accent,
 }: {
   label: string;
-  value: string | number;
+  value: ReactNode;
   accent?: boolean;
 }) {
   return (
-    <div>
+    <div className="asc-profile-stat">
+      <p className="asc-profile-stat__label">{label}</p>
       <p
-        className="text-[10px] font-black uppercase tracking-[0.16em]"
-        style={{ color: "var(--asc-fg-3)" }}
-      >
-        {label}
-      </p>
-
-      <p
-        className="mt-2 text-3xl font-black tabular-nums md:text-4xl"
-        style={{
-          color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
-          fontFamily: "var(--font-display)",
-        }}
+        className={`asc-profile-stat__value tabular-nums ${
+          accent ? "asc-profile-stat__value--accent" : ""
+        }`}
       >
         {value}
       </p>
@@ -606,34 +530,61 @@ function StatBlock({
   );
 }
 
-function MiniStat({
+// Compact, connected "Command Metrics Rail" used in the team hero. Renders as a
+// single bordered cluster so Leader / Results / Best read as one premium unit
+// rather than three disconnected boxes.
+function CommandMetric({
   label,
   value,
+  accent,
   isLast,
+  numeric,
 }: {
   label: string;
-  value: string | number;
+  value: ReactNode;
+  accent?: boolean;
   isLast?: boolean;
+  numeric?: boolean;
 }) {
   return (
     <div
-      className="px-5 py-4"
-      style={{
-        borderRight: isLast ? "none" : "1px solid var(--asc-line-soft)",
-      }}
+      className="relative flex items-center justify-between gap-3 px-5 py-3.5"
+      style={
+        isLast ? undefined : { borderBottom: "1px solid var(--asc-line-soft)" }
+      }
     >
+      <span
+        aria-hidden="true"
+        className="absolute inset-y-2.5"
+        style={{
+          insetInlineStart: 0,
+          width: 2,
+          background: "var(--asc-accent)",
+          opacity: accent ? 0.75 : 0.32,
+        }}
+      />
+
       <p
-        className="text-[10px] font-black uppercase tracking-[0.16em]"
-        style={{ color: "var(--asc-fg-3)" }}
+        className="shrink-0 text-[0.6rem] font-black uppercase leading-none tracking-[0.16em]"
+        style={{
+          color: "var(--asc-fg-3)",
+          fontFamily: "var(--font-mono, monospace)",
+        }}
       >
         {label}
       </p>
 
       <p
-        className="mt-1 text-2xl font-black tabular-nums"
+        className={`min-w-0 flex-1 font-black leading-tight ${
+          numeric ? "tabular-nums" : "break-words"
+        }`}
         style={{
-          color: "var(--asc-fg-0)",
+          color: accent ? "var(--asc-accent)" : "var(--asc-fg-0)",
           fontFamily: "var(--font-display)",
+          fontSize: numeric
+            ? "clamp(1.5rem, 3vw, 2rem)"
+            : "clamp(1rem, 2.2vw, 1.25rem)",
+          textAlign: "end",
         }}
       >
         {value}
@@ -649,7 +600,6 @@ function AvatarBadge({
   username: string;
   avatar: string | null;
 }) {
-  const hue = getAvatarHue(username);
   const clipPath =
     "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)";
 
@@ -672,14 +622,17 @@ function AvatarBadge({
       className="grid h-12 w-12 shrink-0 place-items-center"
       style={{
         clipPath,
-        background: `linear-gradient(135deg, oklch(0.55 0.22 ${hue}), oklch(0.30 0.16 ${
-          hue + 40
-        }))`,
+        background:
+          "linear-gradient(135deg, rgb(232 198 106 / 0.24), rgb(156 111 51 / 0.32)), linear-gradient(145deg, var(--asc-bg-2), var(--asc-bg-1))",
+        boxShadow: "inset 0 0 0 1px var(--asc-accent-border)",
       }}
     >
       <span
         className="text-sm font-black uppercase"
-        style={{ color: "white", fontFamily: "var(--font-display)" }}
+        style={{
+          color: "var(--asc-gold-bright)",
+          fontFamily: "var(--font-display)",
+        }}
       >
         {getInitials(username)}
       </span>
@@ -691,13 +644,7 @@ function BackLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="inline-flex w-fit border px-4 py-2 text-sm font-black transition hover:opacity-80"
-      style={{
-        borderColor: "var(--asc-line-soft)",
-        background: "var(--asc-bg-2)",
-        color: "var(--asc-fg-2)",
-        clipPath: buttonClip,
-      }}
+      className="asc-profile-action asc-profile-action--ghost w-fit px-4 py-2 text-xs tracking-[0.10em]"
     >
       {children}
     </Link>
@@ -706,9 +653,12 @@ function BackLink({ href, children }: { href: string; children: ReactNode }) {
 
 function EmptyMessage({ children }: { children: ReactNode }) {
   return (
-    <p className="p-6 text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
-      {children}
-    </p>
+    <div className="asc-profile-empty asc-profile-empty--inline">
+      <span aria-hidden="true" className="asc-profile-empty__mark">
+        ▲
+      </span>
+      <p className="asc-profile-empty__text">{children}</p>
+    </div>
   );
 }
 
@@ -854,13 +804,13 @@ export default async function TeamDetailsPage({
 
   return (
     <main
-      className="asc-public-page asc-ambient min-h-screen overflow-hidden"
+      className="asc-public-page asc-profile-hub asc-ambient min-h-screen overflow-hidden"
       style={{ background: "var(--asc-bg-0)", color: "var(--asc-fg-1)" }}
     >
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative min-h-[540px] overflow-hidden">
+        <section className="asc-image-hero relative min-h-[540px] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url("${teamImage}")` }}
@@ -895,27 +845,13 @@ export default async function TeamDetailsPage({
               {locale === "ar" ? "→" : "←"} {messages.hero.backToProfile}
             </BackLink>
 
-            <section
-              className="relative mt-8 overflow-hidden border p-6 shadow-2xl shadow-black/30 backdrop-blur md:p-8"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                background: "var(--asc-card)",
-                clipPath: heroClip,
-              }}
-            >
-              <CornerMark />
-
+            <section className="asc-profile-hero-panel mt-8 p-6 md:p-8">
               <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
                 <div className="min-w-0">
-                  <p
-                    className="text-xs font-black uppercase tracking-[0.2em]"
-                    style={{ color: "var(--asc-accent)" }}
-                  >
-                    ▲ {messages.hero.label}
-                  </p>
+                  <p className="asc-profile-eyebrow">{messages.hero.label}</p>
 
                   <h1
-                    className="mt-3 text-5xl md:text-7xl"
+                    className="mt-4 break-words text-4xl sm:text-5xl md:text-7xl"
                     style={{ color: "var(--asc-fg-0)" }}
                   >
                     {team.name}
@@ -978,50 +914,67 @@ export default async function TeamDetailsPage({
                   )}
                 </div>
 
-                <div className="grid gap-5 sm:grid-cols-3 lg:grid-cols-1 lg:text-right">
-                  <StatBlock
+                <div
+                  className="relative overflow-hidden self-end border lg:min-w-[300px]"
+                  style={{
+                    borderColor: "var(--asc-line-soft)",
+                    background:
+                      "var(--asc-profile-card-muted, var(--asc-bg-1))",
+                    clipPath:
+                      "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)",
+                    boxShadow: "var(--asc-profile-shadow)",
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-px"
+                    style={{
+                      background:
+                        "linear-gradient(90deg, transparent, var(--asc-accent), transparent)",
+                      opacity: 0.5,
+                    }}
+                  />
+
+                  <CommandMetric
                     label={messages.common.leader}
                     value={team.leader.displayName?.trim() || team.leader.username}
                   />
-                  <StatBlock
+                  <CommandMetric
                     label={messages.common.results}
                     value={team.results.length}
+                    numeric
                   />
-                  <StatBlock
+                  <CommandMetric
                     label={messages.common.best}
                     value={bestPlacement ? `#${bestPlacement}` : "—"}
+                    numeric
                     accent
+                    isLast
                   />
                 </div>
+              </div>
+
+              <div className="asc-profile-stat-rail asc-profile-stat-rail--4 mt-8">
+                <HeroStat
+                  label={messages.common.members}
+                  value={team.members.length}
+                />
+                <HeroStat
+                  label={messages.common.invites}
+                  value={team.invites.length}
+                />
+                <HeroStat label={messages.common.points} value={totalTeamPoints} />
+                <HeroStat
+                  label={messages.common.best}
+                  value={bestPlacement ? `#${bestPlacement}` : "—"}
+                />
               </div>
             </section>
           </div>
         </section>
 
-        <section className="relative -mt-16 mx-auto max-w-[1440px] px-6 pb-20 lg:px-10">
-          <Panel>
-            <div className="grid grid-cols-2 md:grid-cols-4">
-              <MiniStat
-                label={messages.common.members}
-                value={team.members.length}
-              />
-              <MiniStat
-                label={messages.common.invites}
-                value={team.invites.length}
-              />
-              <MiniStat
-                label={messages.common.points}
-                value={totalTeamPoints}
-              />
-              <MiniStat
-                label={messages.common.best}
-                value={bestPlacement ? `#${bestPlacement}` : "—"}
-                isLast
-              />
-            </div>
-          </Panel>
-
-          <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_400px]">
+        <section className="relative z-20 -mt-16 mx-auto max-w-[1440px] px-6 pb-20 lg:px-10">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_400px]">
             <div className="grid content-start gap-8">
               <Panel>
                 <PanelHeader
@@ -1066,8 +1019,7 @@ export default async function TeamDetailsPage({
                             name="name"
                             required
                             defaultValue={team.name}
-                            className="border px-4 py-3 outline-none transition"
-                            style={inputStyle}
+                            className="asc-profile-input border px-4 py-3 outline-none transition"
                           />
                         </label>
 
@@ -1109,11 +1061,8 @@ export default async function TeamDetailsPage({
                       className="pt-6"
                       style={{ borderTop: "1px solid var(--asc-line-soft)" }}
                     >
-                      <p
-                        className="mb-3 text-xs font-black uppercase tracking-[0.14em]"
-                        style={{ color: "var(--asc-accent)" }}
-                      >
-                        ▲ {messages.sections.invitePlayer}
+                      <p className="asc-profile-eyebrow mb-4">
+                        {messages.sections.invitePlayer}
                       </p>
 
                       <InlineTeamActionForm
@@ -1143,8 +1092,7 @@ export default async function TeamDetailsPage({
                             name="player"
                             required
                             placeholder={messages.settings.playerPlaceholder}
-                            className="border px-4 py-3 outline-none transition"
-                            style={inputStyle}
+                            className="asc-profile-input border px-4 py-3 outline-none transition"
                           />
                         </label>
                       </InlineTeamActionForm>
@@ -1221,7 +1169,7 @@ export default async function TeamDetailsPage({
                     {team.results.map((result, index) => (
                       <article
                         key={result.id}
-                        className="grid gap-4 px-6 py-5 md:grid-cols-[minmax(0,1fr)_90px_100px] md:items-center"
+                        className="asc-profile-row grid gap-4 px-6 py-5 md:grid-cols-[minmax(0,1fr)_90px_100px] md:items-center"
                         style={
                           index < team.results.length - 1
                             ? { borderBottom: "1px solid var(--asc-line-soft)" }
@@ -1256,7 +1204,7 @@ export default async function TeamDetailsPage({
                           )}
                         </div>
 
-                        <Pill label={`#${result.placement}`} tone="blue" />
+                        <Pill label={`#${result.placement}`} tone="accent" />
                         <Pill
                           label={`${result.points} ${messages.common.pts}`}
                           tone="green"
@@ -1291,7 +1239,7 @@ export default async function TeamDetailsPage({
                     return (
                       <div
                         key={member.id}
-                        className="grid gap-4 px-6 py-5"
+                        className="asc-profile-row grid gap-4 px-6 py-5"
                         style={{
                           borderBottom:
                             index < team.members.length - 1 ||
@@ -1402,7 +1350,7 @@ export default async function TeamDetailsPage({
                   {team.invites.map((invite, index) => (
                     <div
                       key={invite.id}
-                      className="grid gap-4 px-6 py-5"
+                      className="asc-profile-row grid gap-4 px-6 py-5"
                       style={{
                         borderBottom:
                           index < team.invites.length - 1
