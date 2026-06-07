@@ -30,9 +30,9 @@ function MatchStatusBadge({ status, locale }: { status: string; locale: Locale }
       }
     : isWarning
     ? {
-        color: "oklch(0.85 0.10 50)",
-        borderColor: "oklch(0.55 0.16 50 / 0.40)",
-        background: "oklch(0.22 0.10 50 / 0.18)",
+        color: "var(--asc-amber)",
+        borderColor: "var(--asc-amber-border)",
+        background: "var(--asc-amber-bg)",
       }
     : {
         color: "var(--asc-fg-3)",
@@ -42,7 +42,7 @@ function MatchStatusBadge({ status, locale }: { status: string; locale: Locale }
 
   return (
     <span
-      className="inline-flex border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.10em]"
+      className="asc-profile-pill inline-flex shrink-0 items-center border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
       style={style}
     >
       {getPlayerMatchStatusLabel(status, locale)}
@@ -63,16 +63,19 @@ function ActiveMatchCard({
     <div
       className="asc-profile-match-card flex flex-col gap-4 p-4"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p
-            className="truncate text-[10px] font-black uppercase tracking-[0.14em]"
-            style={{ color: "var(--asc-fg-3)" }}
+            className="truncate text-sm font-black leading-tight"
+            style={{ color: "var(--asc-fg-0)", fontFamily: "var(--font-display)" }}
           >
             {card.tournamentTitle}
-            {card.gameName ? ` · ${card.gameName}` : ""}
           </p>
-          <p className="mt-0.5 text-[10px]" style={{ color: "var(--asc-fg-3)" }}>
+          <p
+            className="mt-1 truncate text-[10px] font-black uppercase tracking-[0.12em]"
+            style={{ color: "var(--asc-fg-3)" }}
+          >
+            {card.gameName ? `${card.gameName} · ` : ""}
             {msgs.round} {card.roundNumber} · {msgs.match} {card.matchNumber}
           </p>
         </div>
@@ -137,8 +140,8 @@ function ActiveMatchCard({
               className="asc-profile-action mt-1 inline-flex min-h-0 items-center gap-1 px-3 py-1 text-[10px] tracking-[0.10em]"
               style={{
                 color: "var(--asc-green)",
-                borderColor: "oklch(0.55 0.14 150 / 0.40)",
-                background: "oklch(0.22 0.10 150 / 0.14)",
+                borderColor: "var(--asc-green-border)",
+                background: "var(--asc-green-bg)",
                 direction: "ltr",
               }}
             >
@@ -155,11 +158,11 @@ function ActiveMatchCard({
       <div className="border-t pt-3" style={{ borderColor: "var(--asc-line-soft)" }}>
         {card.userCheckedIn ? (
           <span
-            className="inline-flex border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.10em]"
+            className="asc-profile-pill inline-flex items-center border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
             style={{
               color: "var(--asc-green)",
               borderColor: "var(--asc-green-border)",
-              background: "oklch(0.22 0.10 150 / 0.14)",
+              background: "var(--asc-green-bg)",
             }}
           >
             {msgs.checkedIn}
@@ -201,7 +204,7 @@ export function ActiveMatchesPanel({
         {cards.length === 0 ? (
           <div className="asc-profile-empty asc-profile-empty--inline">
             <span className="asc-profile-empty__mark" aria-hidden="true">
-              00
+              ▲
             </span>
             <p className="asc-profile-empty__text">
               {messages.empty}
