@@ -207,6 +207,166 @@ const matchSectionCopy: Record<Locale, TournamentMatchesSectionLabels> = {
   },
 };
 
+type TournamentJourneyCopy = {
+  statusEyebrow: string;
+  statusTitle: string;
+  tournamentStatus: string;
+  registrationStatus: string;
+  approvedTeams: string;
+  capacity: string;
+  startsAt: string;
+  signupRule: string;
+  progressRule: string;
+  bracketSourceTitle: string;
+  bracketSourceOpen: string;
+  bracketSourceClosed: string;
+  pendingNotIncluded: string;
+  matchesTitle: string;
+  viewTournamentMatches: string;
+  viewYourMatch: string;
+  noMatches: string;
+  stages: {
+    registrationOpen: string;
+    registrationClosed: string;
+    awaitingBracket: string;
+    bracketGenerated: string;
+    matchesActive: string;
+    completed: string;
+    cancelled: string;
+  };
+  registrationPanel: {
+    yourRegistration: string;
+    nextAction: string;
+    registerTeam: string;
+    waitingApproval: string;
+    approvedWait: string;
+    approvedMatches: string;
+    rejectedReview: string;
+    cancelled: string;
+    pendingTitle: string;
+    pendingDescription: string;
+    approvedTitle: string;
+    approvedDescription: string;
+    matchReadyDescription: string;
+    rejectedTitle: string;
+    rejectedDescription: string;
+    cancelledTitle: string;
+    cancelledDescription: string;
+    bracketSource: string;
+    viewYourMatch: string;
+    viewTournamentMatches: string;
+  };
+};
+
+const journeyCopy: Record<Locale, TournamentJourneyCopy> = {
+  en: {
+    statusEyebrow: "Player status",
+    statusTitle: "Tournament journey",
+    tournamentStatus: "Tournament status",
+    registrationStatus: "Registration status",
+    approvedTeams: "Approved teams",
+    capacity: "Capacity",
+    startsAt: "Starts at",
+    signupRule: "Registration status controls signup.",
+    progressRule: "Tournament status controls progress.",
+    bracketSourceTitle: "Bracket source",
+    bracketSourceOpen:
+      "Only approved teams enter the bracket. Registrations are reviewed by staff before bracket generation.",
+    bracketSourceClosed:
+      "Only approved teams enter the bracket. The bracket has not been generated yet.",
+    pendingNotIncluded: "Pending registrations are not included until approved.",
+    matchesTitle: "Matches",
+    viewTournamentMatches: "View tournament matches",
+    viewYourMatch: "View your match",
+    noMatches: "Matches will appear after the bracket is generated.",
+    stages: {
+      registrationOpen: "Registration open",
+      registrationClosed: "Registration closed",
+      awaitingBracket: "Awaiting bracket",
+      bracketGenerated: "Bracket generated",
+      matchesActive: "Matches active",
+      completed: "Completed",
+      cancelled: "Cancelled",
+    },
+    registrationPanel: {
+      yourRegistration: "Your registration",
+      nextAction: "Next action",
+      registerTeam: "Register team",
+      waitingApproval: "Waiting for admin approval",
+      approvedWait: "Approved - wait for bracket/matches",
+      approvedMatches: "Approved - open your match",
+      rejectedReview: "Rejected - review reason",
+      cancelled: "Registration cancelled",
+      pendingTitle: "Your registration is pending review.",
+      pendingDescription: "You are not in the bracket until approved.",
+      approvedTitle: "Your team is approved.",
+      approvedDescription: "You will be included when the bracket is generated.",
+      matchReadyDescription: "Your tournament match is available.",
+      rejectedTitle: "Your registration was rejected.",
+      rejectedDescription: "Review the reason below.",
+      cancelledTitle: "Your registration was cancelled.",
+      cancelledDescription:
+        "You can register again while registration is open if your team is eligible.",
+      bracketSource: "Only approved teams enter the bracket.",
+      viewYourMatch: "View your match",
+      viewTournamentMatches: "View tournament matches",
+    },
+  },
+  ar: {
+    statusEyebrow: "حالة اللاعب",
+    statusTitle: "مسار البطولة",
+    tournamentStatus: "حالة البطولة",
+    registrationStatus: "حالة التسجيل",
+    approvedTeams: "الفرق المقبولة",
+    capacity: "السعة",
+    startsAt: "تبدأ في",
+    signupRule: "حالة التسجيل تحدد إمكانية التسجيل.",
+    progressRule: "حالة البطولة تحدد تقدم البطولة.",
+    bracketSourceTitle: "مصدر القوس",
+    bracketSourceOpen:
+      "تدخل الفرق المقبولة فقط إلى القوس. يراجع المنظمون التسجيلات قبل إنشاء القوس.",
+    bracketSourceClosed:
+      "تدخل الفرق المقبولة فقط إلى القوس. لم يتم إنشاء القوس بعد.",
+    pendingNotIncluded: "لا تدخل التسجيلات المعلقة إلى القوس حتى يتم قبولها.",
+    matchesTitle: "المباريات",
+    viewTournamentMatches: "عرض مباريات البطولة",
+    viewYourMatch: "عرض مباراتك",
+    noMatches: "ستظهر المباريات بعد إنشاء القوس.",
+    stages: {
+      registrationOpen: "التسجيل مفتوح",
+      registrationClosed: "التسجيل مغلق",
+      awaitingBracket: "بانتظار القوس",
+      bracketGenerated: "تم إنشاء القوس",
+      matchesActive: "المباريات جارية",
+      completed: "مكتملة",
+      cancelled: "ملغاة",
+    },
+    registrationPanel: {
+      yourRegistration: "تسجيلك",
+      nextAction: "الخطوة التالية",
+      registerTeam: "سجل الفريق",
+      waitingApproval: "بانتظار موافقة الإدارة",
+      approvedWait: "مقبول - انتظر القوس أو المباريات",
+      approvedMatches: "مقبول - افتح مباراتك",
+      rejectedReview: "مرفوض - راجع السبب",
+      cancelled: "تم إلغاء التسجيل",
+      pendingTitle: "تسجيلك قيد المراجعة.",
+      pendingDescription: "لن تدخل القوس حتى تتم الموافقة على التسجيل.",
+      approvedTitle: "تم قبول فريقك.",
+      approvedDescription: "سيتم إدراجك عند إنشاء القوس.",
+      matchReadyDescription: "مباراتك في البطولة متاحة الآن.",
+      rejectedTitle: "تم رفض تسجيلك.",
+      rejectedDescription: "راجع السبب أدناه.",
+      cancelledTitle: "تم إلغاء تسجيلك.",
+      cancelledDescription:
+        "يمكنك التسجيل مرة أخرى أثناء فتح التسجيل إذا كان فريقك مؤهلا.",
+      bracketSource: "تدخل الفرق المقبولة فقط إلى القوس.",
+      viewYourMatch: "عرض مباراتك",
+      viewTournamentMatches: "عرض مباريات البطولة",
+    },
+  },
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const messages = getDictionary(locale).tournamentDetails.metadata;
@@ -482,6 +642,71 @@ function ProgressBar({
   );
 }
 
+type JourneyTone = "green" | "amber" | "red" | "neutral";
+
+function journeyToneStyle(tone: JourneyTone): CSSProperties {
+  if (tone === "green") {
+    return {
+      color: "var(--asc-green)",
+      borderColor: "var(--asc-green-border)",
+      background: "var(--asc-green-bg)",
+    };
+  }
+
+  if (tone === "amber") {
+    return {
+      color: "var(--asc-amber)",
+      borderColor: "var(--asc-amber-border)",
+      background: "var(--asc-amber-bg)",
+    };
+  }
+
+  if (tone === "red") {
+    return {
+      color: "var(--asc-live)",
+      borderColor: "var(--asc-live-border)",
+      background: "var(--asc-live-bg)",
+    };
+  }
+
+  return {
+    color: "var(--asc-fg-2)",
+    borderColor: "var(--asc-line-soft)",
+    background: "var(--asc-bg-2)",
+  };
+}
+
+function JourneyInfoCard({
+  label,
+  value,
+  tone = "neutral",
+  description,
+}: {
+  label: string;
+  value: ReactNode;
+  tone?: JourneyTone;
+  description?: string;
+}) {
+  return (
+    <div
+      className="border p-4"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+    >
+      <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+        {label}
+      </p>
+      <p className="mt-1.5 text-sm font-black" style={{ color: journeyToneStyle(tone).color }}>
+        {value}
+      </p>
+      {description && (
+        <p className="mt-1 text-xs leading-5" style={{ color: "var(--asc-fg-3)" }}>
+          {description}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function formatTemplate(template: string, values: Record<string, string>) {
   return Object.entries(values).reduce(
     (text, [key, value]) => text.replaceAll(`{${key}}`, value),
@@ -564,6 +789,7 @@ export default async function TournamentDetailsPage({
 
   const messages = getDictionary(locale).tournamentDetails;
   const copy = pageCopy[locale];
+  const journey = journeyCopy[locale];
 
   const currentUser = session?.user?.databaseId
     ? await prisma.user.findUnique({
@@ -581,6 +807,11 @@ export default async function TournamentDetailsPage({
             },
             orderBy: {
               createdAt: "desc",
+            },
+          },
+          teamMemberships: {
+            select: {
+              teamId: true,
             },
           },
           playerGameAccounts: {
@@ -765,14 +996,22 @@ export default async function TournamentDetailsPage({
   });
 
   const ownedTeamIds = currentUser?.ownedTeams.map((team) => team.id) || [];
+  const participantTeamIds = [
+    ...new Set([
+      ...ownedTeamIds,
+      ...(currentUser?.teamMemberships.map((membership) => membership.teamId) ||
+        []),
+    ]),
+  ];
+  const ownedTeamIdSet = new Set(ownedTeamIds);
 
   const userTournamentRegistrations =
-    currentUser && ownedTeamIds.length > 0
+    currentUser && participantTeamIds.length > 0
       ? await prisma.tournamentRegistration.findMany({
           where: {
             tournamentId: tournament.id,
             teamId: {
-              in: ownedTeamIds,
+              in: participantTeamIds,
             },
           },
           include: {
@@ -852,13 +1091,110 @@ export default async function TournamentDetailsPage({
     }));
 
   const activeRegistrations = userTournamentRegistrations
-    .filter((registration) => registration.status !== "cancelled")
     .map((registration) => ({
       id: registration.id,
+      teamId: registration.teamId,
       status: registration.status,
       teamName: registration.team.name,
       rejectionReason: registration.rejectionReason,
+      canCancel: ownedTeamIdSet.has(registration.teamId),
     }));
+
+  const participantTeamIdSet = new Set(participantTeamIds);
+  const userTournamentMatches = tournamentMatches.filter(
+    (match) =>
+      (match.teamAId && participantTeamIdSet.has(match.teamAId)) ||
+      (match.teamBId && participantTeamIdSet.has(match.teamBId)),
+  );
+
+  const activeMatchStatuses = new Set([
+    "scheduled",
+    "ready",
+    "room_created",
+    "in_progress",
+    "result_pending",
+    "disputed",
+    "confirmed",
+  ]);
+  const terminalMatchStatuses = new Set([
+    "completed",
+    "cancelled",
+    "forfeit",
+    "bye",
+  ]);
+  const hasGeneratedMatches = tournamentMatches.length > 0;
+  const hasActiveMatches = tournamentMatches.some((match) =>
+    activeMatchStatuses.has(match.status),
+  );
+  const userFeaturedMatch =
+    userTournamentMatches.find(
+      (match) => !terminalMatchStatuses.has(match.status),
+    ) ??
+    userTournamentMatches[0] ??
+    null;
+  const userFeaturedMatchHref = userFeaturedMatch
+    ? `/tournaments/${id}/matches/${userFeaturedMatch.id}`
+    : null;
+
+  const matchHrefByTeamId = new Map<string, string>();
+  for (const registration of userTournamentRegistrations) {
+    const match =
+      tournamentMatches.find(
+        (item) =>
+          !terminalMatchStatuses.has(item.status) &&
+          (item.teamAId === registration.teamId ||
+            item.teamBId === registration.teamId),
+      ) ??
+      tournamentMatches.find(
+        (item) =>
+          item.teamAId === registration.teamId ||
+          item.teamBId === registration.teamId,
+      );
+
+    if (match) {
+      matchHrefByTeamId.set(
+        registration.teamId,
+        `/tournaments/${id}/matches/${match.id}`,
+      );
+    }
+  }
+
+  const publicStage: { label: string; tone: JourneyTone } =
+    tournament.status === "cancelled"
+      ? { label: journey.stages.cancelled, tone: "red" }
+      : tournament.status === "ended"
+        ? { label: journey.stages.completed, tone: "green" }
+        : hasActiveMatches
+          ? { label: journey.stages.matchesActive, tone: "amber" }
+          : hasGeneratedMatches
+            ? { label: journey.stages.bracketGenerated, tone: "green" }
+            : tournament.registrationStatus === "open"
+              ? { label: journey.stages.registrationOpen, tone: "green" }
+              : tournament.registrationStatus === "closed" && approvedSlots >= 2
+                ? { label: journey.stages.awaitingBracket, tone: "amber" }
+                : { label: journey.stages.registrationClosed, tone: "neutral" };
+
+  const tournamentStatusTone: JourneyTone =
+    tournament.status === "cancelled"
+      ? "red"
+      : tournament.status === "ended"
+        ? "green"
+        : "neutral";
+  const registrationStatusTone: JourneyTone =
+    tournament.registrationStatus === "open" ? "green" : "neutral";
+  const bracketSourceDescription =
+    tournament.registrationStatus === "open"
+      ? journey.bracketSourceOpen
+      : tournament.registrationStatus === "closed" && !hasGeneratedMatches
+        ? journey.bracketSourceClosed
+        : journey.registrationPanel.bracketSource;
+  const hasPendingUserRegistration = activeRegistrations.some(
+    (registration) => registration.status === "registered",
+  );
+  const playerRegistrationCards = activeRegistrations.map((registration) => ({
+    ...registration,
+    matchHref: matchHrefByTeamId.get(registration.teamId) ?? null,
+  }));
 
   return (
     <main
@@ -1088,6 +1424,101 @@ export default async function TournamentDetailsPage({
             ]}
           />
 
+          <section className="asc-pub-surface">
+            <PanelHeader
+              eyebrow={journey.statusEyebrow}
+              title={journey.statusTitle}
+            />
+
+            <div className="grid gap-4 p-5">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <JourneyInfoCard
+                  label={journey.tournamentStatus}
+                  value={getTournamentStatusLabel(
+                    tournament.status,
+                    messages.statuses,
+                  )}
+                  tone={tournamentStatusTone}
+                  description={journey.progressRule}
+                />
+                <JourneyInfoCard
+                  label={journey.registrationStatus}
+                  value={getRegistrationStatusLabel(
+                    tournament.registrationStatus,
+                    messages.statuses,
+                  )}
+                  tone={registrationStatusTone}
+                  description={journey.signupRule}
+                />
+                <JourneyInfoCard
+                  label={journey.approvedTeams}
+                  value={`${approvedSlots}/${tournament.maxTeams}`}
+                  tone={approvedSlots > 0 ? "green" : "neutral"}
+                  description={journey.capacity}
+                />
+                <JourneyInfoCard
+                  label={journey.startsAt}
+                  value={formatDateOnly(tournament.startsAt, locale)}
+                  tone="neutral"
+                />
+              </div>
+
+              <div
+                className="grid gap-3 border p-4 md:grid-cols-[minmax(0,1fr)_auto]"
+                style={{
+                  borderColor: journeyToneStyle(publicStage.tone).borderColor,
+                  background: "var(--asc-bg-2)",
+                }}
+              >
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                    {journey.bracketSourceTitle}
+                  </p>
+                  <p className="mt-1 text-sm font-black" style={{ color: journeyToneStyle(publicStage.tone).color }}>
+                    {publicStage.label}
+                  </p>
+                  <p className="mt-2 max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
+                    {bracketSourceDescription}
+                  </p>
+                  {hasPendingUserRegistration && (
+                    <p className="mt-1 text-sm leading-6" style={{ color: "var(--asc-amber)" }}>
+                      {journey.pendingNotIncluded}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                  {userFeaturedMatchHref && (
+                    <Link
+                      href={userFeaturedMatchHref}
+                      className="inline-flex items-center justify-center px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-90"
+                      style={{
+                        background: "var(--asc-accent-2)",
+                        color: "var(--asc-fg-0)",
+                        clipPath:
+                          "polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)",
+                      }}
+                    >
+                      {journey.viewYourMatch}
+                    </Link>
+                  )}
+                  {hasGeneratedMatches && (
+                    <Link
+                      href={`/tournaments/${id}/matches`}
+                      className="inline-flex items-center justify-center border px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80"
+                      style={{
+                        borderColor: "var(--asc-line-soft)",
+                        color: "var(--asc-fg-2)",
+                      }}
+                    >
+                      {journey.viewTournamentMatches}
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Overview */}
           <section id="overview" className="scroll-mt-24">
             <div
@@ -1181,7 +1612,10 @@ export default async function TournamentDetailsPage({
                     isGuildMember={Boolean(currentUser?.isGuildMember)}
                     availableTeams={availableTeams}
                     unavailableTeams={unavailableTeams}
-                    activeRegistrations={activeRegistrations}
+                    activeRegistrations={playerRegistrationCards}
+                    hasGeneratedMatches={hasGeneratedMatches}
+                    tournamentMatchesHref={`/tournaments/${id}/matches`}
+                    journeyMessages={journey.registrationPanel}
                     messages={messages.panel}
                     statusLabels={messages.statuses}
                     playerLabel={messages.labels.player}
@@ -1202,6 +1636,51 @@ export default async function TournamentDetailsPage({
               className="asc-pub-surface"
             >
               <PanelHeader eyebrow={copy.schedule} title={copy.schedule} />
+
+              <div
+                className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
+                style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+              >
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+                    {journey.matchesTitle}
+                  </p>
+                  <p className="mt-1 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
+                    {hasGeneratedMatches
+                      ? journey.registrationPanel.bracketSource
+                      : journey.noMatches}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {userFeaturedMatchHref && (
+                    <Link
+                      href={userFeaturedMatchHref}
+                      className="inline-flex items-center justify-center px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-90"
+                      style={{
+                        background: "var(--asc-accent-2)",
+                        color: "var(--asc-fg-0)",
+                        clipPath:
+                          "polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)",
+                      }}
+                    >
+                      {journey.viewYourMatch}
+                    </Link>
+                  )}
+                  {hasGeneratedMatches && (
+                    <Link
+                      href={`/tournaments/${id}/matches`}
+                      className="inline-flex items-center justify-center border px-4 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80"
+                      style={{
+                        borderColor: "var(--asc-line-soft)",
+                        color: "var(--asc-fg-2)",
+                      }}
+                    >
+                      {journey.viewTournamentMatches}
+                    </Link>
+                  )}
+                </div>
+              </div>
 
               {tournamentMatches.length === 0 ? (
                 <div className="p-6">

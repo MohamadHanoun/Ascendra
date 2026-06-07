@@ -38,9 +38,35 @@ type UnavailableTeam = {
 
 type ActiveRegistration = {
   id: string;
+  teamId: string;
   status: string;
   teamName: string;
   rejectionReason?: string | null;
+  canCancel: boolean;
+  matchHref?: string | null;
+};
+
+type RegistrationJourneyMessages = {
+  yourRegistration: string;
+  nextAction: string;
+  registerTeam: string;
+  waitingApproval: string;
+  approvedWait: string;
+  approvedMatches: string;
+  rejectedReview: string;
+  cancelled: string;
+  pendingTitle: string;
+  pendingDescription: string;
+  approvedTitle: string;
+  approvedDescription: string;
+  matchReadyDescription: string;
+  rejectedTitle: string;
+  rejectedDescription: string;
+  cancelledTitle: string;
+  cancelledDescription: string;
+  bracketSource: string;
+  viewYourMatch: string;
+  viewTournamentMatches: string;
 };
 
 type TournamentRegistrationPanelProps = {
@@ -55,6 +81,9 @@ type TournamentRegistrationPanelProps = {
   availableTeams: AvailableTeam[];
   unavailableTeams: UnavailableTeam[];
   activeRegistrations: ActiveRegistration[];
+  hasGeneratedMatches: boolean;
+  tournamentMatchesHref: string;
+  journeyMessages: RegistrationJourneyMessages;
   messages: TournamentDetailsMessages["panel"];
   statusLabels: TournamentDetailsMessages["statuses"];
   playerLabel: string;
@@ -87,10 +116,11 @@ function Pill({
   tone = "gray",
 }: {
   children: ReactNode;
-  tone?: "green" | "blue" | "red" | "gray" | "violet";
+  tone?: "green" | "amber" | "blue" | "red" | "gray" | "violet";
 }) {
   const styleMap: Record<string, React.CSSProperties> = {
     green: { color: "var(--asc-green)", borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" },
+    amber: { color: "var(--asc-amber)", borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" },
     blue: { color: "var(--asc-blue)", borderColor: "var(--asc-blue-border)", background: "var(--asc-blue-bg)" },
     red: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
     gray: { color: "var(--asc-fg-3)", borderColor: "var(--asc-line-soft)", background: "transparent" },
@@ -117,7 +147,7 @@ function StatusBadge({
     normalizedStatus === "approved"
       ? "green"
       : normalizedStatus === "registered"
-        ? "violet"
+        ? "amber"
         : normalizedStatus === "rejected"
           ? "red"
           : "gray";
@@ -160,7 +190,7 @@ function PanelNotice({
 }: {
   title: string;
   description: string;
-  tone?: "violet" | "red" | "gray" | "green";
+  tone?: "violet" | "red" | "gray" | "green" | "amber";
   children?: ReactNode;
 }) {
   const styleMap: Record<string, React.CSSProperties> = {
@@ -168,6 +198,7 @@ function PanelNotice({
     red: { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)", color: "var(--asc-live)" },
     gray: { borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)", color: "var(--asc-fg-0)" },
     green: { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)", color: "var(--asc-green)" },
+    amber: { borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)", color: "var(--asc-amber)" },
   };
 
   return (
@@ -427,11 +458,51 @@ function ActiveRegistrationCard({
   registration,
   messages,
   statusLabels,
+  hasGeneratedMatches,
+  matchesHref,
+  journeyMessages,
 }: {
   registration: ActiveRegistration;
   messages: TournamentDetailsMessages["panel"];
   statusLabels: TournamentDetailsMessages["statuses"];
+  hasGeneratedMatches: boolean;
+  matchesHref: string;
+  journeyMessages: RegistrationJourneyMessages;
 }) {
+  const status = registration.status.toLowerCase();
+  const state =
+    status === "approved"
+      ? {
+          title: journeyMessages.approvedTitle,
+          description: registration.matchHref
+            ? journeyMessages.matchReadyDescription
+            : journeyMessages.approvedDescription,
+          nextAction: registration.matchHref
+            ? journeyMessages.approvedMatches
+            : journeyMessages.approvedWait,
+          tone: "green" as const,
+        }
+      : status === "rejected"
+        ? {
+            title: journeyMessages.rejectedTitle,
+            description: journeyMessages.rejectedDescription,
+            nextAction: journeyMessages.rejectedReview,
+            tone: "red" as const,
+          }
+        : status === "cancelled"
+          ? {
+              title: journeyMessages.cancelledTitle,
+              description: journeyMessages.cancelledDescription,
+              nextAction: journeyMessages.cancelled,
+              tone: "gray" as const,
+            }
+          : {
+              title: journeyMessages.pendingTitle,
+              description: journeyMessages.pendingDescription,
+              nextAction: journeyMessages.waitingApproval,
+              tone: "amber" as const,
+            };
+
   return (
     <div
       className="grid gap-3 border p-4"
@@ -441,11 +512,46 @@ function ActiveRegistrationCard({
         <div>
           <p className="font-black" style={{ color: "var(--asc-fg-0)" }}>{registration.teamName}</p>
           <p className="mt-1 text-sm" style={{ color: "var(--asc-fg-3)" }}>
-            {messages.currentRegistrationStatus}
+            {journeyMessages.yourRegistration}
           </p>
         </div>
 
         <StatusBadge status={registration.status} labels={statusLabels} />
+      </div>
+
+      <div
+        className="border px-4 py-3"
+        style={
+          state.tone === "green"
+            ? { borderColor: "var(--asc-green-border)", background: "var(--asc-green-bg)" }
+            : state.tone === "red"
+              ? { borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" }
+              : state.tone === "amber"
+                ? { borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" }
+                : { borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }
+        }
+      >
+        <p
+          className="font-black"
+          style={{
+            color:
+              state.tone === "green"
+                ? "var(--asc-green)"
+                : state.tone === "red"
+                  ? "var(--asc-live)"
+                  : state.tone === "amber"
+                    ? "var(--asc-amber)"
+                    : "var(--asc-fg-0)",
+          }}
+        >
+          {state.title}
+        </p>
+        <p className="mt-2 text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
+          {state.description}
+        </p>
+        <p className="mt-2 text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
+          {journeyMessages.nextAction}: {state.nextAction}
+        </p>
       </div>
 
       {registration.rejectionReason && (
@@ -457,7 +563,7 @@ function ActiveRegistrationCard({
         </p>
       )}
 
-      {registration.status === "registered" && (
+      {status === "registered" && registration.canCancel && (
         <CancelRegistrationForm
           registrationId={registration.id}
           teamName={registration.teamName}
@@ -465,10 +571,19 @@ function ActiveRegistrationCard({
         />
       )}
 
-      {registration.status === "approved" && (
-        <p className="text-sm leading-6" style={{ color: "var(--asc-green)" }}>
-          {messages.approvedByAdmin}
-        </p>
+      {status === "approved" && (
+        <div className="flex flex-wrap gap-3">
+          {registration.matchHref && (
+            <NoticeLink href={registration.matchHref}>
+              {journeyMessages.viewYourMatch}
+            </NoticeLink>
+          )}
+          {!registration.matchHref && hasGeneratedMatches && (
+            <NoticeLink href={matchesHref}>
+              {journeyMessages.viewTournamentMatches}
+            </NoticeLink>
+          )}
+        </div>
       )}
     </div>
   );
@@ -706,6 +821,9 @@ function TournamentRegistrationPanel({
   availableTeams,
   unavailableTeams,
   activeRegistrations,
+  hasGeneratedMatches,
+  tournamentMatchesHref,
+  journeyMessages,
   messages,
   statusLabels,
   playerLabel,
@@ -774,6 +892,9 @@ function TournamentRegistrationPanel({
               registration={registration}
               messages={messages}
               statusLabels={statusLabels}
+              hasGeneratedMatches={hasGeneratedMatches}
+              matchesHref={tournamentMatchesHref}
+              journeyMessages={journeyMessages}
             />
           ))}
         </section>
@@ -799,6 +920,12 @@ function TournamentRegistrationPanel({
         slotsRemaining > 0 &&
         !hasOpenRegistration && (
           <section className="grid gap-4">
+            <PanelNotice
+              title={`${journeyMessages.nextAction}: ${journeyMessages.registerTeam}`}
+              description={journeyMessages.bracketSource}
+              tone="green"
+            />
+
             {isCs2 && cs2Readiness && (
               <Cs2RequirementsBlock readiness={cs2Readiness} messages={messages} />
             )}
