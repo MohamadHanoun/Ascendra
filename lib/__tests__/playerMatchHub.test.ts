@@ -6,6 +6,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: {} }));
 import {
   determineUserSide,
   getOpponentTeamId,
+  getPlayerMatchNextActionKey,
   getPlayerMatchStatusLabel,
   normalizeMatchHubCard,
 } from "@/lib/playerMatchHub";
@@ -76,7 +77,7 @@ describe("getPlayerMatchStatusLabel", () => {
   it("returns correct EN label for known statuses", () => {
     expect(getPlayerMatchStatusLabel("scheduled", "en")).toBe("Scheduled");
     expect(getPlayerMatchStatusLabel("in_progress", "en")).toBe("In progress");
-    expect(getPlayerMatchStatusLabel("disputed", "en")).toBe("Disputed");
+    expect(getPlayerMatchStatusLabel("disputed", "en")).toBe("Admin review");
   });
 
   it("returns correct AR label for known statuses", () => {
@@ -91,6 +92,69 @@ describe("getPlayerMatchStatusLabel", () => {
   });
 });
 
+// ─── getPlayerMatchNextActionKey ─────────────────────────────────────────────
+
+describe("getPlayerMatchNextActionKey", () => {
+  const baseMatch = {
+    status: "scheduled",
+    scheduledAt: new Date("2026-06-01T18:00:00Z"),
+    opponentTeamId: "team-b",
+    isBye: false,
+    userHasSubmittedReport: false,
+    opponentHasSubmittedReport: false,
+  };
+
+  it("prioritizes admin review", () => {
+    expect(
+      getPlayerMatchNextActionKey({ ...baseMatch, status: "disputed" }),
+    ).toBe("adminReview");
+  });
+
+  it("shows waiting opponent before schedule work", () => {
+    expect(
+      getPlayerMatchNextActionKey({
+        ...baseMatch,
+        opponentTeamId: null,
+        scheduledAt: null,
+      }),
+    ).toBe("waitingOpponent");
+  });
+
+  it("shows waiting schedule when the match has no scheduled time", () => {
+    expect(
+      getPlayerMatchNextActionKey({ ...baseMatch, scheduledAt: null }),
+    ).toBe("waitingSchedule");
+  });
+
+  it("shows waiting opponent report after the user submits", () => {
+    expect(
+      getPlayerMatchNextActionKey({
+        ...baseMatch,
+        status: "result_pending",
+        userHasSubmittedReport: true,
+      }),
+    ).toBe("waitingOpponentReport");
+  });
+
+  it("shows submit result for playable result states without a user report", () => {
+    expect(
+      getPlayerMatchNextActionKey({ ...baseMatch, status: "in_progress" }),
+    ).toBe("submitResult");
+    expect(
+      getPlayerMatchNextActionKey({ ...baseMatch, status: "result_pending" }),
+    ).toBe("submitResult");
+  });
+
+  it("returns completed and cancelled for terminal states", () => {
+    expect(
+      getPlayerMatchNextActionKey({ ...baseMatch, status: "completed" }),
+    ).toBe("completed");
+    expect(
+      getPlayerMatchNextActionKey({ ...baseMatch, status: "cancelled" }),
+    ).toBe("cancelled");
+  });
+});
+
 // ─── normalizeMatchHubCard ────────────────────────────────────────────────────
 
 function makeMatch(overrides: Partial<{
@@ -99,6 +163,8 @@ function makeMatch(overrides: Partial<{
   status: string;
   scheduledAt: Date | null;
   faceitMatchUrl: string | null;
+  room: { joinUrl: string | null; roomCode: string | null } | null;
+  reports: { teamId: string; status: string }[];
   checkIns: { id: string }[];
 }> = {}) {
   return {
@@ -109,8 +175,11 @@ function makeMatch(overrides: Partial<{
     status: "scheduled",
     teamAId: "team-a",
     teamBId: "team-b",
+    isBye: false,
     scheduledAt: null,
     faceitMatchUrl: null,
+    reports: [],
+    room: null,
     tournament: {
       title: "Summer Cup",
       game: { slug: "cs2", name: "Counter-Strike 2" },
@@ -180,6 +249,30 @@ describe("normalizeMatchHubCard", () => {
       new Set(["team-a"]),
     );
     expect(card.userCheckedIn).toBe(true);
+  });
+
+  it("detects room readiness from manual room data", () => {
+    const card = normalizeMatchHubCard(
+      makeMatch({ room: { joinUrl: null, roomCode: "ABC123" } }),
+      teamMap,
+      new Set(["team-a"]),
+    );
+    expect(card.hasRoomReady).toBe(true);
+  });
+
+  it("detects report state for both sides", () => {
+    const card = normalizeMatchHubCard(
+      makeMatch({
+        status: "result_pending",
+        scheduledAt: new Date("2026-06-01T18:00:00Z"),
+        reports: [{ teamId: "team-a", status: "submitted" }],
+      }),
+      teamMap,
+      new Set(["team-a"]),
+    );
+    expect(card.userHasSubmittedReport).toBe(true);
+    expect(card.opponentHasSubmittedReport).toBe(false);
+    expect(card.nextActionKey).toBe("waitingOpponentReport");
   });
 
   it("detects user as not checked in when checkIns is empty", () => {

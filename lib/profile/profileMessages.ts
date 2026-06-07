@@ -145,12 +145,49 @@ export type ProfileMessages = {
     notAvailableYet: string;
     checkedIn: string;
     notCheckedIn: string;
+    nextAction: string;
+    roomReady: string;
+    waitingSchedule: string;
+    tournamentPage: string;
     openMatch: string;
     openFaceitRoom: string;
     tbd: string;
     round: string;
     match: string;
     browseTournaments: string;
+    nextActions: {
+      openMatch: string;
+      waitingOpponent: string;
+      waitingSchedule: string;
+      submitResult: string;
+      waitingOpponentReport: string;
+      adminReview: string;
+      completed: string;
+      cancelled: string;
+    };
+  };
+  tournamentTasks: {
+    heading: string;
+    description: string;
+    activeMatches: string;
+    resultPending: string;
+    adminReview: string;
+    pendingRegistrations: string;
+    approvedWaiting: string;
+    upcomingScheduled: string;
+    nextUp: string;
+    registrations: string;
+    noTasksTitle: string;
+    noTasksDescription: string;
+    viewTournament: string;
+    viewMatch: string;
+    browseTournaments: string;
+    team: string;
+    registrationPending: string;
+    approvedWaitingForBracket: string;
+    rejected: string;
+    cancelled: string;
+    matchReady: string;
   };
 };
 
@@ -304,12 +341,50 @@ export const profileMessages: Record<Locale, ProfileMessages> = {
       notAvailableYet: "Not available yet",
       checkedIn: "Checked in",
       notCheckedIn: "Not checked in",
+      nextAction: "Next action",
+      roomReady: "Room ready",
+      waitingSchedule: "Waiting for schedule",
+      tournamentPage: "Tournament page",
       openMatch: "Open match",
       openFaceitRoom: "Open FACEIT room",
       tbd: "TBD",
       round: "Round",
       match: "Match",
       browseTournaments: "Browse tournaments",
+      nextActions: {
+        openMatch: "Open match",
+        waitingOpponent: "Waiting for opponent",
+        waitingSchedule: "Waiting for schedule",
+        submitResult: "Submit result",
+        waitingOpponentReport: "Waiting for opponent report",
+        adminReview: "Admin review",
+        completed: "Completed",
+        cancelled: "Cancelled",
+      },
+    },
+    tournamentTasks: {
+      heading: "Tournament tasks",
+      description: "Your current tournament matches and registration follow-ups.",
+      activeMatches: "Active matches",
+      resultPending: "Result pending",
+      adminReview: "Admin review",
+      pendingRegistrations: "Pending registrations",
+      approvedWaiting: "Approved waiting",
+      upcomingScheduled: "Scheduled matches",
+      nextUp: "Next up",
+      registrations: "Registrations",
+      noTasksTitle: "No tournament tasks right now.",
+      noTasksDescription:
+        "Active matches and registration updates will appear here.",
+      viewTournament: "View tournament",
+      viewMatch: "View match",
+      browseTournaments: "Browse tournaments",
+      team: "Team",
+      registrationPending: "Registration pending",
+      approvedWaitingForBracket: "Approved — waiting for bracket",
+      rejected: "Rejected",
+      cancelled: "Cancelled",
+      matchReady: "Match ready",
     },
   },
 
@@ -462,12 +537,49 @@ export const profileMessages: Record<Locale, ProfileMessages> = {
       notAvailableYet: "غير متوفرة بعد",
       checkedIn: "تم تسجيل الحضور",
       notCheckedIn: "لم يتم تسجيل الحضور",
+      nextAction: "الخطوة التالية",
+      roomReady: "الغرفة جاهزة",
+      waitingSchedule: "بانتظار الجدولة",
+      tournamentPage: "صفحة البطولة",
       openMatch: "فتح المباراة",
       openFaceitRoom: "فتح غرفة FACEIT",
       tbd: "غير محدد",
       round: "جولة",
       match: "مباراة",
       browseTournaments: "تصفح البطولات",
+      nextActions: {
+        openMatch: "فتح المباراة",
+        waitingOpponent: "بانتظار الخصم",
+        waitingSchedule: "بانتظار الجدولة",
+        submitResult: "إرسال النتيجة",
+        waitingOpponentReport: "بانتظار تقرير الخصم",
+        adminReview: "مراجعة إدارية",
+        completed: "مكتملة",
+        cancelled: "ملغاة",
+      },
+    },
+    tournamentTasks: {
+      heading: "مهام البطولة",
+      description: "مبارياتك الحالية ومتابعات تسجيلاتك في البطولات.",
+      activeMatches: "المباريات النشطة",
+      resultPending: "بانتظار النتيجة",
+      adminReview: "مراجعة إدارية",
+      pendingRegistrations: "تسجيلات معلقة",
+      approvedWaiting: "مقبولة بانتظار القوس",
+      upcomingScheduled: "مباريات مجدولة",
+      nextUp: "التالي",
+      registrations: "التسجيلات",
+      noTasksTitle: "لا توجد مهام بطولة حاليًا.",
+      noTasksDescription: "ستظهر هنا المباريات النشطة وتحديثات التسجيل.",
+      viewTournament: "عرض البطولة",
+      viewMatch: "عرض المباراة",
+      browseTournaments: "تصفح البطولات",
+      team: "الفريق",
+      registrationPending: "التسجيل قيد المراجعة",
+      approvedWaitingForBracket: "مقبول — بانتظار القوس",
+      rejected: "مرفوض",
+      cancelled: "ملغى",
+      matchReady: "المباراة جاهزة",
     },
   },
 };

@@ -18,15 +18,36 @@ function formatScheduledAt(date: Date, locale: Locale): string {
   return `${dateStr} UTC`;
 }
 
-function MatchStatusBadge({ status, locale }: { status: string; locale: Locale }) {
-  const isLive = status === "in_progress" || status === "room_created" || status === "ready";
-  const isWarning = status === "result_pending" || status === "disputed";
+function MatchStatusBadge({
+  status,
+  locale,
+  hasRoomReady,
+}: {
+  status: string;
+  locale: Locale;
+  hasRoomReady: boolean;
+}) {
+  const label =
+    hasRoomReady && ["ready", "room_created"].includes(status)
+      ? getPlayerMatchStatusLabel("room_created", locale)
+      : getPlayerMatchStatusLabel(status, locale);
+  const isReview = status === "disputed";
+  const isLive =
+    status === "in_progress" ||
+    (hasRoomReady && ["ready", "room_created"].includes(status));
+  const isWarning = status === "result_pending";
 
   const style: React.CSSProperties = isLive
     ? {
-        color: "var(--asc-accent)",
-        borderColor: "var(--asc-accent-border)",
-        background: "var(--asc-accent-dim)",
+        color: "var(--asc-green)",
+        borderColor: "var(--asc-green-border)",
+        background: "var(--asc-green-bg)",
+      }
+    : isReview
+    ? {
+        color: "var(--asc-live)",
+        borderColor: "var(--asc-live-border)",
+        background: "var(--asc-live-bg)",
       }
     : isWarning
     ? {
@@ -45,9 +66,46 @@ function MatchStatusBadge({ status, locale }: { status: string; locale: Locale }
       className="asc-profile-pill inline-flex shrink-0 items-center border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
       style={style}
     >
-      {getPlayerMatchStatusLabel(status, locale)}
+      {label}
     </span>
   );
+}
+
+function nextActionStyle(
+  nextActionKey: MatchHubCard["nextActionKey"],
+): React.CSSProperties {
+  if (nextActionKey === "adminReview") {
+    return {
+      color: "var(--asc-live)",
+      borderColor: "var(--asc-live-border)",
+      background: "var(--asc-live-bg)",
+    };
+  }
+
+  if (
+    nextActionKey === "submitResult" ||
+    nextActionKey === "waitingOpponentReport"
+  ) {
+    return {
+      color: "var(--asc-amber)",
+      borderColor: "var(--asc-amber-border)",
+      background: "var(--asc-amber-bg)",
+    };
+  }
+
+  if (nextActionKey === "completed") {
+    return {
+      color: "var(--asc-green)",
+      borderColor: "var(--asc-green-border)",
+      background: "var(--asc-green-bg)",
+    };
+  }
+
+  return {
+    color: "var(--asc-fg-2)",
+    borderColor: "var(--asc-line-soft)",
+    background: "var(--asc-bg-2)",
+  };
 }
 
 function ActiveMatchCard({
@@ -65,12 +123,16 @@ function ActiveMatchCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p
-            className="truncate text-sm font-black leading-tight"
-            style={{ color: "var(--asc-fg-0)", fontFamily: "var(--font-display)" }}
+          <Link
+            href={`/tournaments/${card.tournamentId}`}
+            className="truncate text-sm font-black leading-tight transition hover:opacity-80"
+            style={{
+              color: "var(--asc-fg-0)",
+              fontFamily: "var(--font-display)",
+            }}
           >
             {card.tournamentTitle}
-          </p>
+          </Link>
           <p
             className="mt-1 truncate text-[10px] font-black uppercase tracking-[0.12em]"
             style={{ color: "var(--asc-fg-3)" }}
@@ -79,7 +141,32 @@ function ActiveMatchCard({
             {msgs.round} {card.roundNumber} · {msgs.match} {card.matchNumber}
           </p>
         </div>
-        <MatchStatusBadge status={card.status} locale={locale} />
+        <MatchStatusBadge
+          status={card.status}
+          locale={locale}
+          hasRoomReady={card.hasRoomReady}
+        />
+      </div>
+
+      <div
+        className="border p-3"
+        style={{
+          borderColor: nextActionStyle(card.nextActionKey).borderColor,
+          background: nextActionStyle(card.nextActionKey).background,
+        }}
+      >
+        <p
+          className="text-[10px] font-black uppercase tracking-[0.10em]"
+          style={{ color: "var(--asc-fg-3)" }}
+        >
+          {msgs.nextAction}
+        </p>
+        <p
+          className="mt-1 text-sm font-black"
+          style={{ color: nextActionStyle(card.nextActionKey).color }}
+        >
+          {msgs.nextActions[card.nextActionKey]}
+        </p>
       </div>
 
       <div className="grid gap-2">
@@ -107,20 +194,39 @@ function ActiveMatchCard({
         </div>
       </div>
 
-      {card.scheduledAt && (
+      <div className="border-t pt-3" style={{ borderColor: "var(--asc-line-soft)" }}>
+        <p
+          className="text-[10px] font-black uppercase tracking-[0.10em]"
+          style={{ color: "var(--asc-fg-3)" }}
+        >
+          {msgs.scheduledTime}
+        </p>
+        <p
+          className="mt-1 text-xs font-black"
+          style={{
+            color: "var(--asc-fg-1)",
+            direction: card.scheduledAt ? "ltr" : undefined,
+            textAlign: card.scheduledAt && locale === "ar" ? "right" : undefined,
+          }}
+        >
+          {card.scheduledAt
+            ? formatScheduledAt(card.scheduledAt, locale)
+            : msgs.waitingSchedule}
+        </p>
+      </div>
+
+      {card.hasRoomReady && (
         <div className="border-t pt-3" style={{ borderColor: "var(--asc-line-soft)" }}>
-          <p
-            className="text-[10px] font-black uppercase tracking-[0.10em]"
-            style={{ color: "var(--asc-fg-3)" }}
+          <span
+            className="asc-profile-pill inline-flex items-center border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]"
+            style={{
+              color: "var(--asc-green)",
+              borderColor: "var(--asc-green-border)",
+              background: "var(--asc-green-bg)",
+            }}
           >
-            {msgs.scheduledTime}
-          </p>
-          <p
-            className="mt-1 text-xs font-black"
-            style={{ color: "var(--asc-fg-1)", direction: "ltr", textAlign: locale === "ar" ? "right" : "left" }}
-          >
-            {formatScheduledAt(card.scheduledAt, locale)}
-          </p>
+            {msgs.roomReady}
+          </span>
         </div>
       )}
 
@@ -174,12 +280,20 @@ function ActiveMatchCard({
         )}
       </div>
 
-      <a
-        href={card.matchHref}
-        className="asc-profile-action mt-auto px-4 py-2 text-center text-xs tracking-[0.08em]"
-      >
-        {msgs.openMatch}
-      </a>
+      <div className="mt-auto flex flex-wrap gap-2">
+        <Link
+          href={card.matchHref}
+          className="asc-profile-action px-4 py-2 text-center text-xs tracking-[0.08em]"
+        >
+          {msgs.openMatch}
+        </Link>
+        <Link
+          href={`/tournaments/${card.tournamentId}`}
+          className="asc-profile-action asc-profile-action--ghost px-4 py-2 text-center text-xs tracking-[0.08em]"
+        >
+          {msgs.tournamentPage}
+        </Link>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { MatchStatus } from "@prisma/client";
+import { MatchStatus, ReportStatus } from "@prisma/client";
 
 import { isCs2Game } from "@/lib/isCs2Game";
 import type { Locale } from "@/lib/i18n";
@@ -25,8 +25,22 @@ export type MatchHubCard = {
   opponentTeamId: string | null;
   opponentTeamName: string | null;
   faceitMatchUrl: string | null;
+  hasRoomReady: boolean;
+  userHasSubmittedReport: boolean;
+  opponentHasSubmittedReport: boolean;
   userCheckedIn: boolean;
+  nextActionKey: PlayerMatchNextActionKey;
 };
+
+export type PlayerMatchNextActionKey =
+  | "openMatch"
+  | "waitingOpponent"
+  | "waitingSchedule"
+  | "submitResult"
+  | "waitingOpponentReport"
+  | "adminReview"
+  | "completed"
+  | "cancelled";
 
 // ─── Pure helpers (exported for tests) ────────────────────────────────────────
 
@@ -49,19 +63,25 @@ export function getOpponentTeamId(
 const STATUS_LABELS: Record<Locale, Record<string, string>> = {
   en: {
     scheduled: "Scheduled",
-    ready: "Ready",
+    ready: "Scheduled",
     room_created: "Room ready",
     in_progress: "In progress",
     result_pending: "Result pending",
-    disputed: "Disputed",
+    disputed: "Admin review",
+    confirmed: "Completed",
+    completed: "Completed",
+    cancelled: "Cancelled",
   },
   ar: {
     scheduled: "مجدولة",
-    ready: "جاهزة",
+    ready: "مجدولة",
     room_created: "الغرفة جاهزة",
     in_progress: "جارية",
     result_pending: "بانتظار النتيجة",
-    disputed: "متنازع عليها",
+    disputed: "مراجعة إدارية",
+    confirmed: "مكتملة",
+    completed: "مكتملة",
+    cancelled: "ملغاة",
   },
 };
 
@@ -77,14 +97,45 @@ type RawMatchRow = {
   status: string;
   teamAId: string | null;
   teamBId: string | null;
+  isBye: boolean;
   scheduledAt: Date | null;
   faceitMatchUrl: string | null;
   tournament: {
     title: string;
     game: { slug: string; name: string } | null;
   };
+  reports: { teamId: string; status: string }[];
+  room: { joinUrl: string | null; roomCode: string | null } | null;
   checkIns: { id: string }[];
 };
+
+export function getPlayerMatchNextActionKey(match: {
+  status: string;
+  scheduledAt: Date | null;
+  opponentTeamId: string | null;
+  isBye: boolean;
+  userHasSubmittedReport: boolean;
+  opponentHasSubmittedReport: boolean;
+}): PlayerMatchNextActionKey {
+  if (match.status === "cancelled") return "cancelled";
+  if (["confirmed", "completed", "forfeit", "bye"].includes(match.status)) {
+    return "completed";
+  }
+  if (match.status === "disputed") return "adminReview";
+  if (!match.opponentTeamId && !match.isBye) return "waitingOpponent";
+  if (!match.scheduledAt) return "waitingSchedule";
+  if (match.userHasSubmittedReport && !match.opponentHasSubmittedReport) {
+    return "waitingOpponentReport";
+  }
+  if (
+    !match.userHasSubmittedReport &&
+    ["in_progress", "result_pending"].includes(match.status)
+  ) {
+    return "submitResult";
+  }
+
+  return "openMatch";
+}
 
 export function normalizeMatchHubCard(
   match: RawMatchRow,
@@ -95,6 +146,29 @@ export function normalizeMatchHubCard(
   const playerTeamId =
     side === "A" ? match.teamAId : side === "B" ? match.teamBId : null;
   const opponentTeamId = side ? getOpponentTeamId(match, side) : null;
+  const userHasSubmittedReport = playerTeamId
+    ? match.reports.some(
+        (report) =>
+          report.teamId === playerTeamId && report.status === "submitted",
+      )
+    : false;
+  const opponentHasSubmittedReport = opponentTeamId
+    ? match.reports.some(
+        (report) =>
+          report.teamId === opponentTeamId && report.status === "submitted",
+      )
+    : false;
+  const hasRoomReady = Boolean(
+    match.room?.joinUrl || match.room?.roomCode || match.faceitMatchUrl,
+  );
+  const nextActionKey = getPlayerMatchNextActionKey({
+    status: match.status,
+    scheduledAt: match.scheduledAt,
+    opponentTeamId,
+    isBye: match.isBye,
+    userHasSubmittedReport,
+    opponentHasSubmittedReport,
+  });
 
   return {
     matchId: match.id,
@@ -115,7 +189,11 @@ export function normalizeMatchHubCard(
       ? (teamMap.get(opponentTeamId)?.name ?? null)
       : null,
     faceitMatchUrl: match.faceitMatchUrl,
+    hasRoomReady,
+    userHasSubmittedReport,
+    opponentHasSubmittedReport,
     userCheckedIn: match.checkIns.length > 0,
+    nextActionKey,
   };
 }
 
@@ -163,12 +241,23 @@ export async function getActiveMatchesForUser(userId: string): Promise<MatchHubC
       status: true,
       teamAId: true,
       teamBId: true,
+      isBye: true,
       scheduledAt: true,
       faceitMatchUrl: true,
       tournament: {
         select: {
           title: true,
           game: { select: { slug: true, name: true } },
+        },
+      },
+      reports: {
+        where: { status: ReportStatus.submitted },
+        select: { teamId: true, status: true },
+      },
+      room: {
+        select: {
+          joinUrl: true,
+          roomCode: true,
         },
       },
       checkIns: {
