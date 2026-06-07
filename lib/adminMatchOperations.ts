@@ -8,6 +8,25 @@ export type ReadinessIssue =
   | "missing_proof"
   | "needs_checkin";
 
+export type MatchReviewState =
+  | "admin_review_required"
+  | "reports_ready"
+  | "waiting_opponent_report"
+  | "waiting_player_reports"
+  | "resolved"
+  | "active";
+
+export type ReviewTone = "red" | "amber" | "green" | "neutral";
+
+export type MatchReviewInfo = {
+  reviewState: MatchReviewState;
+  reviewLabel: string | null;
+  reviewTone: ReviewTone;
+  reviewPriority: number;
+  submittedReportCount: number;
+  submittedReportTeamCount: number;
+};
+
 export type MatchOperationState = {
   hasSchedule: boolean;
   hasInstructions: boolean;
@@ -44,6 +63,13 @@ export type AdminMatchOperationCard = {
   teamACheckIns: number;
   teamBCheckIns: number;
   readinessIssues: ReadinessIssue[];
+  // Read-only review-state derivation (no resolution actions live here).
+  reviewState: MatchReviewState;
+  reviewLabel: string | null;
+  reviewTone: ReviewTone;
+  reviewPriority: number;
+  submittedReportCount: number;
+  submittedReportTeamCount: number;
 };
 
 // ─── Pure helpers (exported for tests) ────────────────────────────────────────
@@ -91,6 +117,78 @@ export function getReadinessIssues(
   return issues;
 }
 
+// Derives a read-only admin review state from match status + the spread of
+// *submitted* reports (≤1 per team — the engine supersedes prior submissions).
+export function getMatchReviewInfo(
+  status: string,
+  submittedReports: ReadonlyArray<{ teamId: string }>,
+): MatchReviewInfo {
+  const submittedReportCount = submittedReports.length;
+  const submittedReportTeamCount = new Set(
+    submittedReports.map((r) => r.teamId),
+  ).size;
+  const base = { submittedReportCount, submittedReportTeamCount };
+
+  if (status === "disputed") {
+    return {
+      reviewState: "admin_review_required",
+      reviewLabel: "Admin review required",
+      reviewTone: "red",
+      reviewPriority: 1,
+      ...base,
+    };
+  }
+  if (status === "result_pending") {
+    if (submittedReportTeamCount >= 2) {
+      return {
+        reviewState: "reports_ready",
+        reviewLabel: "Reports submitted — ready to review",
+        reviewTone: "amber",
+        reviewPriority: 2,
+        ...base,
+      };
+    }
+    if (submittedReportTeamCount === 1) {
+      return {
+        reviewState: "waiting_opponent_report",
+        reviewLabel: "Waiting for opponent report",
+        reviewTone: "amber",
+        reviewPriority: 3,
+        ...base,
+      };
+    }
+    return {
+      reviewState: "waiting_player_reports",
+      reviewLabel: "Waiting for player reports",
+      reviewTone: "neutral",
+      reviewPriority: 4,
+      ...base,
+    };
+  }
+  if (
+    status === "confirmed" ||
+    status === "completed" ||
+    status === "forfeit" ||
+    status === "bye"
+  ) {
+    return {
+      reviewState: "resolved",
+      reviewLabel: "Resolved",
+      reviewTone: "green",
+      reviewPriority: 9,
+      ...base,
+    };
+  }
+  // scheduled / ready / room_created / in_progress / cancelled
+  return {
+    reviewState: "active",
+    reviewLabel: null,
+    reviewTone: "neutral",
+    reviewPriority: 5,
+    ...base,
+  };
+}
+
 type RawAdminMatchRow = {
   id: string;
   tournamentId: string;
@@ -110,6 +208,8 @@ type RawAdminMatchRow = {
     game: { slug: string; name: string } | null;
   };
   checkIns: Array<{ id: string; teamId: string | null }>;
+  // Optional: pre-filtered to submitted reports. Absent in older callers/tests.
+  reports?: Array<{ teamId: string }>;
 };
 
 export function normalizeAdminMatchOperationCard(
@@ -121,6 +221,7 @@ export function normalizeAdminMatchOperationCard(
   const cs2 = isCs2Game(gameSlug, gameName);
   const state = getMatchOperationState(match);
   const issues = getReadinessIssues(state, cs2);
+  const review = getMatchReviewInfo(match.status, match.reports ?? []);
 
   return {
     matchId: match.id,
@@ -148,5 +249,11 @@ export function normalizeAdminMatchOperationCard(
     teamACheckIns: state.teamACheckIns,
     teamBCheckIns: state.teamBCheckIns,
     readinessIssues: issues,
+    reviewState: review.reviewState,
+    reviewLabel: review.reviewLabel,
+    reviewTone: review.reviewTone,
+    reviewPriority: review.reviewPriority,
+    submittedReportCount: review.submittedReportCount,
+    submittedReportTeamCount: review.submittedReportTeamCount,
   };
 }

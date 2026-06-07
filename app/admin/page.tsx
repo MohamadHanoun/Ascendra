@@ -159,7 +159,7 @@ async function getAdminOverview(): Promise<AdminOverviewData> {
       {
         title: "Review disputes",
         description: "Resolve disputed match results that need admin attention.",
-        href: "/admin/match-operations?status=disputed",
+        href: "/admin/match-operations?review=disputed",
         label:
           disputedMatchesCount > 0
             ? `${disputedMatchesCount} disputed`

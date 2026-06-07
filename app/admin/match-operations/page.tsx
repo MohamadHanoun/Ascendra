@@ -10,7 +10,9 @@ import { prisma } from "@/lib/prisma";
 import {
   normalizeAdminMatchOperationCard,
   type AdminMatchOperationCard,
+  type MatchReviewState,
   type ReadinessIssue,
+  type ReviewTone,
 } from "@/lib/adminMatchOperations";
 
 export const runtime = "nodejs";
@@ -55,6 +57,49 @@ const READINESS_FILTER_OPTIONS = [
   { value: "missing_proof", label: "Missing proof" },
   { value: "needs_checkin", label: "Needs check-in" },
 ];
+
+// Quick review-state filters. Each maps to one or more derived reviewState
+// values; selecting one resets the other filters (least-surprising for triage).
+const REVIEW_FILTER_STATES: Record<string, MatchReviewState[]> = {
+  needs: ["admin_review_required", "reports_ready"],
+  disputed: ["admin_review_required"],
+  "reports-ready": ["reports_ready"],
+  "waiting-opponent": ["waiting_opponent_report"],
+  "waiting-players": ["waiting_player_reports"],
+};
+
+const REVIEW_FILTER_BUTTONS = [
+  { key: "all", label: "All active" },
+  { key: "needs", label: "Needs admin action" },
+  { key: "disputed", label: "Disputed" },
+  { key: "reports-ready", label: "Reports ready" },
+  { key: "waiting-opponent", label: "Waiting opponent" },
+  { key: "waiting-players", label: "Waiting players" },
+];
+
+// Triage sort: admin attention first, then blocking readiness, then waiting
+// states, normal active, and resolved last (resolved is excluded by the query).
+function reviewSortPriority(card: AdminMatchOperationCard): number {
+  if (card.reviewState === "admin_review_required") return 1;
+  if (card.reviewState === "reports_ready") return 2;
+  if (card.reviewState === "waiting_opponent_report") return 3;
+  if (
+    card.readinessIssues.includes("missing_schedule") ||
+    card.readinessIssues.includes("missing_room")
+  ) {
+    return 4;
+  }
+  if (card.reviewState === "waiting_player_reports") return 5;
+  if (card.reviewState === "resolved") return 7;
+  return 6;
+}
+
+function reviewToneColor(tone: ReviewTone): string {
+  if (tone === "red") return "var(--asc-live)";
+  if (tone === "amber") return "var(--asc-amber)";
+  if (tone === "green") return "var(--asc-green)";
+  return "var(--asc-fg-3)";
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -190,6 +235,7 @@ type PageProps = {
     status?: string | string[];
     game?: string | string[];
     readiness?: string | string[];
+    review?: string | string[];
   }>;
 };
 
@@ -202,6 +248,10 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
   const statusFilter = typeof params.status === "string" ? params.status : "all";
   const gameFilter = typeof params.game === "string" ? params.game : "all";
   const readinessFilter = typeof params.readiness === "string" ? params.readiness : "all";
+  const reviewFilter =
+    typeof params.review === "string" && REVIEW_FILTER_STATES[params.review]
+      ? params.review
+      : "all";
 
   // ── Prisma query (status filter applied server-side) ──────────────────────
 
@@ -233,6 +283,10 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
       },
       checkIns: {
         select: { id: true, teamId: true },
+      },
+      reports: {
+        where: { status: "submitted" },
+        select: { teamId: true },
       },
     },
     orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
@@ -274,6 +328,17 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
     );
   }
 
+  if (reviewFilter !== "all") {
+    const wanted = REVIEW_FILTER_STATES[reviewFilter];
+    cards = cards.filter((c) => wanted.includes(c.reviewState));
+  }
+
+  // Triage priority sort (stable — preserves the query's scheduledAt ordering
+  // within the same priority bucket).
+  cards = cards
+    .slice()
+    .sort((a, b) => reviewSortPriority(a) - reviewSortPriority(b));
+
   cards = cards.slice(0, 50);
 
   // ── Summary stats (computed from unsliced cards before filter) ────────────
@@ -283,10 +348,19 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
   );
 
   const totalActive = allCards.length;
-  const disputedCount = allCards.filter((c) => c.status === "disputed").length;
-  const resultPendingCount = allCards.filter(
-    (c) => c.status === "result_pending",
+  const disputedCount = allCards.filter(
+    (c) => c.reviewState === "admin_review_required",
   ).length;
+  const reportsReadyCount = allCards.filter(
+    (c) => c.reviewState === "reports_ready",
+  ).length;
+  const waitingOpponentCount = allCards.filter(
+    (c) => c.reviewState === "waiting_opponent_report",
+  ).length;
+  const waitingPlayersCount = allCards.filter(
+    (c) => c.reviewState === "waiting_player_reports",
+  ).length;
+  const needsActionCount = disputedCount + reportsReadyCount;
   const missingSchedule = allCards.filter((c) =>
     c.readinessIssues.includes("missing_schedule"),
   ).length;
@@ -391,14 +465,50 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
       <section className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
 
         {/* Summary stats */}
-        <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <SummaryStat label="Total active" value={totalActive} tone="neutral" />
+          <SummaryStat label="Needs action" value={needsActionCount} tone={needsActionCount > 0 ? "red" : "neutral"} />
           <SummaryStat label="Disputed" value={disputedCount} tone={disputedCount > 0 ? "red" : "neutral"} />
-          <SummaryStat label="Result pending" value={resultPendingCount} tone={resultPendingCount > 0 ? "accent" : "neutral"} />
+          <SummaryStat label="Reports ready" value={reportsReadyCount} tone={reportsReadyCount > 0 ? "accent" : "neutral"} />
+          <SummaryStat label="Waiting opponent" value={waitingOpponentCount} tone={waitingOpponentCount > 0 ? "accent" : "neutral"} />
+          <SummaryStat label="Waiting players" value={waitingPlayersCount} tone="neutral" />
           <SummaryStat label="Missing schedule" value={missingSchedule} tone={missingSchedule > 0 ? "red" : "neutral"} />
           <SummaryStat label="Missing FACEIT room" value={missingRoom} tone={missingRoom > 0 ? "red" : "neutral"} />
           <SummaryStat label="Missing proof" value={missingProof} tone={missingProof > 0 ? "red" : "neutral"} />
           <SummaryStat label="Needs check-in" value={needsCheckin} tone={needsCheckin > 0 ? "red" : "neutral"} />
+        </div>
+
+        {/* Review-state quick filters (each resets game/status/readiness) */}
+        <div className="mb-6 flex flex-wrap gap-2">
+          {REVIEW_FILTER_BUTTONS.map((btn) => {
+            const active = reviewFilter === btn.key;
+            const href =
+              btn.key === "all"
+                ? "/admin/match-operations"
+                : `/admin/match-operations?review=${btn.key}`;
+            return (
+              <Link
+                key={btn.key}
+                href={href}
+                className="border px-3 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-90"
+                style={
+                  active
+                    ? {
+                        borderColor: "var(--asc-accent-border)",
+                        background: "var(--asc-accent-dim)",
+                        color: "var(--asc-accent)",
+                      }
+                    : {
+                        borderColor: "var(--asc-line-soft)",
+                        background: "var(--asc-bg-1)",
+                        color: "var(--asc-fg-2)",
+                      }
+                }
+              >
+                {btn.label}
+              </Link>
+            );
+          })}
         </div>
 
         {/* Filters */}
@@ -584,20 +694,12 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
                     {/* Status */}
                     <td className="px-3 py-3">
                       <StatusBadge status={card.status} />
-                      {card.status === "disputed" && (
+                      {card.reviewLabel && (
                         <p
                           className="mt-1 text-[10px] font-black uppercase tracking-[0.08em]"
-                          style={{ color: "var(--asc-live)" }}
+                          style={{ color: reviewToneColor(card.reviewTone) }}
                         >
-                          Admin review required
-                        </p>
-                      )}
-                      {card.status === "result_pending" && (
-                        <p
-                          className="mt-1 text-[10px] font-black uppercase tracking-[0.08em]"
-                          style={{ color: "var(--asc-accent)" }}
-                        >
-                          Waiting on reports
+                          {card.reviewLabel}
                         </p>
                       )}
                     </td>
