@@ -1022,20 +1022,24 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     {msgs.cs2PlayerMatch.checkInReminder}
                   </p>
 
-                  <div className="grid gap-2 text-sm leading-6">
-                    {[
-                      msgs.cs2PlayerMatch.playedOnFaceit,
-                      msgs.cs2PlayerMatch.joinWhenAvailable,
-                      msgs.cs2PlayerMatch.afterMatchSync,
-                      faceitAutoConfirmEnabled
-                        ? msgs.cs2PlayerMatch.autoConfirmEnabled
-                        : msgs.cs2PlayerMatch.autoConfirmDisabled,
-                    ].map((line) => (
-                      <p key={line} style={{ color: "var(--asc-fg-2)" }}>
-                        {line}
-                      </p>
-                    ))}
-                  </div>
+                  {/* Optional FACEIT verification info — only when the FACEIT
+                      provider is configured. Manual room/report stay primary. */}
+                  {faceitProviderEnabled && (
+                    <div className="grid gap-2 text-sm leading-6">
+                      {[
+                        msgs.cs2PlayerMatch.playedOnFaceit,
+                        msgs.cs2PlayerMatch.joinWhenAvailable,
+                        msgs.cs2PlayerMatch.afterMatchSync,
+                        faceitAutoConfirmEnabled
+                          ? msgs.cs2PlayerMatch.autoConfirmEnabled
+                          : msgs.cs2PlayerMatch.autoConfirmDisabled,
+                      ].map((line) => (
+                        <p key={line} style={{ color: "var(--asc-fg-2)" }}>
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  )}
 
                   {faceitProof.faceitMatchUrl ? (
                     <div className="grid gap-2">
@@ -1086,7 +1090,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                         {faceitProof.faceitMatchId}
                       </p>
                     </div>
-                  ) : (
+                  ) : faceitProviderEnabled ? (
                     <div
                       className="border px-3 py-2 text-xs leading-5"
                       style={{
@@ -1097,7 +1101,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     >
                       {msgs.cs2PlayerMatch.roomUnavailable}
                     </div>
-                  )}
+                  ) : null}
 
                   <MatchCheckInPanel
                     matchId={match.id}
@@ -1180,8 +1184,9 @@ export default async function MatchDetailPage({ params }: PageProps) {
               </Panel>
             )}
 
-            {/* CS2 FACEIT workflow guide */}
-            {isCs2 && (
+            {/* CS2 FACEIT workflow guide — only when the FACEIT provider is
+                configured. When disabled, the match stays manual-first. */}
+            {isCs2 && faceitProviderEnabled && (
               <Panel
                 eyebrow={msgs.faceitWorkflow.eyebrow}
                 title={msgs.faceitWorkflow.title}
@@ -1536,10 +1541,11 @@ export default async function MatchDetailPage({ params }: PageProps) {
               </Panel>
             )}
 
-            {/* FACEIT CS2 proof — shown when FACEIT is configured, proof already
-                exists, or the viewer is an admin (manual room link). The sync
-                action itself is gated inside the form by faceitProviderEnabled. */}
-            {isCs2 && (faceitProviderEnabled || faceitProof.faceitMatchId || isAdmin) && (
+            {/* FACEIT CS2 proof — shown when FACEIT is configured or proof
+                already exists (read-only). The sync action itself is gated
+                inside the form by faceitProviderEnabled. Room details are
+                managed by staff from the admin operations page. */}
+            {isCs2 && (faceitProviderEnabled || faceitProof.faceitMatchId) && (
               <Panel eyebrow={msgs.faceit.eyebrow} title={msgs.faceit.title}>
                 <FaceitMatchProofForm
                   matchId={match.id}

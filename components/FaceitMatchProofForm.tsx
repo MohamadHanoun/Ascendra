@@ -3,10 +3,7 @@
 import { useActionState } from "react";
 
 import type { MatchActionResult } from "@/actions/matchActions";
-import {
-  setFaceitMatchLinkForPlayers,
-  syncFaceitMatchProof,
-} from "@/actions/matchActions";
+import { syncFaceitMatchProof } from "@/actions/matchActions";
 import {
   hasFaceitPlayerRows,
   type FaceitParsedResultView,
@@ -218,10 +215,6 @@ export default function FaceitMatchProofForm({
   const msgs = formMessages[locale];
   const [syncState, syncFormAction, syncPending] = useActionState(
     syncFaceitMatchProof,
-    INITIAL,
-  );
-  const [roomLinkState, roomLinkFormAction, roomLinkPending] = useActionState(
-    setFaceitMatchLinkForPlayers,
     INITIAL,
   );
 
@@ -626,96 +619,6 @@ export default function FaceitMatchProofForm({
         <p className="text-xs" style={{ color: "var(--asc-fg-3)" }}>
           {msgs.connectRequired}
         </p>
-      )}
-
-      {/* Admin-only room link form */}
-      {isAdmin && (
-        <form
-          action={roomLinkFormAction}
-          className="grid gap-3 border p-4"
-          style={{
-            borderColor: "var(--asc-line-soft)",
-            background: "var(--asc-bg-2)",
-          }}
-        >
-          <input type="hidden" name="matchId" value={matchId} />
-          <input type="hidden" name="locale" value={locale} />
-
-          <div>
-            <p
-              className="mb-2 text-[10px] font-black uppercase tracking-[0.14em]"
-              style={{ color: "var(--asc-fg-3)" }}
-            >
-              {msgs.roomLinkTitle}
-            </p>
-            <label
-              htmlFor={`faceit-room-link-input-${matchId}`}
-              className="mb-1 block text-[10px] font-black uppercase tracking-[0.14em]"
-              style={{ color: "var(--asc-fg-3)" }}
-            >
-              {msgs.roomLinkLabel}
-            </label>
-            <input
-              id={`faceit-room-link-input-${matchId}`}
-              name="faceitRoomInput"
-              type="text"
-              dir="ltr"
-              placeholder={msgs.roomLinkPlaceholder}
-              defaultValue={proof.faceitMatchUrl ?? proof.faceitMatchId ?? ""}
-              className="w-full border bg-transparent px-3 py-2 font-mono text-sm"
-              style={{
-                borderColor: "var(--asc-line-soft)",
-                color: "var(--asc-fg-0)",
-                outline: "none",
-              }}
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <button
-              type="submit"
-              disabled={roomLinkPending}
-              className="border px-5 py-2.5 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80 disabled:opacity-40"
-              style={{
-                borderColor: "var(--asc-accent-border)",
-                background: "var(--asc-accent-dim)",
-                color: "var(--asc-accent)",
-              }}
-            >
-              {roomLinkPending ? msgs.roomLinkSaving : msgs.roomLinkButton}
-            </button>
-            <p className="text-xs leading-5" style={{ color: "var(--asc-fg-3)" }}>
-              {msgs.roomLinkHint}
-            </p>
-          </div>
-
-          {roomLinkState.message && (
-            <div
-              className="border px-3 py-2 text-xs"
-              style={{
-                borderColor: roomLinkState.ok
-                  ? "var(--asc-green-border)"
-                  : "var(--asc-live-border)",
-                background: roomLinkState.ok
-                  ? "var(--asc-green-bg)"
-                  : "var(--asc-live-bg)",
-              }}
-            >
-              <p
-                className="font-black"
-                style={{
-                  color: roomLinkState.ok
-                    ? "var(--asc-green)"
-                    : "var(--asc-live)",
-                }}
-              >
-                {roomLinkState.message}
-              </p>
-            </div>
-          )}
-        </form>
       )}
 
       {/* Sync form */}
