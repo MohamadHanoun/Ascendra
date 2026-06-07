@@ -7,8 +7,6 @@ import { auth } from "@/auth";
 import FaceitMatchProofForm from "@/components/FaceitMatchProofForm";
 import Footer from "@/components/Footer";
 import MatchCheckInPanel from "@/components/MatchCheckInPanel";
-import MatchAdminControls from "@/components/MatchAdminControls";
-import MatchCommunicationAdminForm from "@/components/MatchCommunicationAdminForm";
 import MatchRealtimeRefresh from "@/components/MatchRealtimeRefresh";
 import { parseCs2Metadata } from "@/lib/gameIntegrations/steamCs2Adapter";
 import { DisputeForm, MatchReportForm } from "@/components/MatchReportForm";
@@ -1581,8 +1579,8 @@ export default async function MatchDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Admin controls — NOT translated */}
-            {isAdmin && teamA && teamB && (
+            {/* Admin shortcut — match operations now live on the admin page (NOT translated) */}
+            {isAdmin && (
               <div
                 className="relative overflow-hidden border"
                 style={{ borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" }}
@@ -1592,7 +1590,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                   style={{ borderBottom: "1px solid var(--asc-amber-border)" }}
                 >
                   <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-amber)" }}>
-                    ▲ Admin Controls
+                    ▲ Admin match operations
                   </p>
                   <span
                     className="border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em]"
@@ -1601,27 +1599,23 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     Staff Only
                   </span>
                 </div>
-                <div className="p-5">
-                  <MatchAdminControls
-                    matchId={match.id}
-                    teamA={teamA}
-                    teamB={teamB}
-                    status={match.status}
-                  />
-                </div>
-                <div
-                  className="p-5"
-                  style={{ borderTop: "1px solid var(--asc-amber-border)" }}
-                >
-                  <MatchCommunicationAdminForm
-                    matchId={match.id}
-                    currentScheduledAt={
-                      match.scheduledAt
-                        ? match.scheduledAt.toISOString().slice(0, 16)
-                        : null
-                    }
-                    currentInstructions={match.playerInstructions ?? null}
-                  />
+                <div className="grid gap-3 p-5">
+                  <p className="text-sm leading-6" style={{ color: "var(--asc-fg-2)" }}>
+                    Manage schedule, room details, reports, and results from the admin operations page.
+                  </p>
+                  <Link
+                    href={`/admin/tournaments/${tournamentId}/matches`}
+                    className="inline-flex w-fit items-center justify-center border px-5 py-2.5 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-80"
+                    style={{
+                      borderColor: "var(--asc-amber-border)",
+                      background: "var(--asc-amber-bg)",
+                      color: "var(--asc-amber)",
+                      clipPath:
+                        "polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)",
+                    }}
+                  >
+                    Open admin operations →
+                  </Link>
                 </div>
               </div>
             )}
