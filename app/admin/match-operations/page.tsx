@@ -283,6 +283,10 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
   );
 
   const totalActive = allCards.length;
+  const disputedCount = allCards.filter((c) => c.status === "disputed").length;
+  const resultPendingCount = allCards.filter(
+    (c) => c.status === "result_pending",
+  ).length;
   const missingSchedule = allCards.filter((c) =>
     c.readinessIssues.includes("missing_schedule"),
   ).length;
@@ -389,6 +393,8 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
         {/* Summary stats */}
         <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <SummaryStat label="Total active" value={totalActive} tone="neutral" />
+          <SummaryStat label="Disputed" value={disputedCount} tone={disputedCount > 0 ? "red" : "neutral"} />
+          <SummaryStat label="Result pending" value={resultPendingCount} tone={resultPendingCount > 0 ? "accent" : "neutral"} />
           <SummaryStat label="Missing schedule" value={missingSchedule} tone={missingSchedule > 0 ? "red" : "neutral"} />
           <SummaryStat label="Missing FACEIT room" value={missingRoom} tone={missingRoom > 0 ? "red" : "neutral"} />
           <SummaryStat label="Missing proof" value={missingProof} tone={missingProof > 0 ? "red" : "neutral"} />

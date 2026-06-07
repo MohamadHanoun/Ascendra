@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
-type DashboardTone = "gold" | "green" | "amber" | "blue" | "gray";
+type DashboardTone = "gold" | "green" | "amber" | "blue" | "gray" | "red";
 
 export type AdminOverviewData = {
   stats: Array<{
@@ -86,6 +86,11 @@ function toneStyle(tone: DashboardTone): CSSProperties {
       color: "var(--asc-fg-3)",
       borderColor: "var(--asc-line-soft)",
       background: "var(--asc-bg-2)",
+    },
+    red: {
+      color: "var(--asc-live)",
+      borderColor: "var(--asc-live-border)",
+      background: "var(--asc-live-bg)",
     },
   };
 

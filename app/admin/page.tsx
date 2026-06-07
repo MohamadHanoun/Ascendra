@@ -70,6 +70,7 @@ async function getAdminOverview(): Promise<AdminOverviewData> {
     playersCount,
     teamsCount,
     activeMatchesCount,
+    disputedMatchesCount,
   ] = await Promise.all([
     prisma.tournamentRegistration.count({
       where: {
@@ -97,6 +98,9 @@ async function getAdminOverview(): Promise<AdminOverviewData> {
           ],
         },
       },
+    }),
+    prisma.tournamentMatch.count({
+      where: { isBye: false, status: "disputed" },
     }),
   ]);
 
@@ -151,6 +155,16 @@ async function getAdminOverview(): Promise<AdminOverviewData> {
         href: "/admin/match-operations",
         label: `${activeMatchesCount} active`,
         tone: "blue",
+      },
+      {
+        title: "Review disputes",
+        description: "Resolve disputed match results that need admin attention.",
+        href: "/admin/match-operations?status=disputed",
+        label:
+          disputedMatchesCount > 0
+            ? `${disputedMatchesCount} disputed`
+            : "All clear",
+        tone: disputedMatchesCount > 0 ? "red" : "green",
       },
     ],
   };
