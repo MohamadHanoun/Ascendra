@@ -16,6 +16,7 @@ import { getDictionary, type HomeMessages, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { getDiscordStats, type DiscordStats } from "@/lib/discordStats";
 import { prisma } from "@/lib/prisma";
+import { MatchStatus } from "@prisma/client";
 import {
   aggregatePlayerLeaderboard,
   getActiveRankingSeason,
@@ -26,12 +27,10 @@ export const dynamic = "force-dynamic";
 
 type LiveMatchData = {
   id: string;
-  round: number;
+  roundNumber: number;
   matchNumber: number;
   status: string;
   bestOf: number;
-  scoreA: number;
-  scoreB: number;
   teamA: { id: string; name: string } | null;
   teamB: { id: string; name: string } | null;
   tournament: { id: string; title: string };
@@ -427,14 +426,14 @@ function LiveMatchCard({
   messages: HomeMessages;
 }) {
   const statusKey = match.status.toLowerCase();
-  const isLive = statusKey === "live";
+  const isLive = statusKey === "in_progress";
   const isCompleted = statusKey === "completed";
   const matchTone = isLive ? "live" : isCompleted ? "completed" : "standby";
   const statusLabel = isLive
     ? "LIVE"
     : isCompleted
       ? messages.matches.completed
-      : match.status;
+      : match.status.replace(/_/g, " ").toUpperCase();
   const teamATag = match.teamA
     ? match.teamA.name.slice(0, 2).toUpperCase()
     : "??";
@@ -465,12 +464,10 @@ function LiveMatchCard({
           {
             tag: teamATag,
             name: match.teamA?.name ?? "TBD",
-            score: match.scoreA,
           },
           {
             tag: teamBTag,
             name: match.teamB?.name ?? "TBD",
-            score: match.scoreB,
           },
         ].map((team, index) => (
           <div
@@ -489,16 +486,12 @@ function LiveMatchCard({
                 {messages.matches.team}
               </p>
             </div>
-
-            <p className="asc-home-broadcast-team__score">
-              {team.score}
-            </p>
           </div>
         ))}
       </div>
 
       <div className="asc-home-broadcast-card__footer">
-        <span>Round {match.round}</span>
+        <span>Round {match.roundNumber}</span>
         <span>BO{match.bestOf}</span>
         <span>Match {match.matchNumber}</span>
       </div>
@@ -959,7 +952,7 @@ export default async function HomePage() {
 
   const [
     rawTournaments,
-    liveMatches,
+    rawLiveMatches,
     games,
     leaderboardEntries,
     activeSeason,
@@ -993,18 +986,28 @@ export default async function HomePage() {
       },
     }),
 
-    prisma.match.findMany({
-      where: { status: { in: ["live", "completed"] } },
+    prisma.tournamentMatch.findMany({
+      where: {
+        status: {
+          in: [
+            MatchStatus.in_progress,
+            MatchStatus.ready,
+            MatchStatus.room_created,
+            MatchStatus.result_pending,
+            MatchStatus.disputed,
+          ],
+        },
+        teamAId: { not: null },
+        teamBId: { not: null },
+      },
       select: {
         id: true,
-        round: true,
+        roundNumber: true,
         matchNumber: true,
         status: true,
         bestOf: true,
-        scoreA: true,
-        scoreB: true,
-        teamA: { select: { id: true, name: true } },
-        teamB: { select: { id: true, name: true } },
+        teamAId: true,
+        teamBId: true,
         tournament: { select: { id: true, title: true } },
       },
       orderBy: [{ updatedAt: "desc" }],
@@ -1057,6 +1060,40 @@ export default async function HomePage() {
     prisma.tournamentResult.count(),
   ]);
 
+  // TournamentMatch stores only team IDs — resolve names with a batch lookup.
+  const liveMatchTeamIds = [
+    ...new Set(
+      rawLiveMatches
+        .flatMap((match) => [match.teamAId, match.teamBId])
+        .filter((teamId): teamId is string => Boolean(teamId)),
+    ),
+  ];
+  const liveMatchTeamRows =
+    liveMatchTeamIds.length > 0
+      ? await prisma.team.findMany({
+          where: { id: { in: liveMatchTeamIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+  const liveMatchTeamName = new Map(
+    liveMatchTeamRows.map((team) => [team.id, team.name]),
+  );
+
+  const liveMatches: LiveMatchData[] = rawLiveMatches.map((match) => ({
+    id: match.id,
+    roundNumber: match.roundNumber,
+    matchNumber: match.matchNumber,
+    status: match.status,
+    bestOf: match.bestOf,
+    teamA: match.teamAId
+      ? { id: match.teamAId, name: liveMatchTeamName.get(match.teamAId) ?? "TBD" }
+      : null,
+    teamB: match.teamBId
+      ? { id: match.teamBId, name: liveMatchTeamName.get(match.teamBId) ?? "TBD" }
+      : null,
+    tournament: match.tournament,
+  }));
+
   const tournaments = [...rawTournaments]
     .sort((a, b) => {
       const priorityA = getTournamentSortPriority(a.status);
@@ -1072,8 +1109,8 @@ export default async function HomePage() {
 
   const sortedMatches = [...liveMatches]
     .sort((a, b) => {
-      if (a.status === "live" && b.status !== "live") return -1;
-      if (a.status !== "live" && b.status === "live") return 1;
+      if (a.status === "in_progress" && b.status !== "in_progress") return -1;
+      if (a.status !== "in_progress" && b.status === "in_progress") return 1;
 
       return 0;
     })

@@ -136,7 +136,6 @@ model Tournament {
   season             RankingSeason?           @relation(fields: [seasonId], references: [id], onDelete: SetNull)
   registrations      TournamentRegistration[]
   results            TournamentResult[]
-  matches            Match[]
   rankingPointEvents RankingPointEvent[]
 
   tournamentMatches TournamentMatch[]
@@ -172,8 +171,6 @@ model Team {
   registrations      TournamentRegistration[]
   results            TournamentResult[]
   rankingPointEvents RankingPointEvent[]
-  matchesAsA         Match[]                  @relation("MatchTeamA")
-  matchesAsB         Match[]                  @relation("MatchTeamB")
   matchCheckIns      TournamentMatchCheckIn[]
 
   @@unique([name, leaderId])
@@ -315,39 +312,6 @@ model RankingPointEvent {
   @@index([seasonId])
   @@index([type])
   @@index([createdAt])
-}
-
-model Match {
-  id           String @id @default(cuid())
-  tournamentId String
-  round        Int
-  matchNumber  Int
-
-  teamAId String?
-  teamBId String?
-
-  scheduledAt      DateTime?
-  status           String    @default("pending")
-  bestOf           Int       @default(1)
-  scoreA           Int       @default(0)
-  scoreB           Int       @default(0)
-  winnerTeamId     String?
-  reportedById     String?
-  confirmedByAdmin Boolean   @default(false)
-  notes            String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  teamA      Team?      @relation("MatchTeamA", fields: [teamAId], references: [id], onDelete: SetNull)
-  teamB      Team?      @relation("MatchTeamB", fields: [teamBId], references: [id], onDelete: SetNull)
-
-  @@unique([tournamentId, round, matchNumber])
-  @@index([tournamentId])
-  @@index([status])
-  @@index([teamAId])
-  @@index([teamBId])
 }
 
 model Announcement {
