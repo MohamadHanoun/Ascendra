@@ -31,6 +31,7 @@ import InlineAdminTournamentForm from "@/components/InlineAdminTournamentForm";
 import TournamentLifecycleRefresh from "@/components/TournamentLifecycleRefresh";
 import { syncTournamentLifecycleForTournament } from "@/lib/jobs/tournamentLifecycleJobs";
 import { prisma } from "@/lib/prisma";
+import { isSupportedTournamentFormat } from "@/lib/tournamentFormatSupport";
 import { getTournamentImageUrl } from "@/lib/tournamentImages";
 
 export const runtime = "nodejs";
@@ -368,6 +369,15 @@ export default async function ManageTournamentPage({
 
   const isEnded = tournament.status === "ended";
   const isCancelled = tournament.status === "cancelled";
+
+  // Readiness for bracket generation (UI-only signal; admin still clicks Generate).
+  const bracketReady =
+    tournament.registrationStatus === "closed" &&
+    !isEnded &&
+    !isCancelled &&
+    tournamentMatches.length === 0 &&
+    approvedRegistrations.length >= 2 &&
+    isSupportedTournamentFormat(tournament.format);
 
   return (
     <AdminShell
@@ -915,6 +925,7 @@ export default async function ManageTournamentPage({
                 tournamentMatches={tournamentMatches}
                 approvedTeamCount={approvedRegistrations.length}
                 registrationOpen={tournament.registrationStatus === "open"}
+                bracketReady={bracketReady}
               />
             </div>
           </CollapsibleSection>
