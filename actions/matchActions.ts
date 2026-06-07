@@ -14,16 +14,12 @@ import {
 import { FaceitApiError, getFaceitMatchDetails, getFaceitMatchStats } from "@/lib/faceit";
 import { isFaceitCs2MatchDetails, parseFaceitCs2MatchResult } from "@/lib/faceitCs2Parser";
 import { attemptFaceitAutoConfirm } from "@/lib/faceitAutoConfirm";
-import {
-  extractFaceitMatchId,
-  normalizeFaceitMatchLinkForDisplay,
-} from "@/lib/faceitMatchId";
+import { extractFaceitMatchId } from "@/lib/faceitMatchId";
 import { isCs2Game } from "@/lib/isCs2Game";
 import { determineUserMatchTeam } from "@/lib/matchCheckIn";
 import {
   notifyMatchConfirmed,
   notifyMatchCommunicationUpdated,
-  notifyFaceitRoomLinked,
   notifyMatchScheduled,
 } from "@/lib/matchNotifications";
 import { prisma } from "@/lib/prisma";
@@ -984,83 +980,6 @@ export async function findRecentDotaMatch(
       teamBCoverage: Math.round(c.teamBCoverage * 100),
     })),
   };
-}
-
-// ─── Admin: set FACEIT room/match link for players ───────────────────────────
-// Display-only: does not fetch FACEIT, verify proof, apply results, or advance brackets.
-
-export async function setFaceitMatchLinkForPlayers(
-  _prevState: MatchActionResult,
-  formData: FormData,
-): Promise<MatchActionResult> {
-  const messages = matchIdActionMessages[getActionLocale(formData)];
-  const sessionUser = await requireUser();
-  if (!sessionUser) return fail(messages.loginRequired);
-  if (!sessionUser.isAdmin) return fail(messages.faceitRoomNotAllowed);
-
-  const matchId = getValue(formData, "matchId");
-  const faceitRoomInput = getValue(formData, "faceitRoomInput");
-
-  if (!matchId) return fail(messages.matchIdMissing);
-  if (!faceitRoomInput) return fail(messages.faceitRoomInputRequired);
-
-  const normalized = normalizeFaceitMatchLinkForDisplay(faceitRoomInput);
-  if (!normalized) return fail(messages.faceitRoomInvalidInput);
-
-  const match = await prisma.tournamentMatch.findUnique({
-    where: { id: matchId },
-    select: {
-      id: true,
-      tournamentId: true,
-      teamAId: true,
-      teamBId: true,
-      tournament: {
-        select: {
-          game: { select: { slug: true, name: true } },
-        },
-      },
-    },
-  });
-
-  if (!match) return fail(messages.matchNotFound);
-  if (!isCs2Game(match.tournament.game?.slug, match.tournament.game?.name)) {
-    return fail(messages.faceitMatchNotCs2);
-  }
-
-  try {
-    await prisma.tournamentMatch.update({
-      where: { id: match.id },
-      data: {
-        faceitMatchId: normalized.matchId,
-        faceitMatchUrl: normalized.matchUrl,
-      },
-    });
-  } catch (err) {
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === "P2002"
-    ) {
-      return fail(messages.faceitRoomAlreadyUsed);
-    }
-    return fail(messages.faceitRoomSaveFailed);
-  }
-
-  revalidateMatchPaths(match.tournamentId);
-  revalidatePath(`/tournaments/${match.tournamentId}/matches/${match.id}`);
-
-  void notifyFaceitRoomLinked(match).catch((err) =>
-    console.error("[matchActions] notifyFaceitRoomLinked failed:", err),
-  );
-
-  void createRealtimeEvent({
-    type: "tournament.match.room_linked",
-    audience: "admin",
-    entityType: "tournamentMatch",
-    entityId: match.id,
-    payload: { matchId: match.id, tournamentId: match.tournamentId },
-  }).catch(() => {});
-
-  return success(messages.faceitRoomSaved);
 }
 
 // ─── Player: check in for CS2 match readiness ────────────────────────────────

@@ -139,7 +139,8 @@ export const steamCs2Adapter: GameIntegrationAdapter = {
       };
     }
 
-    // Manual mode: room creation is handled by an admin via createCs2RoomInline.
+    // Manual mode: rooms are created by an admin from the admin match
+    // operations page (createMatchRoomInline).
     return {
       ok: false,
       provider: GameProvider.steam_cs2,
