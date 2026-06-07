@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { CreateTeamForm } from "@/components/profile/CreateTeamForm";
 import { InviteResponseButton } from "@/components/profile/InviteResponseButton";
-import { Card, StatusBadge, getCount } from "@/components/profile/shared";
+import { Card, Pill, StatusBadge, getCount } from "@/components/profile/shared";
 import type {
   Game,
   Invitation,
@@ -86,7 +86,7 @@ export function TeamsPanel({
         {teams.length === 0 ? (
           <div className="asc-profile-empty asc-profile-empty--inline">
             <span className="asc-profile-empty__mark" aria-hidden="true">
-              00
+              ▲
             </span>
             <p className="asc-profile-empty__title">{sectionLabels.noTeamsTitle}</p>
             <p className="asc-profile-empty__text">{sectionLabels.noTeamsDescription}</p>
@@ -99,13 +99,16 @@ export function TeamsPanel({
               return (
                 <article
                   key={team.id}
-                  className="asc-profile-team-card p-5"
+                  className="asc-profile-team-card flex flex-col p-5"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p
-                        className="truncate font-black"
-                        style={{ color: "var(--asc-fg-0)", fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18 }}
+                        className="truncate text-lg font-black leading-tight"
+                        style={{
+                          color: "var(--asc-fg-0)",
+                          fontFamily: "var(--font-display)",
+                        }}
                       >
                         {team.name}
                       </p>
@@ -119,10 +122,14 @@ export function TeamsPanel({
                   {team.rejectionReason && (
                     <p className="mt-2 text-xs" style={{ color: "var(--asc-live)" }}>{team.rejectionReason}</p>
                   )}
-                  <div className="mt-4 flex items-center justify-between">
-                    <p className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--asc-fg-3)" }}>
-                      {isLeader ? labels.leader : (membership?.role ?? statuses.member)}
-                    </p>
+                  <div
+                    className="mt-4 flex items-center justify-between gap-3 pt-4"
+                    style={{ borderTop: "1px solid var(--asc-line-soft)" }}
+                  >
+                    <Pill
+                      label={isLeader ? labels.leader : (membership?.role ?? statuses.member)}
+                      tone={isLeader ? "accent" : "gray"}
+                    />
                     <Link
                       href={`/profile/teams/${team.id}`}
                       className="asc-profile-action px-4 py-2 text-xs tracking-[0.08em]"
