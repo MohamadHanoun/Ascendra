@@ -62,7 +62,7 @@ function getStatusInfo(status: string): StatusInfo {
       style: { color: "var(--asc-amber)", borderColor: "var(--asc-amber-border)", background: "var(--asc-amber-bg)" },
     },
     disputed: {
-      label: "Disputed",
+      label: "Admin review required",
       style: { color: "var(--asc-live)", borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" },
     },
     confirmed: {
@@ -190,9 +190,9 @@ function MatchRow({
         BO{match.bestOf}
       </span>
 
-      {/* Match Center link */}
+      {/* Match operations link */}
       <Link
-        href={`/tournaments/${tournamentId}/matches/${match.id}`}
+        href={`/admin/tournaments/${tournamentId}/matches#match-${match.id}`}
         className="inline-flex items-center justify-center border px-3 py-1.5 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-90"
         style={{
           borderColor: "var(--asc-accent-border)",
@@ -200,7 +200,7 @@ function MatchRow({
           background: "var(--asc-accent-dim)",
         }}
       >
-        Open →
+        Manage →
       </Link>
     </div>
   );

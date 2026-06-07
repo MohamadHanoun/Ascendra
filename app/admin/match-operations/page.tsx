@@ -42,7 +42,7 @@ const STATUS_FILTER_OPTIONS = [
   { value: "room_created", label: "Room created" },
   { value: "in_progress", label: "In progress" },
   { value: "result_pending", label: "Result pending" },
-  { value: "disputed", label: "Disputed" },
+  { value: "disputed", label: "Admin review required" },
 ];
 
 const GAME_FILTER_OPTIONS = [
@@ -54,7 +54,7 @@ const GAME_FILTER_OPTIONS = [
 const READINESS_FILTER_OPTIONS = [
   { value: "all", label: "All readiness" },
   { value: "missing_schedule", label: "Missing schedule" },
-  { value: "missing_room", label: "Missing FACEIT room" },
+  { value: "missing_room", label: "Missing room" },
   { value: "missing_proof", label: "Missing proof" },
   { value: "needs_checkin", label: "Needs check-in" },
 ];
@@ -72,7 +72,7 @@ const REVIEW_FILTER_STATES: Record<string, MatchReviewState[]> = {
 const REVIEW_FILTER_BUTTONS = [
   { key: "all", label: "All active" },
   { key: "needs", label: "Needs admin action" },
-  { key: "disputed", label: "Disputed" },
+  { key: "disputed", label: "Admin review required" },
   { key: "reports-ready", label: "Reports ready" },
   { key: "waiting-opponent", label: "Waiting opponent" },
   { key: "waiting-players", label: "Waiting players" },
@@ -179,7 +179,7 @@ function SummaryStat({
 function IssueBadge({ issue }: { issue: ReadinessIssue }) {
   const label: Record<ReadinessIssue, string> = {
     missing_schedule: "Missing schedule",
-    missing_room: "Missing FACEIT room",
+    missing_room: "Missing room",
     missing_proof: "Missing proof",
     needs_checkin: "Needs check-in",
   };
@@ -249,7 +249,7 @@ function StatusBadge({ status }: { status: string }) {
     room_created: "Room created",
     in_progress: "In progress",
     result_pending: "Result pending",
-    disputed: "Disputed",
+    disputed: "Admin review required",
   };
 
   return (
@@ -514,7 +514,7 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <SummaryStat label="Total active" value={totalActive} tone="neutral" />
           <SummaryStat label="Needs action" value={needsActionCount} tone={needsActionCount > 0 ? "red" : "neutral"} />
-          <SummaryStat label="Disputed" value={disputedCount} tone={disputedCount > 0 ? "red" : "neutral"} />
+          <SummaryStat label="Admin review required" value={disputedCount} tone={disputedCount > 0 ? "red" : "neutral"} />
           <SummaryStat label="Reports ready" value={reportsReadyCount} tone={reportsReadyCount > 0 ? "accent" : "neutral"} />
           <SummaryStat label="Waiting for opponent report" value={waitingOpponentCount} tone={waitingOpponentCount > 0 ? "accent" : "neutral"} />
           <SummaryStat label="Waiting for player reports" value={waitingPlayersCount} tone="neutral" />

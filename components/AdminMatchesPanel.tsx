@@ -101,6 +101,11 @@ function getMatchStatusTone(
   }
 }
 
+function getMatchStatusLabel(status: string) {
+  if (status === "disputed") return "Admin review required";
+  return status.replace(/_/g, " ");
+}
+
 export default async function AdminMatchesPanel() {
   const tournaments = await prisma.tournament.findMany({
     select: {
@@ -396,7 +401,7 @@ export default async function AdminMatchesPanel() {
                             </div>
 
                             <Pill tone={getMatchStatusTone(match.status)}>
-                              {match.status.replace(/_/g, " ")}
+                              {getMatchStatusLabel(match.status)}
                             </Pill>
 
                             <span
@@ -407,7 +412,7 @@ export default async function AdminMatchesPanel() {
                             </span>
 
                             <Link
-                              href={`/tournaments/${tournament.id}/matches/${match.id}`}
+                              href={`/admin/tournaments/${tournament.id}/matches#match-${match.id}`}
                               className="inline-flex items-center justify-center border px-3 py-1.5 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-90"
                               style={{
                                 borderColor: "var(--asc-accent-border)",
@@ -415,7 +420,7 @@ export default async function AdminMatchesPanel() {
                                 background: "var(--asc-accent-dim)",
                               }}
                             >
-                              Open →
+                              Manage →
                             </Link>
                           </div>
                         );

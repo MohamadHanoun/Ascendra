@@ -57,4 +57,14 @@ describe("notification route helpers", () => {
       "/admin/match-operations?review=needs",
     );
   });
+
+  it("preserves safe internal notification links", () => {
+    expect(normalizeNotificationHref("/profile/matches")).toBe(
+      "/profile/matches",
+    );
+  });
+
+  it("drops unsafe external notification links", () => {
+    expect(normalizeNotificationHref("https://example.com/phish")).toBeNull();
+  });
 });

@@ -117,7 +117,7 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     vs: { teamA: "Team A", teamB: "Team B", winner: "Winner", vs: "vs", scheduled: "Scheduled", winnerBadge: "✓ Winner" },
     matchStatuses: {
       scheduled: "Scheduled", ready: "Ready", room_created: "Room Created",
-      in_progress: "Live", result_pending: "Awaiting Result", disputed: "Disputed",
+      in_progress: "Live", result_pending: "Awaiting Result", disputed: "Admin review",
       confirmed: "Confirmed", completed: "Completed", cancelled: "Cancelled",
       forfeit: "Forfeit", bye: "Bye",
     },
@@ -195,7 +195,7 @@ const matchDetailMessages: Record<Locale, MatchDetailMessages> = {
     vs: { teamA: "الفريق أ", teamB: "الفريق ب", winner: "الفائز", vs: "مقابل", scheduled: "موعد مجدول", winnerBadge: "✓ الفائز" },
     matchStatuses: {
       scheduled: "مجدولة", ready: "جاهزة", room_created: "الغرفة منشأة",
-      in_progress: "جارية", result_pending: "في انتظار النتيجة", disputed: "متنازع عليها",
+      in_progress: "جارية", result_pending: "في انتظار النتيجة", disputed: "مراجعة إدارية",
       confirmed: "مؤكدة", completed: "مكتملة", cancelled: "ملغاة",
       forfeit: "خسارة بالتخلف", bye: "تأهل تلقائي",
     },

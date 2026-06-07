@@ -65,6 +65,10 @@ function getMetadataString(
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function isSafeInternalHref(value: string) {
+  return value.startsWith("/") && !value.startsWith("//");
+}
+
 export function normalizeNotificationHref(
   value: string | null | undefined,
   metadata?: Prisma.InputJsonValue,
@@ -90,7 +94,11 @@ export function normalizeNotificationHref(
     return "/admin/match-operations?review=needs";
   }
 
-  return normalized || null;
+  if (!normalized || !isSafeInternalHref(normalized)) {
+    return null;
+  }
+
+  return normalized;
 }
 
 function normalizeLimit(limit?: number | null) {

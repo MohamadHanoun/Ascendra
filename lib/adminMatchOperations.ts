@@ -325,7 +325,7 @@ export function normalizeAdminMatchOperationCard(
     gameName,
     gameSlug,
     isCs2: cs2,
-    matchHref: `/tournaments/${match.tournamentId}/matches/${match.id}`,
+    matchHref: `/admin/tournaments/${match.tournamentId}/matches#match-${match.id}`,
     roundNumber: match.roundNumber,
     matchNumber: match.matchNumber,
     status: match.status,

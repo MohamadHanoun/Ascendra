@@ -421,9 +421,9 @@ describe("normalizeAdminMatchOperationCard", () => {
     expect(card.status).toBe("scheduled");
   });
 
-  it("builds correct matchHref", () => {
+  it("builds admin match anchor href", () => {
     const card = normalizeAdminMatchOperationCard(makeAdminMatchRow(), teamMap);
-    expect(card.matchHref).toBe("/tournaments/tourn-1/matches/match-1");
+    expect(card.matchHref).toBe("/admin/tournaments/tourn-1/matches#match-match-1");
   });
 
   it("resolves team names from the map", () => {

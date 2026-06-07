@@ -89,7 +89,7 @@ function statusInfo(status: string): { label: string; tone: StatusTone } {
     room_created: { label: "Room Created", tone: "blue" },
     in_progress: { label: "Live", tone: "live" },
     result_pending: { label: "Result Pending", tone: "amber" },
-    disputed: { label: "Disputed", tone: "live" },
+    disputed: { label: "Admin review required", tone: "live" },
     confirmed: { label: "Confirmed", tone: "green" },
     completed: { label: "Completed", tone: "accent" },
     cancelled: { label: "Cancelled", tone: "gray" },
@@ -428,7 +428,7 @@ export default async function AdminTournamentMatchesPage({ params }: PageProps) 
             <Tag>{rounds.length} round{rounds.length === 1 ? "" : "s"}</Tag>
             <Tag>{scheduledCount} scheduled</Tag>
             <Tag>{pendingReportTotal} report{pendingReportTotal === 1 ? "" : "s"} pending</Tag>
-            {disputedCount > 0 && <Tag>{disputedCount} disputed</Tag>}
+            {disputedCount > 0 && <Tag>{disputedCount} admin review</Tag>}
           </div>
         </div>
 
