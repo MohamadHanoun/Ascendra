@@ -137,20 +137,65 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+// ─── Command center helpers ────────────────────────────────────────────────────
+
+type CommandTone = "red" | "amber" | "green" | "neutral";
+
+function commandColor(tone: CommandTone): string {
+  if (tone === "red") return "var(--asc-live)";
+  if (tone === "amber") return "var(--asc-amber)";
+  if (tone === "green") return "var(--asc-green)";
+  return "var(--asc-fg-2)";
+}
+
+function CommandCard({
+  label,
+  value,
+  valueTone = "neutral",
+  meta,
+}: {
+  label: string;
+  value: ReactNode;
+  valueTone?: CommandTone;
+  meta?: string;
+}) {
+  return (
+    <div
+      className="border p-4"
+      style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+    >
+      <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: "var(--asc-fg-3)" }}>
+        {label}
+      </p>
+      <p className="mt-1.5 text-base font-black" style={{ color: commandColor(valueTone) }}>
+        {value}
+      </p>
+      {meta && (
+        <p className="mt-1 text-xs" style={{ color: "var(--asc-fg-3)" }}>
+          {meta}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function CollapsibleSection({
   label,
   title,
   meta,
   children,
+  id,
 }: {
   label: string;
   title: string;
   meta?: string;
   children: ReactNode;
+  id?: string;
 }) {
   return (
     <details
-      className="group overflow-hidden border shadow-2xl"
+      id={id}
+      className="group overflow-hidden border shadow-2xl scroll-mt-24"
       style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition">
@@ -298,7 +343,7 @@ export default async function ManageTournamentPage({
         completedAt: true,
         reports: {
           where: { status: "submitted" },
-          select: { id: true },
+          select: { id: true, teamId: true },
         },
       },
       orderBy: [{ roundNumber: "asc" }, { matchNumber: "asc" }],
@@ -378,6 +423,66 @@ export default async function ManageTournamentPage({
     tournamentMatches.length === 0 &&
     approvedRegistrations.length >= 2 &&
     isSupportedTournamentFormat(tournament.format);
+
+  // ── Command center (read-only, scoped to this tournament) ──────────────────
+  const totalMatchCount = rawTournamentMatches.length;
+  const disputedCount = rawTournamentMatches.filter(
+    (m) => m.status === "disputed",
+  ).length;
+  const resultPendingCount = rawTournamentMatches.filter(
+    (m) => m.status === "result_pending",
+  ).length;
+  // Reports ready = result_pending matches where both teams have submitted.
+  const reportsReadyCount = rawTournamentMatches.filter(
+    (m) =>
+      m.status === "result_pending" &&
+      new Set(m.reports.map((r) => r.teamId)).size >= 2,
+  ).length;
+  // Needs schedule = active, two-team, non-bye matches with no scheduled time.
+  const missingScheduleCount = rawTournamentMatches.filter(
+    (m) =>
+      !m.isBye &&
+      Boolean(m.teamAId && m.teamBId) &&
+      m.scheduledAt === null &&
+      ["scheduled", "ready", "room_created", "in_progress"].includes(m.status),
+  ).length;
+
+  const bracketState: { label: string; tone: CommandTone } =
+    totalMatchCount > 0
+      ? { label: "Bracket generated", tone: "green" }
+      : tournament.registrationStatus === "open"
+        ? { label: "Close registration first", tone: "amber" }
+        : approvedSlots < 2
+          ? { label: "Need 2+ approved teams", tone: "amber" }
+          : bracketReady
+            ? { label: "Ready to generate", tone: "amber" }
+            : !isSupportedTournamentFormat(tournament.format)
+              ? { label: "Format not supported", tone: "neutral" }
+              : { label: "Not ready", tone: "neutral" };
+
+  const reviewState: { label: string; tone: CommandTone } =
+    disputedCount > 0
+      ? { label: "Admin review required", tone: "red" }
+      : reportsReadyCount > 0
+        ? { label: "Reports ready to confirm", tone: "amber" }
+        : resultPendingCount > 0
+          ? { label: "Pending reports", tone: "amber" }
+          : { label: "No urgent review items", tone: "green" };
+
+  const nextAction: { text: string; tone: CommandTone } =
+    tournament.registrationStatus === "open"
+      ? { text: "Review registrations and close registration when ready.", tone: "amber" }
+      : bracketReady && totalMatchCount === 0
+        ? { text: "Generate bracket.", tone: "amber" }
+        : disputedCount > 0
+          ? { text: "Review disputed matches.", tone: "red" }
+          : resultPendingCount > 0
+            ? { text: "Check pending reports.", tone: "amber" }
+            : missingScheduleCount > 0
+              ? { text: "Complete match setup.", tone: "amber" }
+              : totalMatchCount > 0
+                ? { text: "Monitor matches.", tone: "neutral" }
+                : { text: "No immediate action.", tone: "green" };
 
   return (
     <AdminShell
@@ -487,9 +592,116 @@ export default async function ManageTournamentPage({
       <section className="hidden">
       </section>
 
+      {/* ── Command center: read-only operations summary + guidance ─────────── */}
+      <section className="mx-auto max-w-[1440px] px-6 pb-8 lg:px-10">
+        <div
+          className="overflow-hidden border shadow-2xl"
+          style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
+        >
+          <div
+            className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
+            style={{ borderBottom: "1px solid var(--asc-line-soft)" }}
+          >
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--asc-accent)" }}>
+                Command center
+              </p>
+              <h2 className="mt-1 text-xl font-black" style={{ color: "var(--asc-fg-0)" }}>
+                Tournament operations
+              </h2>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <StatusBadge status={tournament.status} />
+              <StatusBadge status={tournament.registrationStatus} />
+            </div>
+          </div>
+
+          <div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-4">
+            <CommandCard
+              label="Registration"
+              value={tournament.registrationStatus}
+              valueTone={tournament.registrationStatus === "open" ? "green" : "neutral"}
+              meta={`${approvedSlots} approved · ${pendingRegistrations.length} pending · ${tournament.registrations.length} total`}
+            />
+            <CommandCard
+              label="Bracket"
+              value={bracketState.label}
+              valueTone={bracketState.tone}
+              meta={`${approvedSlots} approved team${approvedSlots === 1 ? "" : "s"}`}
+            />
+            <CommandCard
+              label="Matches"
+              value={`${totalMatchCount} match${totalMatchCount === 1 ? "" : "es"}`}
+              valueTone={
+                disputedCount > 0
+                  ? "red"
+                  : resultPendingCount > 0 || missingScheduleCount > 0
+                    ? "amber"
+                    : "neutral"
+              }
+              meta={`${disputedCount} disputed · ${resultPendingCount} pending · ${missingScheduleCount} need schedule`}
+            />
+            <CommandCard
+              label="Admin review"
+              value={reviewState.label}
+              valueTone={reviewState.tone}
+              meta={
+                reportsReadyCount > 0
+                  ? `${reportsReadyCount} ready to confirm`
+                  : "Disputes and pending reports"
+              }
+            />
+          </div>
+
+          {/* Next recommended action */}
+          <div
+            className="flex flex-wrap items-center gap-3 px-5 py-4"
+            style={{ borderTop: "1px solid var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+          >
+            <span
+              className="border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em]"
+              style={{
+                color: commandColor(nextAction.tone),
+                borderColor: "var(--asc-line-soft)",
+                background: "var(--asc-bg-1)",
+              }}
+            >
+              Next action
+            </span>
+            <span className="text-sm font-bold" style={{ color: "var(--asc-fg-1)" }}>
+              {nextAction.text}
+            </span>
+          </div>
+
+          {/* Quick links */}
+          <div className="flex flex-wrap gap-2 px-5 py-4" style={{ borderTop: "1px solid var(--asc-line-soft)" }}>
+            {[
+              { label: "Manage registrations", href: "#registrations" },
+              { label: "Bracket & matches", href: "#matches" },
+              { label: "Manage matches", href: `/admin/tournaments/${tournament.id}/matches` },
+              { label: "Review queue", href: "/admin/match-operations?review=needs" },
+            ].map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="border px-3 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:opacity-90"
+                style={{
+                  borderColor: "var(--asc-line-soft)",
+                  background: "var(--asc-bg-2)",
+                  color: "var(--asc-fg-2)",
+                }}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto grid max-w-[1440px] gap-8 px-6 pb-16 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-10">
         <div className="grid content-start gap-5">
           <CollapsibleSection
+            id="tournament-settings"
             label="Details"
             title="Tournament setup"
             meta="Edit title, game, dates, format, slots, and visibility."
@@ -747,6 +959,7 @@ export default async function ManageTournamentPage({
           </CollapsibleSection>
 
           <CollapsibleSection
+            id="registrations"
             label="Registrations"
             title="Applications"
             meta={`${tournament.registrations.length} total · ${approvedRegistrations.length} approved · ${pendingRegistrations.length} pending`}
@@ -902,6 +1115,7 @@ export default async function ManageTournamentPage({
           </CollapsibleSection>
 
           <CollapsibleSection
+            id="matches"
             label="Matches"
             title="Match schedule"
             meta={`${tournamentMatches.length} match${tournamentMatches.length === 1 ? "" : "es"}`}
