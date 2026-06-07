@@ -660,16 +660,14 @@ export default async function AdminMatchOperationsPage({ searchParams }: PagePro
                       )}
                     </td>
 
-                    {/* Open */}
+                    {/* Open — admin resolution context (schedule/room/confirm/override/reset) */}
                     <td className="px-3 py-3">
                       <Link
-                        href={card.matchHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={`/admin/tournaments/${card.tournamentId}/matches#match-${card.matchId}`}
                         className="font-black underline transition hover:opacity-80"
                         style={{ color: "var(--asc-accent)" }}
                       >
-                        View
+                        Manage
                       </Link>
                     </td>
                   </tr>

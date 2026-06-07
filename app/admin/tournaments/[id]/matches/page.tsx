@@ -208,7 +208,9 @@ export default async function AdminTournamentMatchesPage({ params }: PageProps) 
           teamAScore: true,
           teamBScore: true,
           note: true,
+          evidenceUrl: true,
           createdAt: true,
+          submittedBy: { select: { username: true, displayName: true } },
         },
         orderBy: { createdAt: "desc" },
       },
@@ -238,6 +240,37 @@ export default async function AdminTournamentMatchesPage({ params }: PageProps) 
         })
       : [];
   const teamName = new Map(teamRows.map((t) => [t.id, t.name]));
+
+  // Dispute reasons are recorded in GameApiAuditLog (action "match.dispute",
+  // request.reason). Read-only lookup for disputed matches — never mutated here.
+  const disputedMatchIds = matches
+    .filter((m) => m.status === "disputed")
+    .map((m) => m.id);
+  const disputeReasonMap = new Map<string, { reason: string | null; at: Date }>();
+  if (disputedMatchIds.length > 0) {
+    const disputeLogs = await Promise.all(
+      disputedMatchIds.map((mid) =>
+        prisma.gameApiAuditLog.findFirst({
+          where: {
+            action: "match.dispute",
+            request: { path: ["matchId"], equals: mid },
+          },
+          orderBy: { createdAt: "desc" },
+          select: { request: true, createdAt: true },
+        }),
+      ),
+    );
+    disputedMatchIds.forEach((mid, i) => {
+      const log = disputeLogs[i];
+      if (!log) return;
+      const req = log.request as { reason?: unknown } | null;
+      const reason =
+        req && typeof req.reason === "string" && req.reason.trim()
+          ? req.reason.trim()
+          : null;
+      disputeReasonMap.set(mid, { reason, at: log.createdAt });
+    });
+  }
 
   // Group by round.
   const byRound = new Map<number, typeof matches>();
@@ -348,7 +381,8 @@ export default async function AdminTournamentMatchesPage({ params }: PageProps) 
                     return (
                       <details
                         key={match.id}
-                        className="group overflow-hidden border"
+                        id={`match-${match.id}`}
+                        className="group overflow-hidden border scroll-mt-24"
                         style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-1)" }}
                       >
                         <summary className="flex cursor-pointer list-none flex-wrap items-center gap-3 px-4 py-3 transition">
@@ -424,34 +458,74 @@ export default async function AdminTournamentMatchesPage({ params }: PageProps) 
                           )}
 
                           {/* Reports / disputes */}
-                          {match.reports.length > 0 && (
+                          {(match.reports.length > 0 || match.status === "disputed") && (
                             <div className="grid gap-2">
                               <FieldLabel>Reports &amp; disputes</FieldLabel>
-                              {match.reports.map((r) => (
+
+                              {/* Read-only dispute reason from the audit log */}
+                              {match.status === "disputed" && (
                                 <div
-                                  key={r.id}
-                                  className="flex flex-wrap items-center gap-x-3 gap-y-1 border px-3 py-2 text-xs"
-                                  style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+                                  className="border px-3 py-2 text-xs"
+                                  style={{ borderColor: "var(--asc-live-border)", background: "var(--asc-live-bg)" }}
                                 >
-                                  <span className="font-black" style={{ color: "var(--asc-fg-1)" }}>
-                                    {teamName.get(r.teamId) ?? "Unknown team"}
-                                  </span>
-                                  <span style={{ color: "var(--asc-fg-3)" }}>
-                                    winner: <span style={{ color: "var(--asc-fg-1)" }}>{teamName.get(r.winnerTeamId) ?? "—"}</span>
-                                  </span>
-                                  <span className="font-mono font-black" style={{ color: "var(--asc-fg-0)" }}>
-                                    {r.teamAScore}–{r.teamBScore}
-                                  </span>
-                                  <span className="font-black uppercase" style={{ color: r.status === "submitted" ? "var(--asc-amber)" : "var(--asc-fg-3)" }}>
-                                    {r.status}
-                                  </span>
-                                  {r.note && (
-                                    <span className="basis-full" style={{ color: "var(--asc-fg-3)" }}>
-                                      {r.note}
-                                    </span>
+                                  <p className="font-black uppercase tracking-[0.1em]" style={{ color: "var(--asc-live)" }}>
+                                    Dispute reason
+                                  </p>
+                                  <p className="mt-1 break-words" style={{ color: "var(--asc-fg-1)" }}>
+                                    {disputeReasonMap.get(match.id)?.reason ?? "No dispute reason was recorded."}
+                                  </p>
+                                  {disputeReasonMap.get(match.id)?.at && (
+                                    <p className="mt-1" style={{ color: "var(--asc-fg-3)" }}>
+                                      {fmtUtc(disputeReasonMap.get(match.id)!.at)}
+                                    </p>
                                   )}
                                 </div>
-                              ))}
+                              )}
+
+                              {match.reports.map((r) => {
+                                const submitter =
+                                  r.submittedBy.displayName?.trim() || r.submittedBy.username;
+                                return (
+                                  <div
+                                    key={r.id}
+                                    className="flex flex-wrap items-center gap-x-3 gap-y-1 border px-3 py-2 text-xs"
+                                    style={{ borderColor: "var(--asc-line-soft)", background: "var(--asc-bg-2)" }}
+                                  >
+                                    <span className="font-black" style={{ color: "var(--asc-fg-1)" }}>
+                                      {teamName.get(r.teamId) ?? "Unknown team"}
+                                    </span>
+                                    <span style={{ color: "var(--asc-fg-3)" }}>
+                                      winner: <span style={{ color: "var(--asc-fg-1)" }}>{teamName.get(r.winnerTeamId) ?? "—"}</span>
+                                    </span>
+                                    <span className="font-mono font-black" style={{ color: "var(--asc-fg-0)" }}>
+                                      {r.teamAScore}–{r.teamBScore}
+                                    </span>
+                                    <span className="font-black uppercase" style={{ color: r.status === "submitted" ? "var(--asc-amber)" : "var(--asc-fg-3)" }}>
+                                      {r.status}
+                                    </span>
+                                    <span style={{ color: "var(--asc-fg-3)" }}>
+                                      by <span style={{ color: "var(--asc-fg-2)" }}>{submitter}</span>
+                                    </span>
+                                    <span style={{ color: "var(--asc-fg-3)" }}>{fmtUtc(r.createdAt)}</span>
+                                    {r.evidenceUrl && (
+                                      <a
+                                        href={r.evidenceUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-black underline transition hover:opacity-80"
+                                        style={{ color: "var(--asc-accent)" }}
+                                      >
+                                        View evidence →
+                                      </a>
+                                    )}
+                                    {r.note && (
+                                      <span className="basis-full" style={{ color: "var(--asc-fg-3)" }}>
+                                        {r.note}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
 
