@@ -30,12 +30,6 @@ type FaceitMatchProofMessages = {
   syncButton: string;
   syncing: string;
   syncHint: string;
-  roomLinkTitle: string;
-  roomLinkLabel: string;
-  roomLinkPlaceholder: string;
-  roomLinkButton: string;
-  roomLinkSaving: string;
-  roomLinkHint: string;
   notSyncedYet: string;
   synced: string;
   matchIdLabel: string;
@@ -81,14 +75,6 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
     syncing: "Syncing...",
     syncHint:
       "Auto-confirm applies the result when team mapping is verified.",
-    roomLinkTitle: "FACEIT room link",
-    roomLinkLabel: "FACEIT match link or Match ID",
-    roomLinkPlaceholder:
-      "https://www.faceit.com/en/cs2/room/1-... or 1-...",
-    roomLinkButton: "Save FACEIT room",
-    roomLinkSaving: "Saving...",
-    roomLinkHint:
-      "Players see this link on the match page.",
     notSyncedYet: "No FACEIT proof synced yet.",
     synced: "Synced",
     matchIdLabel: "FACEIT match ID",
@@ -133,14 +119,6 @@ const formMessages: Record<Locale, FaceitMatchProofMessages> = {
     syncing: "جارٍ المزامنة...",
     syncHint:
       "يطبّق التأكيد التلقائي النتيجة عند التحقق من مطابقة الفرق.",
-    roomLinkTitle: "رابط غرفة FACEIT",
-    roomLinkLabel: "رابط مباراة FACEIT أو Match ID",
-    roomLinkPlaceholder:
-      "https://www.faceit.com/ar/cs2/room/1-... أو 1-...",
-    roomLinkButton: "حفظ غرفة FACEIT",
-    roomLinkSaving: "جارٍ الحفظ...",
-    roomLinkHint:
-      "يظهر هذا الرابط للاعبين في صفحة المباراة.",
     notSyncedYet: "لم تتم مزامنة إثبات FACEIT بعد.",
     synced: "تمت المزامنة",
     matchIdLabel: "FACEIT Match ID",

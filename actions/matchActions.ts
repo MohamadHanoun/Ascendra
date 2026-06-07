@@ -95,12 +95,6 @@ type MatchIdActionMessages = {
   faceitSyncNotAllowed: string;
   faceitSyncFailed: string;
   faceitSyncSuccess: string;
-  faceitRoomInputRequired: string;
-  faceitRoomInvalidInput: string;
-  faceitRoomNotAllowed: string;
-  faceitRoomAlreadyUsed: string;
-  faceitRoomSaveFailed: string;
-  faceitRoomSaved: string;
   checkInLoginRequired: string;
   checkInCs2Only: string;
   checkInNotParticipant: string;
@@ -161,12 +155,6 @@ const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
     faceitSyncNotAllowed: "You are not allowed to sync FACEIT proof for this match.",
     faceitSyncFailed: "Failed to sync FACEIT match.",
     faceitSyncSuccess: "FACEIT proof saved for review.",
-    faceitRoomInputRequired: "FACEIT match link or Match ID is required.",
-    faceitRoomInvalidInput: "Enter a valid FACEIT match link or Match ID.",
-    faceitRoomNotAllowed: "Only Ascendra admins can update the FACEIT room link.",
-    faceitRoomAlreadyUsed: "This FACEIT match is already linked to another Ascendra match.",
-    faceitRoomSaveFailed: "Failed to save FACEIT room link.",
-    faceitRoomSaved: "FACEIT room link saved.",
     checkInLoginRequired: "Sign in to check in.",
     checkInCs2Only: "Check-in is available for CS2 matches only.",
     checkInNotParticipant: "You must be part of this match to check in.",
@@ -222,12 +210,6 @@ const matchIdActionMessages: Record<Locale, MatchIdActionMessages> = {
     faceitSyncNotAllowed: "لا تملك صلاحية مزامنة إثبات FACEIT لهذه المباراة.",
     faceitSyncFailed: "فشل مزامنة مباراة FACEIT.",
     faceitSyncSuccess: "تم حفظ إثبات FACEIT للمراجعة.",
-    faceitRoomInputRequired: "رابط مباراة FACEIT أو Match ID مطلوب.",
-    faceitRoomInvalidInput: "أدخل رابط مباراة FACEIT أو Match ID صالحًا.",
-    faceitRoomNotAllowed: "يمكن لمشرفي Ascendra فقط تحديث رابط غرفة FACEIT.",
-    faceitRoomAlreadyUsed: "مباراة FACEIT هذه مرتبطة بمباراة أخرى في Ascendra.",
-    faceitRoomSaveFailed: "تعذر حفظ رابط غرفة FACEIT.",
-    faceitRoomSaved: "تم حفظ رابط غرفة FACEIT.",
     checkInLoginRequired: "سجّل الدخول أولًا لتسجيل الحضور.",
     checkInCs2Only: "تسجيل الحضور متاح لمباريات CS2 فقط.",
     checkInNotParticipant: "يجب أن تكون مشاركًا في هذه المباراة لتسجيل الحضور.",
