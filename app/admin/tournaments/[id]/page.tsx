@@ -896,13 +896,27 @@ export default async function ManageTournamentPage({
             title="Match schedule"
             meta={`${tournamentMatches.length} match${tournamentMatches.length === 1 ? "" : "es"}`}
           >
-            <AdminTournamentMatchPanel
-              tournamentId={tournament.id}
-              tournamentTitle={tournament.title}
-              tournamentMatches={tournamentMatches}
-              approvedTeamCount={approvedRegistrations.length}
-              registrationOpen={tournament.registrationStatus === "open"}
-            />
+            <div className="grid gap-4">
+              <Link
+                href={`/admin/tournaments/${tournament.id}/matches`}
+                className="inline-flex w-fit border px-4 py-2 text-sm font-black transition hover:opacity-90"
+                style={{
+                  borderColor: "var(--asc-accent-border)",
+                  background: "var(--asc-accent-dim)",
+                  color: "var(--asc-accent)",
+                }}
+              >
+                Manage matches →
+              </Link>
+
+              <AdminTournamentMatchPanel
+                tournamentId={tournament.id}
+                tournamentTitle={tournament.title}
+                tournamentMatches={tournamentMatches}
+                approvedTeamCount={approvedRegistrations.length}
+                registrationOpen={tournament.registrationStatus === "open"}
+              />
+            </div>
           </CollapsibleSection>
         </div>
 
