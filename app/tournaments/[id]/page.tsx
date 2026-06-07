@@ -463,12 +463,16 @@ const journeyCopy: Record<Locale, TournamentJourneyCopy> = {
   },
 };
 
-export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale();
+export async function generateMetadata({ params }: TournamentDetailsPageProps): Promise<Metadata> {
+  const [{ id }, locale] = await Promise.all([params, getLocale()]);
   const messages = getDictionary(locale).tournamentDetails.metadata;
+  const tournament = await prisma.tournament.findUnique({
+    where: { id },
+    select: { title: true },
+  });
 
   return {
-    title: messages.title,
+    title: tournament ? `${tournament.title} | Ascendra` : messages.title,
     description: messages.description,
   };
 }

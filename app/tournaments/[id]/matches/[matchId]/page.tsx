@@ -349,18 +349,22 @@ function Panel({
 // ─── generateMetadata ─────────────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { matchId } = await params;
+  const { id, matchId } = await params;
   const [match, locale] = await Promise.all([
-    prisma.tournamentMatch.findUnique({
-      where: { id: matchId },
-      select: { roundNumber: true, matchNumber: true },
+    prisma.tournamentMatch.findFirst({
+      where: { id: matchId, tournamentId: id },
+      select: {
+        roundNumber: true,
+        matchNumber: true,
+        tournament: { select: { title: true } },
+      },
     }),
     getLocale(),
   ]);
   const msgs = matchDetailMessages[locale];
   return {
     title: match
-      ? `${msgs.meta.round} ${match.roundNumber} · ${msgs.meta.match} ${match.matchNumber}`
+      ? `${match.tournament.title} | ${msgs.meta.round} ${match.roundNumber} - ${msgs.meta.match} ${match.matchNumber}`
       : msgs.meta.matchDetail,
   };
 }

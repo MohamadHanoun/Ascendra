@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import TournamentDetailsRealtime from "@/components/TournamentDetailsRealtime";
 import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { prisma } from "@/lib/prisma";
@@ -288,6 +289,7 @@ export default async function TournamentMatchesPage({ params }: PageProps) {
     >
       <div className="relative z-10">
         <Navbar />
+        <TournamentDetailsRealtime tournamentId={id} />
 
         {/* Page header */}
         <header className="mx-auto max-w-[1680px] px-6 pb-8 pt-10 lg:px-10 2xl:px-14">
