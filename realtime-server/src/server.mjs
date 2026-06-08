@@ -38,14 +38,15 @@ import {
   isValidEventSecret,
   verifyHmacSignature,
   parseSignatureHeader,
-  verifyClientToken,
 } from "./auth.mjs";
 import {
   validateEventBody,
   broadcastEvent,
   CLIENT_EVENT_NAME,
 } from "./events.mjs";
-import { isPubliclyJoinable, isValidRoomName } from "./channels.mjs";
+import { isValidRoomName } from "./channels.mjs";
+import { verifyClientToken } from "./clientToken.mjs";
+import { canJoinRoom } from "./acl.mjs";
 import {
   getClientIp,
   createRateLimiter,
@@ -230,19 +231,25 @@ const io = new SocketIOServer(httpServer, {
 });
 
 io.on("connection", (socket) => {
-  // FUTURE: read socket.handshake.auth.token and verify it here. For now we
-  // attach an anonymous identity so later code has a stable shape. Never log
-  // the handshake auth/token.
-  socket.data.identity = verifyClientToken(socket.handshake?.auth?.token);
+  // Verify the optional client token from the handshake. Invalid/absent tokens
+  // fall back to anonymous (public rooms only) — we do not disconnect. Never log
+  // the token or handshake auth.
+  const verified = verifyClientToken({
+    secret: config.clientTokenSecret,
+    token: socket.handshake?.auth?.token,
+  });
+  socket.data.claims = verified.ok ? verified.claims : null;
 
   log("debug", "Socket connected", {
     id: socket.id,
+    authenticated: verified.ok,
     connections: io.engine.clientsCount,
   });
 
-  // Anonymous clients may join PUBLIC rooms only, rate-limited per socket.
-  // Private/admin rooms (user:/notifications:/profile:/team:/admin*) are refused
-  // until token ACLs exist (later phase).
+  // Join policy (see acl.mjs):
+  //  - public rooms: anonymous allowed
+  //  - private rooms: require a token claim for the exact room
+  //  - admin rooms: require isAdmin + the exact room claim
   socket.on("join", (room, ack) => {
     const rate = joinRateLimiter(socket.id);
     if (!rate.allowed) {
@@ -259,10 +266,11 @@ io.on("connection", (socket) => {
       return;
     }
 
-    if (!isPubliclyJoinable(room)) {
+    const decision = canJoinRoom(room, socket.data.claims);
+    if (!decision.allowed) {
       log("debug", "Refused room join", { id: socket.id });
       if (typeof ack === "function") {
-        ack({ ok: false, error: "Room not joinable in current phase." });
+        ack({ ok: false, error: "Room not joinable." });
       }
       return;
     }

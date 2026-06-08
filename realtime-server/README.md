@@ -36,6 +36,13 @@ realtime updates for AscendraHub from a Hetzner box behind a TLS reverse proxy
 > It is **not wired into any existing emitter**, never throws, and the bridge
 > remains env-gated (`REALTIME_ENABLE_SOCKET`, off by default). The DB-polling
 > realtime system remains the source of truth.
+>
+> **Batch 1F** added short-lived **client token** issuance
+> (`app/api/realtime/token` + `lib/realtime/clientToken.ts`) and **room ACL**
+> enforcement here (`src/clientToken.mjs` + `src/acl.mjs`). Private/admin rooms
+> now require an exact token claim; public rooms stay anonymous. The token route
+> is dormant (404) until `REALTIME_ENABLE_SOCKET=true`, and **no browser client
+> exists yet**.
 
 ## What this is / is not
 
@@ -123,14 +130,31 @@ The matching sender lives in the Next.js app at
 - In **production with empty `ALLOWED_ORIGINS`**, all browser origins are
   rejected (fail closed) and a warning is logged at boot.
 
-### Socket.IO room-join hardening
+### Socket.IO room-join ACL (Batch 1F)
 
-- Anonymous connections may join **public rooms only**: `leaderboard`,
-  `tournament:{id}`, `match:{id}`.
-- **Refused** until token ACLs exist: `admin`, `admin:*`, `user:*`,
-  `notifications:*`, `profile:*`, `team:*`.
+The browser may pass a short-lived signed token in the handshake
+(`auth: { token }`). The token is **optional** — public-only usage stays
+anonymous. Invalid/expired/tampered tokens do **not** disconnect the socket; the
+connection simply falls back to anonymous and private/admin joins are denied.
+
+- **Public rooms — anonymous allowed:** `leaderboard`, `tournament:{id}`,
+  `match:{id}`.
+- **Private rooms — require a valid token whose `rooms` EXACTLY contains the
+  room:** `user:{id}`, `notifications:{id}`, `profile:{id}`.
+- **Admin rooms — require a valid token with `isAdmin === true` AND the exact
+  room claimed:** `admin`, `admin:queue`. (`admin:tournament:{id}` is only
+  joinable if the token explicitly includes that exact room — no wildcard
+  escalation.)
+- **`team:{id}` is intentionally deferred** — the token route does not issue
+  team rooms yet, so they remain inaccessible.
 - Room names are strictly validated (`/^[a-zA-Z0-9:_-]+$/`, ≤160 chars, clean ID
   segment) and join attempts are rate-limited to **30/minute per socket**.
+
+Token verification (`src/clientToken.mjs`) mirrors the Next.js issuer
+(`lib/realtime/clientToken.ts`) — same format and algorithm. It rejects missing
+secret, malformed tokens, bad/expired/not-yet-valid times, unsupported version,
+missing `sub`, and invalid rooms, using timing-safe signature comparison. Token
+contents and signatures are never logged.
 
 ### Safe logging
 
@@ -203,9 +227,32 @@ The dormant bridge `lib/realtime/emitRealtimeEvent.ts` reads these on the
   path (callers cannot choose the path).
 - `REALTIME_EVENT_SECRET` — must match this server's secret. **Server-only.**
 - `REALTIME_EMIT_TIMEOUT_MS` — optional; default `1500`, clamped to `500`–`5000`.
+- `REALTIME_CLIENT_TOKEN_SECRET` — used by `app/api/realtime/token` to sign
+  client tokens. **Server-only.** Must match the realtime server's value.
+- `REALTIME_CLIENT_TOKEN_TTL_SECONDS` — optional; default `300`, clamped
+  `60`–`600`.
 
-> **Never** prefix any secret with `NEXT_PUBLIC_`. `REALTIME_EVENT_SECRET` and
-> the bridge are server-only and must never reach the browser bundle.
+> **Never** prefix any secret with `NEXT_PUBLIC_`. `REALTIME_EVENT_SECRET`,
+> `REALTIME_CLIENT_TOKEN_SECRET`, and the bridge are server-only and must never
+> reach the browser bundle.
+
+### Client token route (Batch 1F)
+
+`GET /api/realtime/token` (Next.js, server-only, `nodejs` runtime) mints a
+short-lived signed token for the **authenticated** caller:
+
+- Returns **404** while `REALTIME_ENABLE_SOCKET !== "true"` (route stays hidden);
+  **503** if the secret is missing or (in production) shorter than 32 chars;
+  **401** if not logged in.
+- Token format: `base64url(payload).base64url(HMAC_SHA256(secret, base64url(payload)))`.
+- Payload is minimal: `{ sub, isAdmin, rooms, iat, exp, version }` — **no**
+  Discord ID, email, username, OAuth tokens, cookies, or session data.
+- Rooms issued: `user:{id}`, `notifications:{id}`, `profile:{id}` for everyone;
+  plus `admin`, `admin:queue` for admins. No team rooms yet.
+- Response headers: `Cache-Control: no-store, max-age=0`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`.
+- The browser client that consumes this token is **not** implemented in this
+  batch.
 
 ## Deployment templates (examples only)
 

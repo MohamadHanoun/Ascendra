@@ -157,21 +157,4 @@ export function verifyHmacSignature({
   return { ok: true };
 }
 
-/**
- * FUTURE: verify a short-lived client token issued by the Next.js app and
- * signed with REALTIME_CLIENT_TOKEN_SECRET. Will return the allowed rooms and
- * identity claims (userId, isAdmin) so the connection handler can enforce ACLs.
- *
- * NOT enforced in this batch. Returns an "anonymous" descriptor so the rest of
- * the code can be written against a stable shape today.
- */
-export function verifyClientToken(/* token */) {
-  // Placeholder only — no signature verification yet.
-  return {
-    ok: true,
-    anonymous: true,
-    userId: null,
-    isAdmin: false,
-    allowedRooms: [],
-  };
-}
+// Client-token verification now lives in clientToken.mjs (Batch 1F).
