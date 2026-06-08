@@ -19,6 +19,11 @@ realtime updates for AscendraHub from a Hetzner box behind a TLS reverse proxy
   source of truth).
 - [`PRODUCTION_DRY_RUN.md`](./PRODUCTION_DRY_RUN.md) — operator dry-run checklist
   to complete before any rollout. Offline pre-check: `npm run dry-run:check`.
+- `npm run smoke:event` — send one safe, HMAC-signed, **public-only** test event
+  to `/internal/events` (defaults to `http://127.0.0.1:8787`). Never prints
+  secrets/signatures; cannot target private/admin rooms; does not wire app
+  emitters and does not replace the E2E tests. Example:
+  `REALTIME_EVENT_SECRET=<set-in-env> npm run smoke:event`.
 - `npm run preflight` — validate production env/readiness (PASS/WARN/FAIL, never
   prints secrets) before starting the service.
 

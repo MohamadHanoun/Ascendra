@@ -126,11 +126,22 @@ curl -fsS -H "Authorization: Bearer $REALTIME_STATUS_SECRET" \
 ## 10. Local-to-production smoke checklist
 
 - [ ] Do **not** use real app emitters (none are wired).
-- [ ] A safe manual `POST /internal/events` requires HMAC signing; only do this
-      via a signing helper/script — **never** craft HMAC in the shell with the
-      secret visible.
-- [ ] **Deferred:** a dedicated signed smoke-test script is planned for a later
-      batch. Until then, mark this step deferred.
+- [ ] Use the built-in signed smoke tool — it HMAC-signs for you and never prints
+      secrets/signatures. **Never** craft HMAC in the shell manually.
+
+  ```bash
+  # Local (default target http://127.0.0.1:8787):
+  REALTIME_EVENT_SECRET=<set-in-env> npm run smoke:event
+
+  # Against the deployed server (https required in production):
+  REALTIME_SMOKE_TARGET_URL=https://realtime.ascendrahub.com \
+    REALTIME_EVENT_SECRET=<set-in-env> npm run smoke:event
+  ```
+
+- [ ] Expect `status: 200 ok=true`. It sends one minimal **public** event
+      (`leaderboard.updated` → `["leaderboard"]`); it cannot target
+      private/admin rooms. Confirm via `/internal/status` that
+      `internalEventsAccepted` incremented.
 
 ## 11. Vercel checklist
 

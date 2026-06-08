@@ -144,6 +144,14 @@ logged) use:
 journalctl -u ascendra-realtime -f
 ```
 
+Send a safe signed smoke event (never prints secrets/signatures; public-only):
+
+```bash
+REALTIME_SMOKE_TARGET_URL=https://realtime.ascendrahub.com \
+  REALTIME_EVENT_SECRET=<set-in-env> npm run smoke:event
+# expect: status: 200 ok=true
+```
+
 Optionally run the local E2E suite against a staging instance before flipping the
 Vercel flag.
 
