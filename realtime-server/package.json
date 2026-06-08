@@ -13,6 +13,7 @@
     "start": "node src/server.mjs",
     "test:e2e": "node scripts/run-e2e.mjs",
     "preflight": "node scripts/preflight.mjs",
+    "dry-run:check": "node scripts/dry-run-check.mjs",
     "audit": "npm audit --omit=optional",
     "audit:prod": "npm audit --omit=dev --omit=optional",
     "deps:check": "npm ls --all"

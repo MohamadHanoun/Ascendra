@@ -17,6 +17,8 @@ realtime updates for AscendraHub from a Hetzner box behind a TLS reverse proxy
 - [`FAILURE_MODES.md`](./FAILURE_MODES.md) — how realtime fails closed under
   outage/misconfig/attack, and the instant rollback (DB polling stays the
   source of truth).
+- [`PRODUCTION_DRY_RUN.md`](./PRODUCTION_DRY_RUN.md) — operator dry-run checklist
+  to complete before any rollout. Offline pre-check: `npm run dry-run:check`.
 - `npm run preflight` — validate production env/readiness (PASS/WARN/FAIL, never
   prints secrets) before starting the service.
 
