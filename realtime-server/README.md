@@ -23,6 +23,12 @@ realtime updates for AscendraHub from a Hetzner box behind a TLS reverse proxy
   leaderboard pilot before production. `npm run status:check` verifies
   `/healthz` (+ protected `/internal/status` when a status secret is set).
   Leaderboard is the **only** current pilot; no new events until sign-off.
+- [`THREAT_MODEL.md`](./THREAT_MODEL.md) — security threat model (assets, trust
+  boundaries, threats/mitigations, invariants, residual risks).
+- [`../docs/realtime-expansion-checklist.md`](../docs/realtime-expansion-checklist.md)
+  — required before adding any new event. Enforced offline by
+  `npm run expansion:gate`. **No second realtime event may be added until this
+  checklist is completed.**
 - `npm run smoke:event` — send one safe, HMAC-signed, **public-only** test event
   to `/internal/events` (defaults to `http://127.0.0.1:8787`). Never prints
   secrets/signatures; cannot target private/admin rooms; does not wire app

@@ -7,6 +7,11 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 > `realtime-server/STAGING_SIGNOFF.md` (use `npm run status:check`). The
 > leaderboard is the **only** current pilot — no new realtime events should be
 > enabled until that sign-off passes.
+>
+> **Adding a new realtime event?** First complete
+> `docs/realtime-expansion-checklist.md` and review
+> `realtime-server/THREAT_MODEL.md`; the offline `npm run expansion:gate` enforces
+> that the wiring still matches the approved pilot (one event type per batch).
 
 ## Files
 

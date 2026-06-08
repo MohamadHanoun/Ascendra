@@ -4,7 +4,10 @@ This package (`ascendra-realtime-server`) is the standalone realtime service for
 Ascendra. It is intentionally isolated and minimal.
 
 See also [`FAILURE_MODES.md`](./FAILURE_MODES.md) for fail-closed behavior and
-rollback under outage/misconfiguration/attack.
+rollback, [`THREAT_MODEL.md`](./THREAT_MODEL.md) for the security threat model,
+and [`../docs/realtime-expansion-checklist.md`](../docs/realtime-expansion-checklist.md)
+(enforced by `npm run expansion:gate`) — required before adding any new realtime
+event. No second realtime event may be added until that checklist is completed.
 
 ## Isolation
 

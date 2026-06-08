@@ -16,6 +16,7 @@
     "dry-run:check": "node scripts/dry-run-check.mjs",
     "smoke:event": "node scripts/smoke-event.mjs",
     "status:check": "node scripts/status-check.mjs",
+    "expansion:gate": "node scripts/expansion-gate.mjs",
     "audit": "npm audit --omit=optional",
     "audit:prod": "npm audit --omit=dev --omit=optional",
     "deps:check": "npm ls --all"

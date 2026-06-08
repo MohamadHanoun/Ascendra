@@ -7,8 +7,12 @@
 
 Related: [`PRODUCTION_DRY_RUN.md`](./PRODUCTION_DRY_RUN.md) ·
 [`DEPLOYMENT.md`](./DEPLOYMENT.md) · [`SECURITY.md`](./SECURITY.md) ·
-[`FAILURE_MODES.md`](./FAILURE_MODES.md) ·
-[`../docs/realtime-client.md`](../docs/realtime-client.md).
+[`FAILURE_MODES.md`](./FAILURE_MODES.md) · [`THREAT_MODEL.md`](./THREAT_MODEL.md) ·
+[`../docs/realtime-client.md`](../docs/realtime-client.md) ·
+[`../docs/realtime-expansion-checklist.md`](../docs/realtime-expansion-checklist.md).
+
+> Adding any **new** realtime event requires the expansion checklist + a passing
+> `npm run expansion:gate`. No second event until that is done.
 
 ## 1. Purpose
 
