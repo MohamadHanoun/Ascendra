@@ -9,6 +9,13 @@ and [`../docs/realtime-expansion-checklist.md`](../docs/realtime-expansion-check
 (enforced by `npm run expansion:gate`) — required before adding any new realtime
 event. No second realtime event may be added until that checklist is completed.
 
+Run the full local gate from the repo root with **`npm run verify:realtime-security`**
+(expansion gate + dry-run + preflight + realtime-server E2E + root realtime tests +
+build + audit). If only the known pre-existing Next/PostCSS audit advisory fails,
+re-run with `REALTIME_VERIFY_ALLOW_KNOWN_AUDIT=true`. Never auto-remediate
+dependencies. `status:check` and `smoke:event` stay manual (they need a running
+server / secrets).
+
 ## Isolation
 
 - **Standalone.** This package must **not** import any code from the Next.js app

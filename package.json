@@ -13,7 +13,8 @@
     "bot:create-invite": "tsx bot/create-invite.ts",
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify:realtime-security": "node scripts/verify-realtime-security.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

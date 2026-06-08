@@ -29,6 +29,11 @@ realtime updates for AscendraHub from a Hetzner box behind a TLS reverse proxy
   — required before adding any new event. Enforced offline by
   `npm run expansion:gate`. **No second realtime event may be added until this
   checklist is completed.**
+- **One-command gate (from repo root):** `npm run verify:realtime-security` runs
+  expansion gate + dry-run + preflight + realtime-server E2E + root realtime tests
+  + build + audit. If only the known pre-existing Next/PostCSS audit advisory
+  fails, re-run with `REALTIME_VERIFY_ALLOW_KNOWN_AUDIT=true`. It does **not**
+  deploy, access Hetzner, or run `status:check`/`smoke:event` (those stay manual).
 - `npm run smoke:event` — send one safe, HMAC-signed, **public-only** test event
   to `/internal/events` (defaults to `http://127.0.0.1:8787`). Never prints
   secrets/signatures; cannot target private/admin rooms; does not wire app

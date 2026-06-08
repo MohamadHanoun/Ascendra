@@ -12,6 +12,8 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 > `docs/realtime-expansion-checklist.md` and review
 > `realtime-server/THREAT_MODEL.md`; the offline `npm run expansion:gate` enforces
 > that the wiring still matches the approved pilot (one event type per batch).
+> Run the full local gate with **`npm run verify:realtime-security`** before any
+> expansion or staging/prod sign-off.
 
 ## Files
 

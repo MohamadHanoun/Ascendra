@@ -45,13 +45,18 @@ current state still matches the approved pilot.
 
 ## 5. Required validation
 
-- [ ] `npm --prefix realtime-server run expansion:gate`
-- [ ] Static guardrails (`realtimeSecurityGuardrails`).
-- [ ] Root tests (dispatch / payload / rooms / failure modes / consumer).
-- [ ] `npm --prefix realtime-server run test:e2e`.
-- [ ] `npm run build`.
-- [ ] `npm audit --omit=optional` (no new vulnerabilities).
+- [ ] **`npm run verify:realtime-security`** — one command that runs the full
+      gate (expansion gate, dry-run, preflight, realtime-server E2E, root realtime
+      tests, build, audit). If only the **known pre-existing** Next/PostCSS audit
+      advisory fails, re-run with
+      `REALTIME_VERIFY_ALLOW_KNOWN_AUDIT=true npm run verify:realtime-security`.
+      Do not auto-remediate dependencies.
 - [ ] Staging sign-off (`realtime-server/STAGING_SIGNOFF.md`) if app-facing.
+
+The individual checks the command wraps (run separately if needed):
+`expansion:gate`, `dry-run:check`, `preflight`, `test:e2e`, the root realtime
+tests, `build`, and `audit --omit=optional`. `status:check` and `smoke:event`
+remain **manual operator** commands (they need a running server / secrets).
 
 > No second realtime event may be enabled until this checklist is completed and
 > the leaderboard pilot is stable.

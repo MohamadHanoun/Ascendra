@@ -12,7 +12,11 @@ Related: [`PRODUCTION_DRY_RUN.md`](./PRODUCTION_DRY_RUN.md) ·
 [`../docs/realtime-expansion-checklist.md`](../docs/realtime-expansion-checklist.md).
 
 > Adding any **new** realtime event requires the expansion checklist + a passing
-> `npm run expansion:gate`. No second event until that is done.
+> `npm run expansion:gate`. No second event until that is done. Run the full local
+> gate first with `npm run verify:realtime-security` (re-run with
+> `REALTIME_VERIFY_ALLOW_KNOWN_AUDIT=true` if only the known Next/PostCSS audit
+> advisory fails). `status:check` and `smoke:event` remain manual operator
+> commands (they require a running server / secrets).
 
 ## 1. Purpose
 
