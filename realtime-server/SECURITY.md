@@ -3,6 +3,9 @@
 This package (`ascendra-realtime-server`) is the standalone realtime service for
 Ascendra. It is intentionally isolated and minimal.
 
+See also [`FAILURE_MODES.md`](./FAILURE_MODES.md) for fail-closed behavior and
+rollback under outage/misconfiguration/attack.
+
 ## Isolation
 
 - **Standalone.** This package must **not** import any code from the Next.js app

@@ -88,6 +88,14 @@ check(
   { required: true, detail: "REALTIME_EVENT_SECRET must differ from REALTIME_CLIENT_TOKEN_SECRET" },
 );
 
+// Optional status secret, when set, must differ from the other two.
+const statusSecret = process.env.REALTIME_STATUS_SECRET ?? "";
+check(
+  "REALTIME_STATUS_SECRET distinct (if set)",
+  !(statusSecret.length > 0 && (statusSecret === eventSecret || statusSecret === clientSecret)),
+  { required: true, detail: "status secret must differ from event/client token secrets" },
+);
+
 // ─── Origins ──────────────────────────────────────────────────────────────────
 
 const origins = (process.env.ALLOWED_ORIGINS ?? "")
@@ -103,6 +111,17 @@ check("ALLOWED_ORIGINS has no wildcard", !origins.includes("*"), {
   required: true,
   detail: origins.includes("*") ? "wildcard '*' is forbidden" : "",
 });
+
+// No insecure http origins in production (localhost http is dev-only).
+const httpOrigins = origins.filter((o) => o.startsWith("http://"));
+const nonLocalHttp = httpOrigins.filter(
+  (o) => !/^http:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(o),
+);
+check(
+  "ALLOWED_ORIGINS uses https (no insecure http in production)",
+  isProd ? httpOrigins.length === 0 : nonLocalHttp.length === 0,
+  { required: true, detail: "http origins are not allowed in production" },
+);
 check(
   "ALLOWED_ORIGINS includes canonical site origins",
   CANONICAL_ORIGINS.every((o) => origins.includes(o)),

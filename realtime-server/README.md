@@ -14,6 +14,9 @@ realtime updates for AscendraHub from a Hetzner box behind a TLS reverse proxy
 - [`SECURITY.md`](./SECURITY.md) — dependency hygiene & secret handling.
 - [`DEPLOYMENT.md`](./DEPLOYMENT.md) — production runbook (systemd, Caddy,
   firewall, DNS, rollback).
+- [`FAILURE_MODES.md`](./FAILURE_MODES.md) — how realtime fails closed under
+  outage/misconfig/attack, and the instant rollback (DB polling stays the
+  source of truth).
 - `npm run preflight` — validate production env/readiness (PASS/WARN/FAIL, never
   prints secrets) before starting the service.
 

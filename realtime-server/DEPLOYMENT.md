@@ -9,7 +9,8 @@ Production deployment guide for `ascendra-realtime-server` on Hetzner.
 > This service is **completely separate** from the existing Discord bot. Do not
 > modify, restart, or co-locate it with the bot's process or unit.
 
-See also: [`SECURITY.md`](./SECURITY.md) and [`README.md`](./README.md).
+See also: [`SECURITY.md`](./SECURITY.md), [`README.md`](./README.md), and
+[`FAILURE_MODES.md`](./FAILURE_MODES.md) (failure behavior + rollback).
 
 ## 1. Service account & directories
 
