@@ -86,6 +86,25 @@ Both flags must be on:
 continues either way. The `smoke:event` tool can deliver a test `leaderboard`
 event for manual verification once the client flag is enabled.
 
+## Verified loop (Batch 1S)
+
+A gated local test (`realtime-server/src/__tests__/leaderboardLoop.e2e.test.mjs`,
+run via `npm run test:e2e`) proves the **full** path on an ephemeral local server
+with generated test secrets: `dispatchRealtimeEvent("leaderboard.updated")` →
+signed `POST /internal/events` → broadcast to the `leaderboard` room → Socket.IO
+client receives a **sanitized** `ascendra:event` (sensitive fields like
+`teamName`/`rejectionReason` stripped; ID-only payload) →
+`shouldRefreshLeaderboardFromRealtimeEvent` returns `true`. It also asserts a
+dispatch to an unreachable server fails safely without throwing.
+
+The refresh decision lives in
+`components/leaderboard/leaderboardRealtimeUtils.ts`
+(`shouldRefreshLeaderboardFromRealtimeEvent`), used by `LeaderboardRealtime` for
+**both** the DB-polling and socket triggers. This is **local verification only —
+not production go-live**; live refresh still requires both
+`REALTIME_ENABLE_SOCKET=true` and `NEXT_PUBLIC_REALTIME_ENABLE=true`, and DB
+polling remains the source of truth/fallback.
+
 ## Activation
 
 The provider runs only when **both** are true (read at runtime, client-side):

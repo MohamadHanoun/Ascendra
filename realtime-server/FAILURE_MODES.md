@@ -37,6 +37,11 @@ See also: [`SECURITY.md`](./SECURITY.md), [`DEPLOYMENT.md`](./DEPLOYMENT.md),
 No realtime failure should ever require touching the Discord bot, the database,
 or app business logic.
 
+The leaderboard pilot is verified end-to-end locally (Batch 1S): a dispatch to an
+unreachable realtime server returns `{ ok:false, skipped:false }` and never
+throws, so the tournament-result award path is unaffected and the leaderboard
+still updates via DB polling.
+
 ## Debugging safely
 
 - Use `journalctl -u ascendra-realtime` and `GET /internal/status` (authenticated)

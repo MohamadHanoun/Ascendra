@@ -8,11 +8,7 @@ import {
   useRealtimePublicRoom,
   useRealtimeSocket,
 } from "@/components/realtime/realtimeContext";
-
-const SOCKET_REFRESH_TYPES = new Set([
-  "leaderboard.updated",
-  "tournament.result.updated",
-]);
+import { shouldRefreshLeaderboardFromRealtimeEvent } from "@/components/leaderboard/leaderboardRealtimeUtils";
 
 export default function LeaderboardRealtime() {
   const router = useRouter();
@@ -37,9 +33,7 @@ export default function LeaderboardRealtime() {
     intervalSeconds: 3,
     onEvents(events) {
       const shouldRefresh = events.some((event) =>
-        ["leaderboard.updated", "tournament.result.updated"].includes(
-          event.type,
-        ),
+        shouldRefreshLeaderboardFromRealtimeEvent(event),
       );
 
       if (shouldRefresh) {
@@ -58,7 +52,7 @@ export default function LeaderboardRealtime() {
 
   useEffect(() => {
     const unsubscribe = subscribe((event) => {
-      if (typeof event?.type === "string" && SOCKET_REFRESH_TYPES.has(event.type)) {
+      if (shouldRefreshLeaderboardFromRealtimeEvent(event)) {
         refreshSoonRef.current();
       }
     });

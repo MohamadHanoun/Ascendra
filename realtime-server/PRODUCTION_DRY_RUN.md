@@ -146,6 +146,10 @@ curl -fsS -H "Authorization: Bearer $REALTIME_STATUS_SECRET" \
       can be used to verify the leaderboard surface receives the
       `leaderboard` room event (the `LeaderboardRealtime` consumer triggers a
       `router.refresh()`; DB polling remains the fallback).
+- [ ] The full leaderboard loop (dispatch → `/internal/events` → `leaderboard`
+      room → sanitized socket receive) is verified locally by the Batch 1S gated
+      test (`npm run test:e2e`). This is **local verification only**, not a
+      production go-live signal.
 
 ## 11. Vercel checklist
 
