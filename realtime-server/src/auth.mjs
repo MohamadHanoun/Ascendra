@@ -53,8 +53,8 @@ export function extractBearerToken(authorizationHeader) {
  * Validate the server-to-server secret for /internal/events.
  * Returns true only when REALTIME_EVENT_SECRET is configured AND matches.
  */
-export function isValidEventSecret(authorizationHeader) {
-  if (!config.eventSecret) {
+export function isValidEventSecret(authorizationHeader, secret = config.eventSecret) {
+  if (!secret) {
     // No secret configured => refuse all internal calls (fail closed).
     return false;
   }
@@ -64,7 +64,7 @@ export function isValidEventSecret(authorizationHeader) {
     return false;
   }
 
-  return safeEqual(token, config.eventSecret);
+  return safeEqual(token, secret);
 }
 
 /**

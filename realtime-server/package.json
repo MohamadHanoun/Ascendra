@@ -9,12 +9,16 @@
   },
   "scripts": {
     "dev": "node --watch src/server.mjs",
-    "start": "node src/server.mjs"
+    "start": "node src/server.mjs",
+    "test:e2e": "node scripts/run-e2e.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",
     "express": "^4.21.0",
     "socket.io": "^4.8.0"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.0"
   }
 }

@@ -183,6 +183,35 @@ In this dormant phase, only `tournament:*`, `match:*`, and `leaderboard` are
 joinable. Private/admin rooms are refused until client-token ACLs are added in a
 later phase (see comments in `src/auth.mjs` and `src/channels.mjs`).
 
+## Local end-to-end harness (Batch 1G)
+
+An **opt-in**, local-only E2E suite proves the realtime server, HMAC bridge,
+Socket.IO client, token verification, and room ACL work together.
+
+- Local only: boots the server on an **ephemeral loopback port** with
+  **generated test secrets** (never production secrets, never the production
+  port). No external network.
+- Gated by `ASCENDRA_REALTIME_E2E=true`. Default test runs (root `npm test`)
+  **skip** it cleanly and do not require `socket.io-client`.
+- It proves: public-room delivery; private-room token ACL (exact claim, isolated
+  delivery); admin ACL (claim + `isAdmin`, no wildcard escalation); invalid
+  token → anonymous fallback (no disconnect); HMAC required; replay rejected;
+  tampered body rejected; oversized body rejected. No secrets/bodies are logged.
+
+Run it:
+
+```bash
+cd realtime-server
+npm install        # installs express/cors/socket.io + socket.io-client (dev)
+npm run test:e2e   # sets ASCENDRA_REALTIME_E2E=true and runs the e2e suite
+```
+
+`test:e2e` invokes the **root** vitest (via `scripts/run-e2e.mjs`) so it reuses
+the repo's test config; you do not need vitest installed inside this folder.
+
+This is **not** a production deployment, and it still does **not** wire the app
+UI or any emitter to realtime.
+
 ## Local development
 
 From inside `realtime-server/`:
