@@ -40,6 +40,30 @@ Ascendra. It is intentionally isolated and minimal.
   non-breaking, justified bumps. If a fix is breaking or uncertain, stop and
   escalate rather than auto-upgrading.
 
+## Static guardrails
+
+Automated guardrail tests (`lib/__tests__/realtimeSecurityGuardrails.test.ts`,
+run by the normal `npm test`) scan source as text and **fail the build** if
+unsafe realtime patterns are reintroduced. They enforce:
+
+- No `NEXT_PUBLIC_*SECRET` env usage anywhere in the app (no client secret
+  exposure).
+- The bridge/token modules keep `import "server-only"`.
+- `realtime-server/` never imports app/framework code (`@/`, `next`, `react`,
+  `prisma`, `auth`, or relative traversal into the app).
+- The app never imports `realtime-server`.
+- The app does not import `socket.io-client` (no browser socket usage yet).
+- No runtime emitter references `dispatchRealtimeEvent(Soon)` (no emitter wiring
+  yet); it stays defined only in `lib/realtime/dispatchRealtime.ts`.
+- The payload sanitizer still covers the required sensitive fields.
+- The room mapper never reads `payload.rooms`.
+- The client-token tests still forbid PII/secret fields in the token payload.
+
+**These guardrails must only be relaxed by a batch that explicitly approves the
+relevant capability** (e.g. the browser RealtimeProvider, or wiring the first
+pilot emitter). Never move a secret into a `NEXT_PUBLIC_` variable to satisfy a
+guardrail.
+
 ## Secrets
 
 - **No secrets in source or git.** No HMAC secrets (`REALTIME_EVENT_SECRET`),
