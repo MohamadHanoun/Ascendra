@@ -13,6 +13,21 @@ realtime updates for AscendraHub from a Hetzner box behind a TLS reverse proxy
 > Next.js helper `lib/realtime/emitRealtimeEvent.ts` (server-only) and the
 > `/internal/events` Bearer + HMAC verification here. It remains **dormant** —
 > no app emitter calls it, and the DB-polling realtime system is unchanged.
+>
+> **Batch 1C** added two server-side safety helpers in the Next.js app —
+> `lib/realtime/payload.ts` (payload sanitizer) and `lib/realtime/rooms.ts`
+> (room mapper). They are **not wired into any emitter yet**. Before browser
+> WebSocket rollout:
+>
+> - **Public payloads must be minimal / ID-only.** The sanitizer strips
+>   sensitive fields (rejection reasons, names, emails, tokens, secrets,
+>   headers, Discord IDs, `userIds`, etc.), blocks prototype pollution, and caps
+>   depth/size; public events keep only safe IDs.
+> - **Notification events must become user-scoped.** The room mapper sends
+>   `notification.*` only to `notifications:{userId}` and returns `[]` when no
+>   safe user ID is present — they must never broadcast to public rooms.
+> - **Rooms are derived only from validated event fields**, never from caller
+>   payload.
 
 ## What this is / is not
 
