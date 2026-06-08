@@ -47,6 +47,10 @@ export const config = Object.freeze({
   // Not enforced yet — anonymous Socket.IO connections are allowed for now.
   clientTokenSecret: process.env.REALTIME_CLIENT_TOKEN_SECRET || "",
 
+  // Optional dedicated secret for GET /internal/status. When unset, the status
+  // endpoint falls back to REALTIME_EVENT_SECRET. Value is never logged.
+  statusSecret: process.env.REALTIME_STATUS_SECRET || "",
+
   // CORS / Socket.IO allowed origins. Empty array => reflect-none (deny).
   allowedOrigins,
 

@@ -1,7 +1,8 @@
 # EXAMPLE ONLY — Ascendra realtime server systemd unit.
 #
 # This is a template. Do NOT deploy until approved. Adjust paths/user to match
-# the actual server. Contains NO real secrets — secrets live in the EnvironmentFile.
+# the actual server. Contains NO real secrets — secrets live in the
+# EnvironmentFile (see DEPLOYMENT.md).
 #
 # Install (example):
 #   sudo cp ascendra-realtime.service.example /etc/systemd/system/ascendra-realtime.service
@@ -18,24 +19,45 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-# Placeholder paths — change to the real deploy location.
+
+# Dedicated unprivileged service account (create it; never run as root).
+User=ascendra-realtime
+Group=ascendra-realtime
+
+# Release directory and secrets file (env file is chmod 600, NOT in git).
 WorkingDirectory=/opt/ascendra-realtime
+EnvironmentFile=/etc/ascendra/realtime.env
 ExecStart=/usr/bin/node src/server.mjs
 
-# Secrets are provided via an environment file that is NOT committed to git.
-# Create /opt/ascendra-realtime/.env with the values from .env.example.
-EnvironmentFile=/opt/ascendra-realtime/.env
-
-# Run as an unprivileged user (create one; do not use root).
-User=ascendra
-Group=ascendra
-
 Restart=always
-RestartSec=3
+RestartSec=5
 
-# Basic hardening (optional, tune as needed).
+# ── Hardening ────────────────────────────────────────────────────────────────
 NoNewPrivileges=true
 PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+# The app only needs to write within its own release dir (if at all). Logs go to
+# journald via stdout, so this can usually be tightened further.
+ReadWritePaths=/opt/ascendra-realtime
+# Drop all Linux capabilities — the service binds to a high port (8787) behind
+# the reverse proxy, so it needs none.
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+SystemCallArchitectures=native
+
+# NOTE: MemoryDenyWriteExecute=true is intentionally DISABLED. Node.js/V8's JIT
+# allocates writable+executable memory; enabling it crashes the runtime. Leave
+# it off unless running Node with the JIT disabled (not recommended).
+# MemoryDenyWriteExecute=true
+
+# Optional further tightening (validate before enabling, some may need tuning):
+# ProtectKernelTunables=true
+# ProtectKernelModules=true
+# ProtectControlGroups=true
+# RestrictNamespaces=true
+# RestrictSUIDSGID=true
 
 [Install]
 WantedBy=multi-user.target

@@ -62,6 +62,7 @@ import {
   buildSignatureKey,
   createOriginResolver,
 } from "./security.mjs";
+import { createMetrics } from "./metrics.mjs";
 
 const LEVELS = { error: 0, warn: 1, info: 2, debug: 3 };
 
@@ -82,11 +83,16 @@ function createLogger(logLevel) {
   };
 }
 
-function methodNotAllowed(allowed) {
+function methodNotAllowed(allowed, onReject) {
   return (_req, res) => {
+    if (typeof onReject === "function") onReject();
     res.setHeader("Allow", allowed.join(", "));
     res.status(405).json({ ok: false, error: "Method not allowed" });
   };
+}
+
+function isAdminRoomName(room) {
+  return room === "admin" || room.startsWith("admin:");
 }
 
 /**
@@ -113,6 +119,21 @@ export function createRealtimeServer(overrides = {}) {
   const replayCache = createReplayCache({ windowSeconds: cfg.replayWindowSeconds });
   const joinRateLimiter = createRateLimiter({ limit: 30, windowMs: 60_000 });
 
+  const metrics = createMetrics();
+
+  // Abuse-threshold logging: warn on repeated rejections (no IP/secret/body).
+  function warnAbuse(category, reason, count) {
+    if (count === 5 || count % 50 === 0) {
+      log("warn", "Repeated rejection", { category, reason, count });
+    }
+  }
+  function rejectInternal(reason) {
+    warnAbuse("internal_events", reason, metrics.onInternalRejected(reason));
+  }
+  function rejectJoin(reason) {
+    warnAbuse("room_join", reason, metrics.onJoinRejected(reason));
+  }
+
   // ─── HTTP app ────────────────────────────────────────────────────────────
   const app = express();
   app.disable("x-powered-by");
@@ -136,33 +157,53 @@ export function createRealtimeServer(overrides = {}) {
     }),
   );
 
+  // Public, minimal — no config/secret details (those moved to /internal/status).
   app.get("/healthz", (_req, res) => {
     res.json({
       ok: true,
-      service: "ascendra-realtime",
-      env: cfg.nodeEnv,
-      uptimeSeconds: Math.round(process.uptime()),
+      uptimeSeconds: metrics.snapshot().uptimeSeconds,
       connections: io?.engine?.clientsCount ?? 0,
-      config: {
-        hasEventSecret: cfg.eventSecret.length > 0,
-        hasClientTokenSecret: cfg.clientTokenSecret.length > 0,
-        allowedOriginsCount: cfg.allowedOrigins.length,
-      },
     });
   });
   app.all("/healthz", methodNotAllowed(["GET"]));
+
+  // Protected metrics. Requires Bearer REALTIME_STATUS_SECRET, falling back to
+  // REALTIME_EVENT_SECRET when no dedicated status secret is configured.
+  app.get("/internal/status", (req, res) => {
+    const statusSecret = cfg.statusSecret || cfg.eventSecret;
+    if (!isValidEventSecret(req.headers.authorization, statusSecret)) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    const snap = metrics.snapshot();
+    return res.json({
+      ok: true,
+      uptimeSeconds: snap.uptimeSeconds,
+      connections: snap.connections,
+      counters: snap.counters,
+      config: {
+        nodeEnv: cfg.nodeEnv,
+        allowedOriginCount: cfg.allowedOrigins.length,
+        publicRoomsEnabled: true,
+        privateRoomsRequireToken: true,
+        adminRoomsRequireToken: true,
+      },
+    });
+  });
+  app.all("/internal/status", methodNotAllowed(["GET"]));
 
   app.post("/internal/events", (req, res) => {
     // Layer 0: per-IP rate limit.
     const ip = getClientIp(req);
     const rate = internalRateLimiter(ip);
     if (!rate.allowed) {
+      rejectInternal("rate_limit");
       res.setHeader("Retry-After", String(rate.retryAfterSeconds));
       return res.status(429).json({ ok: false, error: "Too many requests" });
     }
 
     // Layer 1: shared bearer secret (fails closed if secret unconfigured).
     if (!isValidEventSecret(req.headers.authorization, cfg.eventSecret)) {
+      rejectInternal("auth");
       log("warn", "Rejected /internal/events: invalid or missing bearer secret");
       return res.status(401).json({ ok: false, error: "Unauthorized" });
     }
@@ -176,6 +217,7 @@ export function createRealtimeServer(overrides = {}) {
       rawBody,
     });
     if (!hmac.ok) {
+      rejectInternal("hmac");
       log("warn", "Rejected /internal/events: HMAC verification failed", {
         reason: hmac.reason,
       });
@@ -190,6 +232,7 @@ export function createRealtimeServer(overrides = {}) {
         digest,
       );
       if (replayCache.seen(replayKey)) {
+        rejectInternal("replay");
         log("warn", "Rejected /internal/events: replayed request");
         return res.status(409).json({ ok: false, error: "Replay detected" });
       }
@@ -197,23 +240,27 @@ export function createRealtimeServer(overrides = {}) {
 
     const result = validateEventBody(req.body);
     if (!result.ok) {
+      rejectInternal("validation");
       return res.status(400).json({ ok: false, error: result.error });
     }
 
     const roomCount = broadcastEvent(io, result.event);
+    metrics.onInternalAccepted(roomCount);
     log("info", "Broadcast event", { type: result.event.type, rooms: roomCount });
     return res.json({ ok: true, type: result.event.type, rooms: roomCount });
   });
-  app.all("/internal/events", methodNotAllowed(["POST"]));
+  app.all("/internal/events", methodNotAllowed(["POST"], () => rejectInternal("method")));
 
   // Body-parse / size error handler (must be last; 4-arg signature).
   // eslint-disable-next-line no-unused-vars
   app.use((err, _req, res, _next) => {
     const status = err?.status || err?.statusCode || 400;
     if (status === 413 || err?.type === "entity.too.large") {
+      rejectInternal("body_too_large");
       return res.status(413).json({ ok: false, error: "Payload too large" });
     }
     if (err?.type === "entity.parse.failed") {
+      rejectInternal("validation");
       return res.status(400).json({ ok: false, error: "Invalid JSON" });
     }
     return res.status(400).json({ ok: false, error: "Bad request" });
@@ -235,6 +282,7 @@ export function createRealtimeServer(overrides = {}) {
       token: socket.handshake?.auth?.token,
     });
     socket.data.claims = verified.ok ? verified.claims : null;
+    metrics.onConnect();
 
     log("debug", "Socket connected", {
       id: socket.id,
@@ -243,22 +291,27 @@ export function createRealtimeServer(overrides = {}) {
     });
 
     socket.on("join", (room, ack) => {
+      metrics.onJoinAttempt();
       const rate = joinRateLimiter(socket.id);
       if (!rate.allowed) {
+        rejectJoin("rate_limit");
         if (typeof ack === "function") ack({ ok: false, error: "Too many join attempts." });
         return;
       }
       if (typeof room !== "string" || !isValidRoomName(room)) {
+        rejectJoin("invalid_room");
         if (typeof ack === "function") ack({ ok: false, error: "Invalid room name." });
         return;
       }
       const decision = canJoinRoom(room, socket.data.claims);
       if (!decision.allowed) {
+        rejectJoin(isAdminRoomName(room) ? "admin_denied" : "private_denied");
         log("debug", "Refused room join", { id: socket.id });
         if (typeof ack === "function") ack({ ok: false, error: "Room not joinable." });
         return;
       }
       socket.join(room);
+      metrics.onJoinAccepted();
       if (typeof ack === "function") ack({ ok: true, room });
     });
 
@@ -270,6 +323,7 @@ export function createRealtimeServer(overrides = {}) {
     });
 
     socket.on("disconnect", (reason) => {
+      metrics.onDisconnect();
       log("debug", "Socket disconnected", { id: socket.id, reason });
     });
   });
@@ -296,7 +350,7 @@ export function createRealtimeServer(overrides = {}) {
     });
   }
 
-  return { app, httpServer, io, cfg, listen, close };
+  return { app, httpServer, io, cfg, metrics, listen, close };
 }
 
 // ─── CLI bootstrap (only when run directly: `node src/server.mjs`) ────────────

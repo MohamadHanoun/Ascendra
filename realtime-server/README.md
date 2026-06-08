@@ -9,6 +9,18 @@ realtime updates for AscendraHub from a Hetzner box behind a TLS reverse proxy
 > approves. The current realtime system (DB-backed polling via `RealtimeEvent` +
 > `/api/realtime/events`) continues to work exactly as before and is unchanged.
 
+**Key docs:**
+
+- [`SECURITY.md`](./SECURITY.md) — dependency hygiene & secret handling.
+- [`DEPLOYMENT.md`](./DEPLOYMENT.md) — production runbook (systemd, Caddy,
+  firewall, DNS, rollback).
+- `npm run preflight` — validate production env/readiness (PASS/WARN/FAIL, never
+  prints secrets) before starting the service.
+
+> ⚠️ **Production is not active until Mohamad approves.** Do not flip the Vercel
+> `REALTIME_ENABLE_SOCKET` flag until this service is deployed, healthy, and has
+> passed preflight + health checks.
+
 > **Batch 1B** added an HMAC-protected server-to-server event bridge: the
 > Next.js helper `lib/realtime/emitRealtimeEvent.ts` (server-only) and the
 > `/internal/events` Bearer + HMAC verification here. It remains **dormant** —
@@ -55,8 +67,14 @@ realtime updates for AscendraHub from a Hetzner box behind a TLS reverse proxy
 
 ## Endpoints
 
-- `GET /healthz` — liveness/readiness probe. Returns status, uptime, connection
-  count, and which config flags are present (never the secret values).
+- `GET /healthz` — **public, minimal** liveness probe. Returns only `ok`,
+  `uptimeSeconds`, and `connections`. No config/secret details.
+- `GET /internal/status` — **protected** in-memory metrics (Batch 1J). Requires
+  `Authorization: Bearer <REALTIME_STATUS_SECRET>` (falls back to
+  `REALTIME_EVENT_SECRET` when no dedicated status secret is set); `401`
+  otherwise. Returns counters + non-sensitive config flags only — never secrets,
+  tokens, signatures, payloads, or the full origin list (count only). See the
+  Observability section below.
 - `POST /internal/events` — server-to-server event ingress.
   - Requires **BOTH** (else `401`, failing closed if `REALTIME_EVENT_SECRET` is
     unset):
@@ -182,6 +200,23 @@ Builders live in `src/channels.mjs`. Planned model:
 In this dormant phase, only `tournament:*`, `match:*`, and `leaderboard` are
 joinable. Private/admin rooms are refused until client-token ACLs are added in a
 later phase (see comments in `src/auth.mjs` and `src/channels.mjs`).
+
+## Observability & abuse monitoring (Batch 1J)
+
+In-memory metrics (`src/metrics.mjs`), per server instance, **reset on restart**:
+socket connections (active/total/disconnects); `/internal/events` accepted and
+rejected-by-reason (`auth`, `hmac`, `replay`, `rate_limit`, `validation`,
+`body_too_large`, `method`); room join attempts/accepts and rejected-by-reason
+(`invalid_room`, `private_denied`, `admin_denied`, `rate_limit`); emitted event +
+room counts; and `lastEventAt` / `lastRejectionAt` timestamps.
+
+- **Counters only** — no payloads, tokens, secrets, signatures, or raw IPs.
+- Exposed only via the **protected** `GET /internal/status` (see Endpoints).
+- **Abuse logging:** repeated rejections (rate-limit, invalid HMAC, replay,
+  denied private/admin joins) emit threshold `warn` logs with `{ category,
+  reason, count }` — never IPs, secrets, signatures, or bodies.
+- This is a **monitoring foundation**, not a full observability stack. For logs,
+  use `journalctl -u ascendra-realtime`.
 
 ## Local end-to-end harness (Batch 1G)
 

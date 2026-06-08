@@ -1,21 +1,37 @@
 # EXAMPLE ONLY — Caddy reverse proxy for the Ascendra realtime server.
 #
 # Do NOT deploy until approved. Caddy obtains/renews TLS automatically via
-# Let's Encrypt, so wss:// works out of the box. reverse_proxy upgrades
-# WebSocket connections transparently (no extra config needed for Socket.IO).
+# Let's Encrypt (auto HTTPS), so wss:// works out of the box. reverse_proxy
+# upgrades WebSocket connections transparently (no extra config for Socket.IO).
 #
 # Usage (example):
 #   sudo cp Caddyfile.example /etc/caddy/Caddyfile   # then edit as needed
 #   sudo systemctl reload caddy
+#
+# Contains NO secrets.
 
 realtime.ascendrahub.com {
 	encode zstd gzip
 
-	# Forward all traffic (HTTP long-poll + WebSocket upgrade) to the local
-	# Node server. Caddy handles the Upgrade/Connection headers automatically.
+	# Baseline security headers on every response.
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		# Caddy advertises itself by default; drop it.
+		-Server
+	}
+
+	# Internal ingress path is server-to-server only. Mark it no-store. (The Node
+	# app already sets no-store; this is defence in depth. Access is still gated
+	# by Bearer + HMAC + replay protection in the app.)
+	@internal path /internal/*
+	header @internal Cache-Control "no-store"
+
+	# Forward all traffic (HTTP long-poll + WebSocket upgrade) to the local Node
+	# server bound to loopback. Caddy handles the Upgrade/Connection headers.
 	reverse_proxy 127.0.0.1:8787
 
-	# Optional: lightweight access logging.
+	# Lightweight access logging (no request bodies).
 	log {
 		output stdout
 		format console
