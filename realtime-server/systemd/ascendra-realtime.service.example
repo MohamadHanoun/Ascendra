@@ -1,0 +1,41 @@
+# EXAMPLE ONLY — Ascendra realtime server systemd unit.
+#
+# This is a template. Do NOT deploy until approved. Adjust paths/user to match
+# the actual server. Contains NO real secrets — secrets live in the EnvironmentFile.
+#
+# Install (example):
+#   sudo cp ascendra-realtime.service.example /etc/systemd/system/ascendra-realtime.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now ascendra-realtime
+#
+# This service is SEPARATE from the existing Discord bot service. Do not merge
+# them and do not modify the bot's unit.
+
+[Unit]
+Description=Ascendra Realtime Server (Socket.IO)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Placeholder paths — change to the real deploy location.
+WorkingDirectory=/opt/ascendra-realtime
+ExecStart=/usr/bin/node src/server.mjs
+
+# Secrets are provided via an environment file that is NOT committed to git.
+# Create /opt/ascendra-realtime/.env with the values from .env.example.
+EnvironmentFile=/opt/ascendra-realtime/.env
+
+# Run as an unprivileged user (create one; do not use root).
+User=ascendra
+Group=ascendra
+
+Restart=always
+RestartSec=3
+
+# Basic hardening (optional, tune as needed).
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
