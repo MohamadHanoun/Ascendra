@@ -7,8 +7,13 @@
 > throughout.
 
 Related: [`DEPLOYMENT.md`](./DEPLOYMENT.md) · [`SECURITY.md`](./SECURITY.md) ·
-[`FAILURE_MODES.md`](./FAILURE_MODES.md). Offline pre-check:
+[`FAILURE_MODES.md`](./FAILURE_MODES.md) ·
+[`STAGING_SIGNOFF.md`](./STAGING_SIGNOFF.md). Offline pre-check:
 `npm run dry-run:check`.
+
+> **Staging first:** complete [`STAGING_SIGNOFF.md`](./STAGING_SIGNOFF.md) for the
+> leaderboard pilot (the only current pilot) before any production go-live. Do
+> not enable new realtime events until that sign-off passes.
 
 ## 1. Purpose
 

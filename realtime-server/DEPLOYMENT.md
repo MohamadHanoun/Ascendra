@@ -10,9 +10,11 @@ Production deployment guide for `ascendra-realtime-server` on Hetzner.
 > modify, restart, or co-locate it with the bot's process or unit.
 
 See also: [`SECURITY.md`](./SECURITY.md), [`README.md`](./README.md),
-[`FAILURE_MODES.md`](./FAILURE_MODES.md) (failure behavior + rollback), and
+[`FAILURE_MODES.md`](./FAILURE_MODES.md) (failure behavior + rollback),
 [`PRODUCTION_DRY_RUN.md`](./PRODUCTION_DRY_RUN.md) (complete the operator
-checklist — and `npm run dry-run:check` — before deploying).
+checklist — and `npm run dry-run:check` — before deploying), and
+[`STAGING_SIGNOFF.md`](./STAGING_SIGNOFF.md) (required staging sign-off for the
+leaderboard pilot — use `npm run status:check` — before production).
 
 ## 1. Service account & directories
 

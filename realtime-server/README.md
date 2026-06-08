@@ -19,6 +19,10 @@ realtime updates for AscendraHub from a Hetzner box behind a TLS reverse proxy
   source of truth).
 - [`PRODUCTION_DRY_RUN.md`](./PRODUCTION_DRY_RUN.md) — operator dry-run checklist
   to complete before any rollout. Offline pre-check: `npm run dry-run:check`.
+- [`STAGING_SIGNOFF.md`](./STAGING_SIGNOFF.md) — required staging sign-off for the
+  leaderboard pilot before production. `npm run status:check` verifies
+  `/healthz` (+ protected `/internal/status` when a status secret is set).
+  Leaderboard is the **only** current pilot; no new events until sign-off.
 - `npm run smoke:event` — send one safe, HMAC-signed, **public-only** test event
   to `/internal/events` (defaults to `http://127.0.0.1:8787`). Never prints
   secrets/signatures; cannot target private/admin rooms; does not wire app

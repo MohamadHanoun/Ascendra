@@ -3,6 +3,11 @@
 Batch 1O added a **flag-gated, unmounted** browser realtime client. It does
 nothing until it is both mounted (a future batch) and explicitly enabled.
 
+> **Staging sign-off required before production.** See
+> `realtime-server/STAGING_SIGNOFF.md` (use `npm run status:check`). The
+> leaderboard is the **only** current pilot — no new realtime events should be
+> enabled until that sign-off passes.
+
 ## Files
 
 - `components/realtime/RealtimeProvider.tsx` — `"use client"` React provider +
