@@ -95,6 +95,49 @@ Verification rules enforced by the server:
 The matching sender lives in the Next.js app at
 `lib/realtime/emitRealtimeEvent.ts` (server-only, dormant — see below).
 
+### Hardening (Batch 1E)
+
+`/internal/events` is further protected, all in-memory (no Redis):
+
+- **Bearer + HMAC + timestamp + replay protection.** A given
+  `timestamp`+`signature` pair is accepted once; reuse within the replay window
+  (`INTERNAL_EVENTS_REPLAY_WINDOW_SECONDS`, default 120s) returns `409`. The
+  replay cache is **in-memory and single-instance only** — acceptable because
+  there is no Redis and exactly one Hetzner realtime process is expected.
+- **Per-IP rate limit** (`INTERNAL_EVENTS_RATE_LIMIT_PER_MINUTE`, default 120) →
+  `429` with `Retry-After` when exceeded.
+- **64 KB JSON body limit** → `413` on oversize (`/internal/events` only ever
+  needs tiny ID-only payloads).
+- **Strict methods** — `/internal/events` accepts only `POST`, `/healthz` only
+  `GET`; anything else returns `405` with an `Allow` header.
+- **Security headers** on every response: `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: no-referrer`, `Cache-Control: no-store`.
+
+### CORS / origins
+
+- Browser origins are allowed **only** if listed in `ALLOWED_ORIGINS` (HTTP CORS
+  and Socket.IO share one resolver). **No wildcard `*` is ever used.**
+- Requests with **no `Origin` header** (server-to-server, curl) are allowed —
+  `/internal/events` is still protected by Bearer + HMAC + replay.
+- In **development only**, any `localhost` / `127.0.0.1` origin is allowed.
+- In **production with empty `ALLOWED_ORIGINS`**, all browser origins are
+  rejected (fail closed) and a warning is logged at boot.
+
+### Socket.IO room-join hardening
+
+- Anonymous connections may join **public rooms only**: `leaderboard`,
+  `tournament:{id}`, `match:{id}`.
+- **Refused** until token ACLs exist: `admin`, `admin:*`, `user:*`,
+  `notifications:*`, `profile:*`, `team:*`.
+- Room names are strictly validated (`/^[a-zA-Z0-9:_-]+$/`, ≤160 chars, clean ID
+  segment) and join attempts are rate-limited to **30/minute per socket**.
+
+### Safe logging
+
+Logs may include event type, room count, connection count, and status. Logs
+**never** include secrets, signatures, `Authorization` headers, cookies, tokens,
+handshake auth, or raw/full request bodies.
+
 ## Channels / rooms
 
 Builders live in `src/channels.mjs`. Planned model:
@@ -144,6 +187,8 @@ secrets.
 - `ALLOWED_ORIGINS`
 - `ASCENDRA_SITE_URL`
 - `LOG_LEVEL`
+- `INTERNAL_EVENTS_RATE_LIMIT_PER_MINUTE` — optional; default 120, clamped 1–6000.
+- `INTERNAL_EVENTS_REPLAY_WINDOW_SECONDS` — optional; default 120, clamped 30–600.
 
 ### Next.js / Vercel bridge (Batch 1B)
 

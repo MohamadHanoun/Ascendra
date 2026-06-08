@@ -1,5 +1,5 @@
 /**
- * Ascendra realtime server — DORMANT FOUNDATION SKELETON.
+ * Ascendra realtime server — DORMANT FOUNDATION SKELETON (Batch 1E hardened).
  *
  * Standalone Node.js + Socket.IO server intended for future deployment on
  * Hetzner behind a Caddy/Nginx TLS reverse proxy at
@@ -14,12 +14,17 @@
  *
  * Endpoints
  *   GET  /healthz          -> liveness/readiness probe (no secrets).
- *   POST /internal/events  -> server-to-server event ingress (bearer secret).
+ *   POST /internal/events  -> server-to-server ingress (Bearer + HMAC + replay).
  *
- * Socket.IO
- *   - Anonymous connections are allowed for now.
- *   - Only public rooms are joinable in this phase (see channels.mjs).
- *   - Client-token ACLs for user/team/admin rooms come in a later phase.
+ * Security (Batch 1E)
+ *   - 64 KB JSON body limit (413 on oversize).
+ *   - Per-IP rate limit on /internal/events (429 on limit).
+ *   - In-memory signature replay protection (409 on reuse).
+ *   - Strict method handling (405 on unsupported methods).
+ *   - CORS restricted to ALLOWED_ORIGINS (no wildcard in production).
+ *   - Minimal security headers; no-store on responses.
+ *   - Anonymous Socket.IO connections may join PUBLIC rooms only, rate-limited.
+ *   - Logs never include secrets, signatures, auth headers, or raw bodies.
  */
 
 import http from "node:http";
@@ -32,6 +37,7 @@ import { config, configStatus } from "./config.mjs";
 import {
   isValidEventSecret,
   verifyHmacSignature,
+  parseSignatureHeader,
   verifyClientToken,
 } from "./auth.mjs";
 import {
@@ -39,7 +45,14 @@ import {
   broadcastEvent,
   CLIENT_EVENT_NAME,
 } from "./events.mjs";
-import { isPubliclyJoinable } from "./channels.mjs";
+import { isPubliclyJoinable, isValidRoomName } from "./channels.mjs";
+import {
+  getClientIp,
+  createRateLimiter,
+  createReplayCache,
+  buildSignatureKey,
+  createOriginResolver,
+} from "./security.mjs";
 
 // ─── Minimal logger (no secrets) ─────────────────────────────────────────────
 
@@ -62,27 +75,61 @@ function log(level, message, meta) {
   console[level === "debug" ? "log" : level](JSON.stringify(line));
 }
 
+// ─── CORS / origin policy ─────────────────────────────────────────────────────
+
+// Shared origin resolver for HTTP CORS and Socket.IO (see security.mjs).
+const resolveCorsOrigin = createOriginResolver({
+  allowedOrigins: config.allowedOrigins,
+  isProduction: config.isProduction,
+});
+
+// ─── In-memory limiters (single-process; no Redis) ────────────────────────────
+
+const internalRateLimiter = createRateLimiter({
+  limit: config.internalEventsRateLimitPerMinute,
+  windowMs: 60_000,
+});
+
+const replayCache = createReplayCache({
+  windowSeconds: config.replayWindowSeconds,
+});
+
+// Per-socket join attempt limiter (keyed by socket id).
+const joinRateLimiter = createRateLimiter({ limit: 30, windowMs: 60_000 });
+
 // ─── HTTP app ────────────────────────────────────────────────────────────────
 
 const app = express();
+app.disable("x-powered-by");
 
-app.use(
-  cors({
-    origin: config.allowedOrigins.length > 0 ? config.allowedOrigins : false,
-    credentials: false,
-  }),
-);
+app.use(cors({ origin: resolveCorsOrigin, credentials: false }));
 
-// Capture the exact raw body so HMAC verification uses the identical bytes the
-// bridge signed. `verify` runs during parsing; we stash the buffer on the req.
+// Minimal security headers + no-store on every response.
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
+
+// Strict 64 KB JSON limit; capture the exact raw body for HMAC verification.
 app.use(
   express.json({
-    limit: "256kb",
+    limit: "64kb",
     verify: (req, _res, buf) => {
       req.rawBody = buf && buf.length > 0 ? buf.toString("utf8") : "";
     },
   }),
 );
+
+function methodNotAllowed(allowed) {
+  return (_req, res) => {
+    res.setHeader("Allow", allowed.join(", "));
+    res.status(405).json({ ok: false, error: "Method not allowed" });
+  };
+}
+
+// ─── Routes ────────────────────────────────────────────────────────────────────
 
 app.get("/healthz", (_req, res) => {
   res.json({
@@ -98,20 +145,30 @@ app.get("/healthz", (_req, res) => {
     },
   });
 });
+app.all("/healthz", methodNotAllowed(["GET"]));
 
 app.post("/internal/events", (req, res) => {
+  // Layer 0: per-IP rate limit.
+  const ip = getClientIp(req);
+  const rate = internalRateLimiter(ip);
+  if (!rate.allowed) {
+    res.setHeader("Retry-After", String(rate.retryAfterSeconds));
+    return res.status(429).json({ ok: false, error: "Too many requests" });
+  }
+
   // Layer 1: shared bearer secret (fails closed if secret unconfigured).
   if (!isValidEventSecret(req.headers.authorization)) {
     log("warn", "Rejected /internal/events: invalid or missing bearer secret");
     return res.status(401).json({ ok: false, error: "Unauthorized" });
   }
 
-  // Layer 2: HMAC signature over `${timestamp}.${rawBody}` + replay window.
+  // Layer 2: HMAC signature over `${timestamp}.${rawBody}` + skew window.
+  const rawBody = typeof req.rawBody === "string" ? req.rawBody : "";
   const hmac = verifyHmacSignature({
     secret: config.eventSecret,
     timestampHeader: req.headers["x-ascendra-timestamp"],
     signatureHeader: req.headers["x-ascendra-signature"],
-    rawBody: typeof req.rawBody === "string" ? req.rawBody : "",
+    rawBody,
   });
 
   if (!hmac.ok) {
@@ -119,6 +176,19 @@ app.post("/internal/events", (req, res) => {
       reason: hmac.reason,
     });
     return res.status(401).json({ ok: false, error: "Unauthorized" });
+  }
+
+  // Layer 3: replay protection — reject reused timestamp+signature pairs.
+  const digest = parseSignatureHeader(req.headers["x-ascendra-signature"]);
+  if (digest) {
+    const replayKey = buildSignatureKey(
+      req.headers["x-ascendra-timestamp"],
+      digest,
+    );
+    if (replayCache.seen(replayKey)) {
+      log("warn", "Rejected /internal/events: replayed request");
+      return res.status(409).json({ ok: false, error: "Replay detected" });
+    }
   }
 
   const result = validateEventBody(req.body);
@@ -135,43 +205,76 @@ app.post("/internal/events", (req, res) => {
 
   return res.json({ ok: true, type: result.event.type, rooms: roomCount });
 });
+app.all("/internal/events", methodNotAllowed(["POST"]));
+
+// Body-parse / size error handler (must be last; 4-arg signature).
+// eslint-disable-next-line no-unused-vars
+app.use((err, _req, res, _next) => {
+  const status = err?.status || err?.statusCode || 400;
+  if (status === 413 || err?.type === "entity.too.large") {
+    return res.status(413).json({ ok: false, error: "Payload too large" });
+  }
+  if (err?.type === "entity.parse.failed") {
+    return res.status(400).json({ ok: false, error: "Invalid JSON" });
+  }
+  return res.status(400).json({ ok: false, error: "Bad request" });
+});
 
 // ─── HTTP + Socket.IO server ─────────────────────────────────────────────────
 
 const httpServer = http.createServer(app);
 
 const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin: config.allowedOrigins.length > 0 ? config.allowedOrigins : false,
-    credentials: false,
-  },
+  maxHttpBufferSize: 64 * 1024,
+  cors: { origin: resolveCorsOrigin, credentials: false },
 });
 
 io.on("connection", (socket) => {
   // FUTURE: read socket.handshake.auth.token and verify it here. For now we
-  // attach an anonymous identity so later code has a stable shape.
-  const identity = verifyClientToken(socket.handshake?.auth?.token);
-  socket.data.identity = identity;
+  // attach an anonymous identity so later code has a stable shape. Never log
+  // the handshake auth/token.
+  socket.data.identity = verifyClientToken(socket.handshake?.auth?.token);
 
-  log("debug", "Socket connected", { id: socket.id });
+  log("debug", "Socket connected", {
+    id: socket.id,
+    connections: io.engine.clientsCount,
+  });
 
-  // Basic room-join foundation. Anonymous clients may only join public rooms.
-  // Private/admin rooms are refused until token ACLs exist (later phase).
+  // Anonymous clients may join PUBLIC rooms only, rate-limited per socket.
+  // Private/admin rooms (user:/notifications:/profile:/team:/admin*) are refused
+  // until token ACLs exist (later phase).
   socket.on("join", (room, ack) => {
-    if (isPubliclyJoinable(room)) {
-      socket.join(room);
-      if (typeof ack === "function") ack({ ok: true, room });
+    const rate = joinRateLimiter(socket.id);
+    if (!rate.allowed) {
+      if (typeof ack === "function") {
+        ack({ ok: false, error: "Too many join attempts." });
+      }
       return;
     }
 
-    log("debug", "Refused room join", { id: socket.id });
+    if (typeof room !== "string" || !isValidRoomName(room)) {
+      if (typeof ack === "function") {
+        ack({ ok: false, error: "Invalid room name." });
+      }
+      return;
+    }
+
+    if (!isPubliclyJoinable(room)) {
+      log("debug", "Refused room join", { id: socket.id });
+      if (typeof ack === "function") {
+        ack({ ok: false, error: "Room not joinable in current phase." });
+      }
+      return;
+    }
+
+    socket.join(room);
     if (typeof ack === "function") {
-      ack({ ok: false, error: "Room not joinable in current phase." });
+      ack({ ok: true, room });
     }
   });
 
   socket.on("leave", (room, ack) => {
-    if (typeof room === "string" && room.length > 0) {
+    if (typeof room === "string" && isValidRoomName(room)) {
       socket.leave(room);
     }
     if (typeof ack === "function") ack({ ok: true });
@@ -190,6 +293,8 @@ httpServer.listen(config.port, config.host, () => {
     port: config.port,
     env: config.nodeEnv,
     clientEvent: CLIENT_EVENT_NAME,
+    rateLimitPerMinute: config.internalEventsRateLimitPerMinute,
+    replayWindowSeconds: config.replayWindowSeconds,
   });
 
   if (!configStatus.hasEventSecret) {
@@ -200,7 +305,12 @@ httpServer.listen(config.port, config.host, () => {
   }
 
   if (configStatus.allowedOriginsCount === 0) {
-    log("warn", "ALLOWED_ORIGINS not set — browser origins will be blocked");
+    log(
+      "warn",
+      config.isProduction
+        ? "ALLOWED_ORIGINS empty in production — ALL browser origins are rejected (fail closed)"
+        : "ALLOWED_ORIGINS not set — only localhost browser origins allowed (dev)",
+    );
   }
 });
 

@@ -10,6 +10,8 @@
 
 import dotenv from "dotenv";
 
+import { clampInt } from "./security.mjs";
+
 dotenv.config();
 
 function parseOrigins(raw) {
@@ -50,6 +52,25 @@ export const config = Object.freeze({
 
   siteUrl: process.env.ASCENDRA_SITE_URL || "",
   logLevel: process.env.LOG_LEVEL || "info",
+
+  // Hardening (Batch 1E). In-memory, single-process only.
+  // /internal/events requests per minute, per client IP. Default 120.
+  internalEventsRateLimitPerMinute: clampInt(
+    process.env.INTERNAL_EVENTS_RATE_LIMIT_PER_MINUTE,
+    1,
+    6000,
+    120,
+  ),
+  // How long a signature+timestamp pair is remembered to block replays.
+  // Default 120s (matches the HMAC skew window).
+  replayWindowSeconds: clampInt(
+    process.env.INTERNAL_EVENTS_REPLAY_WINDOW_SECONDS,
+    30,
+    600,
+    120,
+  ),
+
+  isProduction: (process.env.NODE_ENV || "development") === "production",
 });
 
 /**

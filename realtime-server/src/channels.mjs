@@ -51,8 +51,26 @@ const PROTECTED_ROOM_PREFIXES = [
   "admin",
 ];
 
+// Strict room-name rules (mirror the emit bridge: /^[a-zA-Z0-9:_-]+$/).
+export const MAX_ROOM_NAME_LENGTH = 160;
+const ROOM_NAME_PATTERN = /^[a-zA-Z0-9:_-]+$/;
+// The ID segment after a prefix may not contain a colon (no nested rooms).
+const ID_SEGMENT_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
 export function isValidRoomName(room) {
-  return typeof room === "string" && room.length > 0 && room.length <= 200;
+  return (
+    typeof room === "string" &&
+    room.length > 0 &&
+    room.length <= MAX_ROOM_NAME_LENGTH &&
+    ROOM_NAME_PATTERN.test(room)
+  );
+}
+
+// For prefixed public rooms, ensure the ID segment itself is a clean token
+// (rejects e.g. "tournament:" with empty/colon-bearing IDs).
+function hasValidIdSegment(room, prefix) {
+  const id = room.slice(prefix.length);
+  return ID_SEGMENT_PATTERN.test(id);
 }
 
 export function isProtectedRoom(room) {
@@ -76,5 +94,7 @@ export function isPubliclyJoinable(room) {
     return true;
   }
 
-  return PUBLIC_ROOM_PREFIXES.some((prefix) => room.startsWith(prefix));
+  return PUBLIC_ROOM_PREFIXES.some(
+    (prefix) => room.startsWith(prefix) && hasValidIdSegment(room, prefix),
+  );
 }
