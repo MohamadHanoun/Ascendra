@@ -385,3 +385,63 @@ describe("guardrail J: RealtimeProvider mount is scoped and dormant", () => {
     }
   });
 });
+
+// ─── K. Leaderboard consumer is scoped + additive (Batch 1Q) ───────────────────
+
+describe("guardrail K: leaderboard realtime consumer is scoped and additive", () => {
+  const CONTEXT_RE = /realtime\/realtimeContext$/;
+  const CONTEXT_ALLOWED = new Set([
+    "components/realtime/RealtimeProvider.tsx",
+    "components/LeaderboardRealtime.tsx",
+  ]);
+
+  it("realtime hooks (realtimeContext) are imported only by the provider + LeaderboardRealtime", () => {
+    const offenders: string[] = [];
+    for (const file of ["app", "components", "hooks"].flatMap((d) =>
+      walk(path.join(ROOT, d), [".ts", ".tsx"], false),
+    )) {
+      const rel = path.relative(ROOT, file).replace(/\\/g, "/");
+      for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
+        if (CONTEXT_RE.test(spec) && !CONTEXT_ALLOWED.has(rel)) {
+          offenders.push(`${rel} -> ${spec}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("LeaderboardRealtime keeps DB polling and requests only the leaderboard room", () => {
+    const raw = read("components/LeaderboardRealtime.tsx");
+    expect(raw).toContain("useRealtimeEvents"); // existing polling preserved
+    expect(raw).toContain('useRealtimePublicRoom("leaderboard")');
+    const code = stripComments(raw);
+    for (const bad of [
+      "tournament:",
+      "match:",
+      "user:",
+      "notifications:",
+      "profile:",
+      "team:",
+    ]) {
+      expect(code).not.toContain(`useRealtimePublicRoom("${bad}`);
+    }
+    for (const room of ["user:", "notifications:", "profile:", "team:"]) {
+      expect(code).not.toContain(room);
+    }
+  });
+
+  it("LeaderboardRealtime has no dispatch wiring / secrets / storage / socket import", () => {
+    const code = stripComments(read("components/LeaderboardRealtime.tsx"));
+    for (const forbidden of [
+      "dispatchRealtimeEvent",
+      "REALTIME_EVENT_SECRET",
+      "REALTIME_CLIENT_TOKEN_SECRET",
+      "localStorage",
+      "sessionStorage",
+      "document.cookie",
+      "socket.io-client",
+    ]) {
+      expect(code).not.toContain(forbidden);
+    }
+  });
+});

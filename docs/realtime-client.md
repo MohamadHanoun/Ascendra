@@ -14,6 +14,9 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 - `components/realtime/RealtimeProviderRoot.tsx` — minimal app-shell client
   boundary that mounts the provider. The **only** file allowed to import
   `RealtimeProvider`.
+- `components/realtime/realtimeContext.tsx` — React context + consumer hooks
+  (`useRealtimeSocket`, `useRealtimePublicRoom`). Consumers import hooks from
+  here (not from the provider component).
 
 ## Mount status (Batch 1P)
 
@@ -30,6 +33,30 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 **Instant client-side rollback:** unset `NEXT_PUBLIC_REALTIME_ENABLE` (or set it
 to anything other than `"true"`) and redeploy. DB polling remains active and is
 unaffected. No emitters are wired.
+
+## First consumer: LeaderboardRealtime (Batch 1Q)
+
+`components/LeaderboardRealtime.tsx` is the first read-only realtime consumer:
+
+- Keeps its existing `useRealtimeEvents` DB-polling listener **exactly as-is** —
+  polling remains the source of truth/fallback.
+- Additionally calls `useRealtimePublicRoom("leaderboard")` (the only room it
+  requests) and `useRealtimeSocket().subscribe(...)`.
+- On a socket `ascendra:event` of type `leaderboard.updated` or
+  `tournament.result.updated`, it triggers the **same** debounced
+  `router.refresh()` the poller already uses. The socket payload is **never**
+  trusted for UI state and is never logged.
+- When realtime is disabled/disconnected the socket trigger is inert (the hook is
+  a no-op), so behavior is identical to before.
+
+Public-room joins are **ref-counted** (joined once even if multiple components
+request the same room; left only when the last unmounts) and **rejoined on
+reconnect**. Only `leaderboard` / `tournament:{id}` / `match:{id}` are accepted;
+private/admin rooms cannot be requested via this API.
+
+No server emitter is wired yet, so this consumer receives real app events only
+after a later batch — though the `smoke:event` tool can deliver a test
+`leaderboard` event once the client flag is enabled for manual verification.
 
 ## Activation
 

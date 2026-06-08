@@ -138,6 +138,8 @@ export type RealtimeController = {
   start: () => Promise<void>;
   stop: () => void;
   reconnect: () => void;
+  /** Ref-counted join of a PUBLIC room. Returns a leave fn. Invalid rooms => no-op. */
+  joinPublicRoom: (room: string) => () => void;
   getStatus: () => RealtimeStatus;
   getJoinedRooms: () => string[];
 };
@@ -171,6 +173,29 @@ export function createRealtimeController(
   let refreshHandle: unknown = null;
   let joinedRooms: string[] = [];
   let stopped = false;
+  let connected = false;
+  let tokenRooms: string[] = [];
+  // Ref-counted dynamic public rooms requested by mounted consumers.
+  const publicRoomCounts = new Map<string, number>();
+
+  function currentDesiredRooms(): string[] {
+    return Array.from(
+      new Set([
+        ...tokenRooms,
+        ...filterPublicRooms(publicRooms),
+        ...publicRoomCounts.keys(),
+      ]),
+    );
+  }
+
+  function emitJoin(room: string) {
+    socket?.emit("join", room, (ack: unknown) => {
+      if (ack && typeof ack === "object" && (ack as { ok?: boolean }).ok) {
+        joinedRooms = Array.from(new Set([...joinedRooms, room]));
+        onRooms(joinedRooms);
+      }
+    });
+  }
 
   function setStatus(next: RealtimeStatus) {
     status = next;
@@ -200,6 +225,7 @@ export function createRealtimeController(
   }
 
   function teardownSocket() {
+    connected = false;
     if (socket) {
       try {
         socket.removeAllListeners?.();
@@ -240,10 +266,7 @@ export function createRealtimeController(
   function connect(parsed: TokenResponse) {
     if (stopped || !url) return;
     setStatus("connecting");
-
-    const desired = Array.from(
-      new Set([...parsed.rooms, ...filterPublicRooms(publicRooms)]),
-    );
+    tokenRooms = parsed.rooms;
 
     socket = ioFactory(url, {
       auth: { token: parsed.token },
@@ -251,24 +274,23 @@ export function createRealtimeController(
       reconnection: true,
     });
 
+    // Fires on first connect AND on every auto-reconnect → rejoin all rooms.
     socket.on("connect", () => {
+      connected = true;
       setStatus("connected");
       joinedRooms = [];
-      for (const room of desired) {
-        socket?.emit("join", room, (ack: unknown) => {
-          if (ack && typeof ack === "object" && (ack as { ok?: boolean }).ok) {
-            joinedRooms = Array.from(new Set([...joinedRooms, room]));
-            onRooms(joinedRooms);
-          }
-        });
+      for (const room of currentDesiredRooms()) {
+        emitJoin(room);
       }
     });
 
     socket.on("connect_error", () => {
+      connected = false;
       setError("connect_error");
     });
 
     socket.on("disconnect", () => {
+      connected = false;
       setStatus("disconnected");
     });
 
@@ -281,6 +303,34 @@ export function createRealtimeController(
     });
 
     scheduleRefresh(parsed.expiresAt);
+  }
+
+  function joinPublicRoom(room: string): () => void {
+    if (!isSafePublicRoom(room)) {
+      return () => {};
+    }
+    const next = (publicRoomCounts.get(room) ?? 0) + 1;
+    publicRoomCounts.set(room, next);
+    if (next === 1 && connected) {
+      emitJoin(room);
+    }
+
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      const remaining = (publicRoomCounts.get(room) ?? 0) - 1;
+      if (remaining <= 0) {
+        publicRoomCounts.delete(room);
+        if (connected && socket) {
+          socket.emit("leave", room, () => {});
+        }
+        joinedRooms = joinedRooms.filter((r) => r !== room);
+        onRooms(joinedRooms);
+      } else {
+        publicRoomCounts.set(room, remaining);
+      }
+    };
   }
 
   async function refresh() {
@@ -346,6 +396,7 @@ export function createRealtimeController(
     start,
     stop,
     reconnect,
+    joinPublicRoom,
     getStatus: () => status,
     getJoinedRooms: () => joinedRooms,
   };

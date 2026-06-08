@@ -142,6 +142,10 @@ curl -fsS -H "Authorization: Bearer $REALTIME_STATUS_SECRET" \
       (`leaderboard.updated` → `["leaderboard"]`); it cannot target
       private/admin rooms. Confirm via `/internal/status` that
       `internalEventsAccepted` incremented.
+- [ ] Once `NEXT_PUBLIC_REALTIME_ENABLE` is enabled in a client, `smoke:event`
+      can be used to verify the leaderboard surface receives the
+      `leaderboard` room event (the `LeaderboardRealtime` consumer triggers a
+      `router.refresh()`; DB polling remains the fallback).
 
 ## 11. Vercel checklist
 

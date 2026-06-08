@@ -203,6 +203,55 @@ describe("controller — runtime behavior", () => {
     expect(ctx.controller.getStatus()).toBe("idle");
   });
 
+  it("joinPublicRoom rejects private/admin rooms (no emit) and ref-counts public rooms", async () => {
+    const ctx = makeController();
+    await ctx.controller.start();
+    const fake = ctx.getSocket();
+    fake.handlers.connect?.();
+    fake.emits.length = 0;
+
+    // Private/admin requests are no-ops (no emit).
+    for (const bad of ["user:hack", "admin", "notifications:u1", "team:t1"]) {
+      const leave = ctx.controller.joinPublicRoom(bad);
+      expect(typeof leave).toBe("function");
+    }
+    expect(fake.emits).toHaveLength(0);
+
+    // Two requests for the same public room → joined once.
+    const leaveA = ctx.controller.joinPublicRoom("leaderboard");
+    const leaveB = ctx.controller.joinPublicRoom("leaderboard");
+    const joins = fake.emits.filter((e) => e.event === "join" && e.room === "leaderboard");
+    expect(joins).toHaveLength(1);
+
+    // Leave once → still referenced (no leave emit); leave again → leave emitted.
+    leaveA();
+    expect(fake.emits.filter((e) => e.event === "leave")).toHaveLength(0);
+    leaveB();
+    expect(fake.emits.filter((e) => e.event === "leave" && e.room === "leaderboard")).toHaveLength(1);
+  });
+
+  it("rejoins requested public rooms on (re)connect", async () => {
+    const ctx = makeController();
+    await ctx.controller.start();
+    const fake = ctx.getSocket();
+
+    // Requested before connect → no emit yet.
+    ctx.controller.joinPublicRoom("match:m1");
+    expect(fake.emits.filter((e) => e.event === "join" && e.room === "match:m1")).toHaveLength(0);
+
+    // First connect joins token rooms + the requested public room.
+    fake.handlers.connect?.();
+    const firstJoins = fake.emits.filter((e) => e.event === "join").map((e) => e.room);
+    expect(firstJoins).toContain("match:m1");
+    expect(firstJoins).toContain("user:u1");
+
+    // Reconnect → rejoins everything.
+    fake.emits.length = 0;
+    fake.handlers.connect?.();
+    const rejoins = fake.emits.filter((e) => e.event === "join").map((e) => e.room);
+    expect(rejoins).toContain("match:m1");
+  });
+
   it("schedules a refresh that re-fetches the token before expiry", async () => {
     const fetchImpl = vi.fn(async () => okTokenResponse(["user:u1"]) as unknown as Response);
     const ctx = makeController({ fetchImpl });
