@@ -92,6 +92,8 @@ npm --prefix realtime-server run smoke:event    # with safe env + target
 
 ## 8. Staging sign-off requirement
 
+- Operator runbook: `docs/realtime-staging-operator-guide.md` (step-by-step
+  staging execution of this RC).
 - Complete `realtime-server/STAGING_SIGNOFF.md` before production.
 - Passing staging does **not** automatically approve production.
 - No second realtime event may be added before staging sign-off or explicit

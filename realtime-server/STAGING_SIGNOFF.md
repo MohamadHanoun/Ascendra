@@ -11,6 +11,9 @@ Related: [`PRODUCTION_DRY_RUN.md`](./PRODUCTION_DRY_RUN.md) ·
 [`../docs/realtime-client.md`](../docs/realtime-client.md) ·
 [`../docs/realtime-expansion-checklist.md`](../docs/realtime-expansion-checklist.md).
 
+> **Operator runbook:** for the step-by-step staging execution of RC1, follow
+> [`../docs/realtime-staging-operator-guide.md`](../docs/realtime-staging-operator-guide.md).
+
 > Adding any **new** realtime event requires the expansion checklist + a passing
 > `npm run expansion:gate`. No second event until that is done. Run the full local
 > gate first with `npm run verify:realtime-security` (re-run with

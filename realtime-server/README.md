@@ -32,6 +32,8 @@ realtime updates for AscendraHub from a Hetzner box behind a TLS reverse proxy
 - [`../docs/realtime-release-candidate.md`](../docs/realtime-release-candidate.md)
   — frozen **Realtime Pilot RC1** baseline (leaderboard.updated only). Confirm the
   repo still matches it with `npm run check:realtime-rc` before staging.
+- [`../docs/realtime-staging-operator-guide.md`](../docs/realtime-staging-operator-guide.md)
+  — step-by-step operator runbook to execute RC1 staging verification.
 - **One-command gate (from repo root):** `npm run verify:realtime-security` runs
   expansion gate + dry-run + preflight + realtime-server E2E + root realtime tests
   + build + audit. If only the known pre-existing Next/PostCSS audit advisory

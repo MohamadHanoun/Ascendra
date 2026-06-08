@@ -17,7 +17,8 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 >
 > The frozen baseline is **Realtime Pilot RC1** —
 > `docs/realtime-release-candidate.md`. Confirm the repo still matches it with
-> **`npm run check:realtime-rc`** before staging.
+> **`npm run check:realtime-rc`** before staging. Operators follow
+> `docs/realtime-staging-operator-guide.md` to execute the staging verification.
 
 ## Files
 
