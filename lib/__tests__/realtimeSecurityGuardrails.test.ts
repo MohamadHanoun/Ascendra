@@ -289,25 +289,74 @@ describe("guardrail I: client token minimization is tested", () => {
   });
 });
 
-// ─── J. Browser provider stays dormant and clean (Batch 1O) ────────────────────
+// ─── J. Browser provider mount is scoped and dormant (Batch 1O/1P) ─────────────
 
-describe("guardrail J: RealtimeProvider is dormant and safe", () => {
-  it("RealtimeProvider is not imported by any app/ source (not mounted yet)", () => {
+describe("guardrail J: RealtimeProvider mount is scoped and dormant", () => {
+  const PROVIDER_RE = /realtime\/RealtimeProvider$/;
+  const ROOT_RE = /realtime\/RealtimeProviderRoot$/;
+  const PROVIDER_ALLOWED = "components/realtime/RealtimeProviderRoot.tsx";
+  const ROOT_ALLOWED = "app/layout.tsx";
+
+  function scanApp(): string[] {
+    return ["app", "components", "hooks"].flatMap((d) =>
+      walk(path.join(ROOT, d), [".ts", ".tsx"], false),
+    );
+  }
+
+  it("RealtimeProvider is imported only by RealtimeProviderRoot.tsx", () => {
     const offenders: string[] = [];
-    for (const file of walk(path.join(ROOT, "app"), [".ts", ".tsx"], false)) {
+    for (const file of scanApp()) {
+      const rel = path.relative(ROOT, file).replace(/\\/g, "/");
       for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
-        if (spec.includes("realtime/RealtimeProvider")) {
-          offenders.push(path.relative(ROOT, file).replace(/\\/g, "/"));
+        if (PROVIDER_RE.test(spec) && rel !== PROVIDER_ALLOWED) {
+          offenders.push(`${rel} -> ${spec}`);
         }
       }
     }
     expect(offenders).toEqual([]);
   });
 
-  it("app/layout.tsx does not reference RealtimeProvider", () => {
-    const layout = path.join(ROOT, "app", "layout.tsx");
-    if (existsSync(layout)) {
-      expect(readFileSync(layout, "utf8")).not.toContain("RealtimeProvider");
+  it("RealtimeProviderRoot is imported only by app/layout.tsx", () => {
+    const offenders: string[] = [];
+    for (const file of scanApp()) {
+      const rel = path.relative(ROOT, file).replace(/\\/g, "/");
+      for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
+        if (ROOT_RE.test(spec) && rel !== ROOT_ALLOWED) {
+          offenders.push(`${rel} -> ${spec}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("app/layout.tsx mounts RealtimeProviderRoot exactly once, not RealtimeProvider directly", () => {
+    const layout = read("app/layout.tsx");
+    const specs = importSpecifiers(layout);
+    expect(specs.filter((s) => ROOT_RE.test(s))).toHaveLength(1);
+    expect(specs.some((s) => PROVIDER_RE.test(s))).toBe(false);
+    expect(layout).toContain("<RealtimeProviderRoot>");
+  });
+
+  it("RealtimeProviderRoot imports RealtimeProvider and stays inert", () => {
+    const raw = read("components/realtime/RealtimeProviderRoot.tsx");
+    expect(importSpecifiers(raw).some((s) => PROVIDER_RE.test(s))).toBe(true);
+    expect(raw).toMatch(/publicRooms=\{\[\]\}/);
+    const code = stripComments(raw);
+    expect(code).not.toContain("subscribe");
+    expect(code).not.toContain("onEvent");
+    for (const forbidden of [
+      "REALTIME_EVENT_SECRET",
+      "REALTIME_CLIENT_TOKEN_SECRET",
+      "localStorage",
+      "sessionStorage",
+      "document.cookie",
+      "user:",
+      "notifications:",
+      "profile:",
+      "team:",
+      "admin",
+    ]) {
+      expect(code).not.toContain(forbidden);
     }
   });
 

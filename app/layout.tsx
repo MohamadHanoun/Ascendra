@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Barlow_Condensed, Inter, Rajdhani } from "next/font/google";
 
 import { PublicThemeProvider } from "@/components/PublicThemeProvider";
+import RealtimeProviderRoot from "@/components/realtime/RealtimeProviderRoot";
 import { getTextDirection, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import { PUBLIC_THEME_STORAGE_KEY } from "@/lib/theme";
@@ -119,7 +120,9 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <PublicThemeProvider>{children}</PublicThemeProvider>
+        <PublicThemeProvider>
+          <RealtimeProviderRoot>{children}</RealtimeProviderRoot>
+        </PublicThemeProvider>
       </body>
     </html>
   );

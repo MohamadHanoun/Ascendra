@@ -11,6 +11,25 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 - `components/realtime/realtimeClientUtils.ts` — pure helpers + the
   framework-agnostic controller (Socket.IO factory is injected, so this file does
   **not** import `socket.io-client`).
+- `components/realtime/RealtimeProviderRoot.tsx` — minimal app-shell client
+  boundary that mounts the provider. The **only** file allowed to import
+  `RealtimeProvider`.
+
+## Mount status (Batch 1P)
+
+`RealtimeProviderRoot` is mounted in `app/layout.tsx` (wrapping `children` inside
+`PublicThemeProvider`). It:
+
+- is **inert until** `NEXT_PUBLIC_REALTIME_ENABLE === "true"` **and**
+  `NEXT_PUBLIC_REALTIME_URL` is set — by default it fetches no token and opens no
+  socket, and the app renders exactly as before;
+- joins **no public rooms** yet (`publicRooms={[]}`);
+- has **no consumers / subscribers** yet;
+- changes no UI, reads no secrets, uses no storage/cookies.
+
+**Instant client-side rollback:** unset `NEXT_PUBLIC_REALTIME_ENABLE` (or set it
+to anything other than `"true"`) and redeploy. DB polling remains active and is
+unaffected. No emitters are wired.
 
 ## Activation
 
