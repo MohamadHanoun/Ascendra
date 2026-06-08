@@ -7,6 +7,7 @@ import {
   createPointEvent,
 } from "@/lib/ranking/rankingService";
 import { createRealtimeEvent } from "@/lib/realtime";
+import { dispatchRealtimeEventSoon } from "@/lib/realtime/dispatchRealtime";
 
 const scoringDefaults = {
   participation: 10,
@@ -312,6 +313,18 @@ async function publishAwardRealtimeEvents(tournamentId: string) {
       payload: { tournamentId },
     }),
   ]);
+
+  // Batch 1R pilot — ONLY leaderboard.updated. Additive, fire-and-forget, and
+  // flag-gated (no-op unless REALTIME_ENABLE_SOCKET === "true"). The DB
+  // RealtimeEvent above remains the source of truth; this never throws and
+  // cannot affect the award mutation. Minimal, ID-only payload.
+  dispatchRealtimeEventSoon({
+    type: "leaderboard.updated",
+    audience: "public",
+    entityType: "leaderboard",
+    entityId: "global",
+    payload: { tournamentId },
+  });
 }
 
 async function upsertTournamentResult(input: {

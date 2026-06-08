@@ -54,9 +54,37 @@ request the same room; left only when the last unmounts) and **rejoined on
 reconnect**. Only `leaderboard` / `tournament:{id}` / `match:{id}` are accepted;
 private/admin rooms cannot be requested via this API.
 
-No server emitter is wired yet, so this consumer receives real app events only
-after a later batch — though the `smoke:event` tool can deliver a test
-`leaderboard` event once the client flag is enabled for manual verification.
+## First server emitter pilot: leaderboard.updated (Batch 1R)
+
+`lib/tournamentResults.ts` (`publishAwardRealtimeEvents`, the tournament-result
+award path) is the **only** wired server emitter. After the existing
+`createRealtimeEvent` DB writes, it additionally calls — fire-and-forget —
+`dispatchRealtimeEventSoon({ type: "leaderboard.updated", audience: "public",
+entityType: "leaderboard", entityId: "global", payload: { tournamentId } })`.
+
+- **Flag-gated:** the dispatch self-skips unless `REALTIME_ENABLE_SOCKET === "true"`.
+- **Additive & non-blocking:** it is never awaited, never throws, and cannot
+  affect the award mutation. The DB `RealtimeEvent` (and DB polling) remain the
+  source of truth.
+- **Minimal payload:** ID-only (`tournamentId`); the sanitizer + room mapper
+  enforce a public ID-only payload routed solely to the `leaderboard` room.
+- **No other emitter is wired** — `tournament.result.updated`, `profile.updated`,
+  registration/match/notification/team events are **not** dispatched to the
+  bridge (they still use the DB path only).
+
+## Enabling live leaderboard socket refresh
+
+Both flags must be on:
+
+- **Server side:** Vercel `REALTIME_ENABLE_SOCKET=true` (+ `REALTIME_SERVER_URL`,
+  `REALTIME_EVENT_SECRET`, `REALTIME_CLIENT_TOKEN_SECRET`) so the emitter sends.
+- **Browser side:** `NEXT_PUBLIC_REALTIME_ENABLE=true` (+ `NEXT_PUBLIC_REALTIME_URL`)
+  so `LeaderboardRealtime` connects and joins the `leaderboard` room.
+
+**Safe rollback:** set `REALTIME_ENABLE_SOCKET=false` to stop server emits, and/or
+`NEXT_PUBLIC_REALTIME_ENABLE=false` to stop the browser socket. DB polling
+continues either way. The `smoke:event` tool can deliver a test `leaderboard`
+event for manual verification once the client flag is enabled.
 
 ## Activation
 

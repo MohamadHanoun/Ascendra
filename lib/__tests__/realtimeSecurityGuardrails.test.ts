@@ -194,7 +194,7 @@ describe("guardrail F: dispatch helper is not wired into emitters", () => {
     "lib/realtime.ts",
     "lib/notifications.ts",
     "lib/matchNotifications.ts",
-    "lib/tournamentResults.ts",
+    // lib/tournamentResults.ts is the Batch 1R pilot (allowed) — see guardrail L.
     "lib/tournamentMatchEngine.ts",
     "actions/adminRegistrationInlineActions.ts",
     "actions/tournamentRegistrationInlineActions.ts",
@@ -442,6 +442,84 @@ describe("guardrail K: leaderboard realtime consumer is scoped and additive", ()
       "socket.io-client",
     ]) {
       expect(code).not.toContain(forbidden);
+    }
+  });
+});
+
+// ─── L. leaderboard.updated emitter pilot (Batch 1R) ───────────────────────────
+
+describe("guardrail L: leaderboard.updated is the only wired server emitter", () => {
+  const PILOT = "lib/tournamentResults.ts";
+
+  function dispatchBlocks(src: string): string[] {
+    const blocks: string[] = [];
+    const re = /dispatchRealtimeEventSoon\s*\(\s*\{([\s\S]*?)\}\s*\)\s*;/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(src))) {
+      blocks.push(m[1]);
+    }
+    return blocks;
+  }
+
+  it("tournamentResults.ts wires exactly one dispatch, for leaderboard.updated", () => {
+    const src = read(PILOT);
+    expect(src).toContain("dispatchRealtimeEventSoon");
+    expect(src).toContain("createRealtimeEvent"); // DB source-of-truth retained
+    expect(src).toContain('type: "leaderboard.updated"');
+
+    const calls = src.match(/dispatchRealtimeEventSoon\s*\(/g) ?? [];
+    expect(calls).toHaveLength(1);
+
+    const blocks = dispatchBlocks(src);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toContain('"leaderboard.updated"');
+  });
+
+  it("the dispatch does not emit any other event type to the bridge", () => {
+    const [block] = dispatchBlocks(read(PILOT));
+    for (const forbiddenType of [
+      "tournament.result.updated",
+      "profile.updated",
+      "tournament.registration.updated",
+      "registration.",
+      "tournament.match.",
+      "notification.",
+      "team.",
+    ]) {
+      expect(block).not.toContain(forbiddenType);
+    }
+  });
+
+  it("the dispatch payload carries no sensitive fields", () => {
+    const [block] = dispatchBlocks(read(PILOT));
+    for (const forbidden of [
+      "rejectionReason",
+      "teamName",
+      "userIds",
+      "discordId",
+      "email",
+      "token",
+      "secret",
+      "password",
+      "cookie",
+      "headers",
+      "raw",
+    ]) {
+      expect(block).not.toContain(forbidden);
+    }
+  });
+
+  it("no other lib emitter imports the dispatch helper", () => {
+    const others = [
+      "lib/realtime.ts",
+      "lib/notifications.ts",
+      "lib/matchNotifications.ts",
+      "lib/tournamentMatchEngine.ts",
+    ];
+    for (const rel of others) {
+      const full = path.join(ROOT, rel);
+      if (!existsSync(full)) continue;
+      expect(readFileSync(full, "utf8")).not.toContain("dispatchRealtime");
     }
   });
 });

@@ -150,7 +150,11 @@ curl -fsS -H "Authorization: Bearer $REALTIME_STATUS_SECRET" \
 ## 11. Vercel checklist
 
 - [ ] Add **server-side** envs only (no `NEXT_PUBLIC` secrets).
-- [ ] `REALTIME_ENABLE_SOCKET` stays `false` until the server is healthy.
+- [ ] `REALTIME_ENABLE_SOCKET` stays `false` until the server is healthy. (When
+      set `true`, the only wired server emitter is the `leaderboard.updated`
+      pilot in `lib/tournamentResults.ts` — additive, non-blocking; the DB
+      `RealtimeEvent` remains the source of truth. Live leaderboard socket
+      refresh also requires `NEXT_PUBLIC_REALTIME_ENABLE=true`.)
 - [ ] `NEXT_PUBLIC_REALTIME_ENABLE` stays unset (the browser `RealtimeProvider` is
       mounted in `app/layout.tsx` but **inert** unless this flag is `"true"` and
       `NEXT_PUBLIC_REALTIME_URL` is set; it joins no rooms and has no consumers).
