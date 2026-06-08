@@ -28,6 +28,14 @@ realtime updates for AscendraHub from a Hetzner box behind a TLS reverse proxy
 >   safe user ID is present — they must never broadcast to public rooms.
 > - **Rooms are derived only from validated event fields**, never from caller
 >   payload.
+>
+> **Batch 1D** added a single server-only dispatch helper in the Next.js app —
+> `lib/realtime/dispatchRealtime.ts`. It composes the previous pieces in order:
+> **room mapping → payload sanitization → HMAC bridge**
+> (`mapRealtimeEventToRooms` → `sanitizeRealtimePayload` → `emitRealtimeEventToServer`).
+> It is **not wired into any existing emitter**, never throws, and the bridge
+> remains env-gated (`REALTIME_ENABLE_SOCKET`, off by default). The DB-polling
+> realtime system remains the source of truth.
 
 ## What this is / is not
 
