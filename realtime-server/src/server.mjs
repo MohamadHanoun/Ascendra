@@ -29,7 +29,11 @@ import cors from "cors";
 import { Server as SocketIOServer } from "socket.io";
 
 import { config, configStatus } from "./config.mjs";
-import { isValidEventSecret, verifyClientToken } from "./auth.mjs";
+import {
+  isValidEventSecret,
+  verifyHmacSignature,
+  verifyClientToken,
+} from "./auth.mjs";
 import {
   validateEventBody,
   broadcastEvent,
@@ -69,7 +73,16 @@ app.use(
   }),
 );
 
-app.use(express.json({ limit: "256kb" }));
+// Capture the exact raw body so HMAC verification uses the identical bytes the
+// bridge signed. `verify` runs during parsing; we stash the buffer on the req.
+app.use(
+  express.json({
+    limit: "256kb",
+    verify: (req, _res, buf) => {
+      req.rawBody = buf && buf.length > 0 ? buf.toString("utf8") : "";
+    },
+  }),
+);
 
 app.get("/healthz", (_req, res) => {
   res.json({
@@ -87,8 +100,24 @@ app.get("/healthz", (_req, res) => {
 });
 
 app.post("/internal/events", (req, res) => {
+  // Layer 1: shared bearer secret (fails closed if secret unconfigured).
   if (!isValidEventSecret(req.headers.authorization)) {
-    log("warn", "Rejected /internal/events: invalid or missing secret");
+    log("warn", "Rejected /internal/events: invalid or missing bearer secret");
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
+  }
+
+  // Layer 2: HMAC signature over `${timestamp}.${rawBody}` + replay window.
+  const hmac = verifyHmacSignature({
+    secret: config.eventSecret,
+    timestampHeader: req.headers["x-ascendra-timestamp"],
+    signatureHeader: req.headers["x-ascendra-signature"],
+    rawBody: typeof req.rawBody === "string" ? req.rawBody : "",
+  });
+
+  if (!hmac.ok) {
+    log("warn", "Rejected /internal/events: HMAC verification failed", {
+      reason: hmac.reason,
+    });
     return res.status(401).json({ ok: false, error: "Unauthorized" });
   }
 
