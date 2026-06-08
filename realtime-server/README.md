@@ -29,6 +29,9 @@ realtime updates for AscendraHub from a Hetzner box behind a TLS reverse proxy
   — required before adding any new event. Enforced offline by
   `npm run expansion:gate`. **No second realtime event may be added until this
   checklist is completed.**
+- [`../docs/realtime-release-candidate.md`](../docs/realtime-release-candidate.md)
+  — frozen **Realtime Pilot RC1** baseline (leaderboard.updated only). Confirm the
+  repo still matches it with `npm run check:realtime-rc` before staging.
 - **One-command gate (from repo root):** `npm run verify:realtime-security` runs
   expansion gate + dry-run + preflight + realtime-server E2E + root realtime tests
   + build + audit. If only the known pre-existing Next/PostCSS audit advisory

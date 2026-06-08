@@ -14,7 +14,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify:realtime-security": "node scripts/verify-realtime-security.mjs"
+    "verify:realtime-security": "node scripts/verify-realtime-security.mjs",
+    "check:realtime-rc": "node scripts/check-realtime-rc.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

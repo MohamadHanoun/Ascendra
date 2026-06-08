@@ -14,6 +14,10 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 > that the wiring still matches the approved pilot (one event type per batch).
 > Run the full local gate with **`npm run verify:realtime-security`** before any
 > expansion or staging/prod sign-off.
+>
+> The frozen baseline is **Realtime Pilot RC1** —
+> `docs/realtime-release-candidate.md`. Confirm the repo still matches it with
+> **`npm run check:realtime-rc`** before staging.
 
 ## Files
 

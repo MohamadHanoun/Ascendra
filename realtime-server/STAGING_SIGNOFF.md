@@ -38,6 +38,10 @@ events, admin/private rooms in the UI, or production rollout.
 ## 3. Preconditions
 
 - [ ] Batches 1A–1S committed; `git status` clean.
+- [ ] `npm.cmd run check:realtime-rc` passes — the repo matches the frozen
+      **Realtime Pilot RC1** baseline (`../docs/realtime-release-candidate.md`).
+- [ ] `npm.cmd run verify:realtime-security` passes (use
+      `REALTIME_VERIFY_ALLOW_KNOWN_AUDIT=true` if only the known audit advisory fails).
 - [ ] `npm.cmd run test` green; `npm.cmd run build` green.
 - [ ] `npm.cmd --prefix realtime-server run test:e2e` green.
 - [ ] Staging realtime server deployed **separately from the Discord bot**.

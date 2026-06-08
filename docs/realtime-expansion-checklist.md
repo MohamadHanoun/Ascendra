@@ -5,6 +5,12 @@ event type per batch**. See `realtime-server/THREAT_MODEL.md` for the security
 rationale; run `npm --prefix realtime-server run expansion:gate` to confirm the
 current state still matches the approved pilot.
 
+The current frozen baseline is **Realtime Pilot RC1**
+(`docs/realtime-release-candidate.md`). Before staging, confirm the repo matches
+it with `npm run check:realtime-rc` and run the full gate with
+`npm run verify:realtime-security`. Any new event moves the repo off RC1 and
+requires re-baselining.
+
 ## 1. Event proposal
 
 - [ ] Event name (e.g. `tournament.result.updated`).
