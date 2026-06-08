@@ -162,17 +162,24 @@ describe("guardrail D: app does not import realtime-server", () => {
 
 // ─── E. No direct browser Socket.IO usage yet ──────────────────────────────────
 
-describe("guardrail E: no socket.io-client in the app", () => {
-  it("no app/components/hooks source imports socket.io-client", () => {
+describe("guardrail E: socket.io-client only in the approved provider file", () => {
+  // Batch 1O: the browser provider may import socket.io-client. Nothing else.
+  const ALLOWED = "components/realtime/RealtimeProvider.tsx";
+
+  it("only RealtimeProvider.tsx imports socket.io-client", () => {
     const offenders: string[] = [];
     const dirs = ["app", "components", "hooks"];
     const files = dirs.flatMap((d) =>
       walk(path.join(ROOT, d), [".ts", ".tsx"], false),
     );
     for (const file of files) {
+      const rel = path.relative(ROOT, file).replace(/\\/g, "/");
       for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
-        if (spec === "socket.io-client" || spec.startsWith("socket.io-client/")) {
-          offenders.push(path.relative(ROOT, file));
+        if (
+          (spec === "socket.io-client" || spec.startsWith("socket.io-client/")) &&
+          rel !== ALLOWED
+        ) {
+          offenders.push(rel);
         }
       }
     }
@@ -278,6 +285,54 @@ describe("guardrail I: client token minimization is tested", () => {
       "secret",
     ]) {
       expect(content).toContain(forbidden);
+    }
+  });
+});
+
+// ─── J. Browser provider stays dormant and clean (Batch 1O) ────────────────────
+
+describe("guardrail J: RealtimeProvider is dormant and safe", () => {
+  it("RealtimeProvider is not imported by any app/ source (not mounted yet)", () => {
+    const offenders: string[] = [];
+    for (const file of walk(path.join(ROOT, "app"), [".ts", ".tsx"], false)) {
+      for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {
+        if (spec.includes("realtime/RealtimeProvider")) {
+          offenders.push(path.relative(ROOT, file).replace(/\\/g, "/"));
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("app/layout.tsx does not reference RealtimeProvider", () => {
+    const layout = path.join(ROOT, "app", "layout.tsx");
+    if (existsSync(layout)) {
+      expect(readFileSync(layout, "utf8")).not.toContain("RealtimeProvider");
+    }
+  });
+
+  it("RealtimeProvider.tsx contains no secrets/storage/cookies", () => {
+    const code = stripComments(read("components/realtime/RealtimeProvider.tsx"));
+    for (const forbidden of [
+      "REALTIME_EVENT_SECRET",
+      "REALTIME_CLIENT_TOKEN_SECRET",
+      "localStorage",
+      "sessionStorage",
+      "document.cookie",
+    ]) {
+      expect(code).not.toContain(forbidden);
+    }
+  });
+
+  it("realtimeClientUtils.ts uses no storage/cookies and imports no socket.io-client", () => {
+    const code = stripComments(read("components/realtime/realtimeClientUtils.ts"));
+    for (const forbidden of [
+      "localStorage",
+      "sessionStorage",
+      "document.cookie",
+      "socket.io-client",
+    ]) {
+      expect(code).not.toContain(forbidden);
     }
   });
 });
