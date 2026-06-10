@@ -83,6 +83,30 @@ describe("dispatchRealtimeEvent — routing", () => {
     });
   });
 
+  it("sends tournament.result.updated to its tournament room with an ID-only payload", async () => {
+    const fetchMock = mockFetchOk();
+    enableBridge();
+
+    const result = await dispatchRealtimeEvent({
+      type: "tournament.result.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: "tour123",
+      payload: { tournamentId: "tour123" },
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.rooms).toEqual(["tournament:tour123"]);
+
+    const body = lastFetchBody(fetchMock);
+    expect(body.rooms).toEqual(["tournament:tour123"]);
+    expect(body.payload).toEqual({
+      tournamentId: "tour123",
+      entityType: "tournament",
+      entityId: "tour123",
+    });
+  });
+
   it("maps tournament.match.confirmed to match + tournament rooms", async () => {
     const fetchMock = mockFetchOk();
     enableBridge();

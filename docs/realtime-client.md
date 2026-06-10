@@ -15,7 +15,7 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 > Run the full local gate with **`npm run verify:realtime-security`** before any
 > expansion or staging/prod sign-off.
 >
-> The frozen baseline is **Realtime Pilot RC1** —
+> The frozen baseline is **Realtime Pilot RC2** —
 > `docs/realtime-release-candidate.md`. Confirm the repo still matches it with
 > **`npm run check:realtime-rc`** before staging. Operators follow
 > `docs/realtime-staging-operator-guide.md` to execute the staging verification.
@@ -95,6 +95,32 @@ entityType: "leaderboard", entityId: "global", payload: { tournamentId } })`.
 - **No other emitter is wired** — `tournament.result.updated`, `profile.updated`,
   registration/match/notification/team events are **not** dispatched to the
   bridge (they still use the DB path only).
+
+## Second pilot: tournament.result.updated (Batch 2A — RC2)
+
+The same award path (`publishAwardRealtimeEvents` in `lib/tournamentResults.ts`)
+additionally dispatches `tournament.result.updated` to the **public room
+`tournament:{tournamentId}`** — also flag-gated, `after()`-scheduled, and
+ID-only (`{ tournamentId }`).
+
+- **Consumer:** `components/TournamentDetailsRealtime.tsx` (mounted on
+  `/tournaments/[id]` and `/tournaments/[id]/matches`). Its DB-polling listener
+  is unchanged; additively it joins `tournament:{tournamentId}` and triggers the
+  **same** debounced `router.refresh()` when
+  `shouldRefreshTournamentDetailsFromRealtimeEvent`
+  (`components/tournament/tournamentRealtimeUtils.ts`) matches the mounted
+  tournament. The socket event is never trusted for UI state — the page
+  re-fetches everything server-side.
+- **Isolation:** events for one tournament are delivered only to that
+  tournament's room; pages for other tournaments do not refresh (covered by the
+  gated `tournamentRoomLoop` E2E test).
+- **Manual admin saves stay polling-only:** `saveTournamentResultInline`
+  (`actions/adminTournamentResultActions.ts`) writes DB `RealtimeEvent`s but has
+  **no** socket dispatch in RC2 — tournament pages still update via polling for
+  that path.
+- **Production remains disabled** (`REALTIME_ENABLE_SOCKET=false`,
+  `NEXT_PUBLIC_REALTIME_ENABLE=false`), **anonymous browser realtime remains
+  disabled**, and the DB-polling fallback remains active for all visitors.
 
 ## Enabling live leaderboard socket refresh
 

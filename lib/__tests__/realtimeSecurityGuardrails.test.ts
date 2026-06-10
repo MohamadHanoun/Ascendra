@@ -386,16 +386,17 @@ describe("guardrail J: RealtimeProvider mount is scoped and dormant", () => {
   });
 });
 
-// ─── K. Leaderboard consumer is scoped + additive (Batch 1Q) ───────────────────
+// ─── K. Approved consumers are scoped + additive (Batches 1Q + 2A) ─────────────
 
-describe("guardrail K: leaderboard realtime consumer is scoped and additive", () => {
+describe("guardrail K: realtime consumers are scoped and additive", () => {
   const CONTEXT_RE = /realtime\/realtimeContext$/;
   const CONTEXT_ALLOWED = new Set([
     "components/realtime/RealtimeProvider.tsx",
     "components/LeaderboardRealtime.tsx",
+    "components/TournamentDetailsRealtime.tsx",
   ]);
 
-  it("realtime hooks (realtimeContext) are imported only by the provider + LeaderboardRealtime", () => {
+  it("realtime hooks (realtimeContext) are imported only by the provider + approved consumers", () => {
     const offenders: string[] = [];
     for (const file of ["app", "components", "hooks"].flatMap((d) =>
       walk(path.join(ROOT, d), [".ts", ".tsx"], false),
@@ -444,12 +445,41 @@ describe("guardrail K: leaderboard realtime consumer is scoped and additive", ()
       expect(code).not.toContain(forbidden);
     }
   });
+
+  it("TournamentDetailsRealtime keeps DB polling and requests only its tournament room", () => {
+    const raw = read("components/TournamentDetailsRealtime.tsx");
+    expect(raw).toContain("useRealtimeEvents"); // existing polling preserved
+    expect(raw).toContain("useRealtimePublicRoom(`tournament:${tournamentId}`)");
+
+    const code = stripComments(raw);
+    const roomCalls = [...code.matchAll(/useRealtimePublicRoom\(([^)]*)\)/g)];
+    expect(roomCalls).toHaveLength(1);
+    for (const room of ["user:", "notifications:", "profile:", "team:", "admin"]) {
+      expect(code).not.toContain(room);
+    }
+  });
+
+  it("TournamentDetailsRealtime has no dispatch wiring / secrets / storage / socket import", () => {
+    const code = stripComments(read("components/TournamentDetailsRealtime.tsx"));
+    for (const forbidden of [
+      "dispatchRealtimeEvent",
+      "REALTIME_EVENT_SECRET",
+      "REALTIME_CLIENT_TOKEN_SECRET",
+      "localStorage",
+      "sessionStorage",
+      "document.cookie",
+      "socket.io-client",
+    ]) {
+      expect(code).not.toContain(forbidden);
+    }
+  });
 });
 
-// ─── L. leaderboard.updated emitter pilot (Batch 1R) ───────────────────────────
+// ─── L. Approved emitter pilots (Batches 1R + 2A) ──────────────────────────────
 
-describe("guardrail L: leaderboard.updated is the only wired server emitter", () => {
+describe("guardrail L: only the approved RC2 events are wired server emitters", () => {
   const PILOT = "lib/tournamentResults.ts";
+  const ALLOWED_TYPES = ["leaderboard.updated", "tournament.result.updated"];
 
   function dispatchBlocks(src: string): string[] {
     const blocks: string[] = [];
@@ -461,51 +491,60 @@ describe("guardrail L: leaderboard.updated is the only wired server emitter", ()
     return blocks;
   }
 
-  it("tournamentResults.ts wires exactly one dispatch, for leaderboard.updated", () => {
+  function blockType(block: string): string | null {
+    const match = block.match(/type\s*:\s*["']([^"']+)["']/);
+    return match ? match[1] : null;
+  }
+
+  it("tournamentResults.ts wires exactly two dispatches, one per approved type", () => {
     const src = read(PILOT);
     expect(src).toContain("dispatchRealtimeEventSoon");
     expect(src).toContain("createRealtimeEvent"); // DB source-of-truth retained
-    expect(src).toContain('type: "leaderboard.updated"');
 
     const calls = src.match(/dispatchRealtimeEventSoon\s*\(/g) ?? [];
-    expect(calls).toHaveLength(1);
+    expect(calls).toHaveLength(2);
 
     const blocks = dispatchBlocks(src);
-    expect(blocks).toHaveLength(1);
-    expect(blocks[0]).toContain('"leaderboard.updated"');
+    expect(blocks).toHaveLength(2);
+    expect(blocks.map(blockType).sort()).toEqual([...ALLOWED_TYPES].sort());
   });
 
-  it("the dispatch does not emit any other event type to the bridge", () => {
-    const [block] = dispatchBlocks(read(PILOT));
-    for (const forbiddenType of [
-      "tournament.result.updated",
-      "profile.updated",
-      "tournament.registration.updated",
-      "registration.",
-      "tournament.match.",
-      "notification.",
-      "team.",
-    ]) {
-      expect(block).not.toContain(forbiddenType);
+  it("no dispatch emits an unapproved event type to the bridge", () => {
+    const blocks = dispatchBlocks(read(PILOT));
+    for (const block of blocks) {
+      expect(ALLOWED_TYPES).toContain(blockType(block));
+      for (const forbiddenType of [
+        "profile.updated",
+        "tournament.registration.updated",
+        "registration.",
+        "tournament.match.",
+        "notification.",
+        "team.",
+      ]) {
+        expect(block).not.toContain(forbiddenType);
+      }
     }
   });
 
-  it("the dispatch payload carries no sensitive fields", () => {
-    const [block] = dispatchBlocks(read(PILOT));
-    for (const forbidden of [
-      "rejectionReason",
-      "teamName",
-      "userIds",
-      "discordId",
-      "email",
-      "token",
-      "secret",
-      "password",
-      "cookie",
-      "headers",
-      "raw",
-    ]) {
-      expect(block).not.toContain(forbidden);
+  it("no dispatch payload carries sensitive fields", () => {
+    const blocks = dispatchBlocks(read(PILOT));
+    expect(blocks.length).toBeGreaterThan(0);
+    for (const block of blocks) {
+      for (const forbidden of [
+        "rejectionReason",
+        "teamName",
+        "userIds",
+        "discordId",
+        "email",
+        "token",
+        "secret",
+        "password",
+        "cookie",
+        "headers",
+        "raw",
+      ]) {
+        expect(block).not.toContain(forbidden);
+      }
     }
   });
 

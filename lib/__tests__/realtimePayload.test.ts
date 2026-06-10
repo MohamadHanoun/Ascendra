@@ -27,6 +27,38 @@ describe("sanitizeRealtimePayload — public", () => {
     expect(result).not.toHaveProperty("rejectionReason");
   });
 
+  it("keeps tournament.result.updated public payloads ID-only", () => {
+    const result = sanitizeRealtimePayload({
+      type: "tournament.result.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: "tour123",
+      payload: {
+        tournamentId: "tour123",
+        teamName: "Shadow Wolves",
+        placement: 1,
+        points: 120,
+        userIds: ["u1", "u2"],
+        discordId: "123456789012345678",
+      },
+    });
+
+    expect(result).toEqual({
+      tournamentId: "tour123",
+      entityType: "tournament",
+      entityId: "tour123",
+    });
+    for (const forbidden of [
+      "teamName",
+      "placement",
+      "points",
+      "userIds",
+      "discordId",
+    ]) {
+      expect(result).not.toHaveProperty(forbidden);
+    }
+  });
+
   it("drops Discord-snowflake userIds but keeps cuid-style userIds", () => {
     const withSnowflake = sanitizeRealtimePayload({
       type: "profile.updated",

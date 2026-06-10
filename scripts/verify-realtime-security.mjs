@@ -72,6 +72,7 @@ export const VERIFY_STEPS = [
       "dispatchRealtime",
       "realtimePayload",
       "realtimeRooms",
+      "tournamentRealtime",
       "smokeEvent",
       "statusCheck",
     ],

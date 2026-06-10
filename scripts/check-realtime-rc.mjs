@@ -1,8 +1,10 @@
 /**
- * Realtime Pilot RC1 baseline checker (Batch 1W) — OFFLINE scan only.
+ * Realtime Pilot RC2 baseline checker (Batch 1W, re-baselined in Batch 2A) —
+ * OFFLINE scan only.
  *
- * Verifies the repository still matches the frozen "Realtime Pilot RC1 —
- * leaderboard.updated only" baseline (see docs/realtime-release-candidate.md).
+ * Verifies the repository still matches the frozen "Realtime Pilot RC2 —
+ * leaderboard.updated + tournament.result.updated" baseline (see
+ * docs/realtime-release-candidate.md).
  *
  * No network. No secrets printed. No dependency mutation. No release/host access.
  * Prints PASS/FAIL lines; exits 1 on any violation.
@@ -20,8 +22,15 @@ const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 const DISPATCH_FILE = "lib/tournamentResults.ts";
 const DISPATCH_DEF_FILE = "lib/realtime/dispatchRealtime.ts";
 const CONSUMER = "components/LeaderboardRealtime.tsx";
+const CONSUMER_TOURNAMENT = "components/TournamentDetailsRealtime.tsx";
 const PROVIDER = "components/realtime/RealtimeProvider.tsx";
 const PROVIDER_ROOT = "components/realtime/RealtimeProviderRoot.tsx";
+
+// RC2 — exactly these event types may be dispatched, nothing else.
+const ALLOWED_DISPATCH_TYPES = [
+  "leaderboard.updated",
+  "tournament.result.updated",
+];
 
 const REQUIRED_DOCS = [
   "docs/realtime-release-candidate.md",
@@ -103,12 +112,14 @@ export function runRcCheck() {
   // 1. RC doc exists.
   check("RC doc exists", Boolean(read("docs/realtime-release-candidate.md")));
 
-  // 2. Only leaderboard.updated is dispatched.
+  // 2. Exactly the approved RC2 event types are dispatched.
   const pilot = read(DISPATCH_FILE) ?? "";
   const types = dispatchedEventTypes(pilot);
   check(
-    "only leaderboard.updated dispatched",
-    types.length === 1 && types[0] === "leaderboard.updated",
+    "only approved RC2 events dispatched",
+    types.length === ALLOWED_DISPATCH_TYPES.length &&
+      ALLOWED_DISPATCH_TYPES.every((t) => types.includes(t)) &&
+      types.every((t) => ALLOWED_DISPATCH_TYPES.includes(t)),
     `found: ${types.join(", ") || "none"}`,
   );
 
@@ -123,9 +134,9 @@ export function runRcCheck() {
   }
   check("dispatch used only in allowed files", dispatchOffenders.length === 0, dispatchOffenders.join(", "));
 
-  // 4. Only LeaderboardRealtime consumes realtime hooks (besides provider).
+  // 4. Only the approved consumers use realtime hooks (besides provider).
   const CONTEXT_RE = /realtime\/realtimeContext$/;
-  const CONTEXT_ALLOWED = new Set([PROVIDER, CONSUMER]);
+  const CONTEXT_ALLOWED = new Set([PROVIDER, CONSUMER, CONSUMER_TOURNAMENT]);
   const consumerOffenders = [];
   for (const file of appFiles) {
     const r = rel(file);
@@ -133,7 +144,7 @@ export function runRcCheck() {
       if (CONTEXT_RE.test(spec) && !CONTEXT_ALLOWED.has(r)) consumerOffenders.push(r);
     }
   }
-  check("only LeaderboardRealtime consumes hooks", consumerOffenders.length === 0, consumerOffenders.join(", "));
+  check("only approved consumers use hooks", consumerOffenders.length === 0, consumerOffenders.join(", "));
 
   // 5. LeaderboardRealtime requests only "leaderboard".
   const consumerSrc = read(CONSUMER) ?? "";
@@ -142,6 +153,18 @@ export function runRcCheck() {
     'LeaderboardRealtime requests only "leaderboard"',
     roomRequests.length === 1 && roomRequests[0] === "leaderboard",
     `found: ${roomRequests.join(", ") || "none"}`,
+  );
+
+  // 5b. TournamentDetailsRealtime requests only its own tournament:{id} room.
+  const tournamentConsumerSrc = read(CONSUMER_TOURNAMENT) ?? "";
+  const tournamentRoomCalls = [
+    ...tournamentConsumerSrc.matchAll(/useRealtimePublicRoom\(([^)]*)\)/g),
+  ].map((m) => m[1].trim());
+  check(
+    "TournamentDetailsRealtime requests only tournament:{id}",
+    tournamentRoomCalls.length === 1 &&
+      tournamentRoomCalls[0] === "`tournament:${tournamentId}`",
+    `found: ${tournamentRoomCalls.join(", ") || "none"}`,
   );
 
   // 6. layout mounts RealtimeProviderRoot.
@@ -220,9 +243,9 @@ if (isRunDirectly()) {
   }
   console.log(`\nRC check — ${results.length} checks, ${fails} fail`);
   if (fails > 0) {
-    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC1 baseline.");
+    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC2 baseline.");
     process.exit(1);
   }
-  console.log("RC check PASSED — repo matches Realtime Pilot RC1 baseline.");
+  console.log("RC check PASSED — repo matches Realtime Pilot RC2 baseline.");
   process.exit(0);
 }

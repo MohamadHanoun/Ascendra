@@ -1,10 +1,12 @@
 /**
  * Realtime expansion gate (Batch 1U) — OFFLINE scan only.
  *
- * Ensures the realtime wiring still matches the approved pilot state:
- *   - leaderboard.updated is the ONLY dispatched server event
- *     (only lib/tournamentResults.ts may call dispatchRealtimeEventSoon).
- *   - LeaderboardRealtime is the ONLY non-provider consumer of realtime hooks.
+ * Ensures the realtime wiring still matches the approved pilot state (RC2):
+ *   - leaderboard.updated and tournament.result.updated are the ONLY dispatched
+ *     server events (only lib/tournamentResults.ts may call
+ *     dispatchRealtimeEventSoon).
+ *   - LeaderboardRealtime and TournamentDetailsRealtime are the ONLY
+ *     non-provider consumers of realtime hooks.
  *   - socket.io-client is imported only by RealtimeProvider.tsx.
  *   - the provider root mounts with no public rooms.
  *   - required security docs exist.
@@ -26,10 +28,13 @@ const SKIP_DIRS = new Set(["node_modules", ".next", ".git", "dist", "coverage"])
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 
 const ALLOWED_DISPATCH_FILE = "lib/tournamentResults.ts";
-const ALLOWED_CONSUMER = "components/LeaderboardRealtime.tsx";
+const ALLOWED_CONSUMERS = [
+  "components/LeaderboardRealtime.tsx",
+  "components/TournamentDetailsRealtime.tsx",
+];
 const PROVIDER = "components/realtime/RealtimeProvider.tsx";
 const PROVIDER_ROOT = "components/realtime/RealtimeProviderRoot.tsx";
-const ALLOWED_EVENT_TYPES = ["leaderboard.updated"];
+const ALLOWED_EVENT_TYPES = ["leaderboard.updated", "tournament.result.updated"];
 
 const REQUIRED_DOCS = [
   "realtime-server/THREAT_MODEL.md",
@@ -106,7 +111,7 @@ export function runExpansionGate() {
     walk(path.join(ROOT, d), [".ts", ".tsx"]),
   );
 
-  // 1. Only the allowed server emitter dispatches, only leaderboard.updated.
+  // 1. Only the allowed server emitter dispatches, only approved event types.
   for (const file of appFiles) {
     const r = rel(file);
     const content = readFileSync(file, "utf8");
@@ -119,16 +124,21 @@ export function runExpansionGate() {
     add(`missing pilot emitter file: ${ALLOWED_DISPATCH_FILE}`);
   } else {
     const types = dispatchedEventTypes(pilot);
-    if (types.length !== 1) add(`expected exactly 1 dispatched event, found ${types.length}`);
+    if (types.length !== ALLOWED_EVENT_TYPES.length) {
+      add(`expected exactly ${ALLOWED_EVENT_TYPES.length} dispatched events, found ${types.length}`);
+    }
     for (const t of types) {
       if (!ALLOWED_EVENT_TYPES.includes(t)) add(`unapproved dispatched event type: ${t}`);
+    }
+    for (const t of ALLOWED_EVENT_TYPES) {
+      if (!types.includes(t)) add(`missing approved dispatched event type: ${t}`);
     }
     if (!pilot.includes("createRealtimeEvent")) add("pilot file lost its DB createRealtimeEvent path");
   }
 
-  // 2. Only LeaderboardRealtime consumes realtime hooks (besides the provider).
+  // 2. Only approved consumers use realtime hooks (besides the provider).
   const CONTEXT_RE = /realtime\/realtimeContext$/;
-  const CONTEXT_ALLOWED = new Set([PROVIDER, ALLOWED_CONSUMER]);
+  const CONTEXT_ALLOWED = new Set([PROVIDER, ...ALLOWED_CONSUMERS]);
   for (const file of appFiles) {
     const r = rel(file);
     for (const spec of importSpecifiers(readFileSync(file, "utf8"))) {

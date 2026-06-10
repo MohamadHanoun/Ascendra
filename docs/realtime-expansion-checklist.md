@@ -5,10 +5,10 @@ event type per batch**. See `realtime-server/THREAT_MODEL.md` for the security
 rationale; run `npm --prefix realtime-server run expansion:gate` to confirm the
 current state still matches the approved pilot.
 
-The current frozen baseline is **Realtime Pilot RC1**
+The current frozen baseline is **Realtime Pilot RC2**
 (`docs/realtime-release-candidate.md`). Before staging, confirm the repo matches
 it with `npm run check:realtime-rc` and run the full gate with
-`npm run verify:realtime-security`. Any new event moves the repo off RC1 and
+`npm run verify:realtime-security`. Any new event moves the repo off RC2 and
 requires re-baselining.
 
 ## 1. Event proposal
@@ -64,5 +64,35 @@ The individual checks the command wraps (run separately if needed):
 tests, `build`, and `audit --omit=optional`. `status:check` and `smoke:event`
 remain **manual operator** commands (they need a running server / secrets).
 
-> No second realtime event may be enabled until this checklist is completed and
-> the leaderboard pilot is stable.
+> No further realtime event may be enabled until this checklist is completed for
+> it and the current pilots are stable.
+
+---
+
+## Completed expansion record — `tournament.result.updated` (Batch 2A → RC2)
+
+**1. Event proposal:** `tournament.result.updated`; `entityType` `tournament` /
+`entityId` `{tournamentId}`; audience `public`; room `tournament:{tournamentId}`;
+payload exactly `{ tournamentId }`; classification public.
+
+**2. Security review:** payload is ID-only (enforced by the sanitizer's public
+path; covered in `realtimePayload.test.ts`); no sensitive fields; clients join
+only the public `tournament:{id}` room (anonymous-joinable class, validated ID
+segment on both sides); missing/expired tokens degrade to polling; a realtime
+outage cannot affect the award mutation (`after()`-scheduled, never throws) and
+DB polling continues.
+
+**3. Implementation:** one event type; emitter added only in
+`publishAwardRealtimeEvents` (`lib/tournamentResults.ts`); consumer
+`TournamentDetailsRealtime` extended additively (polling untouched); guardrails,
+RC checker, and expansion gate re-baselined to exactly two events / two
+consumers; unit + gated E2E tests added (including cross-room isolation); the
+manual inline-save admin path intentionally remains polling-only.
+
+**4. Rollback:** unchanged — `REALTIME_ENABLE_SOCKET=false` and/or
+`NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
+
+**5. Validation:** `verify:realtime-security` green (with the known audit
+override); `check:realtime-rc` green. Production remains disabled; anonymous
+browser realtime remains disabled; RC2 still requires its own Preview
+verification before any production decision.
