@@ -8,9 +8,10 @@ exact scope that may go to staging. Any deviation must follow
 
 > RC2 (Batch 2A) supersedes RC1 by adding exactly one event
 > (`tournament.result.updated`), one public room shape (`tournament:{id}`), and
-> one consumer (`TournamentDetailsRealtime`). RC1's Preview verification is
-> recorded in `realtime-server/STAGING_SIGNOFF.md` §9; RC2 requires its own
-> Preview verification before any production decision.
+> one consumer (`TournamentDetailsRealtime`). Preview verifications are
+> recorded in `realtime-server/STAGING_SIGNOFF.md`: RC1 in §9, **RC2 in §10
+> (passed 2026-06-11)**. Production remains disabled and requires its own
+> manual go/no-go.
 
 ## 1. Release candidate name
 

@@ -182,3 +182,33 @@ Operator-verified RC1 run against the Vercel **Preview** environment and the
 **Status: Preview RC1 sign-off COMPLETE.** Production go-live remains a
 separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). No second realtime event is
 approved; the expansion checklist still applies.
+
+> Superseded by RC2 (§10) — RC1 remains valid history; RC2 is the current
+> verified baseline.
+
+## 10. Completed evidence — RC2 Preview verification (recorded 2026-06-11)
+
+Operator-verified RC2 run (`leaderboard.updated` + `tournament.result.updated`)
+against the Vercel **Preview** environment and the **staging** realtime server.
+Same environment as §9. No secrets below.
+
+**Results:**
+- [x] **Leaderboard live refresh passed** — leaderboard page refreshed live
+      (RC1 behavior retained under RC2).
+- [x] **Tournament page live refresh passed** — after updating a test result,
+      the same tournament's details page refreshed live via the
+      `tournament:{id}` room.
+- [x] **Room isolation passed** — a different tournament's page did **not**
+      refresh incorrectly.
+- [x] **Browser WebSocket passed** — socket connection worked throughout the
+      test.
+- [x] **Kill-switch rollback passed** — after turning the flags off, the
+      WebSocket stopped and the DB-polling fallback continued working.
+- [x] **Production untouched** — no Production env changes; Preview flags
+      returned to `REALTIME_ENABLE_SOCKET=false` and
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` and remain off.
+
+**Status: Preview RC2 sign-off COMPLETE.** Production go-live remains a
+separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
+remains disabled. No further realtime event is approved; the expansion
+checklist still applies (one event type per batch).
