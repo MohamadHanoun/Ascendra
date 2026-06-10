@@ -1,5 +1,7 @@
 import "server-only";
 
+import { after } from "next/server";
+
 import {
   emitRealtimeEventToServer,
   type EmitRealtimeResult,
@@ -8,15 +10,19 @@ import { sanitizeRealtimePayload } from "@/lib/realtime/payload";
 import { mapRealtimeEventToRooms } from "@/lib/realtime/rooms";
 
 /**
- * Unified realtime dispatch helper (Batch 1D — DORMANT FOUNDATION).
+ * Unified realtime dispatch helper (Batch 1D foundation; Batch 1R wired the
+ * single leaderboard pilot; RC1 hardening made the fire-and-forget variant
+ * serverless-safe via Next.js `after()`).
  *
  * Composes the three building blocks in a single safe call:
  *   1. mapRealtimeEventToRooms(...)   — decide safe rooms (never from payload)
  *   2. sanitizeRealtimePayload(...)   — strip sensitive data; public = ID-only
- *   3. emitRealtimeEventToServer(...) — HMAC-signed bridge (env-gated, dormant)
+ *   3. emitRealtimeEventToServer(...) — HMAC-signed bridge (env-gated)
  *
- * IMPORTANT — this is dormant and intentionally NOT wired anywhere:
- *  - No existing emitter calls it. The DB-polling realtime system is unchanged.
+ * IMPORTANT
+ *  - The ONLY wired emitter is the `leaderboard.updated` pilot in
+ *    lib/tournamentResults.ts (enforced by the guardrails, the expansion gate,
+ *    and the RC baseline check). The DB-polling realtime system is unchanged.
  *  - Server-only (`import "server-only"`); never reaches the browser.
  *  - Never throws. Never logs secrets or full payloads.
  *  - Does not touch Prisma, lib/realtime.ts, createRealtimeEvent, or the bot.
@@ -81,11 +87,34 @@ export async function dispatchRealtimeEvent(
 }
 
 /**
- * Fire-and-forget variant for future call sites. Swallows all errors and never
- * throws. NOT used anywhere in this batch.
+ * Fire-and-forget variant for server actions / route handlers.
+ *
+ * On serverless (Vercel), a merely un-awaited promise can be killed when the
+ * function instance is frozen right after the response is sent — silently
+ * dropping the emit. `after()` runs the dispatch once the response has been
+ * sent and keeps the instance alive until it settles, without blocking or
+ * ever failing the caller's mutation.
+ *
+ * Outside a Next.js request scope (unit tests, scripts) `after()` throws
+ * synchronously; we then degrade to the best-effort void dispatch. This
+ * function never throws either way.
  */
 export function dispatchRealtimeEventSoon(input: DispatchRealtimeInput): void {
-  void dispatchRealtimeEvent(input).catch(() => {
-    // Intentionally ignored — dispatch never throws, but guard regardless.
-  });
+  // Kill-switch early-out: schedule nothing at all while realtime is disabled
+  // (mirrors the bridge's own enablement gate).
+  if (process.env.REALTIME_ENABLE_SOCKET !== "true") {
+    return;
+  }
+
+  const run = async (): Promise<void> => {
+    await dispatchRealtimeEvent(input).catch(() => {
+      // dispatchRealtimeEvent never throws, but guard regardless.
+    });
+  };
+
+  try {
+    after(run);
+  } catch {
+    void run();
+  }
 }

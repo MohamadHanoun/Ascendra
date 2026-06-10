@@ -17,8 +17,10 @@ exact scope that may go to staging. Any deviation must follow
 - Source file: `lib/tournamentResults.ts` (`publishAwardRealtimeEvents`).
 - Room: `leaderboard`.
 - Payload: ID-only (`tournamentId`).
-- Server flag: `REALTIME_ENABLE_SOCKET` (additive, fire-and-forget; the DB
-  `RealtimeEvent` write remains the source of truth).
+- Server flag: `REALTIME_ENABLE_SOCKET` (additive, fire-and-forget; the emit is
+  scheduled post-response via Next.js `after()` so it is serverless-safe and
+  never blocks or fails the mutation; the DB `RealtimeEvent` write remains the
+  source of truth).
 
 **Allowed browser consumer:**
 - `components/LeaderboardRealtime.tsx` only.
@@ -26,6 +28,10 @@ exact scope that may go to staging. Any deviation must follow
 - Triggers `router.refresh()` only.
 - Does **not** trust the socket payload for UI state.
 - Browser flag: `NEXT_PUBLIC_REALTIME_ENABLE`.
+- **Authenticated-only for RC1:** anonymous (logged-out) visitors get no socket
+  (`/api/realtime/token` → 401 → client stays `idle`) and keep updating via the
+  DB-polling fallback. Anonymous socket support is a future, separately approved
+  change.
 
 **Allowed provider:**
 - `RealtimeProviderRoot` mounted in `app/layout.tsx` (with `publicRooms={[]}`).

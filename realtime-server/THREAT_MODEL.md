@@ -74,8 +74,9 @@ Mitigations: 64 KB body limit, per-IP internal rate limit, 30/min per-socket joi
 limit, metrics + abuse-threshold counters.
 
 **H. Realtime-server outage** — socket server unavailable.
-Mitigations: fire-and-forget bridge (never awaited, never throws), mutations never
-fail because of realtime, DB-polling fallback, server + browser kill switches.
+Mitigations: fire-and-forget bridge (scheduled post-response via Next.js
+`after()`; never blocks the mutation, never throws), mutations never fail
+because of realtime, DB-polling fallback, server + browser kill switches.
 
 **I. Token theft / expiry** — client token reused.
 Mitigations: short TTL (default 5 min, max 10), token kept **in memory only**

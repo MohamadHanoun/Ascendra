@@ -314,10 +314,12 @@ async function publishAwardRealtimeEvents(tournamentId: string) {
     }),
   ]);
 
-  // Batch 1R pilot — ONLY leaderboard.updated. Additive, fire-and-forget, and
-  // flag-gated (no-op unless REALTIME_ENABLE_SOCKET === "true"). The DB
-  // RealtimeEvent above remains the source of truth; this never throws and
-  // cannot affect the award mutation. Minimal, ID-only payload.
+  // Batch 1R pilot — ONLY leaderboard.updated. Additive and flag-gated (no-op
+  // unless REALTIME_ENABLE_SOCKET === "true"). The helper schedules the emit
+  // via Next.js after() so the serverless instance stays alive until it
+  // settles, without blocking this response. The DB RealtimeEvent above
+  // remains the source of truth; this never throws and cannot affect the
+  // award mutation. Minimal, ID-only payload.
   dispatchRealtimeEventSoon({
     type: "leaderboard.updated",
     audience: "public",

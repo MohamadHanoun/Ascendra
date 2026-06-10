@@ -79,10 +79,17 @@ award path) is the **only** wired server emitter. After the existing
 `dispatchRealtimeEventSoon({ type: "leaderboard.updated", audience: "public",
 entityType: "leaderboard", entityId: "global", payload: { tournamentId } })`.
 
-- **Flag-gated:** the dispatch self-skips unless `REALTIME_ENABLE_SOCKET === "true"`.
-- **Additive & non-blocking:** it is never awaited, never throws, and cannot
-  affect the award mutation. The DB `RealtimeEvent` (and DB polling) remain the
-  source of truth.
+- **Flag-gated:** the dispatch self-skips unless `REALTIME_ENABLE_SOCKET === "true"`
+  (`dispatchRealtimeEventSoon` schedules nothing at all while the flag is off).
+- **Additive & non-blocking:** it never blocks the caller, never throws, and
+  cannot affect the award mutation. The DB `RealtimeEvent` (and DB polling)
+  remain the source of truth.
+- **Serverless-safe (RC1 hardening):** `dispatchRealtimeEventSoon` schedules the
+  emit via Next.js `after()`, so on Vercel the function instance is kept alive
+  until the emit settles *after* the response is sent — a merely un-awaited
+  promise could be frozen mid-flight and silently dropped. Outside a request
+  scope (unit tests, scripts) it degrades to the previous best-effort
+  fire-and-forget behavior.
 - **Minimal payload:** ID-only (`tournamentId`); the sanitizer + room mapper
   enforce a public ID-only payload routed solely to the `leaderboard` room.
 - **No other emitter is wired** — `tournament.result.updated`, `profile.updated`,
@@ -138,6 +145,14 @@ socket. **It is not mounted** in `app/layout.tsx` or any page yet.
    `credentials: "same-origin"`). `404` → `disabled`; `401` (logged out) → `idle`;
    other non-OK → `error`. Tokens are kept **only in memory** — never in
    `localStorage`, `sessionStorage`, or cookies.
+
+   > **RC1 note — browser realtime is authenticated-only by design.** A
+   > logged-out (anonymous) visitor receives `401` and the client stays `idle`:
+   > it does **not** open an anonymous socket, even though the realtime server
+   > itself allows anonymous public-room connections. Anonymous browser realtime
+   > is intentionally deferred to a future, separately approved batch; public
+   > pages (e.g. the leaderboard) keep updating for anonymous visitors via the
+   > DB-polling fallback.
 2. Connects via Socket.IO with `auth: { token }`.
 3. Joins the **private rooms from the token claims** plus any `publicRooms` prop
    that pass validation (`leaderboard`, `tournament:{id}`, `match:{id}` only —

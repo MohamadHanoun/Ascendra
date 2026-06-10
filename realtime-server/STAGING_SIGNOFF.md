@@ -149,3 +149,36 @@ wildcard in staging/prod mode.
 - Production requires a separate go/no-go (see `PRODUCTION_DRY_RUN.md`).
 - Do **not** enable any new realtime event until the leaderboard pilot is stable
   in production.
+
+## 9. Completed evidence — RC1 Preview verification (recorded 2026-06-10)
+
+Operator-verified RC1 run against the Vercel **Preview** environment and the
+**staging** realtime server. No secrets below.
+
+**Environment:**
+- Preview app: `https://ascendra-git-realtime-rc1-staging-abu3day.vercel.app`
+  (branch `realtime-rc1-staging`; Preview-specific auth URLs configured —
+  Discord login worked on Preview).
+- Staging realtime server: `https://realtime-staging.ascendrahub.com`
+  (`ascendra-realtime-staging.service`, app bound to `127.0.0.1:8787` behind
+  Caddy/TLS; port 8787 not publicly reachable).
+
+**Results:**
+- [x] **Server-side emit passed** — admin test-tournament result change →
+      Vercel server action emitted → `/internal/events` accepted;
+      `internalEventsAccepted`, `emittedEvents`, `emittedRooms`, and
+      `lastEventAt` all advanced on `/internal/status`.
+- [x] **Browser WebSocket passed** — `socket.io/?EIO=4&transport=websocket`
+      upgraded with status `101` against `realtime-staging.ascendrahub.com`.
+- [x] **Leaderboard live update passed** — with the Preview leaderboard open, a
+      test result change incremented the realtime counters and the leaderboard
+      refreshed live.
+- [x] **Kill-switch rollback passed** — `REALTIME_ENABLE_SOCKET=false` +
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` → WebSocket disappeared; DB-polling
+      fallback continued updating the leaderboard.
+- [x] **Production untouched** — no Production env changes; both flags were
+      returned to `false` after testing and remain off.
+
+**Status: Preview RC1 sign-off COMPLETE.** Production go-live remains a
+separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). No second realtime event is
+approved; the expansion checklist still applies.
