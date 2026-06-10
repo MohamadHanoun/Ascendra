@@ -19,9 +19,11 @@ Covers the Ascendra realtime architecture only:
 - Short-lived client tokens (`/api/realtime/token`) + room ACL.
 - DB-polling realtime system as the fallback / source of truth.
 
-**Currently wired pilots (RC2):** `leaderboard.updated` (room `leaderboard`) and
-`tournament.result.updated` (room `tournament:{id}`) — both from the
-tournament-result award path, both public ID-only payloads.
+**Currently wired pilots (RC3):** `leaderboard.updated` (room `leaderboard`)
+and `tournament.result.updated` (room `tournament:{id}`) from the
+tournament-result award path, plus `tournament.bracket.generated` (room
+`tournament:{id}`) from `generateBracket` — all public ID-only payloads,
+emitters allowlisted per file.
 
 ## 2. Assets to protect
 
@@ -92,9 +94,10 @@ expansion gate script, staging sign-off required.
 
 - No secret in any `NEXT_PUBLIC_*` variable.
 - No secret in the client bundle.
-- No app emitter except allowlisted ones may use `dispatchRealtimeEventSoon`
-  (currently only `lib/tournamentResults.ts`, only `leaderboard.updated` and
-  `tournament.result.updated`).
+- No app emitter except allowlisted ones may use `dispatchRealtimeEventSoon`.
+  The allowlist is per file: `lib/tournamentResults.ts` (only
+  `leaderboard.updated` + `tournament.result.updated`) and
+  `lib/tournamentMatchEngine.ts` (only `tournament.bracket.generated`).
 - Public payloads are ID-only.
 - Private/admin rooms require exact token claims.
 - DB polling remains the fallback until explicitly retired in a future approved

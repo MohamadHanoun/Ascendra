@@ -30,6 +30,44 @@ describe("shouldRefreshTournamentDetailsFromRealtimeEvent", () => {
     ).toBe(true);
   });
 
+  it("refreshes on tournament.bracket.generated matching via entityId", () => {
+    expect(
+      shouldRefreshTournamentDetailsFromRealtimeEvent(
+        {
+          type: "tournament.bracket.generated",
+          entityId: TOURNAMENT_ID,
+          payload: {},
+        },
+        TOURNAMENT_ID,
+      ),
+    ).toBe(true);
+  });
+
+  it("refreshes on tournament.bracket.generated matching via payload.tournamentId", () => {
+    expect(
+      shouldRefreshTournamentDetailsFromRealtimeEvent(
+        {
+          type: "tournament.bracket.generated",
+          payload: { tournamentId: TOURNAMENT_ID },
+        },
+        TOURNAMENT_ID,
+      ),
+    ).toBe(true);
+  });
+
+  it("does not refresh on tournament.bracket.generated for a different tournament", () => {
+    expect(
+      shouldRefreshTournamentDetailsFromRealtimeEvent(
+        {
+          type: "tournament.bracket.generated",
+          entityId: "other456",
+          payload: { tournamentId: "other456" },
+        },
+        TOURNAMENT_ID,
+      ),
+    ).toBe(false);
+  });
+
   it("does not refresh for a different tournament", () => {
     expect(
       shouldRefreshTournamentDetailsFromRealtimeEvent(

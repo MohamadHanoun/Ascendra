@@ -194,8 +194,8 @@ describe("guardrail F: dispatch helper is not wired into emitters", () => {
     "lib/realtime.ts",
     "lib/notifications.ts",
     "lib/matchNotifications.ts",
-    // lib/tournamentResults.ts is the Batch 1R pilot (allowed) — see guardrail L.
-    "lib/tournamentMatchEngine.ts",
+    // lib/tournamentResults.ts (Batches 1R/2A) and lib/tournamentMatchEngine.ts
+    // (Batch 3A) are the approved pilots — see guardrail L.
     "actions/adminRegistrationInlineActions.ts",
     "actions/tournamentRegistrationInlineActions.ts",
     "actions/teamInlineActions.ts",
@@ -475,11 +475,17 @@ describe("guardrail K: realtime consumers are scoped and additive", () => {
   });
 });
 
-// ─── L. Approved emitter pilots (Batches 1R + 2A) ──────────────────────────────
+// ─── L. Approved emitter pilots (Batches 1R + 2A + 3A) ─────────────────────────
 
-describe("guardrail L: only the approved RC2 events are wired server emitters", () => {
-  const PILOT = "lib/tournamentResults.ts";
-  const ALLOWED_TYPES = ["leaderboard.updated", "tournament.result.updated"];
+describe("guardrail L: only the approved RC3 events are wired server emitters", () => {
+  // Per-file allowlist: each approved file dispatches EXACTLY these types.
+  const ALLOWED_EMITTERS: Record<string, string[]> = {
+    "lib/tournamentResults.ts": [
+      "leaderboard.updated",
+      "tournament.result.updated",
+    ],
+    "lib/tournamentMatchEngine.ts": ["tournament.bracket.generated"],
+  };
 
   function dispatchBlocks(src: string): string[] {
     const blocks: string[] = [];
@@ -496,54 +502,61 @@ describe("guardrail L: only the approved RC2 events are wired server emitters", 
     return match ? match[1] : null;
   }
 
-  it("tournamentResults.ts wires exactly two dispatches, one per approved type", () => {
-    const src = read(PILOT);
-    expect(src).toContain("dispatchRealtimeEventSoon");
-    expect(src).toContain("createRealtimeEvent"); // DB source-of-truth retained
+  it.each(Object.entries(ALLOWED_EMITTERS))(
+    "%s wires exactly its approved dispatches",
+    (file, allowedTypes) => {
+      const src = read(file);
+      expect(src).toContain("dispatchRealtimeEventSoon");
+      expect(src).toContain("createRealtimeEvent"); // DB source-of-truth retained
 
-    const calls = src.match(/dispatchRealtimeEventSoon\s*\(/g) ?? [];
-    expect(calls).toHaveLength(2);
+      const calls = src.match(/dispatchRealtimeEventSoon\s*\(/g) ?? [];
+      expect(calls).toHaveLength(allowedTypes.length);
 
-    const blocks = dispatchBlocks(src);
-    expect(blocks).toHaveLength(2);
-    expect(blocks.map(blockType).sort()).toEqual([...ALLOWED_TYPES].sort());
-  });
+      const blocks = dispatchBlocks(src);
+      expect(blocks).toHaveLength(allowedTypes.length);
+      expect(blocks.map(blockType).sort()).toEqual([...allowedTypes].sort());
+    },
+  );
 
   it("no dispatch emits an unapproved event type to the bridge", () => {
-    const blocks = dispatchBlocks(read(PILOT));
-    for (const block of blocks) {
-      expect(ALLOWED_TYPES).toContain(blockType(block));
-      for (const forbiddenType of [
-        "profile.updated",
-        "tournament.registration.updated",
-        "registration.",
-        "tournament.match.",
-        "notification.",
-        "team.",
-      ]) {
-        expect(block).not.toContain(forbiddenType);
+    for (const [file, allowedTypes] of Object.entries(ALLOWED_EMITTERS)) {
+      for (const block of dispatchBlocks(read(file))) {
+        expect(allowedTypes).toContain(blockType(block));
+        for (const forbiddenType of [
+          "profile.updated",
+          "tournament.registration.updated",
+          "tournament.status.updated",
+          "registration.",
+          "tournament.match.",
+          "notification.",
+          "team.",
+        ]) {
+          expect(block).not.toContain(forbiddenType);
+        }
       }
     }
   });
 
   it("no dispatch payload carries sensitive fields", () => {
-    const blocks = dispatchBlocks(read(PILOT));
-    expect(blocks.length).toBeGreaterThan(0);
-    for (const block of blocks) {
-      for (const forbidden of [
-        "rejectionReason",
-        "teamName",
-        "userIds",
-        "discordId",
-        "email",
-        "token",
-        "secret",
-        "password",
-        "cookie",
-        "headers",
-        "raw",
-      ]) {
-        expect(block).not.toContain(forbidden);
+    for (const file of Object.keys(ALLOWED_EMITTERS)) {
+      const blocks = dispatchBlocks(read(file));
+      expect(blocks.length).toBeGreaterThan(0);
+      for (const block of blocks) {
+        for (const forbidden of [
+          "rejectionReason",
+          "teamName",
+          "userIds",
+          "discordId",
+          "email",
+          "token",
+          "secret",
+          "password",
+          "cookie",
+          "headers",
+          "raw",
+        ]) {
+          expect(block).not.toContain(forbidden);
+        }
       }
     }
   });
@@ -553,7 +566,7 @@ describe("guardrail L: only the approved RC2 events are wired server emitters", 
       "lib/realtime.ts",
       "lib/notifications.ts",
       "lib/matchNotifications.ts",
-      "lib/tournamentMatchEngine.ts",
+      "lib/jobs/tournamentLifecycleJobs.ts",
     ];
     for (const rel of others) {
       const full = path.join(ROOT, rel);

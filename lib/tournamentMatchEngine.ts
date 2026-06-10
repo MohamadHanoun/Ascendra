@@ -9,6 +9,7 @@ import {
 
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import { dispatchRealtimeEventSoon } from "@/lib/realtime/dispatchRealtime";
 import { isSupportedTournamentFormat } from "@/lib/tournamentFormatSupport";
 import {
   notifyBracketAdvanced,
@@ -332,6 +333,19 @@ export async function createMatchesForTournament(
     entityType: "tournament",
     entityId: tournamentId,
     payload: { tournamentId, totalMatches: created.length, rounds: totalRounds },
+  });
+
+  // RC3 pilot (Batch 3A) — ONLY tournament.bracket.generated from this file.
+  // Additive and flag-gated (no-op unless REALTIME_ENABLE_SOCKET === "true");
+  // scheduled via Next.js after() so it never blocks or fails bracket
+  // generation. The DB RealtimeEvent above remains the source of truth.
+  // Minimal, ID-only payload.
+  dispatchRealtimeEventSoon({
+    type: "tournament.bracket.generated",
+    audience: "public",
+    entityType: "tournament",
+    entityId: tournamentId,
+    payload: { tournamentId },
   });
 
   return ok({

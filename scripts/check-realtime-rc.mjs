@@ -1,10 +1,11 @@
 /**
- * Realtime Pilot RC2 baseline checker (Batch 1W, re-baselined in Batch 2A) —
- * OFFLINE scan only.
+ * Realtime Pilot RC3 baseline checker (Batch 1W, re-baselined in Batches
+ * 2A/3A) — OFFLINE scan only.
  *
- * Verifies the repository still matches the frozen "Realtime Pilot RC2 —
- * leaderboard.updated + tournament.result.updated" baseline (see
- * docs/realtime-release-candidate.md).
+ * Verifies the repository still matches the frozen "Realtime Pilot RC3 —
+ * leaderboard.updated + tournament.result.updated + tournament.bracket.generated"
+ * baseline (see docs/realtime-release-candidate.md). Emitters are allowlisted
+ * PER FILE: each approved file may dispatch exactly its approved event types.
  *
  * No network. No secrets printed. No dependency mutation. No release/host access.
  * Prints PASS/FAIL lines; exits 1 on any violation.
@@ -19,18 +20,21 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SKIP_DIRS = new Set(["node_modules", ".next", ".git", "dist", "coverage"]);
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 
-const DISPATCH_FILE = "lib/tournamentResults.ts";
 const DISPATCH_DEF_FILE = "lib/realtime/dispatchRealtime.ts";
 const CONSUMER = "components/LeaderboardRealtime.tsx";
 const CONSUMER_TOURNAMENT = "components/TournamentDetailsRealtime.tsx";
 const PROVIDER = "components/realtime/RealtimeProvider.tsx";
 const PROVIDER_ROOT = "components/realtime/RealtimeProviderRoot.tsx";
 
-// RC2 — exactly these event types may be dispatched, nothing else.
-const ALLOWED_DISPATCH_TYPES = [
-  "leaderboard.updated",
-  "tournament.result.updated",
-];
+// RC3 — per-file emitter allowlist: each file may dispatch EXACTLY these
+// event types, and no other file may dispatch at all.
+const ALLOWED_EMITTERS = {
+  "lib/tournamentResults.ts": [
+    "leaderboard.updated",
+    "tournament.result.updated",
+  ],
+  "lib/tournamentMatchEngine.ts": ["tournament.bracket.generated"],
+};
 
 const REQUIRED_DOCS = [
   "docs/realtime-release-candidate.md",
@@ -112,22 +116,28 @@ export function runRcCheck() {
   // 1. RC doc exists.
   check("RC doc exists", Boolean(read("docs/realtime-release-candidate.md")));
 
-  // 2. Exactly the approved RC2 event types are dispatched.
-  const pilot = read(DISPATCH_FILE) ?? "";
-  const types = dispatchedEventTypes(pilot);
-  check(
-    "only approved RC2 events dispatched",
-    types.length === ALLOWED_DISPATCH_TYPES.length &&
-      ALLOWED_DISPATCH_TYPES.every((t) => types.includes(t)) &&
-      types.every((t) => ALLOWED_DISPATCH_TYPES.includes(t)),
-    `found: ${types.join(", ") || "none"}`,
-  );
+  // 2. Each approved emitter file dispatches EXACTLY its approved types.
+  for (const [emitterFile, allowedTypes] of Object.entries(ALLOWED_EMITTERS)) {
+    const src = read(emitterFile) ?? "";
+    const types = dispatchedEventTypes(src);
+    check(
+      `${emitterFile} dispatches exactly its approved events`,
+      types.length === allowedTypes.length &&
+        allowedTypes.every((t) => types.includes(t)) &&
+        types.every((t) => allowedTypes.includes(t)),
+      `found: ${types.join(", ") || "none"}; allowed: ${allowedTypes.join(", ")}`,
+    );
+  }
 
   // 3. dispatchRealtimeEventSoon used only in the allowed files.
+  const dispatchAllowedFiles = new Set([
+    ...Object.keys(ALLOWED_EMITTERS),
+    DISPATCH_DEF_FILE,
+  ]);
   const dispatchOffenders = [];
   for (const file of appFiles) {
     const r = rel(file);
-    if (r === DISPATCH_FILE || r === DISPATCH_DEF_FILE) continue;
+    if (dispatchAllowedFiles.has(r)) continue;
     if (readFileSync(file, "utf8").includes("dispatchRealtimeEvent")) {
       dispatchOffenders.push(r);
     }
@@ -243,9 +253,9 @@ if (isRunDirectly()) {
   }
   console.log(`\nRC check — ${results.length} checks, ${fails} fail`);
   if (fails > 0) {
-    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC2 baseline.");
+    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC3 baseline.");
     process.exit(1);
   }
-  console.log("RC check PASSED — repo matches Realtime Pilot RC2 baseline.");
+  console.log("RC check PASSED — repo matches Realtime Pilot RC3 baseline.");
   process.exit(0);
 }

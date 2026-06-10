@@ -6,7 +6,10 @@
  * throws.
  */
 
-const TOURNAMENT_DETAILS_REFRESH_TYPES = new Set(["tournament.result.updated"]);
+const TOURNAMENT_DETAILS_REFRESH_TYPES = new Set([
+  "tournament.result.updated",
+  "tournament.bracket.generated",
+]);
 
 export function shouldRefreshTournamentDetailsFromRealtimeEvent(
   event: unknown,

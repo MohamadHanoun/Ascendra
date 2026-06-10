@@ -5,10 +5,10 @@ event type per batch**. See `realtime-server/THREAT_MODEL.md` for the security
 rationale; run `npm --prefix realtime-server run expansion:gate` to confirm the
 current state still matches the approved pilot.
 
-The current frozen baseline is **Realtime Pilot RC2**
+The current frozen baseline is **Realtime Pilot RC3**
 (`docs/realtime-release-candidate.md`). Before staging, confirm the repo matches
 it with `npm run check:realtime-rc` and run the full gate with
-`npm run verify:realtime-security`. Any new event moves the repo off RC2 and
+`npm run verify:realtime-security`. Any new event moves the repo off RC3 and
 requires re-baselining.
 
 ## 1. Event proposal
@@ -98,3 +98,36 @@ override); `check:realtime-rc` green. **RC2 Preview verification passed
 page refreshed live, a different tournament's page did not, kill-switch
 rollback worked, polling fallback continued. Production remains disabled;
 anonymous browser realtime remains disabled.
+
+---
+
+## Completed expansion record — `tournament.bracket.generated` (Batch 3A → RC3)
+
+**1. Event proposal:** `tournament.bracket.generated`; `entityType`
+`tournament` / `entityId` `{tournamentId}`; audience `public`; room
+`tournament:{tournamentId}` (existing, RC2-verified); payload exactly
+`{ tournamentId }`; classification public.
+
+**2. Security review:** payload is ID-only (sanitizer public path; covered by
+the dispatch test and the gated E2E, which prove `totalMatches`/`teamName` etc.
+never leave); same anonymous-joinable public room class as RC2 with validated
+ID segments; missing/expired tokens degrade to polling; a realtime outage
+cannot affect bracket generation (`after()`-scheduled, never throws) and DB
+polling continues.
+
+**3. Implementation:** one event type; one appended dispatch in
+`generateBracket` (`lib/tournamentMatchEngine.ts`) — no engine logic changes;
+**zero new consumers** (the existing `TournamentDetailsRealtime` helper now
+accepts the type for the mounted tournament); gates re-baselined to a
+**per-file emitter allowlist** (`tournamentResults.ts` → its two events;
+`tournamentMatchEngine.ts` → bracket only); unit + gated E2E tests added
+(delivery + cross-room isolation). `tournament.status.updated` and all other
+events remain polling-only.
+
+**4. Rollback:** unchanged — `REALTIME_ENABLE_SOCKET=false` and/or
+`NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
+
+**5. Validation:** `verify:realtime-security` green (with the known audit
+override); `check:realtime-rc` green. Production remains disabled; anonymous
+browser realtime remains disabled; RC3 still requires its own Preview
+verification before any production decision.

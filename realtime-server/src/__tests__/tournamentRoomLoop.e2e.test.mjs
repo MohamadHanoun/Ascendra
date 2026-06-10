@@ -171,4 +171,61 @@ describe.runIf(E2E_ENABLED)("tournament room realtime full loop", () => {
     expect(body.counters.internalEventsAccepted).toBe(1);
     expect(body.counters.emittedRooms).toBe(1);
   }, 15000);
+
+  it("tournament.bracket.generated (RC3) reaches its tournament room only; other room receives nothing", async () => {
+    server = await startTestServer();
+    setEnv({
+      REALTIME_ENABLE_SOCKET: "true",
+      REALTIME_SERVER_URL: server.baseUrl,
+      REALTIME_EVENT_SECRET: server.eventSecret,
+    });
+
+    const socketA = await connect(server.socketUrl);
+    const socketB = await connect(server.socketUrl);
+    expect((await join(socketA, "tournament:tour_a")).ok).toBe(true);
+    expect((await join(socketB, "tournament:tour_b")).ok).toBe(true);
+
+    let otherRoomReceived = false;
+    socketB.on("ascendra:event", () => {
+      otherRoomReceived = true;
+    });
+
+    const received = waitForEvent(socketA, "ascendra:event");
+
+    // Include extra fields to PROVE the payload stays ID-only.
+    const result = await dispatchRealtimeEvent({
+      type: "tournament.bracket.generated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: "tour_a",
+      payload: {
+        tournamentId: "tour_a",
+        totalMatches: 16,
+        rounds: 4,
+        teamName: "Secret Team",
+      },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.rooms).toEqual(["tournament:tour_a"]);
+
+    const msg = await received;
+    expect(msg.type).toBe("tournament.bracket.generated");
+    expect(msg.entityId).toBe("tour_a");
+    expect(msg.payload).toEqual({
+      tournamentId: "tour_a",
+      entityType: "tournament",
+      entityId: "tour_a",
+    });
+    expect(shouldRefresh(msg, "tour_a")).toBe(true);
+    expect(shouldRefresh(msg, "tour_b")).toBe(false);
+
+    const json = JSON.stringify(msg);
+    for (const forbidden of ["teamName", "Secret Team", "totalMatches", server.eventSecret]) {
+      expect(json).not.toContain(forbidden);
+    }
+
+    // Give a stray broadcast time to arrive before asserting isolation.
+    await sleep(300);
+    expect(otherRoomReceived).toBe(false);
+  }, 15000);
 });

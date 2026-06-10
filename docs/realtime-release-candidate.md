@@ -1,4 +1,4 @@
-# Realtime Pilot RC2 — leaderboard.updated + tournament.result.updated
+# Realtime Pilot RC3 — leaderboard.updated + tournament.result.updated + tournament.bracket.generated
 
 Frozen release-candidate baseline for the Ascendra realtime pilot. This is the
 exact scope that may go to staging. Any deviation must follow
@@ -6,28 +6,35 @@ exact scope that may go to staging. Any deviation must follow
 `npm run check:realtime-rc`, and run the full gate with
 `npm run verify:realtime-security`.
 
-> RC2 (Batch 2A) supersedes RC1 by adding exactly one event
-> (`tournament.result.updated`), one public room shape (`tournament:{id}`), and
-> one consumer (`TournamentDetailsRealtime`). Preview verifications are
-> recorded in `realtime-server/STAGING_SIGNOFF.md`: RC1 in §9, **RC2 in §10
-> (passed 2026-06-11)**. Production remains disabled and requires its own
-> manual go/no-go.
+> RC3 (Batch 3A) supersedes RC2 by adding exactly one event
+> (`tournament.bracket.generated`) into the already-proven `tournament:{id}`
+> room and the existing `TournamentDetailsRealtime` consumer — zero new
+> consumers, zero new room shapes. The one new concept is the **per-file
+> emitter allowlist** (a second approved emitter file). Preview verifications
+> are recorded in `realtime-server/STAGING_SIGNOFF.md`: RC1 in §9, RC2 in §10;
+> **RC3 requires its own Preview verification** before any production decision.
+> Production remains disabled and requires its own manual go/no-go.
 
 ## 1. Release candidate name
 
-**Realtime Pilot RC2 — `leaderboard.updated` + `tournament.result.updated` only.**
+**Realtime Pilot RC3 — `leaderboard.updated` + `tournament.result.updated` +
+`tournament.bracket.generated` only.**
 
 ## 2. Current approved scope
 
-**Allowed server emitters (both in `lib/tournamentResults.ts`,
-`publishAwardRealtimeEvents` — the tournament-result award path):**
-- `leaderboard.updated` → room `leaderboard`.
-- `tournament.result.updated` → room `tournament:{tournamentId}`.
+**Allowed server emitters (per-file allowlist — each file may dispatch EXACTLY
+these events):**
+- `lib/tournamentResults.ts` (`publishAwardRealtimeEvents`, the
+  tournament-result award path):
+  - `leaderboard.updated` → room `leaderboard`.
+  - `tournament.result.updated` → room `tournament:{tournamentId}`.
+- `lib/tournamentMatchEngine.ts` (`generateBracket`):
+  - `tournament.bracket.generated` → room `tournament:{tournamentId}`.
 - Payloads: ID-only (`tournamentId`).
 - Server flag: `REALTIME_ENABLE_SOCKET` (additive, fire-and-forget; each emit is
   scheduled post-response via Next.js `after()` so it is serverless-safe and
-  never blocks or fails the mutation; the DB `RealtimeEvent` writes remain the
-  source of truth).
+  never blocks or fails the mutation — including bracket generation; the DB
+  `RealtimeEvent` writes remain the source of truth).
 - The manual inline-save admin path (`actions/adminTournamentResultActions.ts`)
   intentionally remains polling-only (no socket dispatch).
 
@@ -53,6 +60,8 @@ exact scope that may go to staging. Any deviation must follow
 
 - Registration realtime socket events.
 - Match realtime socket events (`match:{id}` rooms).
+- Tournament status realtime (`tournament.status.updated` — both its emitters
+  stay polling-only).
 - Team socket events.
 - Notification socket events.
 - Admin/private UI consumers.

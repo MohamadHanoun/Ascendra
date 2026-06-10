@@ -15,7 +15,7 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 > Run the full local gate with **`npm run verify:realtime-security`** before any
 > expansion or staging/prod sign-off.
 >
-> The frozen baseline is **Realtime Pilot RC2** —
+> The frozen baseline is **Realtime Pilot RC3** —
 > `docs/realtime-release-candidate.md`. Confirm the repo still matches it with
 > **`npm run check:realtime-rc`** before staging. Operators follow
 > `docs/realtime-staging-operator-guide.md` to execute the staging verification.
@@ -120,6 +120,24 @@ ID-only (`{ tournamentId }`).
   that path.
 - **Production remains disabled** (`REALTIME_ENABLE_SOCKET=false`,
   `NEXT_PUBLIC_REALTIME_ENABLE=false`), **anonymous browser realtime remains
+  disabled**, and the DB-polling fallback remains active for all visitors.
+
+## Third pilot: tournament.bracket.generated (Batch 3A — RC3)
+
+`generateBracket` in `lib/tournamentMatchEngine.ts` — the second approved
+emitter **file** (per-file allowlist) — dispatches
+`tournament.bracket.generated` to the same public room
+`tournament:{tournamentId}` after its existing DB `RealtimeEvent` write. Also
+flag-gated, `after()`-scheduled, ID-only (`{ tournamentId }`); a realtime
+failure can never break bracket generation.
+
+- **Consumer:** unchanged — `TournamentDetailsRealtime` already joins the room;
+  the refresh-decision helper now also accepts `tournament.bracket.generated`
+  for the mounted tournament. Same debounced `router.refresh()`; no visual
+  change.
+- **Still polling-only:** `tournament.status.updated` (admin action + lifecycle
+  job), registrations, matches, notifications, profiles, teams.
+- **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
 
 ## Enabling live leaderboard socket refresh
