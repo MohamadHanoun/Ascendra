@@ -92,6 +92,22 @@ async function emitMatchEvent(
       payload: { tournamentId, matchId },
     });
   }
+
+  // RC7 pilot (Batch 7A) — ONLY tournament.match.advanced additionally
+  // (bracket progression, emitted by advanceBracketAfterMatch). Same
+  // guarantees as above: flag-gated, after()-scheduled, never blocks or fails
+  // bracket advancement; DB RealtimeEvent stays the source of truth.
+  // Minimal, ID-only payload — `extra` (nextMatchId/slot) never reaches the
+  // dispatch.
+  if (type === "tournament.match.advanced" && audience === "public") {
+    dispatchRealtimeEventSoon({
+      type: "tournament.match.advanced",
+      audience: "public",
+      entityType: "tournamentMatch",
+      entityId: matchId,
+      payload: { tournamentId, matchId },
+    });
+  }
 }
 
 async function awardFinalTournamentResults(tournamentId: string) {

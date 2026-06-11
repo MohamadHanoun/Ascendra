@@ -5,10 +5,10 @@ event type per batch**. See `realtime-server/THREAT_MODEL.md` for the security
 rationale; run `npm --prefix realtime-server run expansion:gate` to confirm the
 current state still matches the approved pilot.
 
-The current frozen baseline is **Realtime Pilot RC6**
+The current frozen baseline is **Realtime Pilot RC7**
 (`docs/realtime-release-candidate.md`). Before staging, confirm the repo matches
 it with `npm run check:realtime-rc` and run the full gate with
-`npm run verify:realtime-security`. Any new event moves the repo off RC6 and
+`npm run verify:realtime-security`. Any new event moves the repo off RC7 and
 requires re-baselining.
 
 ## 1. Event proposal
@@ -190,7 +190,7 @@ proof URLs/file names, reporter IDs, team names, comments, and admin notes are
 stripped; covered by the dispatch tests and the gated E2E); `match:{id}` is the
 same anonymous-joinable public room class as `tournament:{id}` with validated
 ID segments; the parent tournament room also receives the event by design, and
-the tournament-details refresh helper ignores match events (E2E-asserted);
+tournament pages do not refresh for this event (E2E-asserted);
 missing/expired tokens degrade to polling; a realtime outage cannot affect
 match reporting (`after()`-scheduled, never throws) and DB polling continues.
 
@@ -231,7 +231,7 @@ team, admin/confirmer IDs, FACEIT flags, scores, team names, and comments are
 stripped; covered by the dispatch tests and the gated E2E); same
 anonymous-joinable `match:{id}` public room class as RC5 with validated ID
 segments; the parent tournament room also receives the event by design, and
-the tournament-details refresh helper ignores match events (E2E-asserted);
+tournament pages do not refresh for this event (E2E-asserted);
 missing/expired tokens degrade to polling; a realtime outage cannot affect
 match confirmation (`after()`-scheduled, never throws) and DB polling
 continues.
@@ -252,6 +252,47 @@ polling-only.
 `NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
 
 **5. Validation:** `verify:realtime-security` green (with the known audit
-override); `check:realtime-rc` green. Production remains disabled; anonymous
-browser realtime remains disabled; RC6 still requires its own Preview
-verification before any production decision.
+override); `check:realtime-rc` green. **RC6 Preview verification passed
+2026-06-11** (evidence: `realtime-server/STAGING_SIGNOFF.md` §14) — WebSocket
+connected, the same match's page refreshed live after confirming a test
+match, a different match's page did not, kill-switch rollback worked after
+both flags were returned to `false`, polling fallback remained intact.
+Production remains disabled; anonymous browser realtime remains disabled.
+
+---
+
+## Completed expansion record — `tournament.match.advanced` (Batch 7A → RC7)
+
+**1. Event proposal:** `tournament.match.advanced`; `entityType`
+`tournamentMatch` / `entityId` `{matchId}`; audience `public`; rooms
+`match:{matchId}` + `tournament:{tournamentId}` (the mapper's existing public
+match-event routing — no new room shape); payload exactly
+`{ tournamentId, matchId }`; classification public.
+
+**2. Security review:** payload is ID-only (sanitizer public path —
+`nextMatchId`, `slot`, winner/team IDs, scores, proof details, names,
+comments, and admin notes are stripped); same anonymous-joinable
+`match:{id}` and `tournament:{id}` public room classes with validated ID
+segments; missing/expired tokens degrade to polling; a realtime outage cannot
+affect bracket advancement (`after()`-scheduled, never throws) and DB polling
+continues.
+
+**3. Implementation:** one event type; one guarded dispatch in the shared
+`emitMatchEvent` helper (`lib/tournamentMatchEngine.ts`, already an
+allowlisted emitter file) firing only for `tournament.match.advanced` + public
+audience, emitted by `advanceBracketAfterMatch` after the DB `RealtimeEvent`
+write; **zero new consumers** and **zero new room shapes**. The existing
+`MatchRealtimeRefresh` helper now accepts the event for the mounted match, and
+the existing `TournamentDetailsRealtime` helper accepts it for the mounted
+tournament because bracket progression affects bracket/details. Gates are
+re-baselined to RC7; unit + gated E2E tests cover delivery, cross-match and
+cross-tournament isolation, and sensitive-field stripping. All unapproved
+match events remain polling-only.
+
+**4. Rollback:** unchanged — `REALTIME_ENABLE_SOCKET=false` and/or
+`NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
+
+**5. Validation:** `verify:realtime-security` green (with the known audit
+override); `check:realtime-rc` green. **RC7 requires its own Preview
+verification before any production decision.** Production remains disabled;
+anonymous browser realtime remains disabled.

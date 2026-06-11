@@ -93,10 +93,47 @@ describe("shouldRefreshMatchFromRealtimeEvent", () => {
     ).toBe(false);
   });
 
+  it("refreshes on tournament.match.advanced matching via entityId", () => {
+    expect(
+      shouldRefreshMatchFromRealtimeEvent(
+        {
+          type: "tournament.match.advanced",
+          entityId: MATCH_ID,
+          payload: {},
+        },
+        MATCH_ID,
+      ),
+    ).toBe(true);
+  });
+
+  it("refreshes on tournament.match.advanced matching via payload.matchId", () => {
+    expect(
+      shouldRefreshMatchFromRealtimeEvent(
+        {
+          type: "tournament.match.advanced",
+          payload: { matchId: MATCH_ID, tournamentId: "tour123" },
+        },
+        MATCH_ID,
+      ),
+    ).toBe(true);
+  });
+
+  it("does not refresh on tournament.match.advanced for a different matchId", () => {
+    expect(
+      shouldRefreshMatchFromRealtimeEvent(
+        {
+          type: "tournament.match.advanced",
+          entityId: "other456",
+          payload: { matchId: "other456", tournamentId: "tour123" },
+        },
+        MATCH_ID,
+      ),
+    ).toBe(false);
+  });
+
   it("does not refresh for unapproved event types", () => {
     for (const type of [
       "tournament.match.disputed",
-      "tournament.match.advanced",
       "tournament.match.game_completed",
       "tournament.match.checkin_updated",
       "tournament.match.proof_synced",

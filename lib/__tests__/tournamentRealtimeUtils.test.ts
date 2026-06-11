@@ -93,6 +93,34 @@ describe("shouldRefreshTournamentDetailsFromRealtimeEvent", () => {
     ).toBe(false);
   });
 
+  it("refreshes on tournament.match.advanced matching via payload.tournamentId", () => {
+    // For match events the entityId is the MATCH id, so the tournament match
+    // must come from payload.tournamentId (the dispatch always includes it).
+    expect(
+      shouldRefreshTournamentDetailsFromRealtimeEvent(
+        {
+          type: "tournament.match.advanced",
+          entityId: "match789",
+          payload: { tournamentId: TOURNAMENT_ID, matchId: "match789" },
+        },
+        TOURNAMENT_ID,
+      ),
+    ).toBe(true);
+  });
+
+  it("does not refresh on tournament.match.advanced for a different tournament", () => {
+    expect(
+      shouldRefreshTournamentDetailsFromRealtimeEvent(
+        {
+          type: "tournament.match.advanced",
+          entityId: "match789",
+          payload: { tournamentId: "other456", matchId: "match789" },
+        },
+        TOURNAMENT_ID,
+      ),
+    ).toBe(false);
+  });
+
   it("does not refresh on tournament.bracket.generated for a different tournament", () => {
     expect(
       shouldRefreshTournamentDetailsFromRealtimeEvent(

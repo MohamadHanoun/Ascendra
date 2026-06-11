@@ -448,4 +448,90 @@ describe.runIf(E2E_ENABLED)("tournament room realtime full loop", () => {
     await sleep(300);
     expect(otherMatchReceived).toBe(false);
   }, 15000);
+
+  it("tournament.match.advanced (RC7) reaches its match room and its OWN tournament room; other match/tournament rooms receive nothing", async () => {
+    server = await startTestServer();
+    setEnv({
+      REALTIME_ENABLE_SOCKET: "true",
+      REALTIME_SERVER_URL: server.baseUrl,
+      REALTIME_EVENT_SECRET: server.eventSecret,
+    });
+
+    const socketMatchA = await connect(server.socketUrl);
+    const socketMatchB = await connect(server.socketUrl);
+    const socketTournamentA = await connect(server.socketUrl);
+    const socketTournamentB = await connect(server.socketUrl);
+    expect((await join(socketMatchA, "match:match_a")).ok).toBe(true);
+    expect((await join(socketMatchB, "match:match_b")).ok).toBe(true);
+    expect((await join(socketTournamentA, "tournament:tour_a")).ok).toBe(true);
+    expect((await join(socketTournamentB, "tournament:tour_b")).ok).toBe(true);
+
+    let otherMatchReceived = false;
+    socketMatchB.on("ascendra:event", () => {
+      otherMatchReceived = true;
+    });
+    let otherTournamentReceived = false;
+    socketTournamentB.on("ascendra:event", () => {
+      otherTournamentReceived = true;
+    });
+
+    const receivedMatch = waitForEvent(socketMatchA, "ascendra:event");
+    const receivedTournament = waitForEvent(socketTournamentA, "ascendra:event");
+
+    // Include sensitive fields to PROVE they are stripped before delivery.
+    const result = await dispatchRealtimeEvent({
+      type: "tournament.match.advanced",
+      audience: "public",
+      entityType: "tournamentMatch",
+      entityId: "match_a",
+      payload: {
+        tournamentId: "tour_a",
+        matchId: "match_a",
+        nextMatchId: "match_next",
+        slot: "A",
+        winnerTeamId: "team_w",
+        teamName: "Secret Team",
+      },
+    });
+    expect(result.ok).toBe(true);
+    // The mapper intentionally targets BOTH rooms for public match events.
+    expect(result.rooms).toEqual(["match:match_a", "tournament:tour_a"]);
+
+    const msg = await receivedMatch;
+    expect(msg.type).toBe("tournament.match.advanced");
+    expect(msg.entityId).toBe("match_a");
+    expect(msg.payload).toEqual({
+      tournamentId: "tour_a",
+      matchId: "match_a",
+      entityType: "tournamentMatch",
+      entityId: "match_a",
+    });
+    expect(shouldRefreshMatch(msg, "match_a")).toBe(true);
+    expect(shouldRefreshMatch(msg, "match_b")).toBe(false);
+
+    // RC7: the matching tournament's details page DOES refresh on bracket
+    // progression (approved — the event reaches its own tournament room), and
+    // a different tournament does not.
+    const tournamentMsg = await receivedTournament;
+    expect(tournamentMsg.type).toBe("tournament.match.advanced");
+    expect(shouldRefresh(tournamentMsg, "tour_a")).toBe(true);
+    expect(shouldRefresh(tournamentMsg, "tour_b")).toBe(false);
+
+    const json = JSON.stringify(msg);
+    for (const forbidden of [
+      "nextMatchId",
+      '"slot"',
+      "winnerTeamId",
+      "teamName",
+      "Secret Team",
+      server.eventSecret,
+    ]) {
+      expect(json).not.toContain(forbidden);
+    }
+
+    // Give stray broadcasts time to arrive before asserting isolation.
+    await sleep(300);
+    expect(otherMatchReceived).toBe(false);
+    expect(otherTournamentReceived).toBe(false);
+  }, 15000);
 });

@@ -5,8 +5,8 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 
 > **Staging sign-off required before production.** See
 > `realtime-server/STAGING_SIGNOFF.md` (use `npm run status:check`). The
-> leaderboard is the **only** current pilot — no new realtime events should be
-> enabled until that sign-off passes.
+> the current pilot scope is the frozen RC7 baseline — no additional realtime
+> events should be enabled until the relevant sign-off passes.
 >
 > **Adding a new realtime event?** First complete
 > `docs/realtime-expansion-checklist.md` and review
@@ -15,7 +15,7 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 > Run the full local gate with **`npm run verify:realtime-security`** before any
 > expansion or staging/prod sign-off.
 >
-> The frozen baseline is **Realtime Pilot RC6** —
+> The frozen baseline is **Realtime Pilot RC7** —
 > `docs/realtime-release-candidate.md`. Confirm the repo still matches it with
 > **`npm run check:realtime-rc`** before staging. Operators follow
 > `docs/realtime-staging-operator-guide.md` to execute the staging verification.
@@ -174,9 +174,8 @@ URLs/file names, reporter IDs, team names, and comments are stripped by the
 public sanitizer); a realtime failure can never break match reporting.
 
 - **Rooms:** the mapper's pre-existing public match-event routing targets both
-  `match:{matchId}` and the parent `tournament:{tournamentId}`. The
-  tournament-details refresh helper ignores match events, so tournament pages
-  do not refresh from them.
+  `match:{matchId}` and the parent `tournament:{tournamentId}`. For this event,
+  tournament pages do not refresh from it.
 - **Consumer:** `components/MatchRealtimeRefresh.tsx` (mounted on
   `/tournaments/[id]/matches/[matchId]`) — the third approved consumer. Its
   DB-polling subscriptions are unchanged; additively it joins `match:{matchId}`
@@ -184,11 +183,11 @@ public sanitizer); a realtime failure can never break match reporting.
   `shouldRefreshMatchFromRealtimeEvent`
   (`components/match/matchRealtimeUtils.ts`) matches the mounted match. The
   socket event is never trusted for UI state.
-- **Still polling-only:** all other match events (`confirmed` — wired in RC6,
-  see below — `disputed`, `advanced`, `game_completed`, `room_linked`,
-  `checkin_updated`, `proof_synced`, `communication_updated`),
-  `tournament.registrationStatus.updated`, registrations, notifications,
-  profiles, teams.
+- **Not part of RC5:** `tournament.match.confirmed` is wired in RC6 and
+  `tournament.match.advanced` is wired in RC7; the remaining match events
+  (`disputed`, `game_completed`, `room_linked`, `checkin_updated`,
+  `proof_synced`, `communication_updated`), `tournament.registrationStatus.updated`,
+  registrations, notifications, profiles, and teams remain polling-only.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
 
@@ -206,18 +205,48 @@ the public sanitizer regardless); a realtime failure can never break match
 confirmation.
 
 - **Rooms:** unchanged — the mapper's pre-existing public match-event routing
-  targets `match:{matchId}` + the parent `tournament:{tournamentId}`; the
-  tournament-details refresh helper ignores match events.
+  targets `match:{matchId}` + the parent `tournament:{tournamentId}`. For this
+  event, `TournamentDetailsRealtime` does not refresh from the parent
+  tournament room.
 - **Consumer:** unchanged — `MatchRealtimeRefresh` already joins the room; the
   refresh-decision helper now also accepts `tournament.match.confirmed` for
   the mounted match. Same debounced `router.refresh()`; no visual change.
-- **Still polling-only:** `tournament.match.disputed`, `advanced`,
-  `game_completed`, `room_linked`, `checkin_updated`, `proof_synced`,
-  `communication_updated`, `tournament.registrationStatus.updated`,
-  registrations, notifications, profiles, teams.
+- **Not part of RC6:** `tournament.match.advanced` is wired in RC7; the
+  remaining match events (`disputed`, `game_completed`, `room_linked`,
+  `checkin_updated`, `proof_synced`, `communication_updated`),
+  `tournament.registrationStatus.updated`, registrations, notifications,
+  profiles, and teams remain polling-only.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
-  RC6 requires its own Preview verification before any production decision.
+  RC6 Preview verification passed 2026-06-11; RC7 still requires its own
+  Preview verification before any production decision.
+
+## Seventh pilot: tournament.match.advanced (Batch 7A — RC7)
+
+The shared `emitMatchEvent` helper in `lib/tournamentMatchEngine.ts` dispatches
+`tournament.match.advanced` after its existing DB `RealtimeEvent` write —
+guarded to exactly this event + public audience, and emitted by
+`advanceBracketAfterMatch` when bracket progression happens. Also flag-gated,
+`after()`-scheduled, ID-only (`{ tournamentId, matchId }` — `nextMatchId`,
+`slot`, winner/team IDs, scores, proof details, names, comments, and admin notes
+never reach the dispatch and are stripped by the public sanitizer regardless);
+a realtime failure can never break bracket advancement.
+
+- **Rooms:** unchanged — the mapper's existing public match-event routing
+  targets `match:{matchId}` + the parent `tournament:{tournamentId}`.
+- **Consumers:** no new consumer. `MatchRealtimeRefresh` refreshes only the
+  mounted match, and `TournamentDetailsRealtime` refreshes only the mounted
+  tournament because bracket progression affects bracket/details. Both still
+  use `router.refresh()` and never trust the socket payload for UI state.
+- **Still polling-only:** `tournament.match.disputed`,
+  `tournament.match.game_completed`, `tournament.match.room_linked`,
+  `tournament.match.checkin_updated`, `tournament.match.proof_synced`,
+  `tournament.match.communication_updated`,
+  `tournament.registrationStatus.updated`, registrations, notifications,
+  profiles, and teams.
+- **Production remains disabled**, **anonymous browser realtime remains
+  disabled**, and the DB-polling fallback remains active for all visitors.
+  RC7 requires its own Preview verification before any production decision.
 
 ## Enabling live leaderboard socket refresh
 
@@ -260,7 +289,8 @@ The provider runs only when **both** are true (read at runtime, client-side):
 - `NEXT_PUBLIC_REALTIME_URL` is set (the `wss://realtime.ascendrahub.com` origin)
 
 Otherwise it stays in `disabled` status and never fetches a token or opens a
-socket. **It is not mounted** in `app/layout.tsx` or any page yet.
+socket. It is mounted inertly through `RealtimeProviderRoot`; no socket opens
+unless the browser flag and URL are present.
 
 ## Behavior
 
@@ -298,7 +328,7 @@ envelopes (full payloads are never logged).
   `NEXT_PUBLIC_*`.
 - Private rooms are only ever those the server signed into the token — the client
   cannot request arbitrary private/admin rooms.
-- No emitters are wired; the provider only *consumes* events once mounted.
+- The browser client only *consumes* events; it never emits socket events.
 
 A static guardrail (`lib/__tests__/realtimeSecurityGuardrails.test.ts`) enforces
 that `socket.io-client` is imported only by `RealtimeProvider.tsx`, that the

@@ -508,9 +508,9 @@ describe("guardrail K: realtime consumers are scoped and additive", () => {
   });
 });
 
-// ─── L. Approved emitter pilots (Batches 1R + 2A + 3A + 4A + 5A + 6A) ──────────
+// ─── L. Approved emitter pilots (Batches 1R + 2A + 3A + 4A + 5A + 6A + 7A) ─────
 
-describe("guardrail L: only the approved RC6 events are wired server emitters", () => {
+describe("guardrail L: only the approved RC7 events are wired server emitters", () => {
   // Per-file allowlist: each approved file dispatches EXACTLY these types.
   const ALLOWED_EMITTERS: Record<string, string[]> = {
     "lib/tournamentResults.ts": [
@@ -521,6 +521,7 @@ describe("guardrail L: only the approved RC6 events are wired server emitters", 
       "tournament.bracket.generated",
       "tournament.match.report_submitted",
       "tournament.match.confirmed",
+      "tournament.match.advanced",
     ],
     "actions/adminTournamentInlineActions.ts": ["tournament.status.updated"],
     "lib/jobs/tournamentLifecycleJobs.ts": ["tournament.status.updated"],
@@ -565,10 +566,9 @@ describe("guardrail L: only the approved RC6 events are wired server emitters", 
           "profile.updated",
           "tournament.registration.updated",
           "registration.",
-          // Unapproved match events — only report_submitted (RC5) and
-          // confirmed (RC6) are wired.
+          // Unapproved match events — only report_submitted (RC5),
+          // confirmed (RC6), and advanced (RC7) are wired.
           "tournament.match.disputed",
-          "tournament.match.advanced",
           "tournament.match.game_completed",
           "tournament.match.room_linked",
           "tournament.match.checkin_updated",

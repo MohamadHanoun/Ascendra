@@ -251,6 +251,78 @@ describe("dispatchRealtimeEvent — routing", () => {
     }
   });
 
+  it("sends tournament.match.advanced to its match + tournament rooms with an ID-only payload", async () => {
+    const fetchMock = mockFetchOk();
+    enableBridge();
+
+    const result = await dispatchRealtimeEvent({
+      type: "tournament.match.advanced",
+      audience: "public",
+      entityType: "tournamentMatch",
+      entityId: "match789",
+      payload: { tournamentId: "tour123", matchId: "match789" },
+    });
+
+    expect(result.ok).toBe(true);
+    // The mapper intentionally targets BOTH the match room and its parent
+    // tournament room for public match events (pre-existing behavior).
+    expect(result.rooms).toEqual(["match:match789", "tournament:tour123"]);
+
+    const body = lastFetchBody(fetchMock);
+    expect(body.rooms).toEqual(["match:match789", "tournament:tour123"]);
+    expect(body.payload).toEqual({
+      tournamentId: "tour123",
+      matchId: "match789",
+      entityType: "tournamentMatch",
+      entityId: "match789",
+    });
+  });
+
+  it("strips winner/nextMatch/score fields from a public tournament.match.advanced payload", async () => {
+    const fetchMock = mockFetchOk();
+    enableBridge();
+
+    const result = await dispatchRealtimeEvent({
+      type: "tournament.match.advanced",
+      audience: "public",
+      entityType: "tournamentMatch",
+      entityId: "match789",
+      payload: {
+        tournamentId: "tour123",
+        matchId: "match789",
+        nextMatchId: "match999",
+        slot: "A",
+        winnerTeamId: "team456",
+        teamAScore: 13,
+        teamBScore: 7,
+        teamName: "Shadow Wolves",
+        adminUserId: "admin123",
+      },
+    });
+
+    expect(result.ok).toBe(true);
+
+    const body = lastFetchBody(fetchMock);
+    const payload = body.payload as Record<string, unknown>;
+    expect(payload).toEqual({
+      tournamentId: "tour123",
+      matchId: "match789",
+      entityType: "tournamentMatch",
+      entityId: "match789",
+    });
+    for (const forbidden of [
+      "nextMatchId",
+      "slot",
+      "winnerTeamId",
+      "teamAScore",
+      "teamBScore",
+      "teamName",
+      "adminUserId",
+    ]) {
+      expect(payload).not.toHaveProperty(forbidden);
+    }
+  });
+
   it("sends tournament.match.confirmed to its match + tournament rooms with an ID-only payload", async () => {
     const fetchMock = mockFetchOk();
     enableBridge();

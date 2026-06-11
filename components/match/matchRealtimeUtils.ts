@@ -1,14 +1,16 @@
 /**
  * Pure refresh-decision helper for the match-page realtime consumer
- * (Batch 5A — RC5; RC6/Batch 6A added tournament.match.confirmed). Decides
- * whether a socket realtime event should trigger a match-page
- * `router.refresh()`. The event is only used to match the mounted match —
- * never as a data source for UI state — and this never throws.
+ * (Batch 5A — RC5; RC6 added tournament.match.confirmed; RC7 added
+ * tournament.match.advanced). Decides whether a socket realtime event should
+ * trigger a match-page `router.refresh()`. The event is only used to match
+ * the mounted match — never as a data source for UI state — and this never
+ * throws.
  */
 
 const MATCH_REFRESH_TYPES = new Set([
   "tournament.match.report_submitted",
   "tournament.match.confirmed",
+  "tournament.match.advanced",
 ]);
 
 export function shouldRefreshMatchFromRealtimeEvent(

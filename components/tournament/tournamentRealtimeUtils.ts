@@ -1,15 +1,19 @@
 /**
  * Pure refresh-decision helper for the tournament-details realtime consumer
- * (Batch 2A; RC4/Batch 4A added tournament.status.updated). Decides whether a
- * socket realtime event should trigger a tournament-page `router.refresh()`.
- * The event is only used to match the mounted tournament — never as a data
- * source for UI state — and this never throws.
+ * (Batch 2A; RC4 added tournament.status.updated; RC7 added
+ * tournament.match.advanced — bracket progression affects the tournament
+ * bracket/details, and the mapper already delivers public match events to the
+ * parent tournament:{id} room). Decides whether a socket realtime event
+ * should trigger a tournament-page `router.refresh()`. The event is only used
+ * to match the mounted tournament — never as a data source for UI state — and
+ * this never throws.
  */
 
 const TOURNAMENT_DETAILS_REFRESH_TYPES = new Set([
   "tournament.result.updated",
   "tournament.bracket.generated",
   "tournament.status.updated",
+  "tournament.match.advanced",
 ]);
 
 export function shouldRefreshTournamentDetailsFromRealtimeEvent(

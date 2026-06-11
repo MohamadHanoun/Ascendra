@@ -74,6 +74,18 @@ describe("mapRealtimeEventToRooms", () => {
     ).toEqual(["match:match789", "tournament:tour123"]);
   });
 
+  it("maps tournament.match.advanced to match + tournament rooms", () => {
+    expect(
+      mapRealtimeEventToRooms({
+        type: "tournament.match.advanced",
+        audience: "public",
+        entityType: "tournamentMatch",
+        entityId: "match789",
+        payload: { matchId: "match789", tournamentId: "tour123" },
+      }),
+    ).toEqual(["match:match789", "tournament:tour123"]);
+  });
+
   it("maps tournament.match.confirmed to match + tournament rooms", () => {
     const rooms = mapRealtimeEventToRooms({
       type: "tournament.match.confirmed",
