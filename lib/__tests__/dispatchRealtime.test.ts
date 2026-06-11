@@ -131,6 +131,50 @@ describe("dispatchRealtimeEvent — routing", () => {
     });
   });
 
+  it("sends tournament.status.updated to its tournament room with an ID-only payload", async () => {
+    const fetchMock = mockFetchOk();
+    enableBridge();
+
+    const result = await dispatchRealtimeEvent({
+      type: "tournament.status.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: "tour123",
+      payload: { tournamentId: "tour123" },
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.rooms).toEqual(["tournament:tour123"]);
+
+    const body = lastFetchBody(fetchMock);
+    expect(body.rooms).toEqual(["tournament:tour123"]);
+    expect(body.payload).toEqual({
+      tournamentId: "tour123",
+      entityType: "tournament",
+      entityId: "tour123",
+    });
+  });
+
+  it("strips a status field from a public tournament.status.updated payload", async () => {
+    const fetchMock = mockFetchOk();
+    enableBridge();
+
+    const result = await dispatchRealtimeEvent({
+      type: "tournament.status.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: "tour123",
+      payload: { tournamentId: "tour123", status: "open" },
+    });
+
+    expect(result.ok).toBe(true);
+
+    const body = lastFetchBody(fetchMock);
+    const payload = body.payload as Record<string, unknown>;
+    expect(payload).not.toHaveProperty("status");
+    expect(payload.tournamentId).toBe("tour123");
+  });
+
   it("maps tournament.match.confirmed to match + tournament rooms", async () => {
     const fetchMock = mockFetchOk();
     enableBridge();

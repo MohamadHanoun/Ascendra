@@ -1,11 +1,12 @@
 /**
- * Realtime Pilot RC3 baseline checker (Batch 1W, re-baselined in Batches
- * 2A/3A) — OFFLINE scan only.
+ * Realtime Pilot RC4 baseline checker (Batch 1W, re-baselined in Batches
+ * 2A/3A/4A) — OFFLINE scan only.
  *
- * Verifies the repository still matches the frozen "Realtime Pilot RC3 —
- * leaderboard.updated + tournament.result.updated + tournament.bracket.generated"
- * baseline (see docs/realtime-release-candidate.md). Emitters are allowlisted
- * PER FILE: each approved file may dispatch exactly its approved event types.
+ * Verifies the repository still matches the frozen "Realtime Pilot RC4 —
+ * leaderboard.updated + tournament.result.updated + tournament.bracket.generated
+ * + tournament.status.updated" baseline (see docs/realtime-release-candidate.md).
+ * Emitters are allowlisted PER FILE: each approved file may dispatch exactly
+ * its approved event types.
  *
  * No network. No secrets printed. No dependency mutation. No release/host access.
  * Prints PASS/FAIL lines; exits 1 on any violation.
@@ -26,7 +27,7 @@ const CONSUMER_TOURNAMENT = "components/TournamentDetailsRealtime.tsx";
 const PROVIDER = "components/realtime/RealtimeProvider.tsx";
 const PROVIDER_ROOT = "components/realtime/RealtimeProviderRoot.tsx";
 
-// RC3 — per-file emitter allowlist: each file may dispatch EXACTLY these
+// RC4 — per-file emitter allowlist: each file may dispatch EXACTLY these
 // event types, and no other file may dispatch at all.
 const ALLOWED_EMITTERS = {
   "lib/tournamentResults.ts": [
@@ -34,6 +35,8 @@ const ALLOWED_EMITTERS = {
     "tournament.result.updated",
   ],
   "lib/tournamentMatchEngine.ts": ["tournament.bracket.generated"],
+  "actions/adminTournamentInlineActions.ts": ["tournament.status.updated"],
+  "lib/jobs/tournamentLifecycleJobs.ts": ["tournament.status.updated"],
 };
 
 const REQUIRED_DOCS = [
@@ -109,7 +112,7 @@ export function runRcCheck() {
   const results = [];
   const check = (name, ok, detail = "") => results.push({ name, ok, detail });
 
-  const appFiles = ["app", "components", "hooks", "lib"].flatMap((d) =>
+  const appFiles = ["actions", "app", "components", "hooks", "lib"].flatMap((d) =>
     walk(path.join(ROOT, d), [".ts", ".tsx"]),
   );
 
@@ -253,9 +256,9 @@ if (isRunDirectly()) {
   }
   console.log(`\nRC check — ${results.length} checks, ${fails} fail`);
   if (fails > 0) {
-    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC3 baseline.");
+    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC4 baseline.");
     process.exit(1);
   }
-  console.log("RC check PASSED — repo matches Realtime Pilot RC3 baseline.");
+  console.log("RC check PASSED — repo matches Realtime Pilot RC4 baseline.");
   process.exit(0);
 }

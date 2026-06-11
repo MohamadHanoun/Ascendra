@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { createNotificationsOnceForUsers } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import { dispatchRealtimeEventSoon } from "@/lib/realtime/dispatchRealtime";
 import {
   getServerLogErrorMessage,
   logServerBotError,
@@ -690,6 +691,19 @@ async function setTournamentStatus(
     entityType: "tournament",
     entityId: tournament.id,
     payload: { tournamentId: tournament.id, status },
+  });
+
+  // RC4 pilot (Batch 4A) — ONLY tournament.status.updated from this file.
+  // Additive and flag-gated (no-op unless REALTIME_ENABLE_SOCKET === "true");
+  // scheduled via Next.js after() so it never blocks or fails the admin
+  // status action. The DB RealtimeEvent above remains the source of truth.
+  // Minimal, ID-only payload.
+  dispatchRealtimeEventSoon({
+    type: "tournament.status.updated",
+    audience: "public",
+    entityType: "tournament",
+    entityId: tournament.id,
+    payload: { tournamentId: tournament.id },
   });
 
   if (status === "cancelled" || status === "ended") {

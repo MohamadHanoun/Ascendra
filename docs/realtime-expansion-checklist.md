@@ -5,10 +5,10 @@ event type per batch**. See `realtime-server/THREAT_MODEL.md` for the security
 rationale; run `npm --prefix realtime-server run expansion:gate` to confirm the
 current state still matches the approved pilot.
 
-The current frozen baseline is **Realtime Pilot RC3**
+The current frozen baseline is **Realtime Pilot RC4**
 (`docs/realtime-release-candidate.md`). Before staging, confirm the repo matches
 it with `npm run check:realtime-rc` and run the full gate with
-`npm run verify:realtime-security`. Any new event moves the repo off RC3 and
+`npm run verify:realtime-security`. Any new event moves the repo off RC4 and
 requires re-baselining.
 
 ## 1. Event proposal
@@ -134,3 +134,39 @@ connected, the same tournament's page refreshed live after bracket generation,
 a different tournament's page did not, kill-switch rollback worked after both
 flags were returned to `false`, polling fallback remained intact. Production
 remains disabled; anonymous browser realtime remains disabled.
+
+---
+
+## Completed expansion record — `tournament.status.updated` (Batch 4A → RC4)
+
+**1. Event proposal:** `tournament.status.updated`; `entityType` `tournament` /
+`entityId` `{tournamentId}`; audience `public`; room `tournament:{tournamentId}`
+(existing, RC2/RC3-verified); payload exactly `{ tournamentId }`; classification
+public.
+
+**2. Security review:** payload is ID-only (sanitizer public path strips the
+`status` value — covered by the dispatch tests and the gated E2E); same
+anonymous-joinable public room class as RC2/RC3 with validated ID segments;
+missing/expired tokens degrade to polling; a realtime outage cannot affect the
+admin status action or the lifecycle job (`after()`-scheduled with a safe
+fallback outside request scope, never throws) and DB polling continues.
+
+**3. Implementation:** one event type; two appended dispatches next to the
+existing `createRealtimeEvent` calls — the admin status action in
+`actions/adminTournamentInlineActions.ts` (the first approved `actions/`
+emitter file) and `publishLifecycleEvents` in
+`lib/jobs/tournamentLifecycleJobs.ts` — no business-logic or status-transition
+changes; **zero new consumers** (the existing `TournamentDetailsRealtime`
+helper now accepts the type for the mounted tournament); gates re-baselined to
+the four-file emitter allowlist and now also scan `actions/`; unit + gated E2E
+tests added (delivery + cross-room isolation + status-field stripping).
+`tournament.registrationStatus.updated` and all other events remain
+polling-only.
+
+**4. Rollback:** unchanged — `REALTIME_ENABLE_SOCKET=false` and/or
+`NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
+
+**5. Validation:** `verify:realtime-security` green (with the known audit
+override); `check:realtime-rc` green. Production remains disabled; anonymous
+browser realtime remains disabled; RC4 still requires its own Preview
+verification before any production decision.

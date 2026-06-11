@@ -1,4 +1,4 @@
-# Realtime Pilot RC3 — leaderboard.updated + tournament.result.updated + tournament.bracket.generated
+# Realtime Pilot RC4 — leaderboard.updated + tournament.result.updated + tournament.bracket.generated + tournament.status.updated
 
 Frozen release-candidate baseline for the Ascendra realtime pilot. This is the
 exact scope that may go to staging. Any deviation must follow
@@ -6,19 +6,21 @@ exact scope that may go to staging. Any deviation must follow
 `npm run check:realtime-rc`, and run the full gate with
 `npm run verify:realtime-security`.
 
-> RC3 (Batch 3A) supersedes RC2 by adding exactly one event
-> (`tournament.bracket.generated`) into the already-proven `tournament:{id}`
-> room and the existing `TournamentDetailsRealtime` consumer — zero new
-> consumers, zero new room shapes. The one new concept is the **per-file
-> emitter allowlist** (a second approved emitter file). Preview verifications
-> are recorded in `realtime-server/STAGING_SIGNOFF.md`: RC1 in §9, RC2 in §10,
-> **RC3 in §11 (passed 2026-06-11)**. Production remains disabled and requires
-> its own manual go/no-go.
+> RC4 (Batch 4A) supersedes RC3 by adding exactly one event
+> (`tournament.status.updated`) into the already-proven `tournament:{id}` room
+> and the existing `TournamentDetailsRealtime` consumer — zero new consumers,
+> zero new room shapes, zero realtime-server runtime changes. The one new
+> concept is the first **`actions/` emitter file** in the per-file allowlist
+> (plus the lifecycle cron job as a second emitter of the same single event).
+> Preview verifications are recorded in `realtime-server/STAGING_SIGNOFF.md`:
+> RC1 in §9, RC2 in §10, RC3 in §11; **RC4 requires its own Preview
+> verification** before any production decision. Production remains disabled
+> and requires its own manual go/no-go.
 
 ## 1. Release candidate name
 
-**Realtime Pilot RC3 — `leaderboard.updated` + `tournament.result.updated` +
-`tournament.bracket.generated` only.**
+**Realtime Pilot RC4 — `leaderboard.updated` + `tournament.result.updated` +
+`tournament.bracket.generated` + `tournament.status.updated` only.**
 
 ## 2. Current approved scope
 
@@ -30,11 +32,18 @@ these events):**
   - `tournament.result.updated` → room `tournament:{tournamentId}`.
 - `lib/tournamentMatchEngine.ts` (`generateBracket`):
   - `tournament.bracket.generated` → room `tournament:{tournamentId}`.
-- Payloads: ID-only (`tournamentId`).
+- `actions/adminTournamentInlineActions.ts` (the admin status action):
+  - `tournament.status.updated` → room `tournament:{tournamentId}`.
+- `lib/jobs/tournamentLifecycleJobs.ts` (`publishLifecycleEvents`, scheduled
+  lifecycle transitions):
+  - `tournament.status.updated` → room `tournament:{tournamentId}`.
+- Payloads: ID-only (`tournamentId`; the `status` value is stripped by the
+  public sanitizer).
 - Server flag: `REALTIME_ENABLE_SOCKET` (additive, fire-and-forget; each emit is
-  scheduled post-response via Next.js `after()` so it is serverless-safe and
-  never blocks or fails the mutation — including bracket generation; the DB
-  `RealtimeEvent` writes remain the source of truth).
+  scheduled post-response via Next.js `after()` — with a safe fallback outside
+  request scope, e.g. cron — so it is serverless-safe and never blocks or fails
+  the mutation — including bracket generation, the admin status action, and the
+  lifecycle job; the DB `RealtimeEvent` writes remain the source of truth).
 - The manual inline-save admin path (`actions/adminTournamentResultActions.ts`)
   intentionally remains polling-only (no socket dispatch).
 
@@ -60,8 +69,8 @@ these events):**
 
 - Registration realtime socket events.
 - Match realtime socket events (`match:{id}` rooms).
-- Tournament status realtime (`tournament.status.updated` — both its emitters
-  stay polling-only).
+- Registration-status realtime (`tournament.registrationStatus.updated` — both
+  its emitters stay polling-only).
 - Team socket events.
 - Notification socket events.
 - Admin/private UI consumers.
@@ -121,12 +130,13 @@ npm --prefix realtime-server run smoke:event    # with safe env + target
 ## 8. Staging sign-off requirement
 
 - Operator runbook: `docs/realtime-staging-operator-guide.md` (written for the
-  RC1 run; reuse the same steps for RC2/RC3, additionally verifying the
-  tournament page live refresh — including after bracket generation — and that
-  a different tournament's page does **not** refresh).
+  RC1 run; reuse the same steps for RC2/RC3/RC4, additionally verifying the
+  tournament page live refresh — including after bracket generation and after a
+  status change — and that a different tournament's page does **not** refresh).
 - Complete `realtime-server/STAGING_SIGNOFF.md` before production. Preview runs
-  are recorded there: RC1 (§9), RC2 (§10), and **RC3 (§11, passed 2026-06-11)**
-  — all with both flags returned to `false` afterwards.
+  are recorded there: RC1 (§9), RC2 (§10), and RC3 (§11, passed 2026-06-11) —
+  all with both flags returned to `false` afterwards. **RC4 needs its own
+  Preview verification** with both flags returned to `false` afterwards.
 - Passing staging does **not** automatically approve production.
 - No further realtime event may be added before staging sign-off or explicit
   approval (one event type per batch).

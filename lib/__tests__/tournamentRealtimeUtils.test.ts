@@ -55,6 +55,44 @@ describe("shouldRefreshTournamentDetailsFromRealtimeEvent", () => {
     ).toBe(true);
   });
 
+  it("refreshes on tournament.status.updated matching via entityId", () => {
+    expect(
+      shouldRefreshTournamentDetailsFromRealtimeEvent(
+        {
+          type: "tournament.status.updated",
+          entityId: TOURNAMENT_ID,
+          payload: {},
+        },
+        TOURNAMENT_ID,
+      ),
+    ).toBe(true);
+  });
+
+  it("refreshes on tournament.status.updated matching via payload.tournamentId", () => {
+    expect(
+      shouldRefreshTournamentDetailsFromRealtimeEvent(
+        {
+          type: "tournament.status.updated",
+          payload: { tournamentId: TOURNAMENT_ID },
+        },
+        TOURNAMENT_ID,
+      ),
+    ).toBe(true);
+  });
+
+  it("does not refresh on tournament.status.updated for a different tournament", () => {
+    expect(
+      shouldRefreshTournamentDetailsFromRealtimeEvent(
+        {
+          type: "tournament.status.updated",
+          entityId: "other456",
+          payload: { tournamentId: "other456" },
+        },
+        TOURNAMENT_ID,
+      ),
+    ).toBe(false);
+  });
+
   it("does not refresh on tournament.bracket.generated for a different tournament", () => {
     expect(
       shouldRefreshTournamentDetailsFromRealtimeEvent(
@@ -85,6 +123,7 @@ describe("shouldRefreshTournamentDetailsFromRealtimeEvent", () => {
     for (const type of [
       "leaderboard.updated",
       "tournament.updated",
+      "tournament.registrationStatus.updated",
       "tournament.match.confirmed",
       "registration.approved",
       "notification.created",

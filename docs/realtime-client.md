@@ -15,7 +15,7 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 > Run the full local gate with **`npm run verify:realtime-security`** before any
 > expansion or staging/prod sign-off.
 >
-> The frozen baseline is **Realtime Pilot RC3** —
+> The frozen baseline is **Realtime Pilot RC4** —
 > `docs/realtime-release-candidate.md`. Confirm the repo still matches it with
 > **`npm run check:realtime-rc`** before staging. Operators follow
 > `docs/realtime-staging-operator-guide.md` to execute the staging verification.
@@ -136,9 +136,32 @@ failure can never break bracket generation.
   for the mounted tournament. Same debounced `router.refresh()`; no visual
   change.
 - **Still polling-only:** `tournament.status.updated` (admin action + lifecycle
-  job), registrations, matches, notifications, profiles, teams.
+  job — wired in RC4, see below), registrations, matches, notifications,
+  profiles, teams.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
+
+## Fourth pilot: tournament.status.updated (Batch 4A — RC4)
+
+Both existing `tournament.status.updated` emitters — the admin status action in
+`actions/adminTournamentInlineActions.ts` (the first approved `actions/` emitter
+file) and the scheduled lifecycle transition in
+`lib/jobs/tournamentLifecycleJobs.ts` — now additionally dispatch
+`tournament.status.updated` to the same public room `tournament:{tournamentId}`
+after their existing DB `RealtimeEvent` writes. Also flag-gated,
+`after()`-scheduled (with a safe fallback outside request scope, e.g. cron),
+ID-only (`{ tournamentId }` — the `status` value itself is stripped by the
+public sanitizer); a realtime failure can never break the admin action or the
+lifecycle job.
+
+- **Consumer:** unchanged — `TournamentDetailsRealtime` already joins the room;
+  the refresh-decision helper now also accepts `tournament.status.updated` for
+  the mounted tournament. Same debounced `router.refresh()`; no visual change.
+- **Still polling-only:** `tournament.registrationStatus.updated` (both its
+  emitters), registrations, matches, notifications, profiles, teams.
+- **Production remains disabled**, **anonymous browser realtime remains
+  disabled**, and the DB-polling fallback remains active for all visitors.
+  RC4 requires its own Preview verification before any production decision.
 
 ## Enabling live leaderboard socket refresh
 

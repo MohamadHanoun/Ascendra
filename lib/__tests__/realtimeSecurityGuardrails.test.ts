@@ -194,14 +194,15 @@ describe("guardrail F: dispatch helper is not wired into emitters", () => {
     "lib/realtime.ts",
     "lib/notifications.ts",
     "lib/matchNotifications.ts",
-    // lib/tournamentResults.ts (Batches 1R/2A) and lib/tournamentMatchEngine.ts
-    // (Batch 3A) are the approved pilots — see guardrail L.
+    // lib/tournamentResults.ts (Batches 1R/2A), lib/tournamentMatchEngine.ts
+    // (Batch 3A), actions/adminTournamentInlineActions.ts and
+    // lib/jobs/tournamentLifecycleJobs.ts (Batch 4A) are the approved pilots —
+    // see guardrail L.
     "actions/adminRegistrationInlineActions.ts",
     "actions/tournamentRegistrationInlineActions.ts",
     "actions/teamInlineActions.ts",
     "actions/teamActions.ts",
     "actions/matchActions.ts",
-    "actions/adminTournamentInlineActions.ts",
     "actions/adminTournamentResultActions.ts",
     "actions/profileInvitationInlineActions.ts",
   ];
@@ -475,9 +476,9 @@ describe("guardrail K: realtime consumers are scoped and additive", () => {
   });
 });
 
-// ─── L. Approved emitter pilots (Batches 1R + 2A + 3A) ─────────────────────────
+// ─── L. Approved emitter pilots (Batches 1R + 2A + 3A + 4A) ────────────────────
 
-describe("guardrail L: only the approved RC3 events are wired server emitters", () => {
+describe("guardrail L: only the approved RC4 events are wired server emitters", () => {
   // Per-file allowlist: each approved file dispatches EXACTLY these types.
   const ALLOWED_EMITTERS: Record<string, string[]> = {
     "lib/tournamentResults.ts": [
@@ -485,6 +486,8 @@ describe("guardrail L: only the approved RC3 events are wired server emitters", 
       "tournament.result.updated",
     ],
     "lib/tournamentMatchEngine.ts": ["tournament.bracket.generated"],
+    "actions/adminTournamentInlineActions.ts": ["tournament.status.updated"],
+    "lib/jobs/tournamentLifecycleJobs.ts": ["tournament.status.updated"],
   };
 
   function dispatchBlocks(src: string): string[] {
@@ -525,7 +528,6 @@ describe("guardrail L: only the approved RC3 events are wired server emitters", 
         for (const forbiddenType of [
           "profile.updated",
           "tournament.registration.updated",
-          "tournament.status.updated",
           "registration.",
           "tournament.match.",
           "notification.",
@@ -566,7 +568,6 @@ describe("guardrail L: only the approved RC3 events are wired server emitters", 
       "lib/realtime.ts",
       "lib/notifications.ts",
       "lib/matchNotifications.ts",
-      "lib/jobs/tournamentLifecycleJobs.ts",
     ];
     for (const rel of others) {
       const full = path.join(ROOT, rel);
