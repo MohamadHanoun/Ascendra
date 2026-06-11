@@ -1,9 +1,13 @@
-# Realtime Pilot RC10
+# Realtime Pilot RC10 — Final Verified Baseline (LOCKED)
 
-Frozen release-candidate baseline for the Ascendra realtime pilot. Any
-deviation must follow `docs/realtime-expansion-checklist.md`. Verify this
-baseline with `npm run check:realtime-rc`, and run the full gate with
-`npm run verify:realtime-security`.
+Frozen release-candidate baseline for the Ascendra realtime pilot. **RC10 is
+the current final verified realtime pilot baseline**: RC1–RC10 are all
+Preview-verified and no further realtime event, room, emitter, or consumer is
+approved. Any deviation must follow `docs/realtime-expansion-checklist.md`
+(re-baselining required). Verify this baseline with
+`npm run check:realtime-rc`, and run the full gate with
+`npm run verify:realtime-security`. Production go-live is a separate manual
+go/no-go — see `docs/realtime-production-readiness.md`.
 
 RC10 (Batch 10A) supersedes RC9 by adding exactly one public event:
 `tournaments.updated` to the new public static room `tournaments` (global
@@ -14,8 +18,8 @@ disabled, and DB polling remains the fallback.
 Preview verification evidence is recorded in
 `realtime-server/STAGING_SIGNOFF.md`: RC1 in section 9, RC2 in section 10, RC3
 in section 11, RC4 in section 12, RC5 in section 13, RC6 in section 14, RC7 in
-section 15, RC8 in section 16, and RC9 in section 17. RC10 requires its own
-Preview verification before any production decision.
+section 15, RC8 in section 16, RC9 in section 17, and **RC10 in section 18
+(Preview verification passed 2026-06-12)**.
 
 ## 1. Approved Event Types
 
@@ -169,22 +173,22 @@ Do not run `npm audit fix`.
 - DB polling continues as the source of truth.
 - No schema rollback is required.
 
-## 9. Staging Sign-Off Requirement
+## 9. Staging Sign-Off Status
 
-Use `docs/realtime-staging-operator-guide.md` and record evidence in
-`realtime-server/STAGING_SIGNOFF.md`. RC10 Preview verification must prove:
+**RC10 Preview verification passed 2026-06-12** (evidence:
+`realtime-server/STAGING_SIGNOFF.md` §18), proving:
 
-- WebSocket connects in Preview.
-- `tournaments.updated` is emitted after an admin tournament create / update /
-  delete / status change.
-- The `/tournaments` page (and homepage tournament sections) refresh live via
-  the public `tournaments` room.
-- Pages not mounting the tournament-list consumer do not refresh from it.
-- Anonymous users can join only public rooms; private notification rooms stay
-  token-gated exactly as in RC9.
-- Polling fallback remains intact.
-- Kill-switch rollback works after both flags return to false.
-- Production is not touched.
+- WebSocket connected in Preview.
+- `tournaments.updated` was emitted after a tournament list-impacting action
+  and delivered through the public `tournaments` room.
+- The `/tournaments` page (and mounted homepage tournament sections) refreshed
+  live.
+- Unrelated rooms/pages did not refresh incorrectly.
+- Polling fallback remained intact.
+- Kill-switch rollback worked after both flags returned to false.
+- Production was not touched.
 
 Passing Preview does not approve production. Production requires a separate
-manual go/no-go.
+manual go/no-go — follow `docs/realtime-production-readiness.md` (RC10
+production readiness runbook) together with
+`realtime-server/PRODUCTION_DRY_RUN.md`.

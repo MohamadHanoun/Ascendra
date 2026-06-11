@@ -84,6 +84,7 @@ const REQUIRED_DOCS = [
   "realtime-server/FAILURE_MODES.md",
   "realtime-server/SECURITY.md",
   "docs/realtime-expansion-checklist.md",
+  "docs/realtime-production-readiness.md",
 ];
 
 // ─── Pure helpers (exported for tests) ────────────────────────────────────────

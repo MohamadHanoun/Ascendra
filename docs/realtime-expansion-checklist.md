@@ -429,8 +429,17 @@ and cross-room isolation.
 **4. Rollback:** unchanged — `REALTIME_ENABLE_SOCKET=false` and/or
 `NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
 
-**5. Validation:** local validation required before handoff:
-`check:realtime-rc`, `verify:realtime-security`, root tests,
-realtime-server E2E, and build. **RC10 requires its own Preview verification
-before any production decision.** Production remains disabled; anonymous
-browser realtime remains disabled.
+**5. Validation:** `verify:realtime-security` green (with the known audit
+override); `check:realtime-rc` green. **RC10 Preview verification passed
+2026-06-12** (evidence: `realtime-server/STAGING_SIGNOFF.md` §18) — WebSocket
+connected, `tournaments.updated` was delivered through the public
+`tournaments` room, `/tournaments` and the mounted homepage tournament
+sections refreshed live after a list-impacting action, unrelated rooms/pages
+did not refresh incorrectly, kill-switch rollback worked after both flags were
+returned to `false`, polling fallback remained intact. Production remains
+disabled; anonymous browser realtime remains disabled.
+
+> **RC10 is the final verified realtime pilot baseline (LOCKED).** No further
+> realtime event may be added without re-opening this checklist and
+> re-baselining. Production go-live is a separate manual go/no-go — see
+> `docs/realtime-production-readiness.md`.

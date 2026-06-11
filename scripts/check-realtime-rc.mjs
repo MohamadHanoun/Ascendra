@@ -74,6 +74,7 @@ const REQUIRED_DOCS = [
   "realtime-server/PRODUCTION_DRY_RUN.md",
   "docs/realtime-expansion-checklist.md",
   "docs/realtime-client.md",
+  "docs/realtime-production-readiness.md",
 ];
 
 const REALTIME_SERVER_SCRIPTS = [

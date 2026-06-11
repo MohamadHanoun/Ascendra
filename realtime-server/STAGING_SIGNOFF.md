@@ -419,5 +419,37 @@ the **staging** realtime server. Same environment as §9. No secrets below.
 
 **Status: Preview RC9 sign-off COMPLETE.** Production go-live remains a
 separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
-remains disabled. RC10 requires its own Preview verification before any
-production decision.
+remains disabled.
+
+> Superseded by RC10 (§18) — RC9 remains valid history; RC10 is the current
+> verified baseline.
+
+## 18. Completed evidence — RC10 Preview verification (recorded 2026-06-12)
+
+Operator-verified RC10 run (RC9 scope + `tournaments.updated` to the new
+public `tournaments` room) against the Vercel **Preview** environment and the
+**staging** realtime server. Same environment as §9. No secrets below.
+
+**Results:**
+- [x] **Browser WebSocket passed** — socket connection worked throughout the
+      test.
+- [x] **Tournament-list live refresh passed** — after a tournament
+      list-impacting action, `tournaments.updated` was delivered through the
+      public `tournaments` room and `/tournaments` refreshed live; the
+      homepage tournament list/cards refreshed live where the consumer is
+      mounted.
+- [x] **Room isolation passed** — unrelated rooms/pages did **not** refresh
+      incorrectly.
+- [x] **Polling fallback passed** — the DB-polling/fetch fallback remained
+      intact.
+- [x] **Kill-switch rollback passed** — after returning both flags to `false`,
+      the WebSocket stopped and the DB-polling fallback continued working.
+- [x] **Production untouched** — no Production env changes; Preview flags
+      returned to `REALTIME_ENABLE_SOCKET=false` and
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` and remain off.
+
+**Status: Preview RC10 sign-off COMPLETE — RC10 is the final verified realtime
+pilot baseline (LOCKED).** No further realtime event, room, emitter, or
+consumer is approved. Production go-live remains a separate manual go/no-go —
+see `docs/realtime-production-readiness.md` and `PRODUCTION_DRY_RUN.md`.
+Anonymous browser realtime remains disabled.

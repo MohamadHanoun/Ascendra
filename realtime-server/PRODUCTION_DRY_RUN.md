@@ -8,12 +8,16 @@
 
 Related: [`DEPLOYMENT.md`](./DEPLOYMENT.md) · [`SECURITY.md`](./SECURITY.md) ·
 [`FAILURE_MODES.md`](./FAILURE_MODES.md) ·
-[`STAGING_SIGNOFF.md`](./STAGING_SIGNOFF.md). Offline pre-check:
+[`STAGING_SIGNOFF.md`](./STAGING_SIGNOFF.md) ·
+`docs/realtime-production-readiness.md` (RC10 production readiness runbook —
+rollout sequence, kill switches, final approved scope). Offline pre-check:
 `npm run dry-run:check`.
 
-> **Staging first:** complete [`STAGING_SIGNOFF.md`](./STAGING_SIGNOFF.md) for the
-> leaderboard pilot (the only current pilot) before any production go-live. Do
-> not enable new realtime events until that sign-off passes.
+> **Staging first:** [`STAGING_SIGNOFF.md`](./STAGING_SIGNOFF.md) is complete
+> through **RC10 (§18)** — the final verified pilot baseline (frozen in
+> `docs/realtime-release-candidate.md`). Do not enable any realtime event
+> beyond the RC10 scope; production go-live remains a separate manual
+> go/no-go.
 
 ## 1. Purpose
 
@@ -130,7 +134,8 @@ curl -fsS -H "Authorization: Bearer $REALTIME_STATUS_SECRET" \
 
 ## 10. Local-to-production smoke checklist
 
-- [ ] Do **not** use real app emitters (none are wired).
+- [ ] Do **not** trigger real app emitters for smoke testing (the RC10
+      baseline wires only the approved per-file emitters, all flag-gated).
 - [ ] Use the built-in signed smoke tool — it HMAC-signs for you and never prints
       secrets/signatures. **Never** craft HMAC in the shell manually.
 
@@ -160,10 +165,10 @@ curl -fsS -H "Authorization: Bearer $REALTIME_STATUS_SECRET" \
 
 - [ ] Add **server-side** envs only (no `NEXT_PUBLIC` secrets).
 - [ ] `REALTIME_ENABLE_SOCKET` stays `false` until the server is healthy. (When
-      set `true`, the only wired server emitter is the `leaderboard.updated`
-      pilot in `lib/tournamentResults.ts` — additive, non-blocking; the DB
-      `RealtimeEvent` remains the source of truth. Live leaderboard socket
-      refresh also requires `NEXT_PUBLIC_REALTIME_ENABLE=true`.)
+      set `true`, only the RC10-approved per-file emitters send — see
+      `docs/realtime-release-candidate.md` §2 — all additive, non-blocking;
+      the DB `RealtimeEvent` remains the source of truth. Live socket refresh
+      also requires `NEXT_PUBLIC_REALTIME_ENABLE=true`.)
 - [ ] `NEXT_PUBLIC_REALTIME_ENABLE` stays unset (the browser `RealtimeProvider` is
       mounted in `app/layout.tsx` but **inert** unless this flag is `"true"` and
       `NEXT_PUBLIC_REALTIME_URL` is set; it joins no rooms and has no consumers).

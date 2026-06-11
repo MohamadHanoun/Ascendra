@@ -347,7 +347,10 @@ job.
   `notification.created`, teams, profiles, admin rooms, and all other events.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
-  RC10 requires its own Preview verification before any production decision.
+  RC10 Preview verification passed 2026-06-12 (evidence:
+  `realtime-server/STAGING_SIGNOFF.md` §18). **RC10 is the final verified
+  realtime pilot baseline (LOCKED)** — production go-live is a separate manual
+  go/no-go (`docs/realtime-production-readiness.md`).
 
 ## Enabling live leaderboard socket refresh
 
