@@ -206,31 +206,43 @@ describe("8. no safe rooms", () => {
 });
 
 describe("9. notification routing", () => {
-  it("does not send a notification without a userId", async () => {
+  it("does not send a notification without an internal targetUserId", async () => {
     const fetchMock = mockFetch();
     enableBridge();
     const result = await dispatchRealtimeEvent({
       type: "notification.created",
-      audience: "public",
+      audience: "private",
       entityType: "notification",
-      payload: {},
+      entityId: "notification_1",
+      payload: { notificationId: "notification_1" },
     });
     expect(result.skipped).toBe(true);
     expect(result.reason).toBe("no_safe_rooms");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("sends only to notifications:{userId} when a safe userId exists", async () => {
+  it("sends only to notifications:{userId} and strips routing userId from the payload", async () => {
     const fetchMock = mockFetch();
     enableBridge();
     const result = await dispatchRealtimeEvent({
       type: "notification.created",
-      audience: "public",
+      audience: "private",
       entityType: "notification",
-      payload: { userId: "ckuser123" },
+      entityId: "notification_1",
+      targetUserId: "ckuser123",
+      payload: {
+        notificationId: "notification_1",
+        userId: "ckuser123",
+        message: "Private body",
+      },
     });
     expect(result.rooms).toEqual(["notifications:ckuser123"]);
     expect(lastBody(fetchMock).rooms).toEqual(["notifications:ckuser123"]);
+    expect(lastBody(fetchMock).payload).toEqual({
+      notificationId: "notification_1",
+    });
+    expect(JSON.stringify(lastBody(fetchMock).payload)).not.toContain("ckuser123");
+    expect(JSON.stringify(lastBody(fetchMock).payload)).not.toContain("Private body");
   });
 });
 

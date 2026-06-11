@@ -464,15 +464,16 @@ describe("dispatchRealtimeEvent — routing", () => {
 });
 
 describe("dispatchRealtimeEvent — notifications", () => {
-  it("does not send a notification without a userId", async () => {
+  it("does not send a notification without an internal targetUserId", async () => {
     const fetchMock = mockFetchOk();
     enableBridge();
 
     const result = await dispatchRealtimeEvent({
       type: "notification.created",
-      audience: "public",
+      audience: "private",
       entityType: "notification",
-      payload: {},
+      entityId: "notification_1",
+      payload: { notificationId: "notification_1" },
     });
 
     expect(result.skipped).toBe(true);
@@ -480,19 +481,74 @@ describe("dispatchRealtimeEvent — notifications", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("sends a notification with a safe userId to notifications:{userId}", async () => {
+  it("sends notification.created to notifications:{userId} with an ID-only payload", async () => {
     const fetchMock = mockFetchOk();
     enableBridge();
 
     const result = await dispatchRealtimeEvent({
       type: "notification.created",
-      audience: "public",
+      audience: "private",
       entityType: "notification",
-      payload: { userId: "ckuser123" },
+      entityId: "notification_1",
+      targetUserId: "ckuser123",
+      payload: { notificationId: "notification_1" },
     });
 
     expect(result.rooms).toEqual(["notifications:ckuser123"]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    const body = lastFetchBody(fetchMock);
+    expect(body.rooms).toEqual(["notifications:ckuser123"]);
+    expect(body.audience).toBe("private");
+    expect(body.entityType).toBe("notification");
+    expect(body.entityId).toBe("notification_1");
+    expect(body.payload).toEqual({
+      notificationId: "notification_1",
+    });
+    expect(JSON.stringify(body)).not.toContain("targetUserId");
+    expect(JSON.stringify(body.payload)).not.toContain("ckuser123");
+  });
+
+  it("strips sensitive notification fields before socket dispatch", async () => {
+    const fetchMock = mockFetchOk();
+    enableBridge();
+
+    const result = await dispatchRealtimeEvent({
+      type: "notification.created",
+      audience: "private",
+      entityType: "notification",
+      entityId: "notification_1",
+      targetUserId: "ckuser123",
+      payload: {
+        notificationId: "notification_1",
+        userId: "ckuser123",
+        title: "Secret title",
+        message: "Private message",
+        email: "user@example.com",
+        discordId: "123456789012345678",
+        href: "/profile",
+        adminNotes: "private",
+      },
+    });
+
+    expect(result.rooms).toEqual(["notifications:ckuser123"]);
+
+    const body = lastFetchBody(fetchMock);
+    const payload = body.payload as Record<string, unknown>;
+    expect(payload).toEqual({
+      notificationId: "notification_1",
+    });
+    for (const forbidden of [
+      "userId",
+      "title",
+      "message",
+      "email",
+      "discordId",
+      "href",
+      "adminNotes",
+    ]) {
+      expect(payload).not.toHaveProperty(forbidden);
+    }
   });
 });
 

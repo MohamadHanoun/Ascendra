@@ -192,7 +192,6 @@ describe("guardrail E: socket.io-client only in the approved provider file", () 
 describe("guardrail F: dispatch helper is not wired into emitters", () => {
   const emitters = [
     "lib/realtime.ts",
-    "lib/notifications.ts",
     "lib/matchNotifications.ts",
     // Approved pilot emitters are covered by guardrail L.
     "actions/teamInlineActions.ts",
@@ -391,6 +390,7 @@ describe("guardrail K: realtime consumers are scoped and additive", () => {
     "components/LeaderboardRealtime.tsx",
     "components/TournamentDetailsRealtime.tsx",
     "components/MatchRealtimeRefresh.tsx",
+    "components/NotificationsDropdown.tsx",
   ]);
 
   it("realtime hooks (realtimeContext) are imported only by the provider + approved consumers", () => {
@@ -501,11 +501,49 @@ describe("guardrail K: realtime consumers are scoped and additive", () => {
       expect(code).not.toContain(forbidden);
     }
   });
+
+  it("NotificationsDropdown keeps DB polling and relies on token-issued notification rooms", () => {
+    const raw = read("components/NotificationsDropdown.tsx");
+    expect(raw).toContain("useRealtimeEvents"); // existing polling preserved
+    expect(raw).toContain("useRealtimeSocket");
+    expect(raw).toContain("subscribe");
+    expect(raw).toContain("router.refresh()");
+
+    const code = stripComments(raw);
+    expect(code).not.toContain("useRealtimePublicRoom");
+    expect(code).not.toContain("notifications:");
+    expect(code).not.toMatch(/\buserId\s*[:=]/);
+    for (const forbidden of [
+      "dispatchRealtimeEvent",
+      "REALTIME_EVENT_SECRET",
+      "REALTIME_CLIENT_TOKEN_SECRET",
+      "localStorage",
+      "sessionStorage",
+      "document.cookie",
+      "socket.io-client",
+    ]) {
+      expect(code).not.toContain(forbidden);
+    }
+  });
+
+  it("client tokens issue only the signed-in user's notification room for RC9", () => {
+    const code = stripComments(read("lib/realtime/clientToken.ts"));
+    expect(code).toContain("notifications:${input.databaseId}");
+    for (const forbidden of [
+      "user:${input.databaseId}",
+      "profile:${input.databaseId}",
+      "team:${input.databaseId}",
+      'add("admin")',
+      'add("admin:queue")',
+    ]) {
+      expect(code).not.toContain(forbidden);
+    }
+  });
 });
 
-// ─── L. Approved emitter pilots (Batches 1R + 2A + 3A + 4A + 5A + 6A + 7A + 8A)
+// ─── L. Approved emitter pilots (Batches 1R + 2A + 3A + 4A + 5A + 6A + 7A + 8A + 9A)
 
-describe("guardrail L: only the approved RC8 events are wired server emitters", () => {
+describe("guardrail L: only the approved RC9 events are wired server emitters", () => {
   // Per-file allowlist: each approved file dispatches EXACTLY these types.
   const ALLOWED_EMITTERS: Record<string, string[]> = {
     "lib/tournamentResults.ts": [
@@ -529,6 +567,7 @@ describe("guardrail L: only the approved RC8 events are wired server emitters", 
     "actions/adminRegistrationDiscordSyncActions.ts": [
       "tournament.registration.updated",
     ],
+    "lib/notifications.ts": ["notification.created"],
   };
 
   function dispatchBlocks(src: string): string[] {
@@ -544,6 +583,11 @@ describe("guardrail L: only the approved RC8 events are wired server emitters", 
   function blockType(block: string): string | null {
     const match = block.match(/type\s*:\s*["']([^"']+)["']/);
     return match ? match[1] : null;
+  }
+
+  function blockPayload(block: string): string {
+    const match = block.match(/payload\s*:\s*\{([\s\S]*?)\}\s*,?/);
+    return match ? match[1] : "";
   }
 
   it("dispatch helper is imported only by approved emitter files", () => {
@@ -604,8 +648,13 @@ describe("guardrail L: only the approved RC8 events are wired server emitters", 
           "tournament.match.checkin_updated",
           "tournament.match.proof_synced",
           "tournament.match.communication_updated",
-          "notification.created",
+          "notification.updated",
+          "notification.read",
+          "notification.deleted",
+          "notification.bulk",
           "team.",
+          "profile.",
+          "admin:",
           "audience: \"admin\"",
           "audience: 'admin'",
         ]) {
@@ -620,6 +669,7 @@ describe("guardrail L: only the approved RC8 events are wired server emitters", 
       const blocks = dispatchBlocks(read(file));
       expect(blocks.length).toBeGreaterThan(0);
       for (const block of blocks) {
+        const payloadBlock = blockPayload(block);
         for (const forbidden of [
           "rejectionReason",
           "registrationId",
@@ -638,16 +688,28 @@ describe("guardrail L: only the approved RC8 events are wired server emitters", 
           "headers",
           "raw",
         ]) {
-          expect(block).not.toContain(forbidden);
+          expect(payloadBlock).not.toContain(forbidden);
         }
       }
     }
   });
 
+  it("notification.created dispatch uses targetUserId for routing and notificationId-only payload", () => {
+    const blocks = dispatchBlocks(read("lib/notifications.ts"));
+    expect(blocks).toHaveLength(1);
+    const block = blocks[0];
+    expect(blockType(block)).toBe("notification.created");
+    expect(block).toContain('audience: "private"');
+    expect(block).toContain("targetUserId");
+    expect(block).toContain('entityType: "notification"');
+    expect(block).toContain("entityId: notificationId");
+    expect(blockPayload(block)).toContain("notificationId");
+    expect(blockPayload(block)).not.toContain("userId");
+  });
+
   it("no other lib emitter imports the dispatch helper", () => {
     const others = [
       "lib/realtime.ts",
-      "lib/notifications.ts",
       "lib/matchNotifications.ts",
     ];
     for (const rel of others) {

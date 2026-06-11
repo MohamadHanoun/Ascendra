@@ -183,7 +183,7 @@ describe.runIf(E2E_ENABLED)("realtime failure-mode E2E", () => {
     expect((await join(anon, "admin")).ok).toBe(false);
     expect((await join(anon, "team:t1")).ok).toBe(false);
 
-    // Admin token cannot escalate to an unclaimed admin:tournament room.
+    // RC9 app-issued tokens do not claim admin rooms.
     const adminToken = signClientToken({
       secret: server.clientTokenSecret,
       sub: "adm",
@@ -192,7 +192,8 @@ describe.runIf(E2E_ENABLED)("realtime failure-mode E2E", () => {
       ttlSeconds: 300,
     }).token;
     const admin = await connect(server, adminToken);
-    expect((await join(admin, "admin")).ok).toBe(true);
+    expect((await join(admin, "notifications:adm")).ok).toBe(true);
+    expect((await join(admin, "admin")).ok).toBe(false);
     expect((await join(admin, "admin:tournament:abc")).ok).toBe(false);
   }, 15000);
 

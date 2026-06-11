@@ -7,6 +7,7 @@ import {
   markAllNotificationsReadAction,
   markNotificationReadAction,
 } from "@/actions/notificationActions";
+import { useRealtimeSocket } from "@/components/realtime/realtimeContext";
 import { useRealtimeEvents } from "@/hooks/useRealtimeEvents";
 const CUT8 =
   "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)";
@@ -93,6 +94,8 @@ export default function NotificationsDropdown({
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   const fetchNotificationsRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const realtimeRefreshTimerRef = useRef<number | null>(null);
+  const { subscribe } = useRealtimeSocket();
 
   const fetchNotifications = useCallback(async () => {
     if (!isLoggedIn) {
@@ -148,31 +151,68 @@ export default function NotificationsDropdown({
     fetchNotificationsRef.current = fetchNotifications;
   });
 
+  const scheduleNotificationRefresh = useCallback(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+
+    if (realtimeRefreshTimerRef.current !== null) {
+      window.clearTimeout(realtimeRefreshTimerRef.current);
+    }
+
+    realtimeRefreshTimerRef.current = window.setTimeout(() => {
+      realtimeRefreshTimerRef.current = null;
+      router.refresh();
+      void fetchNotificationsRef.current?.();
+    }, 250);
+  }, [isLoggedIn, router]);
+
+  useEffect(() => {
+    return () => {
+      if (realtimeRefreshTimerRef.current !== null) {
+        window.clearTimeout(realtimeRefreshTimerRef.current);
+        realtimeRefreshTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+
+    return subscribe((event) => {
+      if (event.type === "notification.created") {
+        scheduleNotificationRefresh();
+      }
+    });
+  }, [isLoggedIn, scheduleNotificationRefresh, subscribe]);
+
   useEffect(() => {
     void fetchNotificationsRef.current?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn]);
 
-    useRealtimeEvents({
-      audience: "public",
-      intervalSeconds: 2,
-      onEvents(events) {
-        if (!isLoggedIn) {
-          return;
-        }
+  useRealtimeEvents({
+    audience: "public",
+    intervalSeconds: 2,
+    onEvents(events) {
+      if (!isLoggedIn) {
+        return;
+      }
 
-        const hasNotificationEvent = events.some(
-          (event) =>
-            event.type === "notification.created" ||
-            event.type === "notification.updated" ||
-            event.entityType === "notification",
-        );
+      const hasNotificationEvent = events.some(
+        (event) =>
+          event.type === "notification.created" ||
+          event.type === "notification.updated" ||
+          event.entityType === "notification",
+      );
 
-        if (hasNotificationEvent) {
-          void fetchNotifications();
-        }
-      },
-    });
+      if (hasNotificationEvent) {
+        void fetchNotifications();
+      }
+    },
+  });
 
   useEffect(() => {
     if (!isOpen) {

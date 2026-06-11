@@ -70,6 +70,7 @@ export type MapRealtimeRoomsInput = {
   audience?: string | null;
   entityType?: string | null;
   entityId?: string | null;
+  targetUserId?: string | null;
   payload?: Record<string, unknown> | null;
 };
 
@@ -120,6 +121,7 @@ export function mapRealtimeEventToRooms(
       getString(payload, "teamId") ??
       (entityType === REALTIME_ENTITY_TYPES.TEAM ? entityId : null);
     const userId =
+      input?.targetUserId ??
       getString(payload, "userId") ??
       (entityType === REALTIME_ENTITY_TYPES.PROFILE ? entityId : null);
 

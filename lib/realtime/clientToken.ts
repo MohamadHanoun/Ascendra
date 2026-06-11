@@ -6,7 +6,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * Realtime client token (Batch 1F — server-only).
  *
  * Mints + verifies short-lived, self-contained signed tokens the browser will
- * later present in the Socket.IO handshake to join its private/admin rooms.
+ * later present in the Socket.IO handshake to join its approved private rooms.
  *
  * Format (no JWT dependency):
  *   base64url(jsonPayload) + "." + base64url(HMAC_SHA256(secret, base64url(jsonPayload)))
@@ -59,9 +59,9 @@ export function resolveClientTokenTtlSeconds(
 }
 
 /**
- * Build the exact, minimal set of rooms an authenticated user may join.
- * Only the user's own private rooms (+ admin rooms for admins). No team rooms
- * yet — deferred to a later batch.
+ * Build the exact, minimal set of rooms an authenticated user may join for the
+ * current private-room pilot. RC9 issues only the user's own notification room;
+ * user/profile/admin/team rooms remain deferred to later approved batches.
  */
 export function buildAllowedRooms(input: {
   databaseId: string;
@@ -74,14 +74,7 @@ export function buildAllowedRooms(input: {
     }
   };
 
-  add(`user:${input.databaseId}`);
   add(`notifications:${input.databaseId}`);
-  add(`profile:${input.databaseId}`);
-
-  if (input.isAdmin) {
-    add("admin");
-    add("admin:queue");
-  }
 
   return rooms;
 }

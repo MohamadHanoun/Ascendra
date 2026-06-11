@@ -11,15 +11,16 @@ import {
  * Realtime client-token issuance (Batch 1F — DORMANT until enabled).
  *
  * Mints a short-lived signed token the browser will later present to the
- * Hetzner realtime server to join its own private/admin rooms.
+ * Hetzner realtime server to join its own notification room.
  *
  * Security:
  *  - Returns 404 while REALTIME_ENABLE_SOCKET !== "true" (route stays hidden).
  *  - Reads REALTIME_CLIENT_TOKEN_SECRET server-side only (never NEXT_PUBLIC).
  *  - 503 if the secret is missing or (in production) too weak.
  *  - 401 for unauthenticated callers.
- *  - Token carries only: database user id, admin flag, allowed rooms, iat/exp,
- *    version. No Discord id, email, username, OAuth tokens, cookies, or session.
+ *  - Token carries only: database user id, admin flag, the allowed notification
+ *    room, iat/exp, version. No Discord id, email, username, OAuth tokens,
+ *    cookies, or session.
  *  - No secret/token/cookie/header values are logged.
  */
 

@@ -5,7 +5,7 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 
 > **Staging sign-off required before production.** See
 > `realtime-server/STAGING_SIGNOFF.md` (use `npm run status:check`). The
-> current pilot scope is the frozen RC8 baseline — no additional realtime
+> current pilot scope is the frozen RC9 baseline — no additional realtime
 > events should be enabled until the relevant sign-off passes.
 >
 > **Adding a new realtime event?** First complete
@@ -15,7 +15,7 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 > Run the full local gate with **`npm run verify:realtime-security`** before any
 > expansion or staging/prod sign-off.
 >
-> The frozen baseline is **Realtime Pilot RC8** —
+> The frozen baseline is **Realtime Pilot RC9** —
 > `docs/realtime-release-candidate.md`. Confirm the repo still matches it with
 > **`npm run check:realtime-rc`** before staging. Operators follow
 > `docs/realtime-staging-operator-guide.md` to execute the staging verification.
@@ -137,7 +137,8 @@ failure can never break bracket generation.
   change.
 - **Still polling-only:** `tournament.status.updated` (admin action + lifecycle
   job — wired in RC4, see below), registrations (first socket event wired in
-  RC8, see below), matches, notifications,
+  RC8, see below), matches, notifications except `notification.created`
+  (wired in RC9, see below),
   profiles, teams.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
@@ -161,7 +162,8 @@ lifecycle job.
 - **Still polling-only:** `tournament.registrationStatus.updated` (both its
   emitters), registrations except `tournament.registration.updated` (wired in
   RC8, see below), matches (first match event wired in RC5, see below),
-  notifications, profiles, teams.
+  notifications except `notification.created` (wired in RC9, see below),
+  profiles, teams.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
 
@@ -190,7 +192,8 @@ public sanitizer); a realtime failure can never break match reporting.
   (`disputed`, `game_completed`, `room_linked`, `checkin_updated`,
   `proof_synced`, `communication_updated`), `tournament.registration.updated`
   is wired in RC8; `tournament.registrationStatus.updated`, other registration
-  events, notifications, profiles, and teams remain polling-only.
+  events, notifications except `notification.created`, profiles, and teams
+  remain polling-only.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
 
@@ -218,11 +221,12 @@ confirmation.
   remaining match events (`disputed`, `game_completed`, `room_linked`,
   `checkin_updated`, `proof_synced`, `communication_updated`),
   `tournament.registrationStatus.updated`, other registration events,
-  notifications, profiles, and teams remain polling-only.
+  notifications except `notification.created`, profiles, and teams remain
+  polling-only.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
   RC6 Preview verification passed 2026-06-11; RC7 Preview verification passed
-  2026-06-11; RC8 still requires its own
+  2026-06-11; RC8 Preview verification passed 2026-06-11; RC9 requires its own
   Preview verification before any production decision.
 
 ## Seventh pilot: tournament.match.advanced (Batch 7A — RC7)
@@ -247,11 +251,13 @@ a realtime failure can never break bracket advancement.
   `tournament.match.checkin_updated`, `tournament.match.proof_synced`,
   `tournament.match.communication_updated`,
   `tournament.registrationStatus.updated`, other registration events,
-  notifications, profiles, and teams.
+  notifications except `notification.created` (wired in RC9, see below),
+  profiles, and teams.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
-  RC7 Preview verification passed 2026-06-11; RC8 requires its own Preview
-  verification before any production decision.
+  RC7 Preview verification passed 2026-06-11; RC8 Preview verification passed
+  2026-06-11; RC9 requires its own Preview verification before any production
+  decision.
 
 ## Eighth pilot: tournament.registration.updated (Batch 8A — RC8)
 
@@ -272,10 +278,41 @@ rejection, cancellation, or Discord sync actions.
   debounced `router.refresh()`; polling remains the fallback/source of truth.
 - **Still polling-only:** `registration.approved`, `registration.rejected`,
   `registration.cancelled`, `tournament.registrationStatus.updated`,
-  notifications, teams, profiles, private/admin rooms, and all other events.
+  `notification.updated`, `notification.read`, `notification.deleted`,
+  `notification.bulk`, teams, profiles, private/admin rooms other than the
+  token-issued notification room, and all other events.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
-  RC8 requires its own Preview verification before any production decision.
+  RC8 Preview verification passed 2026-06-11; RC9 requires its own Preview
+  verification before any production decision.
+
+## Ninth pilot: notification.created (Batch 9A — RC9)
+
+`lib/notifications.ts` dispatches `notification.created` after existing
+notification creation and the existing DB `RealtimeEvent` write. The socket
+dispatch is flag-gated, `after()`-scheduled, non-blocking, and private:
+`audience: "private"`, `entityType: "notification"`, `entityId:
+notificationId`, and socket payload exactly `{ notificationId }`.
+
+- **Room:** `notifications:{userId}`. The dispatch uses an internal
+  `targetUserId` for room routing only; that value is not emitted in the socket
+  payload.
+- **Consumer:** no new visual surface. The existing
+  `components/NotificationsDropdown.tsx` subscribes to socket events, accepts no
+  `userId` prop, does not call `useRealtimePublicRoom`, and refreshes from
+  server data only. Its existing `/api/notifications` fetch and DB polling
+  fallback remain intact.
+- **ACL:** `/api/realtime/token` is signed-in only and hidden while
+  `REALTIME_ENABLE_SOCKET !== "true"`. For RC9 it issues only the signed-in
+  user's `notifications:{userId}` room. The realtime-server ACL denies
+  anonymous notification-room joins and exact-claim mismatches, so a signed-in
+  user cannot join another user's notification room.
+- **Still polling-only:** `notification.updated`, `notification.read`,
+  `notification.deleted`, `notification.bulk`, admin rooms, team rooms, profile
+  rooms, and all other private events.
+- **Production remains disabled**, **anonymous browser realtime remains
+  disabled**, and the DB-polling fallback remains active for all visitors.
+  RC9 requires its own Preview verification before any production decision.
 
 ## Enabling live leaderboard socket refresh
 

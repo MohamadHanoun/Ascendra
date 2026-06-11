@@ -120,6 +120,19 @@ describe("mapRealtimeEventToRooms", () => {
     ).toEqual(["notifications:ckuser123"]);
   });
 
+  it("maps notification.created with a targetUserId to notifications:{userId}", () => {
+    expect(
+      mapRealtimeEventToRooms({
+        type: "notification.created",
+        audience: "private",
+        entityType: "notification",
+        entityId: "notif123",
+        targetUserId: "ckuser123",
+        payload: { notificationId: "notif123" },
+      }),
+    ).toEqual(["notifications:ckuser123"]);
+  });
+
   it("does not build a notification room from a Discord-snowflake userId", () => {
     expect(
       mapRealtimeEventToRooms({

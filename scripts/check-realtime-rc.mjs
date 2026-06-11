@@ -1,12 +1,12 @@
 /**
- * Realtime Pilot RC8 baseline checker (Batch 1W, re-baselined in Batches
- * 2A/3A/4A/5A/6A/7A/8A) — OFFLINE scan only.
+ * Realtime Pilot RC9 baseline checker (Batch 1W, re-baselined in Batches
+ * 2A/3A/4A/5A/6A/7A/8A/9A) — OFFLINE scan only.
  *
- * Verifies the repository still matches the frozen "Realtime Pilot RC8 —
+ * Verifies the repository still matches the frozen "Realtime Pilot RC9 —
  * leaderboard.updated + tournament.result.updated + tournament.bracket.generated
  * + tournament.status.updated + tournament.match.report_submitted +
  * tournament.match.confirmed + tournament.match.advanced +
- * tournament.registration.updated" baseline (see
+ * tournament.registration.updated + notification.created" baseline (see
  * docs/realtime-release-candidate.md). Emitters are allowlisted PER FILE:
  * each approved file may dispatch exactly its approved event types.
  *
@@ -27,10 +27,11 @@ const DISPATCH_DEF_FILE = "lib/realtime/dispatchRealtime.ts";
 const CONSUMER = "components/LeaderboardRealtime.tsx";
 const CONSUMER_TOURNAMENT = "components/TournamentDetailsRealtime.tsx";
 const CONSUMER_MATCH = "components/MatchRealtimeRefresh.tsx";
+const CONSUMER_NOTIFICATIONS = "components/NotificationsDropdown.tsx";
 const PROVIDER = "components/realtime/RealtimeProvider.tsx";
 const PROVIDER_ROOT = "components/realtime/RealtimeProviderRoot.tsx";
 
-// RC8 — per-file emitter allowlist: each file may dispatch EXACTLY these
+// RC9 — per-file emitter allowlist: each file may dispatch EXACTLY these
 // event types, and no other file may dispatch at all.
 const ALLOWED_EMITTERS = {
   "lib/tournamentResults.ts": [
@@ -54,6 +55,7 @@ const ALLOWED_EMITTERS = {
   "actions/adminRegistrationDiscordSyncActions.ts": [
     "tournament.registration.updated",
   ],
+  "lib/notifications.ts": ["notification.created"],
 };
 
 const REQUIRED_DOCS = [
@@ -171,6 +173,7 @@ export function runRcCheck() {
     CONSUMER,
     CONSUMER_TOURNAMENT,
     CONSUMER_MATCH,
+    CONSUMER_NOTIFICATIONS,
   ]);
   const consumerOffenders = [];
   for (const file of appFiles) {
@@ -212,6 +215,36 @@ export function runRcCheck() {
     matchRoomCalls.length === 1 &&
       matchRoomCalls[0] === "`match:${matchId}`",
     `found: ${matchRoomCalls.join(", ") || "none"}`,
+  );
+
+  // 5d. NotificationsDropdown subscribes to token-issued private rooms only.
+  const notificationConsumerSrc = read(CONSUMER_NOTIFICATIONS) ?? "";
+  const notificationRoomCalls = [
+    ...notificationConsumerSrc.matchAll(/useRealtimePublicRoom\(([^)]*)\)/g),
+  ].map((m) => m[1].trim());
+  check(
+    "NotificationsDropdown requests no rooms directly",
+    notificationRoomCalls.length === 0 &&
+      notificationConsumerSrc.includes("useRealtimeSocket") &&
+      notificationConsumerSrc.includes("subscribe") &&
+      notificationConsumerSrc.includes("useRealtimeEvents"),
+    `found: ${notificationRoomCalls.join(", ") || "none"}`,
+  );
+
+  // 5e. RC9 private pilot tokens issue only notifications:{currentUserId}.
+  const clientTokenSrc = read("lib/realtime/clientToken.ts") ?? "";
+  const forbiddenTokenRoomIssuers = [
+    "add(`user:${input.databaseId}`)",
+    "add(`profile:${input.databaseId}`)",
+    "add(`team:${input.databaseId}`)",
+    'add("admin")',
+    'add("admin:queue")',
+  ].filter((needle) => clientTokenSrc.includes(needle));
+  check(
+    "client tokens issue only notifications:{userId}",
+    clientTokenSrc.includes("add(`notifications:${input.databaseId}`)") &&
+      forbiddenTokenRoomIssuers.length === 0,
+    `forbidden issuers: ${forbiddenTokenRoomIssuers.join(", ") || "none"}`,
   );
 
   // 6. layout mounts RealtimeProviderRoot.
@@ -290,9 +323,9 @@ if (isRunDirectly()) {
   }
   console.log(`\nRC check — ${results.length} checks, ${fails} fail`);
   if (fails > 0) {
-    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC8 baseline.");
+    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC9 baseline.");
     process.exit(1);
   }
-  console.log("RC check PASSED — repo matches Realtime Pilot RC8 baseline.");
+  console.log("RC check PASSED — repo matches Realtime Pilot RC9 baseline.");
   process.exit(0);
 }

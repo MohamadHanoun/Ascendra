@@ -159,26 +159,29 @@ describe.runIf(E2E_ENABLED)("realtime E2E", () => {
     const res = await postEvent({
       type: "notification.created",
       rooms: ["notifications:user_test_1"],
-      payload: { userId: "user_test_1" },
-      audience: "public",
+      payload: { notificationId: "notification_test_1" },
+      audience: "private",
       entityType: "notification",
+      entityId: "notification_test_1",
     });
     expect(res.status).toBe(200);
 
     const msg = await received;
     expect(msg.type).toBe("notification.created");
+    expect(msg.payload).toEqual({ notificationId: "notification_test_1" });
 
     await new Promise((r) => setTimeout(r, 250));
     expect(anonReceived).toBe(false);
   }, 15000);
 
   // ─── 3. Admin room ACL ──────────────────────────────────────────────────────
-  it("permits claimed admin rooms only for admin tokens", async () => {
+  it("does not issue admin rooms in RC9 client tokens", async () => {
     const adminToken = mintToken({ sub: "admin_test", isAdmin: true });
     const admin = await connectClient(adminToken);
 
-    expect((await joinRoom(admin, "admin")).ok).toBe(true);
-    expect((await joinRoom(admin, "admin:queue")).ok).toBe(true);
+    expect((await joinRoom(admin, "notifications:admin_test")).ok).toBe(true);
+    expect((await joinRoom(admin, "admin")).ok).toBe(false);
+    expect((await joinRoom(admin, "admin:queue")).ok).toBe(false);
     expect((await joinRoom(admin, "admin:tournament:abc")).ok).toBe(false);
 
     const sneakyToken = mintToken({

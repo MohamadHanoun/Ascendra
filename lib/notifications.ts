@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import { dispatchRealtimeEventSoon } from "@/lib/realtime/dispatchRealtime";
 
 const defaultNotificationLimit = 10;
 const maxNotificationLimit = 50;
@@ -37,6 +38,11 @@ type NotificationData = {
   message: string;
   href: string | null;
   metadata?: Prisma.InputJsonValue;
+};
+
+type NotificationRealtimeTarget = {
+  id: string;
+  userId: string;
 };
 
 function normalizeRequiredText(
@@ -148,13 +154,42 @@ function appendDedupeKey(
   };
 }
 
-async function publishNotificationRealtimeEvent(type: string) {
+function dispatchNotificationCreatedRealtime(
+  notification: NotificationRealtimeTarget | null | undefined,
+) {
+  const notificationId = notification?.id?.trim();
+  const targetUserId = notification?.userId?.trim();
+
+  if (!notificationId || !targetUserId) {
+    return;
+  }
+
+  dispatchRealtimeEventSoon({
+    type: "notification.created",
+    audience: "private",
+    entityType: "notification",
+    entityId: notificationId,
+    targetUserId,
+    payload: {
+      notificationId,
+    },
+  });
+}
+
+async function publishNotificationRealtimeEvent(
+  type: string,
+  notification?: NotificationRealtimeTarget,
+) {
   await createRealtimeEvent({
     type,
     audience: "public",
     entityType: "notification",
     payload: {},
   });
+
+  if (type === "notification.created") {
+    dispatchNotificationCreatedRealtime(notification);
+  }
 }
 
 export async function createNotification(input: CreateNotificationInput) {
@@ -162,7 +197,7 @@ export async function createNotification(input: CreateNotificationInput) {
     data: buildNotificationData(input),
   });
 
-  await publishNotificationRealtimeEvent("notification.created");
+  await publishNotificationRealtimeEvent("notification.created", notification);
 
   return notification;
 }
@@ -195,7 +230,7 @@ export async function createNotificationOnce(
     data,
   });
 
-  await publishNotificationRealtimeEvent("notification.created");
+  await publishNotificationRealtimeEvent("notification.created", notification);
 
   return notification;
 }
@@ -251,13 +286,19 @@ export async function createNotificationsForUsers(
     return { count: 0 };
   }
 
-  const result = await prisma.notification.createMany({
+  const notifications = await prisma.notification.createManyAndReturn({
     data: inputs.map(buildNotificationData),
+    select: {
+      id: true,
+      userId: true,
+    },
   });
 
-  await publishNotificationRealtimeEvent("notification.created");
+  for (const notification of notifications) {
+    await publishNotificationRealtimeEvent("notification.created", notification);
+  }
 
-  return result;
+  return { count: notifications.length };
 }
 
 export async function getUnreadNotifications(

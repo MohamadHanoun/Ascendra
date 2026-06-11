@@ -20,24 +20,21 @@ function decodePayload(token: string): Record<string, unknown> {
 }
 
 describe("buildAllowedRooms", () => {
-  it("includes the user's own private rooms", () => {
+  it("includes only the user's own notification room for the RC9 private pilot", () => {
     expect(buildAllowedRooms({ databaseId: "userA", isAdmin: false })).toEqual([
-      "user:userA",
       "notifications:userA",
-      "profile:userA",
     ]);
   });
 
-  it("adds admin rooms only for admins; no team rooms yet", () => {
+  it("does not issue admin, team, user, or profile rooms yet", () => {
     const rooms = buildAllowedRooms({ databaseId: "adm", isAdmin: true });
-    expect(rooms).toEqual([
-      "user:adm",
-      "notifications:adm",
-      "profile:adm",
-      "admin",
-      "admin:queue",
-    ]);
+    expect(rooms).toEqual(["notifications:adm"]);
+    expect(rooms.some((r) => r.startsWith("user:"))).toBe(false);
+    expect(rooms.some((r) => r.startsWith("profile:"))).toBe(false);
     expect(rooms.some((r) => r.startsWith("team:"))).toBe(false);
+    expect(rooms.some((r) => r === "admin" || r.startsWith("admin:"))).toBe(
+      false,
+    );
   });
 });
 

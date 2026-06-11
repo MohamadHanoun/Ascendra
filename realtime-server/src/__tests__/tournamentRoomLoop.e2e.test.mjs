@@ -21,6 +21,8 @@ describe.runIf(E2E_ENABLED)("tournament room realtime full loop", () => {
   let dispatchRealtimeEvent;
   let shouldRefresh;
   let shouldRefreshMatch;
+  let signClientToken;
+  let buildAllowedRooms;
   let server;
   let sockets = [];
   const savedEnv = new Map();
@@ -34,6 +36,9 @@ describe.runIf(E2E_ENABLED)("tournament room realtime full loop", () => {
     ));
     ({ shouldRefreshMatchFromRealtimeEvent: shouldRefreshMatch } = await import(
       "../../../components/match/matchRealtimeUtils.ts"
+    ));
+    ({ signClientToken, buildAllowedRooms } = await import(
+      "../../../lib/realtime/clientToken.ts"
     ));
   }, 20000);
 
@@ -64,9 +69,10 @@ describe.runIf(E2E_ENABLED)("tournament room realtime full loop", () => {
     }
   });
 
-  function connect(url) {
+  function connect(url, token) {
     const s = ioClient(url, {
       transports: ["websocket"],
+      auth: token ? { token } : {},
       reconnection: false,
       forceNew: true,
     });
@@ -100,6 +106,17 @@ describe.runIf(E2E_ENABLED)("tournament room realtime full loop", () => {
 
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  function mintUserToken(userId) {
+    const { token } = signClientToken({
+      secret: server.clientTokenSecret,
+      sub: userId,
+      isAdmin: false,
+      rooms: buildAllowedRooms({ databaseId: userId, isAdmin: false }),
+      ttlSeconds: 300,
+    });
+    return token;
   }
 
   it("dispatch → /internal/events → tournament:{id} room → sanitized socket receive; other tournament room receives nothing", async () => {
@@ -357,6 +374,78 @@ describe.runIf(E2E_ENABLED)("tournament room realtime full loop", () => {
 
     await sleep(300);
     expect(otherRoomReceived).toBe(false);
+  }, 15000);
+
+  it("notification.created (RC9) reaches its own notifications room only with an ID-only payload", async () => {
+    server = await startTestServer();
+    setEnv({
+      REALTIME_ENABLE_SOCKET: "true",
+      REALTIME_SERVER_URL: server.baseUrl,
+      REALTIME_EVENT_SECRET: server.eventSecret,
+    });
+
+    const socketUserA = await connect(server.socketUrl, mintUserToken("user_a"));
+    const socketUserB = await connect(server.socketUrl, mintUserToken("user_b"));
+    expect((await join(socketUserA, "notifications:user_a")).ok).toBe(true);
+    expect((await join(socketUserB, "notifications:user_b")).ok).toBe(true);
+    expect((await join(socketUserB, "notifications:user_a")).ok).toBe(false);
+
+    let otherUserReceived = false;
+    socketUserB.on("ascendra:event", () => {
+      otherUserReceived = true;
+    });
+
+    const received = waitForEvent(socketUserA, "ascendra:event");
+
+    const result = await dispatchRealtimeEvent({
+      type: "notification.created",
+      audience: "private",
+      entityType: "notification",
+      entityId: "notification_a",
+      targetUserId: "user_a",
+      payload: {
+        notificationId: "notification_a",
+        userId: "user_a",
+        title: "Secret title",
+        message: "Private message",
+        email: "user@example.com",
+        discordId: "123456789012345678",
+        href: "/profile",
+        adminNotes: "private",
+      },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.rooms).toEqual(["notifications:user_a"]);
+
+    const msg = await received;
+    expect(msg.type).toBe("notification.created");
+    expect(msg.audience).toBe("private");
+    expect(msg.entityType).toBe("notification");
+    expect(msg.entityId).toBe("notification_a");
+    expect(msg.payload).toEqual({
+      notificationId: "notification_a",
+    });
+
+    const json = JSON.stringify(msg);
+    for (const forbidden of [
+      "user_a",
+      "user_b",
+      "userId",
+      "title",
+      "Secret title",
+      "message",
+      "Private message",
+      "email",
+      "discordId",
+      "href",
+      "adminNotes",
+      server.eventSecret,
+    ]) {
+      expect(json).not.toContain(forbidden);
+    }
+
+    await sleep(300);
+    expect(otherUserReceived).toBe(false);
   }, 15000);
 
   it("tournament.match.report_submitted (RC5) reaches its match room (+ parent tournament room); a different match room receives nothing", async () => {

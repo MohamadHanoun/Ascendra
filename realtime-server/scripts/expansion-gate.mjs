@@ -1,7 +1,7 @@
 /**
  * Realtime expansion gate (Batch 1U) — OFFLINE scan only.
  *
- * Ensures the realtime wiring still matches the approved pilot state (RC8):
+ * Ensures the realtime wiring still matches the approved pilot state (RC9):
  *   - Emitters are allowlisted PER FILE: lib/tournamentResults.ts may dispatch
  *     only leaderboard.updated + tournament.result.updated;
  *     lib/tournamentMatchEngine.ts may dispatch only
@@ -11,9 +11,10 @@
  *     lib/jobs/tournamentLifecycleJobs.ts may each dispatch only
  *     tournament.status.updated;
  *     the approved registration action files may each dispatch only
- *     tournament.registration.updated. No other file may dispatch.
- *   - LeaderboardRealtime, TournamentDetailsRealtime, and MatchRealtimeRefresh
- *     are the ONLY non-provider consumers of realtime hooks.
+ *     tournament.registration.updated; lib/notifications.ts may dispatch only
+ *     notification.created. No other file may dispatch.
+ *   - LeaderboardRealtime, TournamentDetailsRealtime, MatchRealtimeRefresh, and
+ *     NotificationsDropdown are the ONLY non-provider consumers of realtime hooks.
  *   - socket.io-client is imported only by RealtimeProvider.tsx.
  *   - the provider root mounts with no public rooms.
  *   - required security docs exist.
@@ -34,7 +35,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".
 const SKIP_DIRS = new Set(["node_modules", ".next", ".git", "dist", "coverage"]);
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 
-// Per-file emitter allowlist (RC8): each file may dispatch EXACTLY these types.
+// Per-file emitter allowlist (RC9): each file may dispatch EXACTLY these types.
 const ALLOWED_EMITTERS = {
   "lib/tournamentResults.ts": [
     "leaderboard.updated",
@@ -57,11 +58,13 @@ const ALLOWED_EMITTERS = {
   "actions/adminRegistrationDiscordSyncActions.ts": [
     "tournament.registration.updated",
   ],
+  "lib/notifications.ts": ["notification.created"],
 };
 const ALLOWED_CONSUMERS = [
   "components/LeaderboardRealtime.tsx",
   "components/TournamentDetailsRealtime.tsx",
   "components/MatchRealtimeRefresh.tsx",
+  "components/NotificationsDropdown.tsx",
 ];
 const PROVIDER = "components/realtime/RealtimeProvider.tsx";
 const PROVIDER_ROOT = "components/realtime/RealtimeProviderRoot.tsx";
@@ -202,19 +205,35 @@ export function runExpansionGate() {
     add("RealtimeProviderRoot must mount with publicRooms={[]}");
   }
 
-  // 4. Required docs exist.
+  // 4. RC9 private pilot tokens issue only notifications:{currentUserId}.
+  const clientToken = read("lib/realtime/clientToken.ts") ?? "";
+  const forbiddenTokenRoomIssuers = [
+    "add(`user:${input.databaseId}`)",
+    "add(`profile:${input.databaseId}`)",
+    "add(`team:${input.databaseId}`)",
+    'add("admin")',
+    'add("admin:queue")',
+  ].filter((needle) => clientToken.includes(needle));
+  if (!clientToken.includes("add(`notifications:${input.databaseId}`)")) {
+    add("client tokens must issue notifications:{userId}");
+  }
+  for (const issuer of forbiddenTokenRoomIssuers) {
+    add(`client tokens must not issue non-RC9 private/admin room: ${issuer}`);
+  }
+
+  // 5. Required docs exist.
   for (const doc of REQUIRED_DOCS) {
     if (!read(doc)) add(`missing required doc: ${doc}`);
   }
 
-  // 5. No NEXT_PUBLIC secret exposure in app source.
+  // 6. No NEXT_PUBLIC secret exposure in app source.
   for (const file of appFiles) {
     if (hasForbiddenNextPublicSecret(readFileSync(file, "utf8"))) {
       add(`NEXT_PUBLIC secret exposure in ${rel(file)}`);
     }
   }
 
-  // 6. Pilot docs mention the key invariants.
+  // 7. Pilot docs mention the key invariants.
   const clientDoc = read("docs/realtime-client.md") ?? "";
   for (const needle of [
     "leaderboard.updated",

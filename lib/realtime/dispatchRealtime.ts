@@ -33,6 +33,8 @@ export type DispatchRealtimeInput = {
   audience?: string | null;
   entityType?: string | null;
   entityId?: string | null;
+  /** Internal routing target for private user-scoped rooms; never emitted. */
+  targetUserId?: string | null;
   payload?: Record<string, unknown> | null;
 };
 
@@ -53,6 +55,7 @@ export async function dispatchRealtimeEvent(
       audience: input?.audience,
       entityType: input?.entityType,
       entityId: input?.entityId,
+      targetUserId: input?.targetUserId,
       payload: input?.payload,
     });
 

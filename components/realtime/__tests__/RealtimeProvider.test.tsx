@@ -50,7 +50,7 @@ function makeController(overrides: Record<string, unknown> = {}) {
   const ioCalls: Array<{ url: string; opts: Record<string, unknown> }> = [];
   let fake = makeFakeSocket();
 
-  const fetchImpl = vi.fn(async () => okTokenResponse(["user:u1", "notifications:u1"]) as unknown as Response);
+  const fetchImpl = vi.fn(async () => okTokenResponse(["notifications:u1"]) as unknown as Response);
   const ioFactory = vi.fn((url: string, opts: Record<string, unknown>) => {
     ioCalls.push({ url, opts });
     fake = makeFakeSocket();
@@ -151,7 +151,7 @@ describe("controller — token route outcomes", () => {
   });
 
   it("ok → connects with the token in auth and joins token + allowed public rooms", async () => {
-    const fetchImpl = vi.fn(async () => okTokenResponse(["user:u1", "notifications:u1"]) as unknown as Response);
+    const fetchImpl = vi.fn(async () => okTokenResponse(["notifications:u1"]) as unknown as Response);
     const ctx = makeController({
       fetchImpl,
       publicRooms: ["leaderboard", "admin", "tournament:t1", "user:hack"],
@@ -168,9 +168,10 @@ describe("controller — token route outcomes", () => {
     expect(ctx.statuses.at(-1)).toBe("connected");
     const joined = ctx.controller.getJoinedRooms().sort();
     expect(joined).toEqual(
-      ["user:u1", "notifications:u1", "leaderboard", "tournament:t1"].sort(),
+      ["notifications:u1", "leaderboard", "tournament:t1"].sort(),
     );
     expect(joined).not.toContain("admin");
+    expect(joined).not.toContain("user:u1");
     expect(joined).not.toContain("user:hack");
   });
 });
@@ -243,7 +244,8 @@ describe("controller — runtime behavior", () => {
     fake.handlers.connect?.();
     const firstJoins = fake.emits.filter((e) => e.event === "join").map((e) => e.room);
     expect(firstJoins).toContain("match:m1");
-    expect(firstJoins).toContain("user:u1");
+    expect(firstJoins).toContain("notifications:u1");
+    expect(firstJoins).not.toContain("user:u1");
 
     // Reconnect → rejoins everything.
     fake.emits.length = 0;
@@ -253,7 +255,7 @@ describe("controller — runtime behavior", () => {
   });
 
   it("schedules a refresh that re-fetches the token before expiry", async () => {
-    const fetchImpl = vi.fn(async () => okTokenResponse(["user:u1"]) as unknown as Response);
+    const fetchImpl = vi.fn(async () => okTokenResponse(["notifications:u1"]) as unknown as Response);
     const ctx = makeController({ fetchImpl });
     await ctx.controller.start();
 

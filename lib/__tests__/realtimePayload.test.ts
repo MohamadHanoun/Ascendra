@@ -3,6 +3,42 @@ import { describe, expect, it } from "vitest";
 import { sanitizeRealtimePayload } from "@/lib/realtime/payload";
 
 describe("sanitizeRealtimePayload — public", () => {
+  it("keeps notification.created payloads notification-ID-only", () => {
+    const result = sanitizeRealtimePayload({
+      type: "notification.created",
+      audience: "private",
+      entityType: "notification",
+      entityId: "notification_1",
+      payload: {
+        notificationId: "notification_1",
+        userId: "ckuser123",
+        title: "Secret title",
+        message: "Private message",
+        email: "user@example.com",
+        discordId: "123456789012345678",
+        href: "/profile",
+        adminNotes: "private",
+      },
+    });
+
+    expect(result).toEqual({
+      notificationId: "notification_1",
+    });
+    for (const forbidden of [
+      "userId",
+      "title",
+      "message",
+      "email",
+      "discordId",
+      "href",
+      "adminNotes",
+      "entityType",
+      "entityId",
+    ]) {
+      expect(result).not.toHaveProperty(forbidden);
+    }
+  });
+
   it("keeps tournament.registration.updated payloads tournament-only", () => {
     const result = sanitizeRealtimePayload({
       type: "tournament.registration.updated",

@@ -1,189 +1,164 @@
-# Realtime Pilot RC8 — leaderboard.updated + tournament.result.updated + tournament.bracket.generated + tournament.status.updated + tournament.match.report_submitted + tournament.match.confirmed + tournament.match.advanced + tournament.registration.updated
+# Realtime Pilot RC9
 
-Frozen release-candidate baseline for the Ascendra realtime pilot. This is the
-exact scope that may go to staging. Any deviation must follow
-`docs/realtime-expansion-checklist.md`. Verify the repo matches this baseline with
-`npm run check:realtime-rc`, and run the full gate with
+Frozen release-candidate baseline for the Ascendra realtime pilot. Any
+deviation must follow `docs/realtime-expansion-checklist.md`. Verify this
+baseline with `npm run check:realtime-rc`, and run the full gate with
 `npm run verify:realtime-security`.
 
-> RC8 (Batch 8A) supersedes RC7 by adding exactly one event
-> (`tournament.registration.updated`) into the existing public
-> `tournament:{id}` room and existing `TournamentDetailsRealtime` consumer.
-> Zero new consumers, zero new room shapes, zero realtime-server runtime
-> changes. The approved emitters are only the existing registration action
-> files that already write the exact DB `tournament.registration.updated`
-> event; all other registration/private/admin/team/profile socket events stay
-> polling-only.
-> Preview verifications are recorded in `realtime-server/STAGING_SIGNOFF.md`:
-> RC1 in §9, RC2 in §10, RC3 in §11, RC4 in §12, RC5 in §13, RC6 in §14,
-> **RC7 in §15 (passed 2026-06-11)**; **RC8 requires its own Preview verification** before
-> any production decision. Production remains disabled and requires its own
-> manual go/no-go.
+RC9 (Batch 9A) supersedes RC8 by adding exactly one private/authenticated
+event: `notification.created` to `notifications:{userId}`. Production remains
+disabled, both realtime flags remain false outside Preview testing, anonymous
+browser realtime remains disabled, and DB polling remains the fallback.
 
-## 1. Release candidate name
+Preview verification evidence is recorded in
+`realtime-server/STAGING_SIGNOFF.md`: RC1 in section 9, RC2 in section 10, RC3
+in section 11, RC4 in section 12, RC5 in section 13, RC6 in section 14, RC7 in
+section 15, and RC8 in section 16. RC9 requires its own Preview verification
+before any production decision.
 
-**Realtime Pilot RC8 — `leaderboard.updated` + `tournament.result.updated` +
-`tournament.bracket.generated` + `tournament.status.updated` +
-`tournament.match.report_submitted` + `tournament.match.confirmed` +
-`tournament.match.advanced` + `tournament.registration.updated` only.**
+## 1. Approved Event Types
 
-## 2. Current approved scope
+Allowed socket event types are exactly:
 
-**Allowed server emitters (per-file allowlist — each file may dispatch EXACTLY
-these events):**
-- `lib/tournamentResults.ts` (`publishAwardRealtimeEvents`, the
-  tournament-result award path):
-  - `leaderboard.updated` → room `leaderboard`.
-  - `tournament.result.updated` → room `tournament:{tournamentId}`.
-- `lib/tournamentMatchEngine.ts` (`generateBracket` + `submitManualMatchReport`
-  + the shared `emitMatchEvent` helper):
-  - `tournament.bracket.generated` → room `tournament:{tournamentId}`.
-  - `tournament.match.report_submitted` → rooms `match:{matchId}` +
-    `tournament:{tournamentId}` (the mapper's pre-existing public match-event
-    routing); dispatched **only** for the plain report outcome.
-  - `tournament.match.confirmed` → rooms `match:{matchId}` +
-    `tournament:{tournamentId}`; dispatched from the shared `emitMatchEvent`
-    helper (guarded to exactly this event + public audience), covering every
-    confirmation path: auto-confirm, admin confirm, FACEIT auto-result, admin
-    override. The disputed outcome stays polling-only.
-  - `tournament.match.advanced` → rooms `match:{matchId}` +
-    `tournament:{tournamentId}`; dispatched from the same shared
-    `emitMatchEvent` helper (guarded to exactly this event + public
-    audience), emitted by `advanceBracketAfterMatch` (bracket progression).
-    `nextMatchId`/`slot` never reach the dispatch.
-- `actions/adminTournamentInlineActions.ts` (the admin status action):
-  - `tournament.status.updated` → room `tournament:{tournamentId}`.
-- `lib/jobs/tournamentLifecycleJobs.ts` (`publishLifecycleEvents`, scheduled
-  lifecycle transitions):
-  - `tournament.status.updated` → room `tournament:{tournamentId}`.
-- `actions/tournamentRegistrationInlineActions.ts` (player register/cancel):
-  - `tournament.registration.updated` → room `tournament:{tournamentId}`.
-- `actions/adminRegistrationInlineActions.ts` (admin approve/reject/cancel):
-  - `tournament.registration.updated` → room `tournament:{tournamentId}`.
-- `actions/adminRegistrationDiscordSyncActions.ts` (admin Discord sync/remove):
-  - `tournament.registration.updated` → room `tournament:{tournamentId}`.
-- Payloads: ID-only (`tournamentId` / `matchId`; `status`, registration IDs,
-  user IDs, Discord IDs, scores, proof URLs, names, reasons, notes, and
-  reporter/team identifiers are stripped by the public
-  sanitizer).
-- Server flag: `REALTIME_ENABLE_SOCKET` (additive, fire-and-forget; each emit is
-  scheduled post-response via Next.js `after()` — with a safe fallback outside
-  request scope, e.g. cron — so it is serverless-safe and never blocks or fails
-  the mutation — including bracket generation, the admin status action, and the
-  lifecycle job, registration actions, and Discord sync actions; the DB
-  `RealtimeEvent` writes remain the source of truth).
-- The manual inline-save admin path (`actions/adminTournamentResultActions.ts`)
-  intentionally remains polling-only (no socket dispatch).
+- `leaderboard.updated`
+- `tournament.result.updated`
+- `tournament.bracket.generated`
+- `tournament.status.updated`
+- `tournament.match.report_submitted`
+- `tournament.match.confirmed`
+- `tournament.match.advanced`
+- `tournament.registration.updated`
+- `notification.created`
 
-**Allowed browser consumers:**
-- `components/LeaderboardRealtime.tsx` — joins only the public room
-  `leaderboard`.
-- `components/TournamentDetailsRealtime.tsx` — joins only the public room
-  `tournament:{tournamentId}` of the mounted page; since RC8 its refresh
-  helper also accepts `tournament.registration.updated` for the mounted
-  tournament, in addition to `tournament.match.advanced` from RC7.
-- `components/MatchRealtimeRefresh.tsx` — joins only the public room
-  `match:{matchId}` of the mounted match page (its DB-polling subscriptions
-  are unchanged); its refresh helper accepts only
-  `tournament.match.report_submitted`, `tournament.match.confirmed`, and
-  `tournament.match.advanced` for the mounted match.
-- All trigger `router.refresh()` only and do **not** trust the socket payload
-  for UI state (the event is only matched against the mounted page).
-- Browser flag: `NEXT_PUBLIC_REALTIME_ENABLE`.
-- **Authenticated-only for RC2:** anonymous (logged-out) visitors get no socket
-  (`/api/realtime/token` → 401 → client stays `idle`) and keep updating via the
-  DB-polling fallback. Anonymous socket support is a future, separately approved
-  change.
+## 2. Approved Server Emitters
 
-**Allowed provider:**
-- `RealtimeProviderRoot` mounted in `app/layout.tsx` (with `publicRooms={[]}`).
-- `RealtimeProvider` imported only through `RealtimeProviderRoot`.
-- `socket.io-client` imported only in `components/realtime/RealtimeProvider.tsx`.
+Per-file allowlist. Each file may dispatch exactly the listed event type(s):
 
-## 3. Explicitly NOT included
+- `lib/tournamentResults.ts`
+  - `leaderboard.updated` -> `leaderboard`
+  - `tournament.result.updated` -> `tournament:{tournamentId}`
+- `lib/tournamentMatchEngine.ts`
+  - `tournament.bracket.generated` -> `tournament:{tournamentId}`
+  - `tournament.match.report_submitted` -> `match:{matchId}` +
+    `tournament:{tournamentId}`
+  - `tournament.match.confirmed` -> `match:{matchId}` +
+    `tournament:{tournamentId}`
+  - `tournament.match.advanced` -> `match:{matchId}` +
+    `tournament:{tournamentId}`
+- `actions/adminTournamentInlineActions.ts`
+  - `tournament.status.updated` -> `tournament:{tournamentId}`
+- `lib/jobs/tournamentLifecycleJobs.ts`
+  - `tournament.status.updated` -> `tournament:{tournamentId}`
+- `actions/tournamentRegistrationInlineActions.ts`
+  - `tournament.registration.updated` -> `tournament:{tournamentId}`
+- `actions/adminRegistrationInlineActions.ts`
+  - `tournament.registration.updated` -> `tournament:{tournamentId}`
+- `actions/adminRegistrationDiscordSyncActions.ts`
+  - `tournament.registration.updated` -> `tournament:{tournamentId}`
+- `lib/notifications.ts`
+  - `notification.created` -> `notifications:{userId}`
 
-- Registration socket events other than `tournament.registration.updated`.
-- Registration/private/admin event types such as `registration.approved`,
-  `registration.rejected`, `registration.cancelled`, notification events,
-  profile events, and team events.
-- All other match socket events — `tournament.match.disputed`,
-  `game_completed`, `room_linked`, `checkin_updated`, `proof_synced`,
-  `communication_updated` stay polling-only.
-- Registration-status realtime (`tournament.registrationStatus.updated` — both
-  its emitters stay polling-only).
-- Team socket events.
-- Notification socket events.
-- Admin/private UI consumers.
-- Profile socket consumer.
+All socket dispatches are additive, flag-gated by `REALTIME_ENABLE_SOCKET`,
+scheduled after the DB `RealtimeEvent` write, never-throwing, and non-blocking.
+The DB `RealtimeEvent` rows remain the source of truth for polling fallback.
+
+## 3. Payload Rules
+
+- Public tournament/leaderboard/match/registration payloads are ID-only.
+- `notification.created` socket payload is exactly `{ notificationId }`.
+- Notification routing may use an internal `targetUserId`, but that value is
+  not emitted to the realtime server payload.
+- Sensitive fields are stripped: names, emails, Discord IDs, user IDs in
+  socket payloads, registration IDs, team IDs/names, scores, proof URLs,
+  comments, rejection reasons, admin notes, links, tokens, cookies, headers,
+  secrets, and raw metadata.
+
+## 4. Approved Browser Consumers
+
+Allowed consumers are exactly:
+
+- `components/LeaderboardRealtime.tsx`
+  - Joins only `leaderboard`.
+- `components/TournamentDetailsRealtime.tsx`
+  - Joins only `tournament:{tournamentId}` for the mounted tournament.
+- `components/MatchRealtimeRefresh.tsx`
+  - Joins only `match:{matchId}` for the mounted match.
+- `components/NotificationsDropdown.tsx`
+  - Does not accept a `userId` prop.
+  - Does not request private rooms directly.
+  - Uses the token-issued authenticated notification room and refreshes from
+    server data only.
+
+All consumers keep DB polling fallback intact and use safe refresh/refetch
+paths. Socket payloads are never trusted as UI data.
+
+## 5. Explicitly Not Included
+
+- `notification.updated`, `notification.read`, `notification.deleted`,
+  `notification.bulk`.
+- Registration events other than `tournament.registration.updated`.
+- `tournament.registrationStatus.updated`.
+- Match events other than the three approved match events.
+- Admin rooms, team rooms, profile rooms, or new private rooms beyond
+  `notifications:{userId}`.
 - Anonymous browser realtime.
-- Socket dispatch from `saveTournamentResultInline` (manual admin save stays
-  polling-only).
 - Redis.
-- DB schema changes.
+- DB schema changes or migrations.
 - Polling removal.
 - Production enablement.
 
-## 4. Security controls included
+## 6. Security Controls
 
-HMAC + Bearer on `/internal/events`; replay protection (timestamp window +
-in-memory cache); per-IP rate limits; 64 KB body limit; CORS allowlist
-(no wildcard in prod, fail-closed); short-lived client tokens + exact-room ACL;
-public-room allowlist (`leaderboard` / `tournament:{id}` / `match:{id}`); payload
-sanitizer (public = ID-only); room mapper; static security guardrails; expansion
-gate; failure-mode drills; protected `/internal/status`; safe signed smoke tool;
-dry-run + preflight; and the one-command `verify:realtime-security` gate.
+HMAC + Bearer on `/internal/events`; replay protection; rate limits; 64 KB body
+limit; CORS allowlist; short-lived client tokens; exact-room ACL; public-room
+allowlist; private notification room token claims; payload sanitizer; room
+mapper; static guardrails; expansion gate; E2E isolation tests; protected
+`/internal/status`; smoke/dry-run/preflight tools; and the one-command
+`verify:realtime-security` gate.
 
-## 5. Required commands before staging
+`/api/realtime/token` stays hidden when `REALTIME_ENABLE_SOCKET !== "true"`,
+returns 401 for anonymous users, and only grants signed-in users their own
+`notifications:{userId}` room for RC9. Anonymous realtime remains disabled.
+
+## 7. Required Local Validation
 
 ```bash
-# Confirm the repo still matches this RC baseline:
 npm run check:realtime-rc
-
-# Run the full local security gate:
 npm run verify:realtime-security
-# If ONLY the known Next/PostCSS audit advisory fails:
-#   Windows CMD:  set REALTIME_VERIFY_ALLOW_KNOWN_AUDIT=true && npm run verify:realtime-security
-#   PowerShell:   $env:REALTIME_VERIFY_ALLOW_KNOWN_AUDIT="true"; npm run verify:realtime-security
-
-# Operator-only (need a running server / secrets — NOT run by the gate):
-npm --prefix realtime-server run status:check   # against a running local/staging server
-npm --prefix realtime-server run smoke:event    # with safe env + target
+npm test
+npm --prefix realtime-server run test:e2e
+npm run build
 ```
 
-## 6. Known audit note
+If `npm run verify:realtime-security` fails only on the known pre-existing
+Next/PostCSS audit advisory, rerun with:
 
-- `npm audit --omit=optional` reports **2 moderate** vulnerabilities — a
-  **pre-existing** `postcss` advisory pulled in transitively by `next`.
-- Do **not** run `npm audit fix` — the only remediation is a breaking Next
-  downgrade.
-- This is documented, known, pre-existing risk, unrelated to `socket.io-client`
-  or the realtime code.
+```powershell
+$env:REALTIME_VERIFY_ALLOW_KNOWN_AUDIT="true"; npm run verify:realtime-security
+```
 
-## 7. Rollback
+Do not run `npm audit fix`.
+
+## 8. Rollback
 
 - Server side: `REALTIME_ENABLE_SOCKET=false`.
 - Browser side: `NEXT_PUBLIC_REALTIME_ENABLE=false`.
 - DB polling continues as the source of truth.
-- No schema rollback required (there are no schema changes).
-- Stop the realtime-server service if needed.
+- No schema rollback is required.
 
-## 8. Staging sign-off requirement
+## 9. Staging Sign-Off Requirement
 
-- Operator runbook: `docs/realtime-staging-operator-guide.md` (written for the
-  RC1 run; reuse the same steps for RC2–RC8, additionally verifying after a
-  registration update that the same tournament's details page refreshes live
-  while a different tournament's page does **not** refresh).
-- Complete `realtime-server/STAGING_SIGNOFF.md` before production. Preview runs
-  are recorded there: RC1 (§9), RC2 (§10), RC3 (§11), RC4 (§12), RC5 (§13),
-  RC6 (§14), and RC7 (§15, passed 2026-06-11) — all with both flags returned
-  to `false` afterwards. **RC8 needs its own Preview verification** with both flags
-  returned to `false` afterwards.
-- Passing staging does **not** automatically approve production.
-- No further realtime event may be added before staging sign-off or explicit
-  approval (one event type per batch).
+Use `docs/realtime-staging-operator-guide.md` and record evidence in
+`realtime-server/STAGING_SIGNOFF.md`. RC9 Preview verification must prove:
 
-## 9. Production go/no-go
+- WebSocket connects in Preview.
+- `notification.created` works for the signed-in user's own notifications room.
+- The same user's notification UI refreshes live from server data.
+- A different user's notification room does not receive the event.
+- Anonymous users cannot join private notification rooms.
+- Polling fallback remains intact.
+- Kill-switch rollback works after both flags return to false.
+- Production is not touched.
 
-- Production requires **manual** approval.
-- Do **not** enable flags automatically.
-- Do **not** deploy from scripts.
+Passing Preview does not approve production. Production requires a separate
+manual go/no-go.

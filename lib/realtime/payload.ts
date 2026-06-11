@@ -239,6 +239,19 @@ function buildTournamentOnlyPayload(
   return out;
 }
 
+function buildNotificationOnlyPayload(
+  payload: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  const notificationId = payload.notificationId;
+
+  if (typeof notificationId === "string" && notificationId.length > 0) {
+    out.notificationId = capString(notificationId);
+  }
+
+  return out;
+}
+
 function serializedByteLength(value: unknown): number {
   try {
     return Buffer.byteLength(JSON.stringify(value) ?? "", "utf8");
@@ -276,6 +289,10 @@ export function sanitizeRealtimePayload(
           input?.entityType,
           input?.entityId,
         );
+      }
+
+      if (input?.type === "notification.created") {
+        return buildNotificationOnlyPayload(payload);
       }
 
       return buildMinimalPayload(payload, input?.entityType, input?.entityId);

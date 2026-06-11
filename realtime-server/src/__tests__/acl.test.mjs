@@ -51,11 +51,11 @@ describe("user token ACL", () => {
     expect(verified.ok).toBe(true);
   });
 
-  it("permits the user's own private rooms", () => {
+  it("permits the user's own notification room only for the RC9 private pilot", () => {
     const claims = verified.ok ? verified.claims : null;
-    expect(canJoinRoom("user:userA", claims).allowed).toBe(true);
     expect(canJoinRoom("notifications:userA", claims).allowed).toBe(true);
-    expect(canJoinRoom("profile:userA", claims).allowed).toBe(true);
+    expect(canJoinRoom("user:userA", claims).allowed).toBe(false);
+    expect(canJoinRoom("profile:userA", claims).allowed).toBe(false);
   });
 
   it("denies another user's rooms (exact-claim only)", () => {
@@ -84,10 +84,11 @@ describe("admin token ACL", () => {
     rooms: buildAllowedRooms({ databaseId: "adm", isAdmin: true }),
   });
 
-  it("permits exactly the claimed admin rooms", () => {
+  it("does not permit admin rooms because RC9 app-issued tokens do not claim them", () => {
     const claims = verified.ok ? verified.claims : null;
-    expect(canJoinRoom("admin", claims).allowed).toBe(true);
-    expect(canJoinRoom("admin:queue", claims).allowed).toBe(true);
+    expect(canJoinRoom("notifications:adm", claims).allowed).toBe(true);
+    expect(canJoinRoom("admin", claims).allowed).toBe(false);
+    expect(canJoinRoom("admin:queue", claims).allowed).toBe(false);
   });
 
   it("denies unclaimed admin rooms (no wildcard escalation)", () => {

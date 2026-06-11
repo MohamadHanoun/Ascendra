@@ -5,17 +5,17 @@ event type per batch**. See `realtime-server/THREAT_MODEL.md` for the security
 rationale; run `npm --prefix realtime-server run expansion:gate` to confirm the
 current state still matches the approved pilot.
 
-The current frozen baseline is **Realtime Pilot RC8**
+The current frozen baseline is **Realtime Pilot RC9**
 (`docs/realtime-release-candidate.md`). Before staging, confirm the repo matches
 it with `npm run check:realtime-rc` and run the full gate with
-`npm run verify:realtime-security`. Any new event moves the repo off RC8 and
+`npm run verify:realtime-security`. Any new event moves the repo off RC9 and
 requires re-baselining.
 
 ## 1. Event proposal
 
 - [ ] Event name (e.g. `tournament.result.updated`).
 - [ ] `entityType` / `entityId`.
-- [ ] `audience` (`public` or `admin`).
+- [ ] `audience` (`public`, `private`, or `admin`).
 - [ ] Target room(s).
 - [ ] Payload fields (exhaustive list).
 - [ ] Classification: public / private / admin.
@@ -329,13 +329,57 @@ accepts the event for the mounted tournament. Gates are re-baselined to RC8;
 unit + gated E2E tests cover delivery, cross-tournament isolation, and
 sensitive-field stripping. `registration.approved`, `registration.rejected`,
 `registration.cancelled`, `tournament.registrationStatus.updated`,
-notifications, teams, profiles, private/admin rooms, and all other events
-remain polling-only.
+notification events other than `notification.created`, teams, profiles,
+private/admin rooms, and all other events remain polling-only.
 
 **4. Rollback:** unchanged — `REALTIME_ENABLE_SOCKET=false` and/or
 `NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
 
 **5. Validation:** `verify:realtime-security` green (with the known audit
-override); `check:realtime-rc` green. **RC8 requires its own Preview
-verification before any production decision.** Production remains disabled;
-anonymous browser realtime remains disabled.
+override); `check:realtime-rc` green. **RC8 Preview verification passed
+2026-06-11** (evidence: `realtime-server/STAGING_SIGNOFF.md` §16) — WebSocket
+connected, the same tournament page refreshed live after a registration/admin
+registration action, a different tournament page did not, kill-switch rollback
+worked after both flags were returned to `false`, polling fallback remained
+intact. Production remains disabled; anonymous browser realtime remains
+disabled.
+
+---
+
+## Completed expansion record — `notification.created` (Batch 9A → RC9)
+
+**1. Event proposal:** `notification.created`; `entityType` `notification` /
+`entityId` `{notificationId}`; audience `private`; room
+`notifications:{userId}`; socket payload exactly `{ notificationId }`;
+classification private/authenticated user.
+
+**2. Security review:** payload is notification-ID-only (event-specific
+sanitizer path — title/body/message, user IDs, emails, Discord IDs, names,
+links, admin notes, private metadata, tokens, cookies, headers, and raw data are
+stripped). Room routing uses an internal `targetUserId` that is never emitted in
+the socket payload. Token issuance is signed-in only, hidden when
+`REALTIME_ENABLE_SOCKET !== "true"`, and grants only the signed-in user's
+`notifications:{userId}` room for RC9; the realtime-server ACL denies anonymous
+notification-room joins and cross-user notification-room joins. Missing/expired
+tokens degrade safely and DB polling remains active.
+
+**3. Implementation:** one event type; one approved emitter file:
+`lib/notifications.ts`. Dispatch is added only after existing
+`notification.created` DB `RealtimeEvent` writes and only for created
+notification rows with known `{ notificationId, userId }`. `notification.updated`
+remains polling-only. One existing notification UI consumer
+(`components/NotificationsDropdown.tsx`) subscribes to socket events without a
+`userId` prop and without directly requesting private rooms; it refreshes from
+server data and keeps the existing DB polling fallback. Gates are re-baselined
+to RC9; unit + gated E2E tests cover token/ACL behavior, routing, ID-only
+payloads, sensitive-field stripping, own-room delivery, and cross-user
+isolation.
+
+**4. Rollback:** unchanged — `REALTIME_ENABLE_SOCKET=false` and/or
+`NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
+
+**5. Validation:** local validation required before handoff:
+`check:realtime-rc`, `verify:realtime-security`, root tests,
+realtime-server E2E, and build. **RC9 requires its own Preview verification
+before any production decision.** Production remains disabled; anonymous
+browser realtime remains disabled.
