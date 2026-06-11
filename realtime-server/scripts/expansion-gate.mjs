@@ -1,15 +1,16 @@
 /**
  * Realtime expansion gate (Batch 1U) — OFFLINE scan only.
  *
- * Ensures the realtime wiring still matches the approved pilot state (RC4):
+ * Ensures the realtime wiring still matches the approved pilot state (RC5):
  *   - Emitters are allowlisted PER FILE: lib/tournamentResults.ts may dispatch
  *     only leaderboard.updated + tournament.result.updated;
  *     lib/tournamentMatchEngine.ts may dispatch only
- *     tournament.bracket.generated; actions/adminTournamentInlineActions.ts
- *     and lib/jobs/tournamentLifecycleJobs.ts may each dispatch only
+ *     tournament.bracket.generated + tournament.match.report_submitted;
+ *     actions/adminTournamentInlineActions.ts and
+ *     lib/jobs/tournamentLifecycleJobs.ts may each dispatch only
  *     tournament.status.updated. No other file may dispatch.
- *   - LeaderboardRealtime and TournamentDetailsRealtime are the ONLY
- *     non-provider consumers of realtime hooks.
+ *   - LeaderboardRealtime, TournamentDetailsRealtime, and MatchRealtimeRefresh
+ *     are the ONLY non-provider consumers of realtime hooks.
  *   - socket.io-client is imported only by RealtimeProvider.tsx.
  *   - the provider root mounts with no public rooms.
  *   - required security docs exist.
@@ -30,19 +31,23 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".
 const SKIP_DIRS = new Set(["node_modules", ".next", ".git", "dist", "coverage"]);
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 
-// Per-file emitter allowlist (RC4): each file may dispatch EXACTLY these types.
+// Per-file emitter allowlist (RC5): each file may dispatch EXACTLY these types.
 const ALLOWED_EMITTERS = {
   "lib/tournamentResults.ts": [
     "leaderboard.updated",
     "tournament.result.updated",
   ],
-  "lib/tournamentMatchEngine.ts": ["tournament.bracket.generated"],
+  "lib/tournamentMatchEngine.ts": [
+    "tournament.bracket.generated",
+    "tournament.match.report_submitted",
+  ],
   "actions/adminTournamentInlineActions.ts": ["tournament.status.updated"],
   "lib/jobs/tournamentLifecycleJobs.ts": ["tournament.status.updated"],
 };
 const ALLOWED_CONSUMERS = [
   "components/LeaderboardRealtime.tsx",
   "components/TournamentDetailsRealtime.tsx",
+  "components/MatchRealtimeRefresh.tsx",
 ];
 const PROVIDER = "components/realtime/RealtimeProvider.tsx";
 const PROVIDER_ROOT = "components/realtime/RealtimeProviderRoot.tsx";

@@ -601,6 +601,22 @@ export async function submitManualMatchReport(
     },
   );
 
+  // RC5 pilot (Batch 5A) — ONLY tournament.match.report_submitted from this
+  // site (the auto-confirmed / disputed outcomes stay polling-only). Additive
+  // and flag-gated (no-op unless REALTIME_ENABLE_SOCKET === "true"); scheduled
+  // via Next.js after() so it never blocks or fails match reporting. The DB
+  // RealtimeEvent above remains the source of truth. Minimal, ID-only payload
+  // (no scores, proofs, reporter/team identifiers).
+  if (!created.autoConfirmed && !created.disputed) {
+    dispatchRealtimeEventSoon({
+      type: "tournament.match.report_submitted",
+      audience: "public",
+      entityType: "tournamentMatch",
+      entityId: input.matchId,
+      payload: { tournamentId: match.tournamentId, matchId: input.matchId },
+    });
+  }
+
   await notifyManualResultSubmitted(match, input.teamId, created.reportId);
 
   if (created.disputed) {

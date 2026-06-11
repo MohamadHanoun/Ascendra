@@ -4,6 +4,11 @@ import { useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { useRealtimeEvents } from "@/hooks/useRealtimeEvents";
+import {
+  useRealtimePublicRoom,
+  useRealtimeSocket,
+} from "@/components/realtime/realtimeContext";
+import { shouldRefreshMatchFromRealtimeEvent } from "@/components/match/matchRealtimeUtils";
 
 type MatchRealtimeRefreshProps = {
   tournamentId: string;
@@ -115,6 +120,25 @@ export default function MatchRealtimeRefresh({
       });
     }, 250);
   }
+
+  // Additive socket trigger (Batch 5A — inert unless realtime is enabled and
+  // connected). Joins only the public match:{id} room and re-runs the same
+  // debounced router.refresh; the socket event is only used to match the
+  // mounted match and is never trusted for UI state or logged. The DB-polling
+  // subscriptions below are unchanged and remain the fallback.
+  useRealtimePublicRoom(`match:${matchId}`);
+  const { subscribe } = useRealtimeSocket();
+  const refreshSoonRef = useRef(refreshSoon);
+  refreshSoonRef.current = refreshSoon;
+
+  useEffect(() => {
+    const unsubscribe = subscribe((event) => {
+      if (shouldRefreshMatchFromRealtimeEvent(event, matchId)) {
+        refreshSoonRef.current();
+      }
+    });
+    return unsubscribe;
+  }, [subscribe, matchId]);
 
   return (
     <>

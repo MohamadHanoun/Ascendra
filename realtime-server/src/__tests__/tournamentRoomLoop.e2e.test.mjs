@@ -20,6 +20,7 @@ describe.runIf(E2E_ENABLED)("tournament room realtime full loop", () => {
   let ioClient;
   let dispatchRealtimeEvent;
   let shouldRefresh;
+  let shouldRefreshMatch;
   let server;
   let sockets = [];
   const savedEnv = new Map();
@@ -30,6 +31,9 @@ describe.runIf(E2E_ENABLED)("tournament room realtime full loop", () => {
     ({ dispatchRealtimeEvent } = await import("../../../lib/realtime/dispatchRealtime.ts"));
     ({ shouldRefreshTournamentDetailsFromRealtimeEvent: shouldRefresh } = await import(
       "../../../components/tournament/tournamentRealtimeUtils.ts"
+    ));
+    ({ shouldRefreshMatchFromRealtimeEvent: shouldRefreshMatch } = await import(
+      "../../../components/match/matchRealtimeUtils.ts"
     ));
   }, 20000);
 
@@ -283,5 +287,85 @@ describe.runIf(E2E_ENABLED)("tournament room realtime full loop", () => {
     // Give a stray broadcast time to arrive before asserting isolation.
     await sleep(300);
     expect(otherRoomReceived).toBe(false);
+  }, 15000);
+
+  it("tournament.match.report_submitted (RC5) reaches its match room (+ parent tournament room); a different match room receives nothing", async () => {
+    server = await startTestServer();
+    setEnv({
+      REALTIME_ENABLE_SOCKET: "true",
+      REALTIME_SERVER_URL: server.baseUrl,
+      REALTIME_EVENT_SECRET: server.eventSecret,
+    });
+
+    const socketMatchA = await connect(server.socketUrl);
+    const socketMatchB = await connect(server.socketUrl);
+    const socketTournament = await connect(server.socketUrl);
+    expect((await join(socketMatchA, "match:match_a")).ok).toBe(true);
+    expect((await join(socketMatchB, "match:match_b")).ok).toBe(true);
+    expect((await join(socketTournament, "tournament:tour_a")).ok).toBe(true);
+
+    let otherMatchReceived = false;
+    socketMatchB.on("ascendra:event", () => {
+      otherMatchReceived = true;
+    });
+
+    const receivedMatch = waitForEvent(socketMatchA, "ascendra:event");
+    const receivedTournament = waitForEvent(socketTournament, "ascendra:event");
+
+    // Include sensitive fields to PROVE they are stripped before delivery.
+    const result = await dispatchRealtimeEvent({
+      type: "tournament.match.report_submitted",
+      audience: "public",
+      entityType: "tournamentMatch",
+      entityId: "match_a",
+      payload: {
+        tournamentId: "tour_a",
+        matchId: "match_a",
+        teamAScore: 13,
+        teamBScore: 7,
+        proofUrl: "https://example.com/proof.png",
+        reporterId: "user789",
+        teamName: "Secret Team",
+      },
+    });
+    expect(result.ok).toBe(true);
+    // The mapper intentionally targets BOTH rooms for public match events.
+    expect(result.rooms).toEqual(["match:match_a", "tournament:tour_a"]);
+
+    const msg = await receivedMatch;
+    expect(msg.type).toBe("tournament.match.report_submitted");
+    expect(msg.entityId).toBe("match_a");
+    expect(msg.payload).toEqual({
+      tournamentId: "tour_a",
+      matchId: "match_a",
+      entityType: "tournamentMatch",
+      entityId: "match_a",
+    });
+    expect(shouldRefreshMatch(msg, "match_a")).toBe(true);
+    expect(shouldRefreshMatch(msg, "match_b")).toBe(false);
+
+    // The parent tournament room also receives the event (intended mapper
+    // behavior), but the tournament-details refresh helper ignores match
+    // events, so tournament pages do not refresh from it.
+    const tournamentMsg = await receivedTournament;
+    expect(tournamentMsg.type).toBe("tournament.match.report_submitted");
+    expect(shouldRefresh(tournamentMsg, "tour_a")).toBe(false);
+
+    const json = JSON.stringify(msg);
+    for (const forbidden of [
+      "teamAScore",
+      "teamBScore",
+      "proofUrl",
+      "reporterId",
+      "teamName",
+      "Secret Team",
+      server.eventSecret,
+    ]) {
+      expect(json).not.toContain(forbidden);
+    }
+
+    // Give a stray broadcast time to arrive before asserting isolation.
+    await sleep(300);
+    expect(otherMatchReceived).toBe(false);
   }, 15000);
 });

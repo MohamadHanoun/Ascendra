@@ -15,7 +15,7 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 > Run the full local gate with **`npm run verify:realtime-security`** before any
 > expansion or staging/prod sign-off.
 >
-> The frozen baseline is **Realtime Pilot RC4** —
+> The frozen baseline is **Realtime Pilot RC5** —
 > `docs/realtime-release-candidate.md`. Confirm the repo still matches it with
 > **`npm run check:realtime-rc`** before staging. Operators follow
 > `docs/realtime-staging-operator-guide.md` to execute the staging verification.
@@ -158,10 +158,40 @@ lifecycle job.
   the refresh-decision helper now also accepts `tournament.status.updated` for
   the mounted tournament. Same debounced `router.refresh()`; no visual change.
 - **Still polling-only:** `tournament.registrationStatus.updated` (both its
-  emitters), registrations, matches, notifications, profiles, teams.
+  emitters), registrations, matches (first match event wired in RC5, see
+  below), notifications, profiles, teams.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
-  RC4 requires its own Preview verification before any production decision.
+
+## Fifth pilot: tournament.match.report_submitted (Batch 5A — RC5)
+
+`submitManualMatchReport` in `lib/tournamentMatchEngine.ts` (already an
+approved emitter file) dispatches `tournament.match.report_submitted` after
+its existing DB `RealtimeEvent` write — **only** for the plain report outcome;
+the auto-confirmed and disputed outcomes stay polling-only. Also flag-gated,
+`after()`-scheduled, ID-only (`{ tournamentId, matchId }` — scores, proof
+URLs/file names, reporter IDs, team names, and comments are stripped by the
+public sanitizer); a realtime failure can never break match reporting.
+
+- **Rooms:** the mapper's pre-existing public match-event routing targets both
+  `match:{matchId}` and the parent `tournament:{tournamentId}`. The
+  tournament-details refresh helper ignores match events, so tournament pages
+  do not refresh from them.
+- **Consumer:** `components/MatchRealtimeRefresh.tsx` (mounted on
+  `/tournaments/[id]/matches/[matchId]`) — the third approved consumer. Its
+  DB-polling subscriptions are unchanged; additively it joins `match:{matchId}`
+  and triggers the **same** debounced `router.refresh()` when
+  `shouldRefreshMatchFromRealtimeEvent`
+  (`components/match/matchRealtimeUtils.ts`) matches the mounted match. The
+  socket event is never trusted for UI state.
+- **Still polling-only:** all other match events (`confirmed`, `disputed`,
+  `advanced`, `game_completed`, `room_linked`, `checkin_updated`,
+  `proof_synced`, `communication_updated`),
+  `tournament.registrationStatus.updated`, registrations, notifications,
+  profiles, teams.
+- **Production remains disabled**, **anonymous browser realtime remains
+  disabled**, and the DB-polling fallback remains active for all visitors.
+  RC5 requires its own Preview verification before any production decision.
 
 ## Enabling live leaderboard socket refresh
 

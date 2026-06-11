@@ -395,6 +395,7 @@ describe("guardrail K: realtime consumers are scoped and additive", () => {
     "components/realtime/RealtimeProvider.tsx",
     "components/LeaderboardRealtime.tsx",
     "components/TournamentDetailsRealtime.tsx",
+    "components/MatchRealtimeRefresh.tsx",
   ]);
 
   it("realtime hooks (realtimeContext) are imported only by the provider + approved consumers", () => {
@@ -474,18 +475,52 @@ describe("guardrail K: realtime consumers are scoped and additive", () => {
       expect(code).not.toContain(forbidden);
     }
   });
+
+  it("MatchRealtimeRefresh keeps DB polling and requests only its match room", () => {
+    const raw = read("components/MatchRealtimeRefresh.tsx");
+    expect(raw).toContain("useRealtimeEvents"); // existing polling preserved
+    expect(raw).toContain("useRealtimePublicRoom(`match:${matchId}`)");
+
+    const code = stripComments(raw);
+    const roomCalls = [...code.matchAll(/useRealtimePublicRoom\(([^)]*)\)/g)];
+    expect(roomCalls).toHaveLength(1);
+    // No private/admin room joins (the "admin" string in this file is the
+    // pre-existing admin-audience POLLING subscription, not a socket room).
+    for (const room of ["user:", "notifications:", "profile:", "team:"]) {
+      expect(code).not.toContain(room);
+    }
+    expect(code).not.toMatch(/useRealtimePublicRoom\(\s*["'`]admin/);
+  });
+
+  it("MatchRealtimeRefresh has no dispatch wiring / secrets / storage / socket import", () => {
+    const code = stripComments(read("components/MatchRealtimeRefresh.tsx"));
+    for (const forbidden of [
+      "dispatchRealtimeEvent",
+      "REALTIME_EVENT_SECRET",
+      "REALTIME_CLIENT_TOKEN_SECRET",
+      "localStorage",
+      "sessionStorage",
+      "document.cookie",
+      "socket.io-client",
+    ]) {
+      expect(code).not.toContain(forbidden);
+    }
+  });
 });
 
-// ─── L. Approved emitter pilots (Batches 1R + 2A + 3A + 4A) ────────────────────
+// ─── L. Approved emitter pilots (Batches 1R + 2A + 3A + 4A + 5A) ───────────────
 
-describe("guardrail L: only the approved RC4 events are wired server emitters", () => {
+describe("guardrail L: only the approved RC5 events are wired server emitters", () => {
   // Per-file allowlist: each approved file dispatches EXACTLY these types.
   const ALLOWED_EMITTERS: Record<string, string[]> = {
     "lib/tournamentResults.ts": [
       "leaderboard.updated",
       "tournament.result.updated",
     ],
-    "lib/tournamentMatchEngine.ts": ["tournament.bracket.generated"],
+    "lib/tournamentMatchEngine.ts": [
+      "tournament.bracket.generated",
+      "tournament.match.report_submitted",
+    ],
     "actions/adminTournamentInlineActions.ts": ["tournament.status.updated"],
     "lib/jobs/tournamentLifecycleJobs.ts": ["tournament.status.updated"],
   };
@@ -529,7 +564,15 @@ describe("guardrail L: only the approved RC4 events are wired server emitters", 
           "profile.updated",
           "tournament.registration.updated",
           "registration.",
-          "tournament.match.",
+          // Unapproved match events — only report_submitted is wired in RC5.
+          "tournament.match.confirmed",
+          "tournament.match.disputed",
+          "tournament.match.advanced",
+          "tournament.match.game_completed",
+          "tournament.match.room_linked",
+          "tournament.match.checkin_updated",
+          "tournament.match.proof_synced",
+          "tournament.match.communication_updated",
           "notification.",
           "team.",
         ]) {

@@ -175,6 +175,82 @@ describe("dispatchRealtimeEvent — routing", () => {
     expect(payload.tournamentId).toBe("tour123");
   });
 
+  it("sends tournament.match.report_submitted to its match + tournament rooms with an ID-only payload", async () => {
+    const fetchMock = mockFetchOk();
+    enableBridge();
+
+    const result = await dispatchRealtimeEvent({
+      type: "tournament.match.report_submitted",
+      audience: "public",
+      entityType: "tournamentMatch",
+      entityId: "match789",
+      payload: { tournamentId: "tour123", matchId: "match789" },
+    });
+
+    expect(result.ok).toBe(true);
+    // The mapper intentionally targets BOTH the match room and its parent
+    // tournament room for public match events (pre-existing behavior).
+    expect(result.rooms).toEqual(["match:match789", "tournament:tour123"]);
+
+    const body = lastFetchBody(fetchMock);
+    expect(body.rooms).toEqual(["match:match789", "tournament:tour123"]);
+    expect(body.payload).toEqual({
+      tournamentId: "tour123",
+      matchId: "match789",
+      entityType: "tournamentMatch",
+      entityId: "match789",
+    });
+  });
+
+  it("strips scores/proof/reporter fields from a public tournament.match.report_submitted payload", async () => {
+    const fetchMock = mockFetchOk();
+    enableBridge();
+
+    const result = await dispatchRealtimeEvent({
+      type: "tournament.match.report_submitted",
+      audience: "public",
+      entityType: "tournamentMatch",
+      entityId: "match789",
+      payload: {
+        tournamentId: "tour123",
+        matchId: "match789",
+        teamAScore: 13,
+        teamBScore: 7,
+        winnerTeamId: "team456",
+        proofUrl: "https://example.com/proof.png",
+        proofFileName: "proof.png",
+        reporterId: "user789",
+        teamName: "Shadow Wolves",
+        comment: "we won",
+        adminNotes: "check this",
+      },
+    });
+
+    expect(result.ok).toBe(true);
+
+    const body = lastFetchBody(fetchMock);
+    const payload = body.payload as Record<string, unknown>;
+    expect(payload).toEqual({
+      tournamentId: "tour123",
+      matchId: "match789",
+      entityType: "tournamentMatch",
+      entityId: "match789",
+    });
+    for (const forbidden of [
+      "teamAScore",
+      "teamBScore",
+      "winnerTeamId",
+      "proofUrl",
+      "proofFileName",
+      "reporterId",
+      "teamName",
+      "comment",
+      "adminNotes",
+    ]) {
+      expect(payload).not.toHaveProperty(forbidden);
+    }
+  });
+
   it("maps tournament.match.confirmed to match + tournament rooms", async () => {
     const fetchMock = mockFetchOk();
     enableBridge();

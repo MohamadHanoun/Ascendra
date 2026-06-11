@@ -1,12 +1,12 @@
 /**
- * Realtime Pilot RC4 baseline checker (Batch 1W, re-baselined in Batches
- * 2A/3A/4A) — OFFLINE scan only.
+ * Realtime Pilot RC5 baseline checker (Batch 1W, re-baselined in Batches
+ * 2A/3A/4A/5A) — OFFLINE scan only.
  *
- * Verifies the repository still matches the frozen "Realtime Pilot RC4 —
+ * Verifies the repository still matches the frozen "Realtime Pilot RC5 —
  * leaderboard.updated + tournament.result.updated + tournament.bracket.generated
- * + tournament.status.updated" baseline (see docs/realtime-release-candidate.md).
- * Emitters are allowlisted PER FILE: each approved file may dispatch exactly
- * its approved event types.
+ * + tournament.status.updated + tournament.match.report_submitted" baseline
+ * (see docs/realtime-release-candidate.md). Emitters are allowlisted PER FILE:
+ * each approved file may dispatch exactly its approved event types.
  *
  * No network. No secrets printed. No dependency mutation. No release/host access.
  * Prints PASS/FAIL lines; exits 1 on any violation.
@@ -24,17 +24,21 @@ const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 const DISPATCH_DEF_FILE = "lib/realtime/dispatchRealtime.ts";
 const CONSUMER = "components/LeaderboardRealtime.tsx";
 const CONSUMER_TOURNAMENT = "components/TournamentDetailsRealtime.tsx";
+const CONSUMER_MATCH = "components/MatchRealtimeRefresh.tsx";
 const PROVIDER = "components/realtime/RealtimeProvider.tsx";
 const PROVIDER_ROOT = "components/realtime/RealtimeProviderRoot.tsx";
 
-// RC4 — per-file emitter allowlist: each file may dispatch EXACTLY these
+// RC5 — per-file emitter allowlist: each file may dispatch EXACTLY these
 // event types, and no other file may dispatch at all.
 const ALLOWED_EMITTERS = {
   "lib/tournamentResults.ts": [
     "leaderboard.updated",
     "tournament.result.updated",
   ],
-  "lib/tournamentMatchEngine.ts": ["tournament.bracket.generated"],
+  "lib/tournamentMatchEngine.ts": [
+    "tournament.bracket.generated",
+    "tournament.match.report_submitted",
+  ],
   "actions/adminTournamentInlineActions.ts": ["tournament.status.updated"],
   "lib/jobs/tournamentLifecycleJobs.ts": ["tournament.status.updated"],
 };
@@ -149,7 +153,12 @@ export function runRcCheck() {
 
   // 4. Only the approved consumers use realtime hooks (besides provider).
   const CONTEXT_RE = /realtime\/realtimeContext$/;
-  const CONTEXT_ALLOWED = new Set([PROVIDER, CONSUMER, CONSUMER_TOURNAMENT]);
+  const CONTEXT_ALLOWED = new Set([
+    PROVIDER,
+    CONSUMER,
+    CONSUMER_TOURNAMENT,
+    CONSUMER_MATCH,
+  ]);
   const consumerOffenders = [];
   for (const file of appFiles) {
     const r = rel(file);
@@ -178,6 +187,18 @@ export function runRcCheck() {
     tournamentRoomCalls.length === 1 &&
       tournamentRoomCalls[0] === "`tournament:${tournamentId}`",
     `found: ${tournamentRoomCalls.join(", ") || "none"}`,
+  );
+
+  // 5c. MatchRealtimeRefresh requests only its own match:{id} room.
+  const matchConsumerSrc = read(CONSUMER_MATCH) ?? "";
+  const matchRoomCalls = [
+    ...matchConsumerSrc.matchAll(/useRealtimePublicRoom\(([^)]*)\)/g),
+  ].map((m) => m[1].trim());
+  check(
+    "MatchRealtimeRefresh requests only match:{id}",
+    matchRoomCalls.length === 1 &&
+      matchRoomCalls[0] === "`match:${matchId}`",
+    `found: ${matchRoomCalls.join(", ") || "none"}`,
   );
 
   // 6. layout mounts RealtimeProviderRoot.
@@ -256,9 +277,9 @@ if (isRunDirectly()) {
   }
   console.log(`\nRC check — ${results.length} checks, ${fails} fail`);
   if (fails > 0) {
-    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC4 baseline.");
+    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC5 baseline.");
     process.exit(1);
   }
-  console.log("RC check PASSED — repo matches Realtime Pilot RC4 baseline.");
+  console.log("RC check PASSED — repo matches Realtime Pilot RC5 baseline.");
   process.exit(0);
 }

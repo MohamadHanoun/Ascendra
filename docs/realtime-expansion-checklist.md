@@ -5,10 +5,10 @@ event type per batch**. See `realtime-server/THREAT_MODEL.md` for the security
 rationale; run `npm --prefix realtime-server run expansion:gate` to confirm the
 current state still matches the approved pilot.
 
-The current frozen baseline is **Realtime Pilot RC4**
+The current frozen baseline is **Realtime Pilot RC5**
 (`docs/realtime-release-candidate.md`). Before staging, confirm the repo matches
 it with `npm run check:realtime-rc` and run the full gate with
-`npm run verify:realtime-security`. Any new event moves the repo off RC4 and
+`npm run verify:realtime-security`. Any new event moves the repo off RC5 and
 requires re-baselining.
 
 ## 1. Event proposal
@@ -167,6 +167,48 @@ polling-only.
 `NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
 
 **5. Validation:** `verify:realtime-security` green (with the known audit
+override); `check:realtime-rc` green. **RC4 Preview verification passed
+2026-06-11** (evidence: `realtime-server/STAGING_SIGNOFF.md` §12) — WebSocket
+connected, the same tournament's page refreshed live after a status change, a
+different tournament's page did not, kill-switch rollback worked after both
+flags were returned to `false`, polling fallback remained intact. Production
+remains disabled; anonymous browser realtime remains disabled.
+
+---
+
+## Completed expansion record — `tournament.match.report_submitted` (Batch 5A → RC5)
+
+**1. Event proposal:** `tournament.match.report_submitted`; `entityType`
+`tournamentMatch` / `entityId` `{matchId}`; audience `public`; rooms
+`match:{matchId}` + `tournament:{tournamentId}` (the room mapper's
+pre-existing public match-event routing — the `match:{id}` public room class
+was already server-approved and ACL-tested, this is its first client use);
+payload exactly `{ tournamentId, matchId }`; classification public.
+
+**2. Security review:** payload is ID-only (sanitizer public path — scores,
+proof URLs/file names, reporter IDs, team names, comments, and admin notes are
+stripped; covered by the dispatch tests and the gated E2E); `match:{id}` is the
+same anonymous-joinable public room class as `tournament:{id}` with validated
+ID segments; the parent tournament room also receives the event by design, and
+the tournament-details refresh helper ignores match events (E2E-asserted);
+missing/expired tokens degrade to polling; a realtime outage cannot affect
+match reporting (`after()`-scheduled, never throws) and DB polling continues.
+
+**3. Implementation:** one event type; one appended conditional dispatch in
+`submitManualMatchReport` (`lib/tournamentMatchEngine.ts`, already an
+allowlisted emitter file) — fires **only** for the plain report outcome; the
+auto-confirmed / disputed outcomes stay polling-only; consumer
+`MatchRealtimeRefresh` extended additively (polling untouched) with a pure
+refresh helper (`components/match/matchRealtimeUtils.ts`) accepting only this
+event for the mounted match; gates re-baselined (third approved consumer, the
+engine file's event list grew by one); unit + gated E2E tests added (delivery
++ cross-match isolation + sensitive-field stripping). All other match events
+remain polling-only.
+
+**4. Rollback:** unchanged — `REALTIME_ENABLE_SOCKET=false` and/or
+`NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
+
+**5. Validation:** `verify:realtime-security` green (with the known audit
 override); `check:realtime-rc` green. Production remains disabled; anonymous
-browser realtime remains disabled; RC4 still requires its own Preview
+browser realtime remains disabled; RC5 still requires its own Preview
 verification before any production decision.
