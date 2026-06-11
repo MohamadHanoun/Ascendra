@@ -128,6 +128,9 @@ events remain polling-only.
 `NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
 
 **5. Validation:** `verify:realtime-security` green (with the known audit
-override); `check:realtime-rc` green. Production remains disabled; anonymous
-browser realtime remains disabled; RC3 still requires its own Preview
-verification before any production decision.
+override); `check:realtime-rc` green. **RC3 Preview verification passed
+2026-06-11** (evidence: `realtime-server/STAGING_SIGNOFF.md` §11) — WebSocket
+connected, the same tournament's page refreshed live after bracket generation,
+a different tournament's page did not, kill-switch rollback worked after both
+flags were returned to `false`, polling fallback remained intact. Production
+remains disabled; anonymous browser realtime remains disabled.

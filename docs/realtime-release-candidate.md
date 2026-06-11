@@ -11,9 +11,9 @@ exact scope that may go to staging. Any deviation must follow
 > room and the existing `TournamentDetailsRealtime` consumer — zero new
 > consumers, zero new room shapes. The one new concept is the **per-file
 > emitter allowlist** (a second approved emitter file). Preview verifications
-> are recorded in `realtime-server/STAGING_SIGNOFF.md`: RC1 in §9, RC2 in §10;
-> **RC3 requires its own Preview verification** before any production decision.
-> Production remains disabled and requires its own manual go/no-go.
+> are recorded in `realtime-server/STAGING_SIGNOFF.md`: RC1 in §9, RC2 in §10,
+> **RC3 in §11 (passed 2026-06-11)**. Production remains disabled and requires
+> its own manual go/no-go.
 
 ## 1. Release candidate name
 
@@ -121,12 +121,12 @@ npm --prefix realtime-server run smoke:event    # with safe env + target
 ## 8. Staging sign-off requirement
 
 - Operator runbook: `docs/realtime-staging-operator-guide.md` (written for the
-  RC1 run; reuse the same steps for RC2, additionally verifying the tournament
-  page live refresh and that a different tournament's page does **not**
-  refresh).
-- Complete `realtime-server/STAGING_SIGNOFF.md` before production. The RC1
-  Preview run is recorded there (§9); RC2 needs its own Preview verification
-  with both flags returned to `false` afterwards.
+  RC1 run; reuse the same steps for RC2/RC3, additionally verifying the
+  tournament page live refresh — including after bracket generation — and that
+  a different tournament's page does **not** refresh).
+- Complete `realtime-server/STAGING_SIGNOFF.md` before production. Preview runs
+  are recorded there: RC1 (§9), RC2 (§10), and **RC3 (§11, passed 2026-06-11)**
+  — all with both flags returned to `false` afterwards.
 - Passing staging does **not** automatically approve production.
 - No further realtime event may be added before staging sign-off or explicit
   approval (one event type per batch).
