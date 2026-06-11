@@ -1,20 +1,21 @@
-# Realtime Pilot RC9
+# Realtime Pilot RC10
 
 Frozen release-candidate baseline for the Ascendra realtime pilot. Any
 deviation must follow `docs/realtime-expansion-checklist.md`. Verify this
 baseline with `npm run check:realtime-rc`, and run the full gate with
 `npm run verify:realtime-security`.
 
-RC9 (Batch 9A) supersedes RC8 by adding exactly one private/authenticated
-event: `notification.created` to `notifications:{userId}`. Production remains
-disabled, both realtime flags remain false outside Preview testing, anonymous
-browser realtime remains disabled, and DB polling remains the fallback.
+RC10 (Batch 10A) supersedes RC9 by adding exactly one public event:
+`tournaments.updated` to the new public static room `tournaments` (global
+tournament-list refresh signal). Production remains disabled, both realtime
+flags remain false outside Preview testing, anonymous browser realtime remains
+disabled, and DB polling remains the fallback.
 
 Preview verification evidence is recorded in
 `realtime-server/STAGING_SIGNOFF.md`: RC1 in section 9, RC2 in section 10, RC3
 in section 11, RC4 in section 12, RC5 in section 13, RC6 in section 14, RC7 in
-section 15, and RC8 in section 16. RC9 requires its own Preview verification
-before any production decision.
+section 15, RC8 in section 16, and RC9 in section 17. RC10 requires its own
+Preview verification before any production decision.
 
 ## 1. Approved Event Types
 
@@ -29,6 +30,7 @@ Allowed socket event types are exactly:
 - `tournament.match.advanced`
 - `tournament.registration.updated`
 - `notification.created`
+- `tournaments.updated`
 
 ## 2. Approved Server Emitters
 
@@ -47,8 +49,11 @@ Per-file allowlist. Each file may dispatch exactly the listed event type(s):
     `tournament:{tournamentId}`
 - `actions/adminTournamentInlineActions.ts`
   - `tournament.status.updated` -> `tournament:{tournamentId}`
+  - `tournaments.updated` -> `tournaments` (create / update / delete / status
+    paths only; registration-status changes stay polling-only)
 - `lib/jobs/tournamentLifecycleJobs.ts`
   - `tournament.status.updated` -> `tournament:{tournamentId}`
+  - `tournaments.updated` -> `tournaments` (lifecycle status transitions only)
 - `actions/tournamentRegistrationInlineActions.ts`
   - `tournament.registration.updated` -> `tournament:{tournamentId}`
 - `actions/adminRegistrationInlineActions.ts`
@@ -65,6 +70,9 @@ The DB `RealtimeEvent` rows remain the source of truth for polling fallback.
 ## 3. Payload Rules
 
 - Public tournament/leaderboard/match/registration payloads are ID-only.
+- `tournaments.updated` socket payload is tournament-ID-only
+  (`{ tournamentId }` + entity identifiers); titles, prizes, descriptions, and
+  admin details are stripped.
 - `notification.created` socket payload is exactly `{ notificationId }`.
 - Notification routing may use an internal `targetUserId`, but that value is
   not emitted to the realtime server payload.
@@ -88,19 +96,27 @@ Allowed consumers are exactly:
   - Does not request private rooms directly.
   - Uses the token-issued authenticated notification room and refreshes from
     server data only.
+- `components/TournamentsListRealtime.tsx`
+  - Joins only the public static `tournaments` room.
+  - Mounted only on tournament-list surfaces (`/tournaments` and the
+    homepage).
 
 All consumers keep DB polling fallback intact and use safe refresh/refetch
-paths. Socket payloads are never trusted as UI data.
+paths. Socket payloads are never trusted as UI data. The tournament-list
+surfaces keep their existing page-level DB-polling refreshers
+(`TournamentsRealtimeRefresh`, `HomeRealtimeRefresh`) unchanged.
 
 ## 5. Explicitly Not Included
 
 - `notification.updated`, `notification.read`, `notification.deleted`,
   `notification.bulk`.
 - Registration events other than `tournament.registration.updated`.
-- `tournament.registrationStatus.updated`.
+- `tournament.registrationStatus.updated` (registration-status changes also do
+  not emit `tournaments.updated`).
 - Match events other than the three approved match events.
 - Admin rooms, team rooms, profile rooms, or new private rooms beyond
   `notifications:{userId}`.
+- Wildcard rooms or wildcard events of any kind.
 - Anonymous browser realtime.
 - Redis.
 - DB schema changes or migrations.
@@ -111,14 +127,21 @@ paths. Socket payloads are never trusted as UI data.
 
 HMAC + Bearer on `/internal/events`; replay protection; rate limits; 64 KB body
 limit; CORS allowlist; short-lived client tokens; exact-room ACL; public-room
-allowlist; private notification room token claims; payload sanitizer; room
-mapper; static guardrails; expansion gate; E2E isolation tests; protected
-`/internal/status`; smoke/dry-run/preflight tools; and the one-command
-`verify:realtime-security` gate.
+allowlist (exact `tournaments` name — no prefix/wildcard variant); private
+notification room token claims; payload sanitizer; room mapper; static
+guardrails; expansion gate; E2E isolation tests; protected `/internal/status`;
+smoke/dry-run/preflight tools; and the one-command `verify:realtime-security`
+gate.
 
 `/api/realtime/token` stays hidden when `REALTIME_ENABLE_SOCKET !== "true"`,
 returns 401 for anonymous users, and only grants signed-in users their own
-`notifications:{userId}` room for RC9. Anonymous realtime remains disabled.
+`notifications:{userId}` room (unchanged from RC9). Anonymous realtime remains
+disabled.
+
+RC10 includes exactly one realtime-server runtime change: the `tournaments`
+exact public-room allowlist entry in `realtime-server/src/channels.mjs`. No
+other runtime file changed; private/admin ACL behavior is unchanged and
+re-verified by unit + E2E tests.
 
 ## 7. Required Local Validation
 
@@ -149,13 +172,16 @@ Do not run `npm audit fix`.
 ## 9. Staging Sign-Off Requirement
 
 Use `docs/realtime-staging-operator-guide.md` and record evidence in
-`realtime-server/STAGING_SIGNOFF.md`. RC9 Preview verification must prove:
+`realtime-server/STAGING_SIGNOFF.md`. RC10 Preview verification must prove:
 
 - WebSocket connects in Preview.
-- `notification.created` works for the signed-in user's own notifications room.
-- The same user's notification UI refreshes live from server data.
-- A different user's notification room does not receive the event.
-- Anonymous users cannot join private notification rooms.
+- `tournaments.updated` is emitted after an admin tournament create / update /
+  delete / status change.
+- The `/tournaments` page (and homepage tournament sections) refresh live via
+  the public `tournaments` room.
+- Pages not mounting the tournament-list consumer do not refresh from it.
+- Anonymous users can join only public rooms; private notification rooms stay
+  token-gated exactly as in RC9.
 - Polling fallback remains intact.
 - Kill-switch rollback works after both flags return to false.
 - Production is not touched.

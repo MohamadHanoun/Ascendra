@@ -7,7 +7,8 @@
  * Security:
  *  - Never reads server secrets; never touches localStorage/sessionStorage/cookies.
  *  - Tokens live only in memory (closure), fetched from /api/realtime/token.
- *  - publicRooms are restricted to leaderboard / tournament:{id} / match:{id}.
+ *  - publicRooms are restricted to leaderboard / tournaments / tournament:{id}
+ *    / match:{id}.
  *  - Never throws to callers; never logs tokens or full payloads.
  */
 
@@ -54,12 +55,13 @@ function isValidId(value: string): boolean {
   return value.length > 0 && value.length <= MAX_ROOM_LENGTH && ID_PATTERN.test(value);
 }
 
-/** Public rooms a client may self-join: leaderboard / tournament:{id} / match:{id}. */
+/** Public rooms a client may self-join: leaderboard / tournaments / tournament:{id} / match:{id}. */
 export function isSafePublicRoom(room: unknown): room is string {
   if (typeof room !== "string" || room.length === 0 || room.length > MAX_ROOM_LENGTH) {
     return false;
   }
   if (room === "leaderboard") return true;
+  if (room === "tournaments") return true;
   if (room.startsWith("tournament:")) return isValidId(room.slice("tournament:".length));
   if (room.startsWith("match:")) return isValidId(room.slice("match:".length));
   return false;

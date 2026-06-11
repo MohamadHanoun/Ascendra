@@ -134,6 +134,13 @@ export function mapRealtimeEventToRooms(
       return rooms;
     }
 
+    // 1b) Global tournament list (RC10) — single public static room only.
+    // Exact-type match: never matched by the "tournament." prefix branches.
+    if (type === "tournaments.updated") {
+      add(realtimeChannels.tournaments());
+      return rooms;
+    }
+
     // 2) Notifications — private user room only; never public.
     if (type.startsWith("notification.")) {
       if (isSafeUserId(userId)) {

@@ -196,15 +196,26 @@ async function publishLifecycleEvents(
 
   await Promise.all(events);
 
-  // RC4 pilot (Batch 4A) — ONLY tournament.status.updated from this file.
+  // RC4 pilot (Batch 4A; RC10 added tournaments.updated) — this file
+  // dispatches exactly tournament.status.updated + tournaments.updated.
   // Additive and flag-gated (no-op unless REALTIME_ENABLE_SOCKET === "true");
   // scheduled via Next.js after() (with a safe fallback outside request
   // scope, e.g. cron jobs) so it never blocks or fails the lifecycle job.
   // The DB RealtimeEvent above remains the source of truth. Minimal,
-  // ID-only payload. registrationStatus changes stay polling-only.
+  // ID-only payloads. registrationStatus changes stay polling-only.
   if (update.status && update.status !== tournament.status) {
     dispatchRealtimeEventSoon({
       type: "tournament.status.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: tournament.id,
+      payload: { tournamentId: tournament.id },
+    });
+
+    // Lifecycle status changes affect the public tournament list
+    // (grouping/ordering), so list surfaces also get the RC10 signal.
+    dispatchRealtimeEventSoon({
+      type: "tournaments.updated",
       audience: "public",
       entityType: "tournament",
       entityId: tournament.id,

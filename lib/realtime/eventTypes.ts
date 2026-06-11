@@ -69,6 +69,8 @@ export const NOTIFICATION_EVENT_TYPES = {
 } as const;
 
 export const TOURNAMENT_EVENT_TYPES = {
+  // Global tournament-list change signal (RC10) — list surfaces only.
+  TOURNAMENTS_UPDATED: "tournaments.updated",
   TOURNAMENT_UPDATED: "tournament.updated",
   TOURNAMENT_DELETED: "tournament.deleted",
   TOURNAMENT_STATUS_UPDATED: "tournament.status.updated",
@@ -203,13 +205,14 @@ export type RealtimeEventType =
 //   - user:{userId}, notifications:{userId}, profile:{userId} are PRIVATE rooms.
 //   - team:{teamId} is restricted to team members.
 //   - admin / admin:tournament:{id} / admin:queue are admin-only rooms.
-//   - tournament:{id}, match:{id}, leaderboard are public rooms and must only
-//     ever carry minimal, non-sensitive payloads.
+//   - tournament:{id}, match:{id}, leaderboard, tournaments are public rooms
+//     and must only ever carry minimal, non-sensitive payloads.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Static (non-parameterised) channel names. */
 export const REALTIME_STATIC_CHANNELS = {
   LEADERBOARD: "leaderboard",
+  TOURNAMENTS: "tournaments",
   ADMIN: "admin",
   ADMIN_QUEUE: "admin:queue",
 } as const;
@@ -229,6 +232,7 @@ export const realtimeChannels = {
   profile: (userId: string) => `profile:${userId}` as const,
   team: (teamId: string) => `team:${teamId}` as const,
   leaderboard: () => REALTIME_STATIC_CHANNELS.LEADERBOARD,
+  tournaments: () => REALTIME_STATIC_CHANNELS.TOURNAMENTS,
   admin: () => REALTIME_STATIC_CHANNELS.ADMIN,
   adminTournament: (tournamentId: string) =>
     `admin:tournament:${tournamentId}` as const,

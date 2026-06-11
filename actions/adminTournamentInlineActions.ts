@@ -384,6 +384,24 @@ async function snapshotTournament(
   }
 }
 
+// RC10 pilot (Batch 10A) — the ONLY `tournaments.updated` dispatch site in
+// this file. Called only after a successful DB mutation (and its DB
+// RealtimeEvent write) from the list-impacting admin paths: create, update,
+// delete, and status change. Additive and flag-gated (no-op unless
+// REALTIME_ENABLE_SOCKET === "true"); scheduled via Next.js after() so it
+// never blocks or fails the admin action. Minimal, tournament-ID-only
+// payload; the DB RealtimeEvent rows remain the polling source of truth.
+// Registration-status changes stay polling-only.
+function dispatchTournamentsListUpdated(tournamentId: string) {
+  dispatchRealtimeEventSoon({
+    type: "tournaments.updated",
+    audience: "public",
+    entityType: "tournament",
+    entityId: tournamentId,
+    payload: { tournamentId },
+  });
+}
+
 export async function createTournamentInline(
   formData: FormData,
 ): Promise<AdminTournamentActionResult> {
@@ -416,6 +434,8 @@ export async function createTournamentInline(
       game: tournament.game?.name ?? null,
     },
   });
+
+  dispatchTournamentsListUpdated(tournament.id);
 
   revalidateTournamentViews(tournament.id);
 
@@ -471,6 +491,8 @@ export async function updateTournamentInline(
     payload: { tournamentId: tournament.id },
   });
 
+  dispatchTournamentsListUpdated(tournament.id);
+
   revalidateTournamentViews(tournament.id);
 
   return success("Tournament updated successfully.");
@@ -503,6 +525,8 @@ export async function deleteTournamentInline(
     entityId: tournament.id,
     payload: { tournamentId: tournament.id, title: tournament.title },
   });
+
+  dispatchTournamentsListUpdated(tournament.id);
 
   revalidatePath("/admin");
   revalidatePath("/tournaments");
@@ -693,7 +717,8 @@ async function setTournamentStatus(
     payload: { tournamentId: tournament.id, status },
   });
 
-  // RC4 pilot (Batch 4A) — ONLY tournament.status.updated from this file.
+  // RC4 pilot (Batch 4A; RC10 added tournaments.updated below) — this file
+  // dispatches exactly tournament.status.updated + tournaments.updated.
   // Additive and flag-gated (no-op unless REALTIME_ENABLE_SOCKET === "true");
   // scheduled via Next.js after() so it never blocks or fails the admin
   // status action. The DB RealtimeEvent above remains the source of truth.
@@ -705,6 +730,9 @@ async function setTournamentStatus(
     entityId: tournament.id,
     payload: { tournamentId: tournament.id },
   });
+
+  // Status changes affect the public tournament list (grouping/ordering).
+  dispatchTournamentsListUpdated(tournament.id);
 
   if (status === "cancelled" || status === "ended") {
     await notifyTournamentStatusUsers({

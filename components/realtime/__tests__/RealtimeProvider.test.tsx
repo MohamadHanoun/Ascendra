@@ -85,11 +85,21 @@ describe("pure helpers", () => {
     expect(isRealtimeEnabled(undefined, undefined)).toBe(false);
   });
 
-  it("isSafePublicRoom allows only leaderboard/tournament/match", () => {
+  it("isSafePublicRoom allows only leaderboard/tournaments/tournament/match", () => {
     expect(isSafePublicRoom("leaderboard")).toBe(true);
+    expect(isSafePublicRoom("tournaments")).toBe(true);
     expect(isSafePublicRoom("tournament:t1")).toBe(true);
     expect(isSafePublicRoom("match:m1")).toBe(true);
-    for (const bad of ["admin", "user:u1", "notifications:u1", "profile:u1", "team:t1", "tournament:bad id"]) {
+    for (const bad of [
+      "admin",
+      "user:u1",
+      "notifications:u1",
+      "profile:u1",
+      "team:t1",
+      "tournament:bad id",
+      "tournaments:t1",
+      "tournamentsX",
+    ]) {
       expect(isSafePublicRoom(bad)).toBe(false);
     }
   });

@@ -5,7 +5,8 @@
  * a valid client token (claims) and what that token explicitly authorizes.
  *
  * Rules:
- *  - PUBLIC rooms (leaderboard, tournament:{id}, match:{id}) — anonymous OK.
+ *  - PUBLIC rooms (leaderboard, tournaments, tournament:{id}, match:{id}) —
+ *    anonymous OK.
  *  - PRIVATE rooms (user:/notifications:/profile:/team:) — require a valid token
  *    whose `rooms` array EXACTLY contains the requested room.
  *  - ADMIN rooms (admin, admin:*) — require a valid token with isAdmin === true

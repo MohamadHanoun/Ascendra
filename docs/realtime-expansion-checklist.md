@@ -5,10 +5,10 @@ event type per batch**. See `realtime-server/THREAT_MODEL.md` for the security
 rationale; run `npm --prefix realtime-server run expansion:gate` to confirm the
 current state still matches the approved pilot.
 
-The current frozen baseline is **Realtime Pilot RC9**
+The current frozen baseline is **Realtime Pilot RC10**
 (`docs/realtime-release-candidate.md`). Before staging, confirm the repo matches
 it with `npm run check:realtime-rc` and run the full gate with
-`npm run verify:realtime-security`. Any new event moves the repo off RC9 and
+`npm run verify:realtime-security`. Any new event moves the repo off RC10 and
 requires re-baselining.
 
 ## 1. Event proposal
@@ -378,8 +378,59 @@ isolation.
 **4. Rollback:** unchanged — `REALTIME_ENABLE_SOCKET=false` and/or
 `NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
 
+**5. Validation:** `verify:realtime-security` green (with the known audit
+override); `check:realtime-rc` green. **RC9 Preview verification passed
+2026-06-11** (evidence: `realtime-server/STAGING_SIGNOFF.md` §17) — WebSocket
+connected, `notification.created` was delivered through the private
+`notifications:{userId}` room, the intended user's notification UI refreshed
+live, a different signed-in user did not receive the event, anonymous
+private-room access remained blocked, kill-switch rollback worked after both
+flags were returned to `false`, polling fallback remained intact. Production
+remains disabled; anonymous browser realtime remains disabled.
+
+---
+
+## Completed expansion record — `tournaments.updated` (Batch 10A → RC10)
+
+**1. Event proposal:** `tournaments.updated`; `entityType` `tournament` /
+`entityId` `{tournamentId}`; audience `public`; room `tournaments` (new public
+static room — exact name, no wildcard); payload exactly `{ tournamentId }`;
+classification public (global tournament-list refresh signal).
+
+**2. Security review:** payload is tournament-ID-only (event-specific public
+sanitizer path — titles, prizes, descriptions, admin notes, user IDs, team
+IDs/names, and Discord IDs are stripped; covered by the dispatch tests and the
+gated E2E). The `tournaments` room is anonymous-joinable like `leaderboard`,
+added as an EXACT public-room allowlist entry on both sides (server
+`channels.mjs` + client `isSafePublicRoom`); `tournaments:{anything}` and
+prefix variants are rejected. Private/admin room rules and the RC9 token
+issuance are unchanged (re-asserted by unit + E2E tests). Missing/expired
+tokens degrade to polling; a realtime outage cannot affect admin tournament
+actions or the lifecycle job (`after()`-scheduled, never throws) and DB
+polling continues.
+
+**3. Implementation:** one event type; two approved emitter files (both
+already allowlisted), each with exactly one `tournaments.updated` dispatch
+site: `actions/adminTournamentInlineActions.ts` (a local helper fired after
+the create / update / delete / status DB writes + DB `RealtimeEvent` writes —
+registration-status changes intentionally excluded) and
+`lib/jobs/tournamentLifecycleJobs.ts` (status transitions only). One new
+consumer (`components/TournamentsListRealtime.tsx`, the fifth approved
+consumer) joins only `tournaments` and reuses the debounced
+`router.refresh()` pattern; it is mounted only on `/tournaments` and the
+homepage, whose page-level DB-polling refreshers remain unchanged. **One
+approved realtime-server runtime change:** the `tournaments` exact
+public-room allowlist entry in `realtime-server/src/channels.mjs` (no other
+runtime file changed). Gates are re-baselined to RC10; unit + gated E2E tests
+cover room mapping, ID-only payloads, sensitive-field stripping, anonymous
+join of `tournaments`, wildcard rejection, unchanged private ACL, delivery,
+and cross-room isolation.
+
+**4. Rollback:** unchanged — `REALTIME_ENABLE_SOCKET=false` and/or
+`NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
+
 **5. Validation:** local validation required before handoff:
 `check:realtime-rc`, `verify:realtime-security`, root tests,
-realtime-server E2E, and build. **RC9 requires its own Preview verification
+realtime-server E2E, and build. **RC10 requires its own Preview verification
 before any production decision.** Production remains disabled; anonymous
 browser realtime remains disabled.

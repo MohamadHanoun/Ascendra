@@ -391,6 +391,7 @@ describe("guardrail K: realtime consumers are scoped and additive", () => {
     "components/TournamentDetailsRealtime.tsx",
     "components/MatchRealtimeRefresh.tsx",
     "components/NotificationsDropdown.tsx",
+    "components/TournamentsListRealtime.tsx",
   ]);
 
   it("realtime hooks (realtimeContext) are imported only by the provider + approved consumers", () => {
@@ -526,7 +527,47 @@ describe("guardrail K: realtime consumers are scoped and additive", () => {
     }
   });
 
-  it("client tokens issue only the signed-in user's notification room for RC9", () => {
+  it("TournamentsListRealtime requests only the public tournaments room", () => {
+    const raw = read("components/TournamentsListRealtime.tsx");
+    expect(raw).toContain('useRealtimePublicRoom("tournaments")');
+    expect(raw).toContain("router.refresh()");
+
+    const code = stripComments(raw);
+    const roomCalls = [...code.matchAll(/useRealtimePublicRoom\(([^)]*)\)/g)];
+    expect(roomCalls).toHaveLength(1);
+    expect(roomCalls[0][1].trim()).toBe('"tournaments"');
+    for (const room of ["user:", "notifications:", "profile:", "team:", "admin"]) {
+      expect(code).not.toContain(room);
+    }
+  });
+
+  it("TournamentsListRealtime has no dispatch wiring / secrets / storage / socket import", () => {
+    const code = stripComments(read("components/TournamentsListRealtime.tsx"));
+    for (const forbidden of [
+      "dispatchRealtimeEvent",
+      "REALTIME_EVENT_SECRET",
+      "REALTIME_CLIENT_TOKEN_SECRET",
+      "localStorage",
+      "sessionStorage",
+      "document.cookie",
+      "socket.io-client",
+    ]) {
+      expect(code).not.toContain(forbidden);
+    }
+  });
+
+  it("tournament-list DB-polling fallback components remain intact", () => {
+    // The RC10 socket consumer is additive: the page-level polling refreshers
+    // it sits next to must keep their useRealtimeEvents polling loops.
+    expect(read("components/TournamentsRealtimeRefresh.tsx")).toContain(
+      "useRealtimeEvents",
+    );
+    expect(read("components/HomeRealtimeRefresh.tsx")).toContain(
+      "useRealtimeEvents",
+    );
+  });
+
+  it("client tokens issue only the signed-in user's notification room for RC9/RC10", () => {
     const code = stripComments(read("lib/realtime/clientToken.ts"));
     expect(code).toContain("notifications:${input.databaseId}");
     for (const forbidden of [
@@ -541,9 +582,9 @@ describe("guardrail K: realtime consumers are scoped and additive", () => {
   });
 });
 
-// ─── L. Approved emitter pilots (Batches 1R + 2A + 3A + 4A + 5A + 6A + 7A + 8A + 9A)
+// ─── L. Approved emitter pilots (Batches 1R + 2A + 3A + 4A + 5A + 6A + 7A + 8A + 9A + 10A)
 
-describe("guardrail L: only the approved RC9 events are wired server emitters", () => {
+describe("guardrail L: only the approved RC10 events are wired server emitters", () => {
   // Per-file allowlist: each approved file dispatches EXACTLY these types.
   const ALLOWED_EMITTERS: Record<string, string[]> = {
     "lib/tournamentResults.ts": [
@@ -556,8 +597,14 @@ describe("guardrail L: only the approved RC9 events are wired server emitters", 
       "tournament.match.confirmed",
       "tournament.match.advanced",
     ],
-    "actions/adminTournamentInlineActions.ts": ["tournament.status.updated"],
-    "lib/jobs/tournamentLifecycleJobs.ts": ["tournament.status.updated"],
+    "actions/adminTournamentInlineActions.ts": [
+      "tournament.status.updated",
+      "tournaments.updated",
+    ],
+    "lib/jobs/tournamentLifecycleJobs.ts": [
+      "tournament.status.updated",
+      "tournaments.updated",
+    ],
     "actions/tournamentRegistrationInlineActions.ts": [
       "tournament.registration.updated",
     ],

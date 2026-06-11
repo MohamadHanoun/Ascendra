@@ -1,7 +1,7 @@
 /**
  * Realtime expansion gate (Batch 1U) — OFFLINE scan only.
  *
- * Ensures the realtime wiring still matches the approved pilot state (RC9):
+ * Ensures the realtime wiring still matches the approved pilot state (RC10):
  *   - Emitters are allowlisted PER FILE: lib/tournamentResults.ts may dispatch
  *     only leaderboard.updated + tournament.result.updated;
  *     lib/tournamentMatchEngine.ts may dispatch only
@@ -9,12 +9,13 @@
  *     tournament.match.confirmed + tournament.match.advanced;
  *     actions/adminTournamentInlineActions.ts and
  *     lib/jobs/tournamentLifecycleJobs.ts may each dispatch only
- *     tournament.status.updated;
+ *     tournament.status.updated + tournaments.updated;
  *     the approved registration action files may each dispatch only
  *     tournament.registration.updated; lib/notifications.ts may dispatch only
  *     notification.created. No other file may dispatch.
- *   - LeaderboardRealtime, TournamentDetailsRealtime, MatchRealtimeRefresh, and
- *     NotificationsDropdown are the ONLY non-provider consumers of realtime hooks.
+ *   - LeaderboardRealtime, TournamentDetailsRealtime, MatchRealtimeRefresh,
+ *     NotificationsDropdown, and TournamentsListRealtime are the ONLY
+ *     non-provider consumers of realtime hooks.
  *   - socket.io-client is imported only by RealtimeProvider.tsx.
  *   - the provider root mounts with no public rooms.
  *   - required security docs exist.
@@ -35,7 +36,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".
 const SKIP_DIRS = new Set(["node_modules", ".next", ".git", "dist", "coverage"]);
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 
-// Per-file emitter allowlist (RC9): each file may dispatch EXACTLY these types.
+// Per-file emitter allowlist (RC10): each file may dispatch EXACTLY these types.
 const ALLOWED_EMITTERS = {
   "lib/tournamentResults.ts": [
     "leaderboard.updated",
@@ -47,8 +48,14 @@ const ALLOWED_EMITTERS = {
     "tournament.match.confirmed",
     "tournament.match.advanced",
   ],
-  "actions/adminTournamentInlineActions.ts": ["tournament.status.updated"],
-  "lib/jobs/tournamentLifecycleJobs.ts": ["tournament.status.updated"],
+  "actions/adminTournamentInlineActions.ts": [
+    "tournament.status.updated",
+    "tournaments.updated",
+  ],
+  "lib/jobs/tournamentLifecycleJobs.ts": [
+    "tournament.status.updated",
+    "tournaments.updated",
+  ],
   "actions/tournamentRegistrationInlineActions.ts": [
     "tournament.registration.updated",
   ],
@@ -65,6 +72,7 @@ const ALLOWED_CONSUMERS = [
   "components/TournamentDetailsRealtime.tsx",
   "components/MatchRealtimeRefresh.tsx",
   "components/NotificationsDropdown.tsx",
+  "components/TournamentsListRealtime.tsx",
 ];
 const PROVIDER = "components/realtime/RealtimeProvider.tsx";
 const PROVIDER_ROOT = "components/realtime/RealtimeProviderRoot.tsx";
@@ -205,7 +213,7 @@ export function runExpansionGate() {
     add("RealtimeProviderRoot must mount with publicRooms={[]}");
   }
 
-  // 4. RC9 private pilot tokens issue only notifications:{currentUserId}.
+  // 4. RC9/RC10 private pilot tokens issue only notifications:{currentUserId}.
   const clientToken = read("lib/realtime/clientToken.ts") ?? "";
   const forbiddenTokenRoomIssuers = [
     "add(`user:${input.databaseId}`)",
@@ -218,7 +226,7 @@ export function runExpansionGate() {
     add("client tokens must issue notifications:{userId}");
   }
   for (const issuer of forbiddenTokenRoomIssuers) {
-    add(`client tokens must not issue non-RC9 private/admin room: ${issuer}`);
+    add(`client tokens must not issue non-RC10 private/admin room: ${issuer}`);
   }
 
   // 5. Required docs exist.

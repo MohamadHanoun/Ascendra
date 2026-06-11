@@ -148,10 +148,12 @@ describe("getTournamentLifecycleUpdate", () => {
   });
 });
 
-// RC4 (Batch 4A): the lifecycle job's status-change path dispatches exactly
-// one flag-gated tournament.status.updated socket event with an ID-only
-// payload, after the DB RealtimeEvent (which remains the source of truth).
-describe("syncTournamentLifecycleForTournament — RC4 dispatch site", () => {
+// RC4 (Batch 4A; RC10/Batch 10A added tournaments.updated): the lifecycle
+// job's status-change path dispatches exactly two flag-gated socket events
+// with ID-only payloads — tournament.status.updated (RC4) and
+// tournaments.updated (RC10, list surfaces) — after the DB RealtimeEvent
+// (which remains the source of truth).
+describe("syncTournamentLifecycleForTournament — RC4/RC10 dispatch site", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(prisma.tournament.update).mockResolvedValue(
@@ -159,7 +161,7 @@ describe("syncTournamentLifecycleForTournament — RC4 dispatch site", () => {
     );
   });
 
-  it("dispatches tournament.status.updated once with an ID-only payload on a status change", async () => {
+  it("dispatches status + tournaments-list events with ID-only payloads on a status change", async () => {
     vi.mocked(prisma.tournament.findUnique).mockResolvedValue(
       tournament({
         startsAt: new Date("2000-01-01T00:00:00.000Z"),
@@ -176,9 +178,16 @@ describe("syncTournamentLifecycleForTournament — RC4 dispatch site", () => {
       expect.objectContaining({ type: "tournament.status.updated" }),
     );
 
-    expect(dispatchRealtimeEventSoon).toHaveBeenCalledTimes(1);
+    expect(dispatchRealtimeEventSoon).toHaveBeenCalledTimes(2);
     expect(dispatchRealtimeEventSoon).toHaveBeenCalledWith({
       type: "tournament.status.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: "tournament-1",
+      payload: { tournamentId: "tournament-1" },
+    });
+    expect(dispatchRealtimeEventSoon).toHaveBeenCalledWith({
+      type: "tournaments.updated",
       audience: "public",
       entityType: "tournament",
       entityId: "tournament-1",

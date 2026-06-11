@@ -20,6 +20,8 @@
 
 export const STATIC_CHANNELS = Object.freeze({
   LEADERBOARD: "leaderboard",
+  // RC10: global tournament-list room (exact name, public, no wildcard).
+  TOURNAMENTS: "tournaments",
   ADMIN: "admin",
   ADMIN_QUEUE: "admin:queue",
 });
@@ -32,6 +34,7 @@ export const channels = Object.freeze({
   profile: (userId) => `profile:${userId}`,
   team: (teamId) => `team:${teamId}`,
   leaderboard: () => STATIC_CHANNELS.LEADERBOARD,
+  tournaments: () => STATIC_CHANNELS.TOURNAMENTS,
   admin: () => STATIC_CHANNELS.ADMIN,
   adminTournament: (tournamentId) => `admin:tournament:${tournamentId}`,
   adminQueue: () => STATIC_CHANNELS.ADMIN_QUEUE,
@@ -40,7 +43,10 @@ export const channels = Object.freeze({
 // Prefixes/names that are safe for anonymous clients to join in this dormant
 // phase. Everything else requires future token-based ACLs.
 const PUBLIC_ROOM_PREFIXES = ["tournament:", "match:"];
-const PUBLIC_ROOM_EXACT = new Set([STATIC_CHANNELS.LEADERBOARD]);
+const PUBLIC_ROOM_EXACT = new Set([
+  STATIC_CHANNELS.LEADERBOARD,
+  STATIC_CHANNELS.TOURNAMENTS,
+]);
 
 // Names that must NEVER be joinable without a verified token/ACL.
 const PROTECTED_ROOM_PREFIXES = [

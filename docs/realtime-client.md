@@ -5,7 +5,7 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 
 > **Staging sign-off required before production.** See
 > `realtime-server/STAGING_SIGNOFF.md` (use `npm run status:check`). The
-> current pilot scope is the frozen RC9 baseline — no additional realtime
+> current pilot scope is the frozen RC10 baseline — no additional realtime
 > events should be enabled until the relevant sign-off passes.
 >
 > **Adding a new realtime event?** First complete
@@ -15,7 +15,7 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 > Run the full local gate with **`npm run verify:realtime-security`** before any
 > expansion or staging/prod sign-off.
 >
-> The frozen baseline is **Realtime Pilot RC9** —
+> The frozen baseline is **Realtime Pilot RC10** —
 > `docs/realtime-release-candidate.md`. Confirm the repo still matches it with
 > **`npm run check:realtime-rc`** before staging. Operators follow
 > `docs/realtime-staging-operator-guide.md` to execute the staging verification.
@@ -68,8 +68,9 @@ unaffected. No emitters are wired.
 
 Public-room joins are **ref-counted** (joined once even if multiple components
 request the same room; left only when the last unmounts) and **rejoined on
-reconnect**. Only `leaderboard` / `tournament:{id}` / `match:{id}` are accepted;
-private/admin rooms cannot be requested via this API.
+reconnect**. Only `leaderboard` / `tournaments` / `tournament:{id}` /
+`match:{id}` are accepted; private/admin rooms cannot be requested via this
+API.
 
 ## First server emitter pilot: leaderboard.updated (Batch 1R)
 
@@ -226,8 +227,8 @@ confirmation.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
   RC6 Preview verification passed 2026-06-11; RC7 Preview verification passed
-  2026-06-11; RC8 Preview verification passed 2026-06-11; RC9 requires its own
-  Preview verification before any production decision.
+  2026-06-11; RC8 Preview verification passed 2026-06-11; RC9 Preview
+  verification passed 2026-06-11.
 
 ## Seventh pilot: tournament.match.advanced (Batch 7A — RC7)
 
@@ -256,8 +257,7 @@ a realtime failure can never break bracket advancement.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
   RC7 Preview verification passed 2026-06-11; RC8 Preview verification passed
-  2026-06-11; RC9 requires its own Preview verification before any production
-  decision.
+  2026-06-11; RC9 Preview verification passed 2026-06-11.
 
 ## Eighth pilot: tournament.registration.updated (Batch 8A — RC8)
 
@@ -283,8 +283,8 @@ rejection, cancellation, or Discord sync actions.
   token-issued notification room, and all other events.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
-  RC8 Preview verification passed 2026-06-11; RC9 requires its own Preview
-  verification before any production decision.
+  RC8 Preview verification passed 2026-06-11; RC9 Preview verification passed
+  2026-06-11.
 
 ## Ninth pilot: notification.created (Batch 9A — RC9)
 
@@ -312,7 +312,42 @@ notificationId`, and socket payload exactly `{ notificationId }`.
   rooms, and all other private events.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
-  RC9 requires its own Preview verification before any production decision.
+  RC9 Preview verification passed 2026-06-11 (evidence:
+  `realtime-server/STAGING_SIGNOFF.md` §17).
+
+## Tenth pilot: tournaments.updated (Batch 10A — RC10)
+
+The list-impacting admin tournament paths dispatch `tournaments.updated` after
+their existing DB writes + DB `RealtimeEvent` writes: tournament create,
+update, delete, and status change in `actions/adminTournamentInlineActions.ts`
+(one dispatch site, a local helper), and the scheduled lifecycle status
+transition in `lib/jobs/tournamentLifecycleJobs.ts`. Each dispatch is
+flag-gated, `after()`-scheduled, non-blocking, and ID-only
+(`{ tournamentId }`); titles, prizes, descriptions, admin notes, user IDs,
+team IDs/names, and Discord IDs are stripped by the public sanitizer. A
+realtime failure can never break an admin tournament action or the lifecycle
+job.
+
+- **Room:** the new public static room `tournaments` — exact name only, no
+  wildcard, anonymous-joinable like `leaderboard`. This required the one
+  approved RC10 realtime-server runtime change: adding `tournaments` to the
+  exact public-room allowlist in `realtime-server/src/channels.mjs`.
+  Private/admin room rules are unchanged.
+- **Consumer:** `components/TournamentsListRealtime.tsx` — the one approved
+  tournament-list consumer, mounted on `/tournaments` and the homepage (both
+  render tournament-list data). It joins only `tournaments`, triggers the same
+  debounced `router.refresh()`, and never trusts the socket payload for UI
+  state. The existing page-level DB-polling refreshers
+  (`TournamentsRealtimeRefresh`, `HomeRealtimeRefresh`) remain mounted and
+  unchanged as the fallback.
+- **Still polling-only:** `tournament.registrationStatus.updated` and
+  registration-status changes (no `tournaments.updated` from those paths),
+  `tournament.updated`/`tournament.deleted` per-tournament socket events (the
+  details page keeps polling for those), notification events other than
+  `notification.created`, teams, profiles, admin rooms, and all other events.
+- **Production remains disabled**, **anonymous browser realtime remains
+  disabled**, and the DB-polling fallback remains active for all visitors.
+  RC10 requires its own Preview verification before any production decision.
 
 ## Enabling live leaderboard socket refresh
 
@@ -374,8 +409,9 @@ unless the browser flag and URL are present.
    > DB-polling fallback.
 2. Connects via Socket.IO with `auth: { token }`.
 3. Joins the **private rooms from the token claims** plus any `publicRooms` prop
-   that pass validation (`leaderboard`, `tournament:{id}`, `match:{id}` only —
-   `admin`/`user`/`notifications`/`profile`/`team` are rejected client-side).
+   that pass validation (`leaderboard`, `tournaments`, `tournament:{id}`,
+   `match:{id}` only — `admin`/`user`/`notifications`/`profile`/`team` are
+   rejected client-side).
 4. Refreshes the token ~60s before `expiresAt` and re-auths.
 5. On disconnect/error it degrades gracefully; **the existing DB-polling realtime
    system remains the source of truth/fallback** and is unaffected.

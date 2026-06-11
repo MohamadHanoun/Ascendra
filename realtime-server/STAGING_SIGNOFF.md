@@ -388,5 +388,36 @@ Same environment as §9. No secrets below.
 
 **Status: Preview RC8 sign-off COMPLETE.** Production go-live remains a
 separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
-remains disabled. RC9 requires its own Preview verification before any
+remains disabled.
+
+> Superseded by RC9 (§17) — RC8 remains valid history; RC9 is the current
+> verified baseline.
+
+## 17. Completed evidence — RC9 Preview verification (recorded 2026-06-11)
+
+Operator-verified RC9 run (RC8 scope + `notification.created` to the private
+`notifications:{userId}` room) against the Vercel **Preview** environment and
+the **staging** realtime server. Same environment as §9. No secrets below.
+
+**Results:**
+- [x] **Browser WebSocket passed** — socket connection worked throughout the
+      test.
+- [x] **Private notification delivery passed** — `notification.created` was
+      delivered through the private `notifications:{userId}` room and the
+      intended signed-in user's notification UI refreshed live from server
+      data.
+- [x] **Cross-user isolation passed** — a different signed-in user did **not**
+      receive the notification event.
+- [x] **Anonymous/private-room denial passed** — anonymous private-room access
+      remained blocked.
+- [x] **Polling fallback passed** — the DB-polling fallback remained intact.
+- [x] **Kill-switch rollback passed** — after returning both flags to `false`,
+      the WebSocket stopped and the DB-polling fallback continued working.
+- [x] **Production untouched** — no Production env changes; Preview flags
+      returned to `REALTIME_ENABLE_SOCKET=false` and
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` and remain off.
+
+**Status: Preview RC9 sign-off COMPLETE.** Production go-live remains a
+separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
+remains disabled. RC10 requires its own Preview verification before any
 production decision.

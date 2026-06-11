@@ -393,6 +393,75 @@ describe("dispatchRealtimeEvent — routing", () => {
     }
   });
 
+  it("sends tournaments.updated to the public tournaments room with an ID-only payload", async () => {
+    const fetchMock = mockFetchOk();
+    enableBridge();
+
+    const result = await dispatchRealtimeEvent({
+      type: "tournaments.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: "tour123",
+      payload: { tournamentId: "tour123" },
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.rooms).toEqual(["tournaments"]);
+
+    const body = lastFetchBody(fetchMock);
+    expect(body.rooms).toEqual(["tournaments"]);
+    expect(body.payload).toEqual({
+      tournamentId: "tour123",
+      entityType: "tournament",
+      entityId: "tour123",
+    });
+  });
+
+  it("strips title/prize/admin fields from a public tournaments.updated payload", async () => {
+    const fetchMock = mockFetchOk();
+    enableBridge();
+
+    const result = await dispatchRealtimeEvent({
+      type: "tournaments.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: "tour123",
+      payload: {
+        tournamentId: "tour123",
+        title: "Secret tournament title",
+        prize: "$10,000",
+        description: "private description",
+        adminNotes: "check this",
+        userId: "user123",
+        teamId: "team456",
+        teamName: "Shadow Wolves",
+        discordId: "123456789012345678",
+      },
+    });
+
+    expect(result.ok).toBe(true);
+
+    const body = lastFetchBody(fetchMock);
+    const payload = body.payload as Record<string, unknown>;
+    expect(payload).toEqual({
+      tournamentId: "tour123",
+      entityType: "tournament",
+      entityId: "tour123",
+    });
+    for (const forbidden of [
+      "title",
+      "prize",
+      "description",
+      "adminNotes",
+      "userId",
+      "teamId",
+      "teamName",
+      "discordId",
+    ]) {
+      expect(payload).not.toHaveProperty(forbidden);
+    }
+  });
+
   it("sends tournament.registration.updated to its tournament room with an ID-only payload", async () => {
     const fetchMock = mockFetchOk();
     enableBridge();

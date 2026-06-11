@@ -283,7 +283,10 @@ export function sanitizeRealtimePayload(
 
     if (!isAdmin) {
       // Public: ID-only, never anything else.
-      if (input?.type === "tournament.registration.updated") {
+      if (
+        input?.type === "tournament.registration.updated" ||
+        input?.type === "tournaments.updated"
+      ) {
         return buildTournamentOnlyPayload(
           payload,
           input?.entityType,

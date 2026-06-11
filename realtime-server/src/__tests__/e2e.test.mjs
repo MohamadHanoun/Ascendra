@@ -140,6 +140,39 @@ describe.runIf(E2E_ENABLED)("realtime E2E", () => {
     expect(JSON.stringify(msg)).not.toContain(server.eventSecret);
   }, 15000);
 
+  // ─── 1b. Tournament-list room delivery + isolation (RC10) ──────────────────
+  it("delivers tournaments.updated to the tournaments room and not to unrelated rooms", async () => {
+    const listClient = await connectClient();
+    const otherClient = await connectClient();
+
+    expect((await joinRoom(listClient, "tournaments")).ok).toBe(true);
+    await joinRoom(otherClient, "leaderboard");
+    await joinRoom(otherClient, "tournament:tournament_other");
+
+    let otherReceived = false;
+    otherClient.on("ascendra:event", () => {
+      otherReceived = true;
+    });
+
+    const received = waitForEvent(listClient, "ascendra:event");
+    const res = await postEvent({
+      type: "tournaments.updated",
+      rooms: ["tournaments"],
+      payload: { tournamentId: "tournament_test" },
+      audience: "public",
+      entityType: "tournament",
+      entityId: "tournament_test",
+    });
+    expect(res.status).toBe(200);
+
+    const msg = await received;
+    expect(msg.type).toBe("tournaments.updated");
+    expect(msg.payload).toEqual({ tournamentId: "tournament_test" });
+
+    await new Promise((r) => setTimeout(r, 250));
+    expect(otherReceived).toBe(false);
+  }, 15000);
+
   // ─── 2. Private room token ACL ──────────────────────────────────────────────
   it("enforces private room token claims and isolates delivery", async () => {
     const token = mintToken({ sub: "user_test_1", isAdmin: false });

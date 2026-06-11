@@ -24,10 +24,19 @@ describe("isValidRoomName", () => {
 });
 
 describe("isPubliclyJoinable", () => {
-  it("allows public rooms: leaderboard, tournament:{id}, match:{id}", () => {
+  it("allows public rooms: leaderboard, tournaments, tournament:{id}, match:{id}", () => {
     expect(isPubliclyJoinable("leaderboard")).toBe(true);
+    expect(isPubliclyJoinable("tournaments")).toBe(true);
     expect(isPubliclyJoinable("tournament:tour123")).toBe(true);
     expect(isPubliclyJoinable("match:match789")).toBe(true);
+  });
+
+  it("allows only the exact tournaments room (no wildcard/prefix variants)", () => {
+    expect(isPubliclyJoinable("tournaments")).toBe(true);
+    expect(isPubliclyJoinable("tournaments:t1")).toBe(false);
+    expect(isPubliclyJoinable("tournamentsX")).toBe(false);
+    expect(isPubliclyJoinable("tournaments-list")).toBe(false);
+    expect(isPubliclyJoinable("Tournaments")).toBe(false);
   });
 
   it("rejects private/admin rooms until token ACLs exist", () => {

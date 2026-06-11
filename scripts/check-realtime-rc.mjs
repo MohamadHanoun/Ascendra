@@ -1,14 +1,15 @@
 /**
- * Realtime Pilot RC9 baseline checker (Batch 1W, re-baselined in Batches
- * 2A/3A/4A/5A/6A/7A/8A/9A) — OFFLINE scan only.
+ * Realtime Pilot RC10 baseline checker (Batch 1W, re-baselined in Batches
+ * 2A/3A/4A/5A/6A/7A/8A/9A/10A) — OFFLINE scan only.
  *
- * Verifies the repository still matches the frozen "Realtime Pilot RC9 —
+ * Verifies the repository still matches the frozen "Realtime Pilot RC10 —
  * leaderboard.updated + tournament.result.updated + tournament.bracket.generated
  * + tournament.status.updated + tournament.match.report_submitted +
  * tournament.match.confirmed + tournament.match.advanced +
- * tournament.registration.updated + notification.created" baseline (see
- * docs/realtime-release-candidate.md). Emitters are allowlisted PER FILE:
- * each approved file may dispatch exactly its approved event types.
+ * tournament.registration.updated + notification.created +
+ * tournaments.updated" baseline (see docs/realtime-release-candidate.md).
+ * Emitters are allowlisted PER FILE: each approved file may dispatch exactly
+ * its approved event types.
  *
  * No network. No secrets printed. No dependency mutation. No release/host access.
  * Prints PASS/FAIL lines; exits 1 on any violation.
@@ -28,10 +29,11 @@ const CONSUMER = "components/LeaderboardRealtime.tsx";
 const CONSUMER_TOURNAMENT = "components/TournamentDetailsRealtime.tsx";
 const CONSUMER_MATCH = "components/MatchRealtimeRefresh.tsx";
 const CONSUMER_NOTIFICATIONS = "components/NotificationsDropdown.tsx";
+const CONSUMER_TOURNAMENTS_LIST = "components/TournamentsListRealtime.tsx";
 const PROVIDER = "components/realtime/RealtimeProvider.tsx";
 const PROVIDER_ROOT = "components/realtime/RealtimeProviderRoot.tsx";
 
-// RC9 — per-file emitter allowlist: each file may dispatch EXACTLY these
+// RC10 — per-file emitter allowlist: each file may dispatch EXACTLY these
 // event types, and no other file may dispatch at all.
 const ALLOWED_EMITTERS = {
   "lib/tournamentResults.ts": [
@@ -44,8 +46,14 @@ const ALLOWED_EMITTERS = {
     "tournament.match.confirmed",
     "tournament.match.advanced",
   ],
-  "actions/adminTournamentInlineActions.ts": ["tournament.status.updated"],
-  "lib/jobs/tournamentLifecycleJobs.ts": ["tournament.status.updated"],
+  "actions/adminTournamentInlineActions.ts": [
+    "tournament.status.updated",
+    "tournaments.updated",
+  ],
+  "lib/jobs/tournamentLifecycleJobs.ts": [
+    "tournament.status.updated",
+    "tournaments.updated",
+  ],
   "actions/tournamentRegistrationInlineActions.ts": [
     "tournament.registration.updated",
   ],
@@ -174,6 +182,7 @@ export function runRcCheck() {
     CONSUMER_TOURNAMENT,
     CONSUMER_MATCH,
     CONSUMER_NOTIFICATIONS,
+    CONSUMER_TOURNAMENTS_LIST,
   ]);
   const consumerOffenders = [];
   for (const file of appFiles) {
@@ -231,7 +240,19 @@ export function runRcCheck() {
     `found: ${notificationRoomCalls.join(", ") || "none"}`,
   );
 
-  // 5e. RC9 private pilot tokens issue only notifications:{currentUserId}.
+  // 5f. TournamentsListRealtime requests only the public tournaments room.
+  const tournamentsListConsumerSrc = read(CONSUMER_TOURNAMENTS_LIST) ?? "";
+  const tournamentsListRoomCalls = [
+    ...tournamentsListConsumerSrc.matchAll(/useRealtimePublicRoom\(([^)]*)\)/g),
+  ].map((m) => m[1].trim());
+  check(
+    'TournamentsListRealtime requests only "tournaments"',
+    tournamentsListRoomCalls.length === 1 &&
+      tournamentsListRoomCalls[0] === '"tournaments"',
+    `found: ${tournamentsListRoomCalls.join(", ") || "none"}`,
+  );
+
+  // 5g. RC9/RC10 private pilot tokens issue only notifications:{currentUserId}.
   const clientTokenSrc = read("lib/realtime/clientToken.ts") ?? "";
   const forbiddenTokenRoomIssuers = [
     "add(`user:${input.databaseId}`)",
@@ -323,9 +344,9 @@ if (isRunDirectly()) {
   }
   console.log(`\nRC check — ${results.length} checks, ${fails} fail`);
   if (fails > 0) {
-    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC9 baseline.");
+    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC10 baseline.");
     process.exit(1);
   }
-  console.log("RC check PASSED — repo matches Realtime Pilot RC9 baseline.");
+  console.log("RC check PASSED — repo matches Realtime Pilot RC10 baseline.");
   process.exit(0);
 }

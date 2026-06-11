@@ -75,6 +75,44 @@ describe("sanitizeRealtimePayload — public", () => {
     }
   });
 
+  it("keeps tournaments.updated payloads tournament-ID-only", () => {
+    const result = sanitizeRealtimePayload({
+      type: "tournaments.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: "tour123",
+      payload: {
+        tournamentId: "tour123",
+        title: "Secret tournament title",
+        prize: "$10,000",
+        description: "private description",
+        adminNotes: "private",
+        userId: "user123",
+        teamId: "team456",
+        teamName: "Shadow Wolves",
+        discordId: "123456789012345678",
+      },
+    });
+
+    expect(result).toEqual({
+      tournamentId: "tour123",
+      entityType: "tournament",
+      entityId: "tour123",
+    });
+    for (const forbidden of [
+      "title",
+      "prize",
+      "description",
+      "adminNotes",
+      "userId",
+      "teamId",
+      "teamName",
+      "discordId",
+    ]) {
+      expect(result).not.toHaveProperty(forbidden);
+    }
+  });
+
   it("keeps tournament.result.updated public payloads ID-only", () => {
     const result = sanitizeRealtimePayload({
       type: "tournament.result.updated",

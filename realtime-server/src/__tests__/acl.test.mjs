@@ -28,8 +28,14 @@ function claimsFor({ sub, isAdmin, rooms, ttlSeconds = 300, now }) {
 describe("public rooms (anonymous)", () => {
   it("allows leaderboard / tournament:{id} / match:{id} with no token", () => {
     expect(canJoinRoom("leaderboard", null).allowed).toBe(true);
+    expect(canJoinRoom("tournaments", null).allowed).toBe(true);
     expect(canJoinRoom("tournament:t1", null).allowed).toBe(true);
     expect(canJoinRoom("match:m1", null).allowed).toBe(true);
+  });
+
+  it("allows only the exact tournaments room (RC10 — no wildcard variants)", () => {
+    expect(canJoinRoom("tournaments:t1", null).allowed).toBe(false);
+    expect(canJoinRoom("tournamentsX", null).allowed).toBe(false);
   });
 
   it("denies private/admin rooms with no token", () => {

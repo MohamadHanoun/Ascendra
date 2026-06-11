@@ -98,6 +98,37 @@ describe("mapRealtimeEventToRooms", () => {
     expect(rooms).toEqual(["match:match789", "tournament:tour123"]);
   });
 
+  it("maps tournaments.updated to ['tournaments'] only", () => {
+    expect(
+      mapRealtimeEventToRooms({
+        type: "tournaments.updated",
+        audience: "public",
+        entityType: "tournament",
+        entityId: "tour123",
+        payload: { tournamentId: "tour123" },
+      }),
+    ).toEqual(["tournaments"]);
+  });
+
+  it("never routes tournaments.updated to per-tournament or payload-supplied rooms", () => {
+    const rooms = mapRealtimeEventToRooms({
+      type: "tournaments.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: "tour123",
+      payload: {
+        tournamentId: "tour123",
+        rooms: ["admin", "user:victim", "notifications:victim"],
+      },
+    });
+
+    expect(rooms).toEqual(["tournaments"]);
+    expect(rooms).not.toContain("tournament:tour123");
+    expect(rooms).not.toContain("admin");
+    expect(rooms).not.toContain("user:victim");
+    expect(rooms).not.toContain("notifications:victim");
+  });
+
   it("maps notification.created without userId to []", () => {
     expect(
       mapRealtimeEventToRooms({
