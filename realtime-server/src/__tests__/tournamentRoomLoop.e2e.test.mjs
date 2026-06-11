@@ -289,6 +289,76 @@ describe.runIf(E2E_ENABLED)("tournament room realtime full loop", () => {
     expect(otherRoomReceived).toBe(false);
   }, 15000);
 
+  it("tournament.registration.updated (RC8) reaches its tournament room only; other room receives nothing", async () => {
+    server = await startTestServer();
+    setEnv({
+      REALTIME_ENABLE_SOCKET: "true",
+      REALTIME_SERVER_URL: server.baseUrl,
+      REALTIME_EVENT_SECRET: server.eventSecret,
+    });
+
+    const socketA = await connect(server.socketUrl);
+    const socketB = await connect(server.socketUrl);
+    expect((await join(socketA, "tournament:tour_a")).ok).toBe(true);
+    expect((await join(socketB, "tournament:tour_b")).ok).toBe(true);
+
+    let otherRoomReceived = false;
+    socketB.on("ascendra:event", () => {
+      otherRoomReceived = true;
+    });
+
+    const received = waitForEvent(socketA, "ascendra:event");
+
+    // Include sensitive fields to prove the payload stays tournament-only.
+    const result = await dispatchRealtimeEvent({
+      type: "tournament.registration.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: "tour_a",
+      payload: {
+        tournamentId: "tour_a",
+        registrationId: "reg_a",
+        teamId: "team_a",
+        teamName: "Secret Team",
+        userId: "user_a",
+        discordId: "123456789012345678",
+        rejectionReason: "private",
+        adminNotes: "private",
+      },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.rooms).toEqual(["tournament:tour_a"]);
+
+    const msg = await received;
+    expect(msg.type).toBe("tournament.registration.updated");
+    expect(msg.entityId).toBe("tour_a");
+    expect(msg.payload).toEqual({
+      tournamentId: "tour_a",
+      entityType: "tournament",
+      entityId: "tour_a",
+    });
+    expect(shouldRefresh(msg, "tour_a")).toBe(true);
+    expect(shouldRefresh(msg, "tour_b")).toBe(false);
+
+    const json = JSON.stringify(msg);
+    for (const forbidden of [
+      "registrationId",
+      "teamId",
+      "teamName",
+      "Secret Team",
+      "userId",
+      "discordId",
+      "rejectionReason",
+      "adminNotes",
+      server.eventSecret,
+    ]) {
+      expect(json).not.toContain(forbidden);
+    }
+
+    await sleep(300);
+    expect(otherRoomReceived).toBe(false);
+  }, 15000);
+
   it("tournament.match.report_submitted (RC5) reaches its match room (+ parent tournament room); a different match room receives nothing", async () => {
     server = await startTestServer();
     setEnv({

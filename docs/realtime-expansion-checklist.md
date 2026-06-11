@@ -5,10 +5,10 @@ event type per batch**. See `realtime-server/THREAT_MODEL.md` for the security
 rationale; run `npm --prefix realtime-server run expansion:gate` to confirm the
 current state still matches the approved pilot.
 
-The current frozen baseline is **Realtime Pilot RC7**
+The current frozen baseline is **Realtime Pilot RC8**
 (`docs/realtime-release-candidate.md`). Before staging, confirm the repo matches
 it with `npm run check:realtime-rc` and run the full gate with
-`npm run verify:realtime-security`. Any new event moves the repo off RC7 and
+`npm run verify:realtime-security`. Any new event moves the repo off RC8 and
 requires re-baselining.
 
 ## 1. Event proposal
@@ -293,6 +293,49 @@ match events remain polling-only.
 `NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
 
 **5. Validation:** `verify:realtime-security` green (with the known audit
-override); `check:realtime-rc` green. **RC7 requires its own Preview
+override); `check:realtime-rc` green. **RC7 Preview verification passed
+2026-06-11** (evidence: `realtime-server/STAGING_SIGNOFF.md` §15) — WebSocket
+connected, the same match page and same tournament page refreshed live after
+bracket advancement, different match and tournament pages did not, kill-switch
+rollback worked after both flags were returned to `false`, polling fallback
+remained intact. Production remains disabled; anonymous browser realtime
+remains disabled.
+
+---
+
+## Completed expansion record — `tournament.registration.updated` (Batch 8A → RC8)
+
+**1. Event proposal:** `tournament.registration.updated`; `entityType`
+`tournament` / `entityId` `{tournamentId}`; audience `public`; room
+`tournament:{tournamentId}` (existing public tournament room); payload exactly
+`{ tournamentId }`; classification public.
+
+**2. Security review:** payload is tournament-ID-only (event-specific public
+sanitizer path — registration IDs, team IDs/names, player/user IDs, Discord
+IDs, rejection reasons, notes, invite details, and admin details are stripped);
+same anonymous-joinable `tournament:{id}` public room class with validated ID
+segments; missing/expired tokens degrade to polling; a realtime outage cannot
+affect registration, approval, rejection, cancellation, or Discord sync actions
+(`after()`-scheduled, never throws) and DB polling continues.
+
+**3. Implementation:** one event type; guarded socket dispatches added only
+next to existing DB `createRealtimeEvent` writes for the exact
+`tournament.registration.updated` event in
+`actions/tournamentRegistrationInlineActions.ts`,
+`actions/adminRegistrationInlineActions.ts`, and
+`actions/adminRegistrationDiscordSyncActions.ts`. **Zero new consumers** and
+**zero new room shapes**: the existing `TournamentDetailsRealtime` helper now
+accepts the event for the mounted tournament. Gates are re-baselined to RC8;
+unit + gated E2E tests cover delivery, cross-tournament isolation, and
+sensitive-field stripping. `registration.approved`, `registration.rejected`,
+`registration.cancelled`, `tournament.registrationStatus.updated`,
+notifications, teams, profiles, private/admin rooms, and all other events
+remain polling-only.
+
+**4. Rollback:** unchanged — `REALTIME_ENABLE_SOCKET=false` and/or
+`NEXT_PUBLIC_REALTIME_ENABLE=false`; DB polling remains the source of truth.
+
+**5. Validation:** `verify:realtime-security` green (with the known audit
+override); `check:realtime-rc` green. **RC8 requires its own Preview
 verification before any production decision.** Production remains disabled;
 anonymous browser realtime remains disabled.

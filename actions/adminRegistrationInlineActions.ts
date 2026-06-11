@@ -8,6 +8,7 @@ import { createNotificationsOnceForUsers } from "@/lib/notifications";
 import { sendDiscordNotificationsToUsers } from "@/lib/discordNotificationBridge";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import { dispatchRealtimeEventSoon } from "@/lib/realtime/dispatchRealtime";
 import { logServerTournamentAction } from "@/lib/serverDiscordLogs";
 
 export type AdminRegistrationActionResult = {
@@ -157,6 +158,16 @@ function revalidateRegistrationViews(tournamentId: string) {
   revalidatePath("/stats");
 }
 
+function dispatchRegistrationUpdatedRealtime(tournamentId: string) {
+  dispatchRealtimeEventSoon({
+    type: "tournament.registration.updated",
+    audience: "public",
+    entityType: "tournament",
+    entityId: tournamentId,
+    payload: { tournamentId },
+  });
+}
+
 async function publishRegistrationUpdate(params: {
   type: string;
   registrationId: string;
@@ -190,6 +201,8 @@ async function publishRegistrationUpdate(params: {
       payload: params,
     }),
   ]);
+
+  dispatchRegistrationUpdatedRealtime(params.tournamentId);
 }
 
 function compactReason(reason: string) {

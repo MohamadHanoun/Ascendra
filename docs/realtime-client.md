@@ -5,7 +5,7 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 
 > **Staging sign-off required before production.** See
 > `realtime-server/STAGING_SIGNOFF.md` (use `npm run status:check`). The
-> the current pilot scope is the frozen RC7 baseline — no additional realtime
+> current pilot scope is the frozen RC8 baseline — no additional realtime
 > events should be enabled until the relevant sign-off passes.
 >
 > **Adding a new realtime event?** First complete
@@ -15,7 +15,7 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 > Run the full local gate with **`npm run verify:realtime-security`** before any
 > expansion or staging/prod sign-off.
 >
-> The frozen baseline is **Realtime Pilot RC7** —
+> The frozen baseline is **Realtime Pilot RC8** —
 > `docs/realtime-release-candidate.md`. Confirm the repo still matches it with
 > **`npm run check:realtime-rc`** before staging. Operators follow
 > `docs/realtime-staging-operator-guide.md` to execute the staging verification.
@@ -92,9 +92,9 @@ entityType: "leaderboard", entityId: "global", payload: { tournamentId } })`.
   fire-and-forget behavior.
 - **Minimal payload:** ID-only (`tournamentId`); the sanitizer + room mapper
   enforce a public ID-only payload routed solely to the `leaderboard` room.
-- **No other emitter is wired** — `tournament.result.updated`, `profile.updated`,
-  registration/match/notification/team events are **not** dispatched to the
-  bridge (they still use the DB path only).
+- **At RC1, no other emitter was wired** — later sections document the
+  approved additive event batches. Everything outside the current RC baseline
+  still uses the DB path only.
 
 ## Second pilot: tournament.result.updated (Batch 2A — RC2)
 
@@ -136,7 +136,8 @@ failure can never break bracket generation.
   for the mounted tournament. Same debounced `router.refresh()`; no visual
   change.
 - **Still polling-only:** `tournament.status.updated` (admin action + lifecycle
-  job — wired in RC4, see below), registrations, matches, notifications,
+  job — wired in RC4, see below), registrations (first socket event wired in
+  RC8, see below), matches, notifications,
   profiles, teams.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
@@ -158,8 +159,9 @@ lifecycle job.
   the refresh-decision helper now also accepts `tournament.status.updated` for
   the mounted tournament. Same debounced `router.refresh()`; no visual change.
 - **Still polling-only:** `tournament.registrationStatus.updated` (both its
-  emitters), registrations, matches (first match event wired in RC5, see
-  below), notifications, profiles, teams.
+  emitters), registrations except `tournament.registration.updated` (wired in
+  RC8, see below), matches (first match event wired in RC5, see below),
+  notifications, profiles, teams.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
 
@@ -186,8 +188,9 @@ public sanitizer); a realtime failure can never break match reporting.
 - **Not part of RC5:** `tournament.match.confirmed` is wired in RC6 and
   `tournament.match.advanced` is wired in RC7; the remaining match events
   (`disputed`, `game_completed`, `room_linked`, `checkin_updated`,
-  `proof_synced`, `communication_updated`), `tournament.registrationStatus.updated`,
-  registrations, notifications, profiles, and teams remain polling-only.
+  `proof_synced`, `communication_updated`), `tournament.registration.updated`
+  is wired in RC8; `tournament.registrationStatus.updated`, other registration
+  events, notifications, profiles, and teams remain polling-only.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
 
@@ -214,11 +217,12 @@ confirmation.
 - **Not part of RC6:** `tournament.match.advanced` is wired in RC7; the
   remaining match events (`disputed`, `game_completed`, `room_linked`,
   `checkin_updated`, `proof_synced`, `communication_updated`),
-  `tournament.registrationStatus.updated`, registrations, notifications,
-  profiles, and teams remain polling-only.
+  `tournament.registrationStatus.updated`, other registration events,
+  notifications, profiles, and teams remain polling-only.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
-  RC6 Preview verification passed 2026-06-11; RC7 still requires its own
+  RC6 Preview verification passed 2026-06-11; RC7 Preview verification passed
+  2026-06-11; RC8 still requires its own
   Preview verification before any production decision.
 
 ## Seventh pilot: tournament.match.advanced (Batch 7A — RC7)
@@ -242,11 +246,36 @@ a realtime failure can never break bracket advancement.
   `tournament.match.game_completed`, `tournament.match.room_linked`,
   `tournament.match.checkin_updated`, `tournament.match.proof_synced`,
   `tournament.match.communication_updated`,
-  `tournament.registrationStatus.updated`, registrations, notifications,
-  profiles, and teams.
+  `tournament.registrationStatus.updated`, other registration events,
+  notifications, profiles, and teams.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
-  RC7 requires its own Preview verification before any production decision.
+  RC7 Preview verification passed 2026-06-11; RC8 requires its own Preview
+  verification before any production decision.
+
+## Eighth pilot: tournament.registration.updated (Batch 8A — RC8)
+
+The existing registration actions dispatch `tournament.registration.updated`
+after their existing DB `RealtimeEvent` writes: player register/cancel, admin
+approve/reject/cancel, and admin Discord sync/remove. Each dispatch is
+flag-gated, `after()`-scheduled, non-blocking, and ID-only (`{ tournamentId }`);
+registration IDs, team IDs/names, player/user IDs, Discord IDs, rejection
+reasons, notes, invite details, and admin details are stripped by the public
+sanitizer. A realtime failure can never break registration, approval,
+rejection, cancellation, or Discord sync actions.
+
+- **Rooms:** unchanged — the event targets the existing public
+  `tournament:{tournamentId}` room.
+- **Consumer:** no new consumer. `TournamentDetailsRealtime` already joins the
+  tournament room; its refresh-decision helper now accepts
+  `tournament.registration.updated` only for the mounted tournament. Same
+  debounced `router.refresh()`; polling remains the fallback/source of truth.
+- **Still polling-only:** `registration.approved`, `registration.rejected`,
+  `registration.cancelled`, `tournament.registrationStatus.updated`,
+  notifications, teams, profiles, private/admin rooms, and all other events.
+- **Production remains disabled**, **anonymous browser realtime remains
+  disabled**, and the DB-polling fallback remains active for all visitors.
+  RC8 requires its own Preview verification before any production decision.
 
 ## Enabling live leaderboard socket refresh
 

@@ -164,7 +164,7 @@ describe("6. non-2xx server responses", () => {
 });
 
 describe("7. payload sanitized before dispatch", () => {
-  it("never sends rejectionReason/teamName/token/cookie on a public event", async () => {
+  it("never sends registration/team/user/admin fields on a public registration update", async () => {
     const fetchMock = mockFetch();
     enableBridge();
     await dispatchRealtimeEvent({
@@ -174,9 +174,13 @@ describe("7. payload sanitized before dispatch", () => {
       entityId: "tour123",
       payload: {
         tournamentId: "tour123",
+        registrationId: "reg789",
         teamId: "team456",
+        userId: "user123",
         teamName: "Shadow Wolves",
         rejectionReason: "nope",
+        discordId: "123456789012345678",
+        adminUserId: "admin123",
         token: "abc",
         cookie: "c",
       },
@@ -184,7 +188,6 @@ describe("7. payload sanitized before dispatch", () => {
     const payload = lastBody(fetchMock).payload as Record<string, unknown>;
     expect(payload).toEqual({
       tournamentId: "tour123",
-      teamId: "team456",
       entityType: "tournament",
       entityId: "tour123",
     });

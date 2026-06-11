@@ -57,7 +57,7 @@ describe("mapRealtimeEventToRooms", () => {
         audience: "public",
         entityType: "tournament",
         entityId: "tour123",
-        payload: { tournamentId: "tour123", teamId: "team456" },
+        payload: { tournamentId: "tour123" },
       }),
     ).toEqual(["tournament:tour123"]);
   });

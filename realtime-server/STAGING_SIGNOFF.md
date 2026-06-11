@@ -329,3 +329,34 @@ environment as §9. No secrets below.
 separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
 remains disabled. No further realtime event is approved; the expansion
 checklist still applies (one event type per batch).
+
+> Superseded by RC7 (§15) — RC6 remains valid history; RC7 is the current
+> verified baseline.
+
+## 15. Completed evidence — RC7 Preview verification (recorded 2026-06-11)
+
+Operator-verified RC7 run (RC6 scope + `tournament.match.advanced`) against
+the Vercel **Preview** environment and the **staging** realtime server. Same
+environment as §9. No secrets below.
+
+**Results:**
+- [x] **Browser WebSocket passed** — socket connection worked throughout the
+      test.
+- [x] **Match-advanced live refresh passed** — after bracket advancement,
+      `tournament.match.advanced` was emitted and the same match's page
+      refreshed live via the `match:{id}` room.
+- [x] **Tournament live refresh passed** — the same tournament's details page
+      refreshed live via the `tournament:{id}` room after bracket advancement.
+- [x] **Room isolation passed** — a different match's page and a different
+      tournament's page did **not** refresh incorrectly.
+- [x] **Polling fallback passed** — the DB-polling fallback remained intact.
+- [x] **Kill-switch rollback passed** — after returning both flags to `false`,
+      the WebSocket stopped and the DB-polling fallback continued working.
+- [x] **Production untouched** — no Production env changes; Preview flags
+      returned to `REALTIME_ENABLE_SOCKET=false` and
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` and remain off.
+
+**Status: Preview RC7 sign-off COMPLETE.** Production go-live remains a
+separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
+remains disabled. No further realtime event is approved; the expansion
+checklist still applies (one event type per batch).

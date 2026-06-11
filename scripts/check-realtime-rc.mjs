@@ -1,11 +1,12 @@
 /**
- * Realtime Pilot RC7 baseline checker (Batch 1W, re-baselined in Batches
- * 2A/3A/4A/5A/6A/7A) — OFFLINE scan only.
+ * Realtime Pilot RC8 baseline checker (Batch 1W, re-baselined in Batches
+ * 2A/3A/4A/5A/6A/7A/8A) — OFFLINE scan only.
  *
- * Verifies the repository still matches the frozen "Realtime Pilot RC7 —
+ * Verifies the repository still matches the frozen "Realtime Pilot RC8 —
  * leaderboard.updated + tournament.result.updated + tournament.bracket.generated
  * + tournament.status.updated + tournament.match.report_submitted +
- * tournament.match.confirmed + tournament.match.advanced" baseline (see
+ * tournament.match.confirmed + tournament.match.advanced +
+ * tournament.registration.updated" baseline (see
  * docs/realtime-release-candidate.md). Emitters are allowlisted PER FILE:
  * each approved file may dispatch exactly its approved event types.
  *
@@ -29,7 +30,7 @@ const CONSUMER_MATCH = "components/MatchRealtimeRefresh.tsx";
 const PROVIDER = "components/realtime/RealtimeProvider.tsx";
 const PROVIDER_ROOT = "components/realtime/RealtimeProviderRoot.tsx";
 
-// RC7 — per-file emitter allowlist: each file may dispatch EXACTLY these
+// RC8 — per-file emitter allowlist: each file may dispatch EXACTLY these
 // event types, and no other file may dispatch at all.
 const ALLOWED_EMITTERS = {
   "lib/tournamentResults.ts": [
@@ -44,6 +45,15 @@ const ALLOWED_EMITTERS = {
   ],
   "actions/adminTournamentInlineActions.ts": ["tournament.status.updated"],
   "lib/jobs/tournamentLifecycleJobs.ts": ["tournament.status.updated"],
+  "actions/tournamentRegistrationInlineActions.ts": [
+    "tournament.registration.updated",
+  ],
+  "actions/adminRegistrationInlineActions.ts": [
+    "tournament.registration.updated",
+  ],
+  "actions/adminRegistrationDiscordSyncActions.ts": [
+    "tournament.registration.updated",
+  ],
 };
 
 const REQUIRED_DOCS = [
@@ -280,9 +290,9 @@ if (isRunDirectly()) {
   }
   console.log(`\nRC check — ${results.length} checks, ${fails} fail`);
   if (fails > 0) {
-    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC7 baseline.");
+    console.error("RC check FAILED — repo no longer matches Realtime Pilot RC8 baseline.");
     process.exit(1);
   }
-  console.log("RC check PASSED — repo matches Realtime Pilot RC7 baseline.");
+  console.log("RC check PASSED — repo matches Realtime Pilot RC8 baseline.");
   process.exit(0);
 }

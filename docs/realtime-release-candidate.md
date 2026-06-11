@@ -1,4 +1,4 @@
-# Realtime Pilot RC7 — leaderboard.updated + tournament.result.updated + tournament.bracket.generated + tournament.status.updated + tournament.match.report_submitted + tournament.match.confirmed + tournament.match.advanced
+# Realtime Pilot RC8 — leaderboard.updated + tournament.result.updated + tournament.bracket.generated + tournament.status.updated + tournament.match.report_submitted + tournament.match.confirmed + tournament.match.advanced + tournament.registration.updated
 
 Frozen release-candidate baseline for the Ascendra realtime pilot. This is the
 exact scope that may go to staging. Any deviation must follow
@@ -6,26 +6,26 @@ exact scope that may go to staging. Any deviation must follow
 `npm run check:realtime-rc`, and run the full gate with
 `npm run verify:realtime-security`.
 
-> RC7 (Batch 7A) supersedes RC6 by adding exactly one event
-> (`tournament.match.advanced`, bracket progression) — same shared
-> `emitMatchEvent` dispatch pattern as RC6, zero new consumers, zero new room
-> shapes, zero realtime-server runtime changes. New in RC7: the
-> tournament-details helper now ALSO accepts this event for the mounted
-> tournament (approved — bracket progression affects the tournament
-> bracket/details, and the mapper already delivers public match events to the
-> parent `tournament:{id}` room). All other match events stay polling-only.
+> RC8 (Batch 8A) supersedes RC7 by adding exactly one event
+> (`tournament.registration.updated`) into the existing public
+> `tournament:{id}` room and existing `TournamentDetailsRealtime` consumer.
+> Zero new consumers, zero new room shapes, zero realtime-server runtime
+> changes. The approved emitters are only the existing registration action
+> files that already write the exact DB `tournament.registration.updated`
+> event; all other registration/private/admin/team/profile socket events stay
+> polling-only.
 > Preview verifications are recorded in `realtime-server/STAGING_SIGNOFF.md`:
-> RC1 in §9, RC2 in §10, RC3 in §11, RC4 in §12, RC5 in §13, **RC6 in §14
-> (passed 2026-06-11)**; **RC7 requires its own Preview verification** before
+> RC1 in §9, RC2 in §10, RC3 in §11, RC4 in §12, RC5 in §13, RC6 in §14,
+> **RC7 in §15 (passed 2026-06-11)**; **RC8 requires its own Preview verification** before
 > any production decision. Production remains disabled and requires its own
 > manual go/no-go.
 
 ## 1. Release candidate name
 
-**Realtime Pilot RC7 — `leaderboard.updated` + `tournament.result.updated` +
+**Realtime Pilot RC8 — `leaderboard.updated` + `tournament.result.updated` +
 `tournament.bracket.generated` + `tournament.status.updated` +
 `tournament.match.report_submitted` + `tournament.match.confirmed` +
-`tournament.match.advanced` only.**
+`tournament.match.advanced` + `tournament.registration.updated` only.**
 
 ## 2. Current approved scope
 
@@ -56,14 +56,22 @@ these events):**
 - `lib/jobs/tournamentLifecycleJobs.ts` (`publishLifecycleEvents`, scheduled
   lifecycle transitions):
   - `tournament.status.updated` → room `tournament:{tournamentId}`.
-- Payloads: ID-only (`tournamentId` / `matchId`; `status`, scores, proof URLs,
-  reporter/team identifiers, and comments are stripped by the public
+- `actions/tournamentRegistrationInlineActions.ts` (player register/cancel):
+  - `tournament.registration.updated` → room `tournament:{tournamentId}`.
+- `actions/adminRegistrationInlineActions.ts` (admin approve/reject/cancel):
+  - `tournament.registration.updated` → room `tournament:{tournamentId}`.
+- `actions/adminRegistrationDiscordSyncActions.ts` (admin Discord sync/remove):
+  - `tournament.registration.updated` → room `tournament:{tournamentId}`.
+- Payloads: ID-only (`tournamentId` / `matchId`; `status`, registration IDs,
+  user IDs, Discord IDs, scores, proof URLs, names, reasons, notes, and
+  reporter/team identifiers are stripped by the public
   sanitizer).
 - Server flag: `REALTIME_ENABLE_SOCKET` (additive, fire-and-forget; each emit is
   scheduled post-response via Next.js `after()` — with a safe fallback outside
   request scope, e.g. cron — so it is serverless-safe and never blocks or fails
   the mutation — including bracket generation, the admin status action, and the
-  lifecycle job; the DB `RealtimeEvent` writes remain the source of truth).
+  lifecycle job, registration actions, and Discord sync actions; the DB
+  `RealtimeEvent` writes remain the source of truth).
 - The manual inline-save admin path (`actions/adminTournamentResultActions.ts`)
   intentionally remains polling-only (no socket dispatch).
 
@@ -71,9 +79,9 @@ these events):**
 - `components/LeaderboardRealtime.tsx` — joins only the public room
   `leaderboard`.
 - `components/TournamentDetailsRealtime.tsx` — joins only the public room
-  `tournament:{tournamentId}` of the mounted page; since RC7 its refresh
-  helper also accepts `tournament.match.advanced` for the mounted tournament
-  (bracket progression refreshes the tournament details/bracket).
+  `tournament:{tournamentId}` of the mounted page; since RC8 its refresh
+  helper also accepts `tournament.registration.updated` for the mounted
+  tournament, in addition to `tournament.match.advanced` from RC7.
 - `components/MatchRealtimeRefresh.tsx` — joins only the public room
   `match:{matchId}` of the mounted match page (its DB-polling subscriptions
   are unchanged); its refresh helper accepts only
@@ -94,7 +102,10 @@ these events):**
 
 ## 3. Explicitly NOT included
 
-- Registration realtime socket events.
+- Registration socket events other than `tournament.registration.updated`.
+- Registration/private/admin event types such as `registration.approved`,
+  `registration.rejected`, `registration.cancelled`, notification events,
+  profile events, and team events.
 - All other match socket events — `tournament.match.disputed`,
   `game_completed`, `room_linked`, `checkin_updated`, `proof_synced`,
   `communication_updated` stay polling-only.
@@ -159,14 +170,13 @@ npm --prefix realtime-server run smoke:event    # with safe env + target
 ## 8. Staging sign-off requirement
 
 - Operator runbook: `docs/realtime-staging-operator-guide.md` (written for the
-  RC1 run; reuse the same steps for RC2–RC7, additionally verifying after a
-  bracket advancement that the match page AND the same tournament's details
-  page refresh live, while a different match's page and a different
-  tournament's page do **not** refresh).
+  RC1 run; reuse the same steps for RC2–RC8, additionally verifying after a
+  registration update that the same tournament's details page refreshes live
+  while a different tournament's page does **not** refresh).
 - Complete `realtime-server/STAGING_SIGNOFF.md` before production. Preview runs
   are recorded there: RC1 (§9), RC2 (§10), RC3 (§11), RC4 (§12), RC5 (§13),
-  and RC6 (§14, passed 2026-06-11) — all with both flags returned to `false`
-  afterwards. **RC7 needs its own Preview verification** with both flags
+  RC6 (§14), and RC7 (§15, passed 2026-06-11) — all with both flags returned
+  to `false` afterwards. **RC8 needs its own Preview verification** with both flags
   returned to `false` afterwards.
 - Passing staging does **not** automatically approve production.
 - No further realtime event may be added before staging sign-off or explicit

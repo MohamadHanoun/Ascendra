@@ -393,29 +393,73 @@ describe("dispatchRealtimeEvent — routing", () => {
     }
   });
 
-  it("sanitizes a public registration payload (no rejectionReason/teamName) before send", async () => {
+  it("sends tournament.registration.updated to its tournament room with an ID-only payload", async () => {
     const fetchMock = mockFetchOk();
     enableBridge();
 
-    await dispatchRealtimeEvent({
+    const result = await dispatchRealtimeEvent({
+      type: "tournament.registration.updated",
+      audience: "public",
+      entityType: "tournament",
+      entityId: "tour123",
+      payload: { tournamentId: "tour123" },
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.rooms).toEqual(["tournament:tour123"]);
+
+    const body = lastFetchBody(fetchMock);
+    expect(body.rooms).toEqual(["tournament:tour123"]);
+    expect(body.payload).toEqual({
+      tournamentId: "tour123",
+      entityType: "tournament",
+      entityId: "tour123",
+    });
+  });
+
+  it("strips registration/team/user/admin fields from a public tournament.registration.updated payload", async () => {
+    const fetchMock = mockFetchOk();
+    enableBridge();
+
+    const result = await dispatchRealtimeEvent({
       type: "tournament.registration.updated",
       audience: "public",
       entityType: "tournament",
       entityId: "tour123",
       payload: {
         tournamentId: "tour123",
+        registrationId: "reg789",
         teamId: "team456",
         teamName: "Shadow Wolves",
         rejectionReason: "not eligible",
+        userId: "user123",
+        discordId: "123456789012345678",
+        adminUserId: "admin123",
+        notes: "private",
       },
     });
 
+    expect(result.ok).toBe(true);
+
     const body = lastFetchBody(fetchMock);
     const payload = body.payload as Record<string, unknown>;
-    expect(payload).not.toHaveProperty("rejectionReason");
-    expect(payload).not.toHaveProperty("teamName");
-    expect(payload.tournamentId).toBe("tour123");
-    expect(payload.teamId).toBe("team456");
+    expect(payload).toEqual({
+      tournamentId: "tour123",
+      entityType: "tournament",
+      entityId: "tour123",
+    });
+    for (const forbidden of [
+      "registrationId",
+      "teamId",
+      "teamName",
+      "rejectionReason",
+      "userId",
+      "discordId",
+      "adminUserId",
+      "notes",
+    ]) {
+      expect(payload).not.toHaveProperty(forbidden);
+    }
   });
 });
 

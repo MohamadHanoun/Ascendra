@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { sanitizeRealtimePayload } from "@/lib/realtime/payload";
 
 describe("sanitizeRealtimePayload — public", () => {
-  it("removes rejectionReason and keeps only safe IDs", () => {
+  it("keeps tournament.registration.updated payloads tournament-only", () => {
     const result = sanitizeRealtimePayload({
       type: "tournament.registration.updated",
       audience: "public",
@@ -11,20 +11,32 @@ describe("sanitizeRealtimePayload — public", () => {
       entityId: "tour123",
       payload: {
         tournamentId: "tour123",
+        registrationId: "reg789",
         teamId: "team456",
+        userId: "user123",
+        discordId: "123456789012345678",
         teamName: "Shadow Wolves",
         rejectionReason: "Roster not eligible",
+        adminNotes: "private",
       },
     });
 
     expect(result).toEqual({
       tournamentId: "tour123",
-      teamId: "team456",
       entityType: "tournament",
       entityId: "tour123",
     });
-    expect(result).not.toHaveProperty("teamName");
-    expect(result).not.toHaveProperty("rejectionReason");
+    for (const forbidden of [
+      "registrationId",
+      "teamId",
+      "userId",
+      "discordId",
+      "teamName",
+      "rejectionReason",
+      "adminNotes",
+    ]) {
+      expect(result).not.toHaveProperty(forbidden);
+    }
   });
 
   it("keeps tournament.result.updated public payloads ID-only", () => {

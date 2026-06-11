@@ -1,7 +1,7 @@
 /**
  * Realtime expansion gate (Batch 1U) — OFFLINE scan only.
  *
- * Ensures the realtime wiring still matches the approved pilot state (RC7):
+ * Ensures the realtime wiring still matches the approved pilot state (RC8):
  *   - Emitters are allowlisted PER FILE: lib/tournamentResults.ts may dispatch
  *     only leaderboard.updated + tournament.result.updated;
  *     lib/tournamentMatchEngine.ts may dispatch only
@@ -9,7 +9,9 @@
  *     tournament.match.confirmed + tournament.match.advanced;
  *     actions/adminTournamentInlineActions.ts and
  *     lib/jobs/tournamentLifecycleJobs.ts may each dispatch only
- *     tournament.status.updated. No other file may dispatch.
+ *     tournament.status.updated;
+ *     the approved registration action files may each dispatch only
+ *     tournament.registration.updated. No other file may dispatch.
  *   - LeaderboardRealtime, TournamentDetailsRealtime, and MatchRealtimeRefresh
  *     are the ONLY non-provider consumers of realtime hooks.
  *   - socket.io-client is imported only by RealtimeProvider.tsx.
@@ -32,7 +34,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".
 const SKIP_DIRS = new Set(["node_modules", ".next", ".git", "dist", "coverage"]);
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 
-// Per-file emitter allowlist (RC7): each file may dispatch EXACTLY these types.
+// Per-file emitter allowlist (RC8): each file may dispatch EXACTLY these types.
 const ALLOWED_EMITTERS = {
   "lib/tournamentResults.ts": [
     "leaderboard.updated",
@@ -46,6 +48,15 @@ const ALLOWED_EMITTERS = {
   ],
   "actions/adminTournamentInlineActions.ts": ["tournament.status.updated"],
   "lib/jobs/tournamentLifecycleJobs.ts": ["tournament.status.updated"],
+  "actions/tournamentRegistrationInlineActions.ts": [
+    "tournament.registration.updated",
+  ],
+  "actions/adminRegistrationInlineActions.ts": [
+    "tournament.registration.updated",
+  ],
+  "actions/adminRegistrationDiscordSyncActions.ts": [
+    "tournament.registration.updated",
+  ],
 };
 const ALLOWED_CONSUMERS = [
   "components/LeaderboardRealtime.tsx",

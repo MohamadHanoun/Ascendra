@@ -93,6 +93,44 @@ describe("shouldRefreshTournamentDetailsFromRealtimeEvent", () => {
     ).toBe(false);
   });
 
+  it("refreshes on tournament.registration.updated matching via entityId", () => {
+    expect(
+      shouldRefreshTournamentDetailsFromRealtimeEvent(
+        {
+          type: "tournament.registration.updated",
+          entityId: TOURNAMENT_ID,
+          payload: {},
+        },
+        TOURNAMENT_ID,
+      ),
+    ).toBe(true);
+  });
+
+  it("refreshes on tournament.registration.updated matching via payload.tournamentId", () => {
+    expect(
+      shouldRefreshTournamentDetailsFromRealtimeEvent(
+        {
+          type: "tournament.registration.updated",
+          payload: { tournamentId: TOURNAMENT_ID },
+        },
+        TOURNAMENT_ID,
+      ),
+    ).toBe(true);
+  });
+
+  it("does not refresh on tournament.registration.updated for a different tournament", () => {
+    expect(
+      shouldRefreshTournamentDetailsFromRealtimeEvent(
+        {
+          type: "tournament.registration.updated",
+          entityId: "other456",
+          payload: { tournamentId: "other456" },
+        },
+        TOURNAMENT_ID,
+      ),
+    ).toBe(false);
+  });
+
   it("refreshes on tournament.match.advanced matching via payload.tournamentId", () => {
     // For match events the entityId is the MATCH id, so the tournament match
     // must come from payload.tournamentId (the dispatch always includes it).
@@ -154,6 +192,8 @@ describe("shouldRefreshTournamentDetailsFromRealtimeEvent", () => {
       "tournament.registrationStatus.updated",
       "tournament.match.confirmed",
       "registration.approved",
+      "registration.rejected",
+      "registration.cancelled",
       "notification.created",
     ]) {
       expect(

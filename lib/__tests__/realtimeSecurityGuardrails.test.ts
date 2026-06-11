@@ -194,12 +194,7 @@ describe("guardrail F: dispatch helper is not wired into emitters", () => {
     "lib/realtime.ts",
     "lib/notifications.ts",
     "lib/matchNotifications.ts",
-    // lib/tournamentResults.ts (Batches 1R/2A), lib/tournamentMatchEngine.ts
-    // (Batch 3A), actions/adminTournamentInlineActions.ts and
-    // lib/jobs/tournamentLifecycleJobs.ts (Batch 4A) are the approved pilots —
-    // see guardrail L.
-    "actions/adminRegistrationInlineActions.ts",
-    "actions/tournamentRegistrationInlineActions.ts",
+    // Approved pilot emitters are covered by guardrail L.
     "actions/teamInlineActions.ts",
     "actions/teamActions.ts",
     "actions/matchActions.ts",
@@ -508,9 +503,9 @@ describe("guardrail K: realtime consumers are scoped and additive", () => {
   });
 });
 
-// ─── L. Approved emitter pilots (Batches 1R + 2A + 3A + 4A + 5A + 6A + 7A) ─────
+// ─── L. Approved emitter pilots (Batches 1R + 2A + 3A + 4A + 5A + 6A + 7A + 8A)
 
-describe("guardrail L: only the approved RC7 events are wired server emitters", () => {
+describe("guardrail L: only the approved RC8 events are wired server emitters", () => {
   // Per-file allowlist: each approved file dispatches EXACTLY these types.
   const ALLOWED_EMITTERS: Record<string, string[]> = {
     "lib/tournamentResults.ts": [
@@ -525,6 +520,15 @@ describe("guardrail L: only the approved RC7 events are wired server emitters", 
     ],
     "actions/adminTournamentInlineActions.ts": ["tournament.status.updated"],
     "lib/jobs/tournamentLifecycleJobs.ts": ["tournament.status.updated"],
+    "actions/tournamentRegistrationInlineActions.ts": [
+      "tournament.registration.updated",
+    ],
+    "actions/adminRegistrationInlineActions.ts": [
+      "tournament.registration.updated",
+    ],
+    "actions/adminRegistrationDiscordSyncActions.ts": [
+      "tournament.registration.updated",
+    ],
   };
 
   function dispatchBlocks(src: string): string[] {
@@ -541,6 +545,30 @@ describe("guardrail L: only the approved RC7 events are wired server emitters", 
     const match = block.match(/type\s*:\s*["']([^"']+)["']/);
     return match ? match[1] : null;
   }
+
+  it("dispatch helper is imported only by approved emitter files", () => {
+    const allowed = new Set([
+      ...Object.keys(ALLOWED_EMITTERS),
+      "lib/realtime/dispatchRealtime.ts",
+    ]);
+    const offenders: string[] = [];
+    const files = ["actions", "app", "components", "hooks", "lib"].flatMap((d) =>
+      walk(path.join(ROOT, d), [".ts", ".tsx"], false),
+    );
+
+    for (const file of files) {
+      const rel = path.relative(ROOT, file).replace(/\\/g, "/");
+      if (allowed.has(rel)) {
+        continue;
+      }
+
+      if (readFileSync(file, "utf8").includes("dispatchRealtimeEvent")) {
+        offenders.push(rel);
+      }
+    }
+
+    expect(offenders).toEqual([]);
+  });
 
   it.each(Object.entries(ALLOWED_EMITTERS))(
     "%s wires exactly its approved dispatches",
@@ -564,8 +592,10 @@ describe("guardrail L: only the approved RC7 events are wired server emitters", 
         expect(allowedTypes).toContain(blockType(block));
         for (const forbiddenType of [
           "profile.updated",
-          "tournament.registration.updated",
-          "registration.",
+          "registration.approved",
+          "registration.rejected",
+          "registration.cancelled",
+          "tournament.registrationStatus.updated",
           // Unapproved match events — only report_submitted (RC5),
           // confirmed (RC6), and advanced (RC7) are wired.
           "tournament.match.disputed",
@@ -574,8 +604,10 @@ describe("guardrail L: only the approved RC7 events are wired server emitters", 
           "tournament.match.checkin_updated",
           "tournament.match.proof_synced",
           "tournament.match.communication_updated",
-          "notification.",
+          "notification.created",
           "team.",
+          "audience: \"admin\"",
+          "audience: 'admin'",
         ]) {
           expect(block).not.toContain(forbiddenType);
         }
@@ -590,14 +622,19 @@ describe("guardrail L: only the approved RC7 events are wired server emitters", 
       for (const block of blocks) {
         for (const forbidden of [
           "rejectionReason",
+          "registrationId",
+          "teamId",
           "teamName",
+          "userId",
           "userIds",
           "discordId",
+          "adminUserId",
           "email",
           "token",
           "secret",
           "password",
           "cookie",
+          "note",
           "headers",
           "raw",
         ]) {

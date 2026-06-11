@@ -216,6 +216,29 @@ function buildMinimalPayload(
   return out;
 }
 
+function buildTournamentOnlyPayload(
+  payload: Record<string, unknown>,
+  entityType: string | null | undefined,
+  entityId: string | null | undefined,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  const tournamentId = payload.tournamentId;
+
+  if (typeof tournamentId === "string" && tournamentId.length > 0) {
+    out.tournamentId = capString(tournamentId);
+  }
+
+  if (typeof entityType === "string" && entityType.length > 0) {
+    out.entityType = capString(entityType);
+  }
+
+  if (typeof entityId === "string" && entityId.length > 0) {
+    out.entityId = capString(entityId);
+  }
+
+  return out;
+}
+
 function serializedByteLength(value: unknown): number {
   try {
     return Buffer.byteLength(JSON.stringify(value) ?? "", "utf8");
@@ -247,6 +270,14 @@ export function sanitizeRealtimePayload(
 
     if (!isAdmin) {
       // Public: ID-only, never anything else.
+      if (input?.type === "tournament.registration.updated") {
+        return buildTournamentOnlyPayload(
+          payload,
+          input?.entityType,
+          input?.entityId,
+        );
+      }
+
       return buildMinimalPayload(payload, input?.entityType, input?.entityId);
     }
 
