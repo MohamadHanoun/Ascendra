@@ -55,13 +55,53 @@ describe("shouldRefreshMatchFromRealtimeEvent", () => {
     ).toBe(false);
   });
 
+  it("refreshes on tournament.match.confirmed matching via entityId", () => {
+    expect(
+      shouldRefreshMatchFromRealtimeEvent(
+        {
+          type: "tournament.match.confirmed",
+          entityId: MATCH_ID,
+          payload: {},
+        },
+        MATCH_ID,
+      ),
+    ).toBe(true);
+  });
+
+  it("refreshes on tournament.match.confirmed matching via payload.matchId", () => {
+    expect(
+      shouldRefreshMatchFromRealtimeEvent(
+        {
+          type: "tournament.match.confirmed",
+          payload: { matchId: MATCH_ID, tournamentId: "tour123" },
+        },
+        MATCH_ID,
+      ),
+    ).toBe(true);
+  });
+
+  it("does not refresh on tournament.match.confirmed for a different matchId", () => {
+    expect(
+      shouldRefreshMatchFromRealtimeEvent(
+        {
+          type: "tournament.match.confirmed",
+          entityId: "other456",
+          payload: { matchId: "other456", tournamentId: "tour123" },
+        },
+        MATCH_ID,
+      ),
+    ).toBe(false);
+  });
+
   it("does not refresh for unapproved event types", () => {
     for (const type of [
-      "tournament.match.confirmed",
       "tournament.match.disputed",
       "tournament.match.advanced",
       "tournament.match.game_completed",
       "tournament.match.checkin_updated",
+      "tournament.match.proof_synced",
+      "tournament.match.room_linked",
+      "tournament.match.communication_updated",
       "tournament.result.updated",
       "tournament.bracket.generated",
       "tournament.status.updated",

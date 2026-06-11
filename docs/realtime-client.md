@@ -15,7 +15,7 @@ nothing until it is both mounted (a future batch) and explicitly enabled.
 > Run the full local gate with **`npm run verify:realtime-security`** before any
 > expansion or staging/prod sign-off.
 >
-> The frozen baseline is **Realtime Pilot RC5** —
+> The frozen baseline is **Realtime Pilot RC6** —
 > `docs/realtime-release-candidate.md`. Confirm the repo still matches it with
 > **`npm run check:realtime-rc`** before staging. Operators follow
 > `docs/realtime-staging-operator-guide.md` to execute the staging verification.
@@ -184,14 +184,40 @@ public sanitizer); a realtime failure can never break match reporting.
   `shouldRefreshMatchFromRealtimeEvent`
   (`components/match/matchRealtimeUtils.ts`) matches the mounted match. The
   socket event is never trusted for UI state.
-- **Still polling-only:** all other match events (`confirmed`, `disputed`,
-  `advanced`, `game_completed`, `room_linked`, `checkin_updated`,
-  `proof_synced`, `communication_updated`),
+- **Still polling-only:** all other match events (`confirmed` — wired in RC6,
+  see below — `disputed`, `advanced`, `game_completed`, `room_linked`,
+  `checkin_updated`, `proof_synced`, `communication_updated`),
   `tournament.registrationStatus.updated`, registrations, notifications,
   profiles, teams.
 - **Production remains disabled**, **anonymous browser realtime remains
   disabled**, and the DB-polling fallback remains active for all visitors.
-  RC5 requires its own Preview verification before any production decision.
+
+## Sixth pilot: tournament.match.confirmed (Batch 6A — RC6)
+
+The shared `emitMatchEvent` helper in `lib/tournamentMatchEngine.ts` (already
+an approved emitter file) dispatches `tournament.match.confirmed` after its
+existing DB `RealtimeEvent` write — guarded to exactly this event + public
+audience, so **one dispatch site** covers every confirmation path:
+auto-confirm (matching reports), admin confirm, FACEIT auto-result, and admin
+override. Also flag-gated, `after()`-scheduled, ID-only
+(`{ tournamentId, matchId }` — winner team, admin/confirmer IDs, FACEIT flags,
+scores, team names, and comments never reach the dispatch and are stripped by
+the public sanitizer regardless); a realtime failure can never break match
+confirmation.
+
+- **Rooms:** unchanged — the mapper's pre-existing public match-event routing
+  targets `match:{matchId}` + the parent `tournament:{tournamentId}`; the
+  tournament-details refresh helper ignores match events.
+- **Consumer:** unchanged — `MatchRealtimeRefresh` already joins the room; the
+  refresh-decision helper now also accepts `tournament.match.confirmed` for
+  the mounted match. Same debounced `router.refresh()`; no visual change.
+- **Still polling-only:** `tournament.match.disputed`, `advanced`,
+  `game_completed`, `room_linked`, `checkin_updated`, `proof_synced`,
+  `communication_updated`, `tournament.registrationStatus.updated`,
+  registrations, notifications, profiles, teams.
+- **Production remains disabled**, **anonymous browser realtime remains
+  disabled**, and the DB-polling fallback remains active for all visitors.
+  RC6 requires its own Preview verification before any production decision.
 
 ## Enabling live leaderboard socket refresh
 

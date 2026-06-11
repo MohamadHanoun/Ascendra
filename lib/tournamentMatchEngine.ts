@@ -74,6 +74,24 @@ async function emitMatchEvent(
       ...(extra ?? {}),
     },
   });
+
+  // RC6 pilot (Batch 6A) — ONLY tournament.match.confirmed from this shared
+  // emitter (covers every confirmation path: auto-confirm, admin confirm,
+  // FACEIT auto-result, admin override). All other match events stay
+  // polling-only. Additive and flag-gated (no-op unless
+  // REALTIME_ENABLE_SOCKET === "true"); scheduled via Next.js after() so it
+  // never blocks or fails match confirmation. The DB RealtimeEvent above
+  // remains the source of truth. Minimal, ID-only payload — the `extra`
+  // fields (winner/admin/FACEIT details) are never passed to the dispatch.
+  if (type === "tournament.match.confirmed" && audience === "public") {
+    dispatchRealtimeEventSoon({
+      type: "tournament.match.confirmed",
+      audience: "public",
+      entityType: "tournamentMatch",
+      entityId: matchId,
+      payload: { tournamentId, matchId },
+    });
+  }
 }
 
 async function awardFinalTournamentResults(tournamentId: string) {

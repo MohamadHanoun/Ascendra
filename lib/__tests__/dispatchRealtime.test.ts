@@ -251,7 +251,7 @@ describe("dispatchRealtimeEvent — routing", () => {
     }
   });
 
-  it("maps tournament.match.confirmed to match + tournament rooms", async () => {
+  it("sends tournament.match.confirmed to its match + tournament rooms with an ID-only payload", async () => {
     const fetchMock = mockFetchOk();
     enableBridge();
 
@@ -263,9 +263,62 @@ describe("dispatchRealtimeEvent — routing", () => {
       payload: { matchId: "match789", tournamentId: "tour123" },
     });
 
+    // The mapper intentionally targets BOTH the match room and its parent
+    // tournament room for public match events (pre-existing behavior).
     expect(result.rooms).toEqual(["match:match789", "tournament:tour123"]);
     const body = lastFetchBody(fetchMock);
     expect(body.rooms).toEqual(["match:match789", "tournament:tour123"]);
+    expect(body.payload).toEqual({
+      tournamentId: "tour123",
+      matchId: "match789",
+      entityType: "tournamentMatch",
+      entityId: "match789",
+    });
+  });
+
+  it("strips winner/admin/score fields from a public tournament.match.confirmed payload", async () => {
+    const fetchMock = mockFetchOk();
+    enableBridge();
+
+    const result = await dispatchRealtimeEvent({
+      type: "tournament.match.confirmed",
+      audience: "public",
+      entityType: "tournamentMatch",
+      entityId: "match789",
+      payload: {
+        tournamentId: "tour123",
+        matchId: "match789",
+        winnerTeamId: "team456",
+        adminUserId: "admin123",
+        faceitAutoConfirm: true,
+        teamAScore: 13,
+        teamBScore: 7,
+        teamName: "Shadow Wolves",
+        comment: "confirmed by admin",
+      },
+    });
+
+    expect(result.ok).toBe(true);
+
+    const body = lastFetchBody(fetchMock);
+    const payload = body.payload as Record<string, unknown>;
+    expect(payload).toEqual({
+      tournamentId: "tour123",
+      matchId: "match789",
+      entityType: "tournamentMatch",
+      entityId: "match789",
+    });
+    for (const forbidden of [
+      "winnerTeamId",
+      "adminUserId",
+      "faceitAutoConfirm",
+      "teamAScore",
+      "teamBScore",
+      "teamName",
+      "comment",
+    ]) {
+      expect(payload).not.toHaveProperty(forbidden);
+    }
   });
 
   it("sanitizes a public registration payload (no rejectionReason/teamName) before send", async () => {
