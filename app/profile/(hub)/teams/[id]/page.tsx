@@ -427,7 +427,7 @@ function Pill({
   tone = "accent",
 }: {
   label: string;
-  tone?: "green" | "blue" | "red" | "gray" | "accent";
+  tone?: "green" | "bronze" | "red" | "gray" | "accent";
 }) {
   const styleMap: Record<string, CSSProperties> = {
     green: {
@@ -435,10 +435,10 @@ function Pill({
       borderColor: "var(--asc-green-border)",
       background: "var(--asc-green-bg)",
     },
-    blue: {
-      color: "var(--asc-blue)",
-      borderColor: "var(--asc-blue-border)",
-      background: "var(--asc-blue-bg)",
+    bronze: {
+      color: "var(--asc-amber)",
+      borderColor: "var(--asc-amber-border)",
+      background: "var(--asc-amber-bg)",
     },
     red: {
       color: "var(--asc-live)",
@@ -481,23 +481,23 @@ function StatusBadge({
   }
 
   if (normalizedStatus === "leader") {
-    return <Pill label={messages.common.leader} tone="green" />;
+    return <Pill label={messages.common.leader} tone="accent" />;
   }
 
   if (normalizedStatus === "member") {
-    return <Pill label={messages.common.member} tone="accent" />;
+    return <Pill label={messages.common.member} tone="gray" />;
   }
 
   if (normalizedStatus === "pending") {
-    return <Pill label={messages.common.pending} tone="blue" />;
+    return <Pill label={messages.common.pending} tone="bronze" />;
   }
 
   if (normalizedStatus === "invited") {
-    return <Pill label={messages.common.invited} tone="blue" />;
+    return <Pill label={messages.common.invited} tone="bronze" />;
   }
 
   if (normalizedStatus === "locked") {
-    return <Pill label={messages.common.locked} tone="blue" />;
+    return <Pill label={messages.common.locked} tone="bronze" />;
   }
 
   if (normalizedStatus === "rejected") {
@@ -505,29 +505,6 @@ function StatusBadge({
   }
 
   return <Pill label={status} tone="gray" />;
-}
-
-function HeroStat({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: ReactNode;
-  accent?: boolean;
-}) {
-  return (
-    <div className="asc-profile-stat">
-      <p className="asc-profile-stat__label">{label}</p>
-      <p
-        className={`asc-profile-stat__value tabular-nums ${
-          accent ? "asc-profile-stat__value--accent" : ""
-        }`}
-      >
-        {value}
-      </p>
-    </div>
-  );
 }
 
 // Compact, connected "Command Metrics Rail" used in the team hero. Renders as a
@@ -859,6 +836,10 @@ export default async function TeamDetailsPage({
 
                   <div className="mt-5 flex flex-wrap gap-2">
                     <StatusBadge status={team.status} messages={messages} />
+                    <StatusBadge
+                      status={isLeader ? "Leader" : "Member"}
+                      messages={messages}
+                    />
                     <Pill label={team.game?.name ?? "—"} />
                     <Pill
                       label={`${team.members.length} ${getCountLabel(
@@ -882,7 +863,7 @@ export default async function TeamDetailsPage({
                           messages.common.pendingInvite,
                           messages.common.pendingInvites,
                         )}`}
-                        tone="blue"
+                        tone="bronze"
                       />
                     )}
                   </div>
@@ -890,7 +871,7 @@ export default async function TeamDetailsPage({
                   {activeRegistration && (
                     <p
                       className="mt-5 max-w-3xl text-sm leading-6"
-                      style={{ color: "var(--asc-blue)" }}
+                      style={{ color: "var(--asc-amber)" }}
                     >
                       {messages.hero.lockedWhileRegistered}{" "}
                       <Link
@@ -954,21 +935,6 @@ export default async function TeamDetailsPage({
                 </div>
               </div>
 
-              <div className="asc-profile-stat-rail asc-profile-stat-rail--4 mt-8">
-                <HeroStat
-                  label={messages.common.members}
-                  value={team.members.length}
-                />
-                <HeroStat
-                  label={messages.common.invites}
-                  value={team.invites.length}
-                />
-                <HeroStat label={messages.common.points} value={totalTeamPoints} />
-                <HeroStat
-                  label={messages.common.best}
-                  value={bestPlacement ? `#${bestPlacement}` : "—"}
-                />
-              </div>
             </section>
           </div>
         </section>
@@ -1102,7 +1068,7 @@ export default async function TeamDetailsPage({
                   {!isLeader && !isTeamLocked && (
                     <div
                       className="pt-6"
-                      style={{ borderTop: "1px solid var(--asc-line-soft)" }}
+                      style={{ borderTop: "1px solid var(--asc-live-border)" }}
                     >
                       <InlineTeamActionForm
                         action={leaveTeamInline}
@@ -1127,7 +1093,7 @@ export default async function TeamDetailsPage({
                     <div
                       className="pt-6"
                       style={{
-                        borderTop: "1px solid oklch(0.50 0.20 25 / 0.30)",
+                        borderTop: "1px solid var(--asc-live-border)",
                       }}
                     >
                       <InlineTeamActionForm
@@ -1169,7 +1135,7 @@ export default async function TeamDetailsPage({
                     {team.results.map((result, index) => (
                       <article
                         key={result.id}
-                        className="asc-profile-row grid gap-4 px-6 py-5 md:grid-cols-[minmax(0,1fr)_90px_100px] md:items-center"
+                        className="asc-profile-row grid gap-3 px-5 py-4 md:grid-cols-[minmax(0,1fr)_90px_100px] md:items-center"
                         style={
                           index < team.results.length - 1
                             ? { borderBottom: "1px solid var(--asc-line-soft)" }
@@ -1239,7 +1205,7 @@ export default async function TeamDetailsPage({
                     return (
                       <div
                         key={member.id}
-                        className="asc-profile-row grid gap-4 px-6 py-5"
+                        className="asc-profile-row grid gap-3 px-5 py-4"
                         style={{
                           borderBottom:
                             index < team.members.length - 1 ||
@@ -1350,7 +1316,7 @@ export default async function TeamDetailsPage({
                   {team.invites.map((invite, index) => (
                     <div
                       key={invite.id}
-                      className="asc-profile-row grid gap-4 px-6 py-5"
+                      className="asc-profile-row grid gap-3 px-5 py-4"
                       style={{
                         borderBottom:
                           index < team.invites.length - 1
