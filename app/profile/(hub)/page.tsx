@@ -2,7 +2,6 @@ import ProfileNotice from "@/components/ProfileNotice";
 import { OverviewPanel } from "@/components/profile/OverviewPanel";
 import { getLocale } from "@/lib/i18nServer";
 import {
-  getBestPlacement,
   getUserTournamentResultWhere,
   profilePointEventSelect,
   profileTournamentResultSelect,
@@ -27,22 +26,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     requireProfileUserId(),
   ]);
 
-  const [
-    teamsCount,
-    invitationCount,
-    tournamentResults,
-    rankingPointsAgg,
-    rawPointEvents,
-  ] = await Promise.all([
-    prisma.team.count({
-      where: {
-        members: {
-          some: {
-            userId,
-          },
-        },
-      },
-    }),
+  const [invitationCount, tournamentResults, rawPointEvents] = await Promise.all([
     prisma.teamInvite.count({
       where: {
         invitedUserId: userId,
@@ -54,14 +38,6 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       select: profileTournamentResultSelect,
       orderBy: {
         awardedAt: "desc",
-      },
-    }),
-    prisma.rankingPointEvent.aggregate({
-      where: {
-        userId,
-      },
-      _sum: {
-        points: true,
       },
     }),
     prisma.rankingPointEvent.findMany({
@@ -82,17 +58,10 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       <ProfileNotice message={params.message} error={params.error} />
       <OverviewPanel
         tournamentResults={serializeTournamentResults(tournamentResults)}
-        teamsCount={teamsCount}
         invitationCount={invitationCount}
         pointEvents={serializePointEvents(rawPointEvents)}
-        rankingPoints={rankingPointsAgg._sum.points ?? 0}
-        bestPlacement={getBestPlacement(tournamentResults)}
         labels={messages.labels}
         sectionLabels={messages.sections}
-        heroLabels={{
-          team: messages.hero.team,
-          teams: messages.hero.teams,
-        }}
       />
     </div>
   );
