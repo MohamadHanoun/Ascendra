@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import ProfileNotice from "@/components/ProfileNotice";
 import AccountPanel from "@/components/profile/AccountPanel";
+import type { Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18nServer";
 import {
   profileAccountUserSelect,
@@ -15,6 +16,20 @@ import {
 import { profileMessages } from "@/lib/profile/profileMessages";
 import { prisma } from "@/lib/prisma";
 
+function getSettingsPageText(locale: Locale) {
+  return locale === "ar"
+    ? {
+        title: "إعدادات الحساب",
+        description:
+          "إدارة ملفك الشخصي، والارتباطات، والخصوصية، والتفضيلات.",
+      }
+    : {
+        title: "Account & Settings",
+        description:
+          "Manage your profile, connections, privacy, and preferences.",
+      };
+}
+
 type ProfileSettingsPageProps = {
   searchParams: Promise<{
     message?: string;
@@ -24,11 +39,11 @@ type ProfileSettingsPageProps = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
-  const messages = profileMessages[locale];
+  const pageText = getSettingsPageText(locale);
 
   return {
-    title: messages.sections.accountTitle,
-    description: messages.sections.preferencesDesc,
+    title: pageText.title,
+    description: pageText.description,
   };
 }
 
@@ -70,6 +85,7 @@ export default async function ProfileSettingsPage({
   }
 
   const messages = profileMessages[locale];
+  const pageText = getSettingsPageText(locale);
 
   return (
     <main
@@ -79,22 +95,26 @@ export default async function ProfileSettingsPage({
       <div className="relative z-10">
         <Navbar />
 
-        <section className="relative mx-auto max-w-[1320px] px-4 pb-24 pt-24 sm:px-6 lg:px-10 lg:pt-28">
-          <div className="mb-8 grid gap-3">
+        <section
+          aria-labelledby="profile-settings-title"
+          className="relative mx-auto max-w-[1440px] px-4 pb-24 pt-24 sm:px-6 lg:px-10 lg:pt-28"
+        >
+          <div className="mb-10 grid max-w-4xl gap-3">
             <p className="asc-profile-eyebrow">
-              {messages.sections.accountTitle}
+              {pageText.title}
             </p>
             <h1
-              className="text-4xl font-black leading-none sm:text-5xl"
+              id="profile-settings-title"
+              className="text-4xl font-black leading-none sm:text-5xl lg:text-6xl"
               style={{ color: "var(--asc-fg-0)" }}
             >
-              {messages.sections.accountTitle}
+              {pageText.title}
             </h1>
             <p
-              className="max-w-3xl text-sm leading-6"
+              className="max-w-2xl text-base leading-7"
               style={{ color: "var(--asc-fg-3)" }}
             >
-              {messages.sections.preferencesDesc}
+              {pageText.description}
             </p>
           </div>
 
