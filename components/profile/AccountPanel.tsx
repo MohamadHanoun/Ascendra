@@ -216,20 +216,7 @@ export default function AccountPanel({
   ];
 
   return (
-    <div className="grid gap-7">
-      <div className="grid gap-2">
-        <p className="asc-profile-eyebrow">
-          {messages.sections.accountTitle}
-        </p>
-        <h2 className="asc-profile-section-title">
-          {messages.sections.accountTitle}
-        </h2>
-        <p className="max-w-3xl text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
-          {messages.sections.preferencesDesc}
-        </p>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[220px_minmax(0,1fr)] xl:items-start">
+    <div className="grid gap-6 xl:grid-cols-[220px_minmax(0,1fr)] xl:items-start">
         <SettingsSidebar
           items={settingsNavItems}
           label={messages.sections.accountTitle}
@@ -508,7 +495,6 @@ export default function AccountPanel({
             </Card>
           </SettingsSection>
         </div>
-      </div>
     </div>
   );
 }
