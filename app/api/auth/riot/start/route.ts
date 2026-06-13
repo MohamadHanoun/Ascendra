@@ -59,7 +59,7 @@ export async function GET(request: Request) {
   const rsoConfig = getRiotRsoConfig();
 
   if (!rsoConfig) {
-    const profileUrl = new URL("/profile", request.url);
+    const profileUrl = new URL("/profile/settings", request.url);
     profileUrl.searchParams.set("error", messages.notConfigured);
     return NextResponse.redirect(profileUrl);
   }

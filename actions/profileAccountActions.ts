@@ -137,6 +137,7 @@ export async function unlinkSteamAccount(
   });
 
   revalidatePath("/profile");
+  revalidatePath("/profile/settings");
   return success(messages.steamUnlinked);
 }
 
@@ -172,6 +173,7 @@ export async function unlinkRiotAccount(
   }).catch(() => undefined);
 
   revalidatePath("/profile");
+  revalidatePath("/profile/settings");
   return success(messages.riotUnlinked);
 }
 
@@ -236,6 +238,7 @@ export async function connectFaceitAccount(
   });
 
   revalidatePath("/profile");
+  revalidatePath("/profile/settings");
   return success(messages.faceitLinked);
 }
 
@@ -270,5 +273,6 @@ export async function unlinkFaceitAccount(
   });
 
   revalidatePath("/profile");
+  revalidatePath("/profile/settings");
   return success(messages.faceitUnlinked);
 }

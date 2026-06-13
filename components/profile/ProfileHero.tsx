@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import Link from "next/link";
 
 import ProfileIdentityActions from "@/components/ProfileIdentityActions";
 import { CornerMark } from "@/components/profile/shared";
@@ -166,6 +167,12 @@ export default function ProfileHero({
               </p>
 
               <ProfileIdentityActions discordId={discordId} />
+              <Link
+                href="/profile/settings"
+                className="asc-profile-action asc-profile-action--ghost px-4 py-2 text-xs tracking-[0.10em]"
+              >
+                {messages.sections.accountTitle}
+              </Link>
             </div>
           </div>
 

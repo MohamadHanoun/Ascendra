@@ -75,7 +75,7 @@ export async function GET(request: Request) {
   // CSRF nonce signed with a server-side secret so the callback can verify it.
   const secret = process.env.STEAM_OPENID_SECRET?.trim();
   if (!secret) {
-    const errUrl = new URL("/profile", appBaseUrl);
+    const errUrl = new URL("/profile/settings", appBaseUrl);
     errUrl.searchParams.set("error", messages.notConfigured);
     return NextResponse.redirect(errUrl);
   }
