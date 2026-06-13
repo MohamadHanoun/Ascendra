@@ -32,6 +32,7 @@ export type ProfileMessages = {
     noPendingInvitations: string;
     myTeams: string;
     teamsLead: string;
+    matchesLead: string;
     teamOverview: string;
     noTeamsTitle: string;
     noTeamsDescription: string;
@@ -137,6 +138,7 @@ export type ProfileMessages = {
   activeMatches: {
     heading: string;
     empty: string;
+    emptyWithFollowUps: string;
     tournament: string;
     yourTeam: string;
     opponent: string;
@@ -177,6 +179,7 @@ export type ProfileMessages = {
     approvedWaiting: string;
     upcomingScheduled: string;
     nextUp: string;
+    followUps: string;
     registrations: string;
     noTasksTitle: string;
     noTasksDescription: string;
@@ -189,6 +192,7 @@ export type ProfileMessages = {
     rejected: string;
     cancelled: string;
     matchReady: string;
+    viewUpdate: string;
   };
 };
 
@@ -225,6 +229,7 @@ export const profileMessages: Record<Locale, ProfileMessages> = {
       noPendingInvitations: "No pending invitations.",
       myTeams: "My teams",
       teamsLead: "Manage your teams and invitations.",
+      matchesLead: "Track your active matches, reports, and upcoming tournament tasks.",
       teamOverview: "Team overview",
       noTeamsTitle: "No teams yet",
       noTeamsDescription: "Create your first team from the section below.",
@@ -334,6 +339,8 @@ export const profileMessages: Record<Locale, ProfileMessages> = {
     activeMatches: {
       heading: "My active matches",
       empty: "You do not have active tournament matches yet.",
+      emptyWithFollowUps:
+        "No active matches are currently assigned. Tournament follow-ups are shown below.",
       tournament: "Tournament",
       yourTeam: "Your team",
       opponent: "Opponent",
@@ -374,6 +381,7 @@ export const profileMessages: Record<Locale, ProfileMessages> = {
       approvedWaiting: "Approved waiting",
       upcomingScheduled: "Scheduled matches",
       nextUp: "Next up",
+      followUps: "Tournament follow-ups",
       registrations: "Registrations",
       noTasksTitle: "No tournament tasks right now.",
       noTasksDescription:
@@ -387,6 +395,7 @@ export const profileMessages: Record<Locale, ProfileMessages> = {
       rejected: "Rejected",
       cancelled: "Cancelled",
       matchReady: "Match ready",
+      viewUpdate: "View update",
     },
   },
 
@@ -422,6 +431,7 @@ export const profileMessages: Record<Locale, ProfileMessages> = {
       noPendingInvitations: "لا توجد دعوات معلقة.",
       myTeams: "فرقي",
       teamsLead: "أدر فرقك ودعواتك.",
+      matchesLead: "تابع مبارياتك النشطة والتقارير ومهام البطولات القادمة.",
       teamOverview: "نظرة عامة على الفرق",
       noTeamsTitle: "لا توجد فرق بعد",
       noTeamsDescription: "أنشئ فريقك الأول من القسم الموجود بالأسفل.",
@@ -531,6 +541,8 @@ export const profileMessages: Record<Locale, ProfileMessages> = {
     activeMatches: {
       heading: "مبارياتي النشطة",
       empty: "لا توجد لديك مباريات نشطة حاليًا.",
+      emptyWithFollowUps:
+        "لا توجد مباريات نشطة مخصّصة حاليًا. تظهر متابعات البطولات بالأسفل.",
       tournament: "البطولة",
       yourTeam: "فريقك",
       opponent: "الخصم",
@@ -571,6 +583,7 @@ export const profileMessages: Record<Locale, ProfileMessages> = {
       approvedWaiting: "مقبولة بانتظار القوس",
       upcomingScheduled: "مباريات مجدولة",
       nextUp: "التالي",
+      followUps: "متابعات البطولات",
       registrations: "التسجيلات",
       noTasksTitle: "لا توجد مهام بطولة حاليًا.",
       noTasksDescription: "ستظهر هنا المباريات النشطة وتحديثات التسجيل.",
@@ -583,6 +596,7 @@ export const profileMessages: Record<Locale, ProfileMessages> = {
       rejected: "مرفوض",
       cancelled: "ملغى",
       matchReady: "المباراة جاهزة",
+      viewUpdate: "عرض التحديث",
     },
   },
 };
