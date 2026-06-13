@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import type { AdminRegistrationActionResult } from "@/actions/adminRegistrationInlineActions";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import { dispatchRealtimeEventSoon } from "@/lib/realtime/dispatchRealtime";
 
 function success(message: string): AdminRegistrationActionResult {
   return {
@@ -110,6 +111,16 @@ function needsDiscordAccessRemove(registration: {
     Boolean(registration.discordRoleId) ||
     Boolean(registration.discordChannelId)
   );
+}
+
+function dispatchRegistrationUpdatedRealtime(tournamentId: string) {
+  dispatchRealtimeEventSoon({
+    type: "tournament.registration.updated",
+    audience: "public",
+    entityType: "tournament",
+    entityId: tournamentId,
+    payload: { tournamentId },
+  });
 }
 
 export async function forceSyncRegistrationDiscordAccess(
@@ -235,6 +246,8 @@ export async function forceSyncRegistrationDiscordAccess(
     }),
   ]);
 
+  dispatchRegistrationUpdatedRealtime(registration.tournamentId);
+
   revalidatePath("/admin");
   revalidatePath(`/tournaments/${registration.tournamentId}`);
   revalidatePath("/profile");
@@ -352,6 +365,8 @@ export async function forceRemoveRegistrationDiscordAccess(
       },
     }),
   ]);
+
+  dispatchRegistrationUpdatedRealtime(registration.tournamentId);
 
   revalidatePath("/admin");
   revalidatePath(`/tournaments/${registration.tournamentId}`);

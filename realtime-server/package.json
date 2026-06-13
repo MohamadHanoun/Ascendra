@@ -1,0 +1,33 @@
+{
+  "name": "ascendra-realtime-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone Ascendra realtime server (Hetzner + Socket.IO). Independent package — must NOT import Next.js app code.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "npm@11.12.1",
+  "scripts": {
+    "dev": "node --watch src/server.mjs",
+    "start": "node src/server.mjs",
+    "test:e2e": "node scripts/run-e2e.mjs",
+    "preflight": "node scripts/preflight.mjs",
+    "dry-run:check": "node scripts/dry-run-check.mjs",
+    "smoke:event": "node scripts/smoke-event.mjs",
+    "status:check": "node scripts/status-check.mjs",
+    "expansion:gate": "node scripts/expansion-gate.mjs",
+    "audit": "npm audit --omit=optional",
+    "audit:prod": "npm audit --omit=dev --omit=optional",
+    "deps:check": "npm ls --all"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.0",
+    "express": "^4.21.0",
+    "socket.io": "^4.8.0"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.0"
+  }
+}

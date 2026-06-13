@@ -79,6 +79,7 @@ export async function updateProfilePrivacy(
   }
 
   revalidatePath("/profile");
+  revalidatePath("/profile/settings");
   revalidatePath(`/players/${userId}`);
 
   return { ok: true, message: messages.saved };
@@ -204,6 +205,7 @@ export async function updateProfileInfo(
   }
 
   revalidatePath("/profile");
+  revalidatePath("/profile/settings");
   revalidatePath(`/players/${userId}`);
 
   return { ok: true, message: messages.saved };

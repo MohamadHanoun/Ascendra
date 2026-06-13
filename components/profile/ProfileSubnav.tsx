@@ -104,7 +104,6 @@ export default function ProfileSubnav({
   const pathname = usePathname() || "/profile";
   const items: ProfileSubnavItem[] = [
     { href: "/profile", label: labels.overview },
-    { href: "/profile/account", label: labels.account },
     {
       href: "/profile/teams",
       label: labels.teams,

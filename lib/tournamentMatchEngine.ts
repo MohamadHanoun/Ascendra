@@ -9,6 +9,7 @@ import {
 
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import { dispatchRealtimeEventSoon } from "@/lib/realtime/dispatchRealtime";
 import { isSupportedTournamentFormat } from "@/lib/tournamentFormatSupport";
 import {
   notifyBracketAdvanced,
@@ -73,6 +74,40 @@ async function emitMatchEvent(
       ...(extra ?? {}),
     },
   });
+
+  // RC6 pilot (Batch 6A) — ONLY tournament.match.confirmed from this shared
+  // emitter (covers every confirmation path: auto-confirm, admin confirm,
+  // FACEIT auto-result, admin override). All other match events stay
+  // polling-only. Additive and flag-gated (no-op unless
+  // REALTIME_ENABLE_SOCKET === "true"); scheduled via Next.js after() so it
+  // never blocks or fails match confirmation. The DB RealtimeEvent above
+  // remains the source of truth. Minimal, ID-only payload — the `extra`
+  // fields (winner/admin/FACEIT details) are never passed to the dispatch.
+  if (type === "tournament.match.confirmed" && audience === "public") {
+    dispatchRealtimeEventSoon({
+      type: "tournament.match.confirmed",
+      audience: "public",
+      entityType: "tournamentMatch",
+      entityId: matchId,
+      payload: { tournamentId, matchId },
+    });
+  }
+
+  // RC7 pilot (Batch 7A) — ONLY tournament.match.advanced additionally
+  // (bracket progression, emitted by advanceBracketAfterMatch). Same
+  // guarantees as above: flag-gated, after()-scheduled, never blocks or fails
+  // bracket advancement; DB RealtimeEvent stays the source of truth.
+  // Minimal, ID-only payload — `extra` (nextMatchId/slot) never reaches the
+  // dispatch.
+  if (type === "tournament.match.advanced" && audience === "public") {
+    dispatchRealtimeEventSoon({
+      type: "tournament.match.advanced",
+      audience: "public",
+      entityType: "tournamentMatch",
+      entityId: matchId,
+      payload: { tournamentId, matchId },
+    });
+  }
 }
 
 async function awardFinalTournamentResults(tournamentId: string) {
@@ -334,6 +369,19 @@ export async function createMatchesForTournament(
     payload: { tournamentId, totalMatches: created.length, rounds: totalRounds },
   });
 
+  // RC3 pilot (Batch 3A) — ONLY tournament.bracket.generated from this file.
+  // Additive and flag-gated (no-op unless REALTIME_ENABLE_SOCKET === "true");
+  // scheduled via Next.js after() so it never blocks or fails bracket
+  // generation. The DB RealtimeEvent above remains the source of truth.
+  // Minimal, ID-only payload.
+  dispatchRealtimeEventSoon({
+    type: "tournament.bracket.generated",
+    audience: "public",
+    entityType: "tournament",
+    entityId: tournamentId,
+    payload: { tournamentId },
+  });
+
   return ok({
     created: created.length,
     rounds: totalRounds,
@@ -586,6 +634,22 @@ export async function submitManualMatchReport(
       disputed: created.disputed,
     },
   );
+
+  // RC5 pilot (Batch 5A) — ONLY tournament.match.report_submitted from this
+  // site (the auto-confirmed / disputed outcomes stay polling-only). Additive
+  // and flag-gated (no-op unless REALTIME_ENABLE_SOCKET === "true"); scheduled
+  // via Next.js after() so it never blocks or fails match reporting. The DB
+  // RealtimeEvent above remains the source of truth. Minimal, ID-only payload
+  // (no scores, proofs, reporter/team identifiers).
+  if (!created.autoConfirmed && !created.disputed) {
+    dispatchRealtimeEventSoon({
+      type: "tournament.match.report_submitted",
+      audience: "public",
+      entityType: "tournamentMatch",
+      entityId: input.matchId,
+      payload: { tournamentId: match.tournamentId, matchId: input.matchId },
+    });
+  }
 
   await notifyManualResultSubmitted(match, input.teamId, created.reportId);
 

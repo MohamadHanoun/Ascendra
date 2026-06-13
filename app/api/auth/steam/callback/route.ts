@@ -145,7 +145,7 @@ function redirect(
 }
 
 function fail(baseUrl: string, error: string) {
-  return redirect(baseUrl, "/profile", { error });
+  return redirect(baseUrl, "/profile/settings", { error });
 }
 
 async function writeAudit(opts: {
@@ -377,7 +377,7 @@ export async function GET(request: Request) {
     ok: true,
   });
 
-  return redirect(baseUrl, "/profile", {
+  return redirect(baseUrl, "/profile/settings", {
     message: displayName
       ? messages.linkedWithName.replace("{name}", displayName)
       : messages.linked,

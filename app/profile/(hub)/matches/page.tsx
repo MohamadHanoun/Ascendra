@@ -131,20 +131,41 @@ export default async function ProfileMatchesPage() {
   ]);
   const messages = profileMessages[locale];
 
+  const hasFollowUps = tournamentRegistrationTasks.length > 0;
+  // When the player has no active matches but does have tournament follow-ups,
+  // clarify the empty state so it does not read as a contradiction with the
+  // follow-up tasks shown below.
+  const activeMatchMessages =
+    activeMatches.length === 0 && hasFollowUps
+      ? {
+          ...messages.activeMatches,
+          empty: messages.activeMatches.emptyWithFollowUps,
+        }
+      : messages.activeMatches;
+
   return (
     <div className="grid gap-6">
-      <TournamentTasksPanel
-        activeMatches={activeMatches}
-        registrations={tournamentRegistrationTasks}
-        messages={messages.tournamentTasks}
-        activeMatchMessages={messages.activeMatches}
-        locale={locale}
-      />
+      <header className="flex flex-col gap-2">
+        <h2 className="asc-profile-section-title" style={{ marginTop: 0 }}>
+          {messages.tabLabels.matches}
+        </h2>
+        <p className="text-sm leading-6" style={{ color: "var(--asc-fg-3)" }}>
+          {messages.sections.matchesLead}
+        </p>
+      </header>
+
       <ActiveMatchesPanel
         cards={activeMatches}
-        messages={messages.activeMatches}
+        messages={activeMatchMessages}
         locale={locale}
       />
+
+      {hasFollowUps && (
+        <TournamentTasksPanel
+          registrations={tournamentRegistrationTasks}
+          messages={messages.tournamentTasks}
+        />
+      )}
     </div>
   );
 }

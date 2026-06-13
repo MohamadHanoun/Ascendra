@@ -77,10 +77,6 @@ export default async function ProfileTeamsPage() {
       labels={messages.labels}
       sectionLabels={messages.sections}
       statuses={messages.statuses}
-      heroLabels={{
-        team: messages.hero.team,
-        teams: messages.hero.teams,
-      }}
     />
   );
 }

@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import SectionReveal from "@/components/SectionReveal";
 import CommandRail from "@/components/public/CommandRail";
 import TournamentsRealtimeRefresh from "@/components/TournamentsRealtimeRefresh";
+import TournamentsListRealtime from "@/components/TournamentsListRealtime";
 import ProfileNotice from "@/components/ProfileNotice";
 import {
   getDictionary,
@@ -1154,6 +1155,7 @@ export default async function TournamentsPage({
         <Footer />
       </div>
       <TournamentsRealtimeRefresh />
+      <TournamentsListRealtime />
     </main>
   );
 }

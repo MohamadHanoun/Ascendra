@@ -115,7 +115,7 @@ function redirect(baseUrl: string, path: string, params: Record<string, string>)
 }
 
 function fail(baseUrl: string, error: string) {
-  return redirect(baseUrl, "/profile", { error });
+  return redirect(baseUrl, "/profile/settings", { error });
 }
 
 export async function GET(request: Request) {
@@ -345,7 +345,7 @@ export async function GET(request: Request) {
     },
   });
 
-  return redirect(baseUrl, "/profile", {
+  return redirect(baseUrl, "/profile/settings", {
     message: displayName
       ? messages.linkedWithName.replace("{name}", displayName)
       : messages.linked,

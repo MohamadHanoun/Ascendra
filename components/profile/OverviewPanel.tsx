@@ -5,7 +5,6 @@ import { PointHistoryChart } from "@/components/profile/PointHistoryChart";
 import { Card, Pill } from "@/components/profile/shared";
 import type {
   PointEvent,
-  ProfileHeroLabels,
   ProfileLabels,
   ProfileSectionLabels,
   TournamentResult,
@@ -13,36 +12,21 @@ import type {
 
 export function OverviewPanel({
   tournamentResults,
-  teamsCount,
   invitationCount,
   pointEvents,
-  rankingPoints,
-  bestPlacement,
   labels,
   sectionLabels,
-  heroLabels,
 }: {
   tournamentResults: TournamentResult[];
-  teamsCount: number;
   invitationCount: number;
   pointEvents: PointEvent[];
-  rankingPoints: number;
-  bestPlacement: number | null;
   labels: ProfileLabels;
   sectionLabels: ProfileSectionLabels;
-  heroLabels: ProfileHeroLabels;
 }) {
-  const stats: Array<{ label: string; value: string; accent?: boolean }> = [
-    { label: sectionLabels.tableColPts, value: rankingPoints.toLocaleString(), accent: true },
-    { label: labels.results, value: String(tournamentResults.length) },
-    { label: labels.best, value: bestPlacement ? `#${bestPlacement}` : "—" },
-    { label: heroLabels.teams, value: String(teamsCount) },
-  ];
-
   const chartData = buildChartData(pointEvents);
 
   return (
-    <div className="grid gap-7">
+    <div className="grid gap-6">
       {invitationCount > 0 && (
         <div
           className="asc-profile-alert flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5"
@@ -59,24 +43,6 @@ export function OverviewPanel({
         </div>
       )}
 
-      <div className="asc-profile-stat-rail asc-profile-stat-rail--4">
-        {stats.map(({ label, value, accent }) => (
-          <div
-            key={label}
-            className="asc-profile-stat"
-          >
-            <p className="asc-profile-stat__label">
-              {label}
-            </p>
-            <p
-              className={`asc-profile-stat__value tabular-nums${accent ? " asc-profile-stat__value--accent" : ""}`}
-            >
-              {value}
-            </p>
-          </div>
-        ))}
-      </div>
-
       {/* Chart — shown whenever point events exist, regardless of tournament results */}
       {chartData.length > 0 && (
         <Card>
@@ -90,7 +56,7 @@ export function OverviewPanel({
               {sectionLabels.pointHistoryTitle}
             </h3>
           </div>
-          <div className="p-5 md:p-6">
+          <div className="p-5">
             <PointHistoryChart data={chartData} ptsLabel={sectionLabels.tableColPts} height={160} />
           </div>
         </Card>
@@ -103,6 +69,11 @@ export function OverviewPanel({
             <p className="asc-profile-eyebrow">
               {sectionLabels.recentMatchesEyebrow}
             </p>
+            <h3
+              className="asc-profile-section-title"
+            >
+              {sectionLabels.matchHistoryTitle}
+            </h3>
           </div>
           {tournamentResults.slice(0, 3).map((r) => {
             const date = new Date(r.awardedAt).toLocaleDateString("en-GB", {

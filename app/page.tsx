@@ -4,6 +4,7 @@ import Link from "next/link";
 import LeaderboardAvatar from "@/components/LeaderboardAvatar";
 import Footer from "@/components/Footer";
 import HomeRealtimeRefresh from "@/components/HomeRealtimeRefresh";
+import TournamentsListRealtime from "@/components/TournamentsListRealtime";
 import HeroTextAnimated from "@/components/HeroTextAnimated";
 import HeroScene3DWrapper from "@/components/HeroScene3DWrapper";
 import SectionReveal from "@/components/SectionReveal";
@@ -1479,6 +1480,7 @@ export default async function HomePage() {
         <Footer />
       </div>
       <HomeRealtimeRefresh />
+      <TournamentsListRealtime />
     </main>
   );
 }

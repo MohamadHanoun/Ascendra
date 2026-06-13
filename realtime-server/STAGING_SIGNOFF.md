@@ -1,0 +1,455 @@
+# Realtime Staging Sign-off — Leaderboard Pilot
+
+> ⚠️ **Staging/non-production only.** Completing this checklist verifies the
+> existing `leaderboard.updated` pilot in a staging environment. It does **not**
+> approve production and does **not** authorize enabling any other realtime
+> event. Production go-live is a separate go/no-go decision.
+
+Related: [`PRODUCTION_DRY_RUN.md`](./PRODUCTION_DRY_RUN.md) ·
+[`DEPLOYMENT.md`](./DEPLOYMENT.md) · [`SECURITY.md`](./SECURITY.md) ·
+[`FAILURE_MODES.md`](./FAILURE_MODES.md) · [`THREAT_MODEL.md`](./THREAT_MODEL.md) ·
+[`../docs/realtime-client.md`](../docs/realtime-client.md) ·
+[`../docs/realtime-expansion-checklist.md`](../docs/realtime-expansion-checklist.md).
+
+> **Operator runbook:** for the step-by-step staging execution of RC1, follow
+> [`../docs/realtime-staging-operator-guide.md`](../docs/realtime-staging-operator-guide.md).
+
+> Adding any **new** realtime event requires the expansion checklist + a passing
+> `npm run expansion:gate`. No second event until that is done. Run the full local
+> gate first with `npm run verify:realtime-security` (re-run with
+> `REALTIME_VERIFY_ALLOW_KNOWN_AUDIT=true` if only the known Next/PostCSS audit
+> advisory fails). `status:check` and `smoke:event` remain manual operator
+> commands (they require a running server / secrets).
+
+## 1. Purpose
+
+- Verify the leaderboard realtime pilot end-to-end in staging.
+- Must pass **before** expanding realtime to additional events.
+- Passing this does **not** enable production.
+
+## 2. Scope
+
+**Verify only:**
+- `leaderboard.updated` server emit (from the tournament-result award path)
+- the `leaderboard` room
+- `LeaderboardRealtime` triggering `router.refresh()`
+- existing DB-polling fallback
+
+**Do NOT test or enable:** registration / match / team / notification socket
+events, admin/private rooms in the UI, or production rollout.
+
+## 3. Preconditions
+
+- [ ] Batches 1A–1S committed; `git status` clean.
+- [ ] `npm.cmd run check:realtime-rc` passes — the repo matches the frozen
+      **Realtime Pilot RC1** baseline (`../docs/realtime-release-candidate.md`).
+- [ ] `npm.cmd run verify:realtime-security` passes (use
+      `REALTIME_VERIFY_ALLOW_KNOWN_AUDIT=true` if only the known audit advisory fails).
+- [ ] `npm.cmd run test` green; `npm.cmd run build` green.
+- [ ] `npm.cmd --prefix realtime-server run test:e2e` green.
+- [ ] Staging realtime server deployed **separately from the Discord bot**.
+- [ ] Staging DNS ready (e.g. `realtime-staging.ascendrahub.com`, or a documented
+      equivalent host).
+- [ ] Staging Caddy/TLS working.
+- [ ] `GET /healthz` returns ok; `/internal/status` is protected.
+- [ ] `npm run smoke:event` works against staging.
+- [ ] A Vercel staging/preview environment is available.
+
+## 4. Required env (names only — never values)
+
+**Staging realtime server:** `NODE_ENV`, `PORT`, `REALTIME_EVENT_SECRET`,
+`REALTIME_CLIENT_TOKEN_SECRET`, `REALTIME_STATUS_SECRET`, `ALLOWED_ORIGINS`,
+`ASCENDRA_SITE_URL`, `LOG_LEVEL`, `INTERNAL_EVENTS_RATE_LIMIT_PER_MINUTE`,
+`INTERNAL_EVENTS_REPLAY_WINDOW_SECONDS`.
+
+**Staging Vercel (server-side):** `REALTIME_ENABLE_SOCKET`, `REALTIME_SERVER_URL`,
+`REALTIME_EVENT_SECRET`, `REALTIME_CLIENT_TOKEN_SECRET`,
+`REALTIME_CLIENT_TOKEN_TTL_SECONDS`, `REALTIME_EMIT_TIMEOUT_MS`.
+
+**Staging Vercel (public):** `NEXT_PUBLIC_REALTIME_ENABLE`,
+`NEXT_PUBLIC_REALTIME_URL`.
+
+**Rules:**
+- [ ] `REALTIME_EVENT_SECRET` matches between Vercel staging and the staging server.
+- [ ] `REALTIME_CLIENT_TOKEN_SECRET` matches between both.
+- [ ] `REALTIME_STATUS_SECRET` is distinct from the other two.
+- [ ] No secret in any `NEXT_PUBLIC_*` variable.
+- [ ] Staging secrets are used — **never** production secrets.
+
+## 5. Step-by-step staging test
+
+### A. Server health
+```bash
+curl -fsS https://realtime-staging.ascendrahub.com/healthz
+```
+- [ ] Returns minimal `{ ok, uptimeSeconds, connections }` only (no config/secrets).
+
+### B. Protected status
+```bash
+# Use the env var; never paste the literal secret.
+REALTIME_STATUS_TARGET_URL=https://realtime-staging.ascendrahub.com \
+  REALTIME_STATUS_SECRET=<set-in-env> npm run status:check
+```
+- [ ] Without auth, `/internal/status` returns 401.
+- [ ] With the status secret, counters are visible. No secrets printed.
+
+### C. Smoke event
+```bash
+REALTIME_SMOKE_TARGET_URL=https://realtime-staging.ascendrahub.com \
+  REALTIME_EVENT_SECRET=<set-in-env> npm run smoke:event
+```
+- [ ] `status: 200 ok=true`; `/internal/status` shows `internalEventsAccepted`
+      and `emittedEvents` incremented.
+
+### D. Browser flag test
+- [ ] Open the Vercel staging URL.
+- [ ] No secrets in console/network; no token/cookie logging.
+- [ ] `/api/realtime/token` returns a token only when both
+      `NEXT_PUBLIC_REALTIME_ENABLE` and the server-side flags are configured;
+      otherwise 404/401.
+- [ ] The browser connects only to `NEXT_PUBLIC_REALTIME_URL`.
+
+### E. Leaderboard pilot test
+- [ ] In staging, award/update a **test** tournament result via the normal
+      admin/UI path.
+- [ ] DB result is correct; leaderboard updates normally.
+- [ ] `/internal/status` counters increment: accepted internal event, emitted
+      event, emitted room count.
+- [ ] With both flags on, the browser leaderboard refreshes live.
+- [ ] With the socket disabled, the leaderboard still updates via DB polling.
+
+### F. Rollback drill
+- [ ] Set `REALTIME_ENABLE_SOCKET=false` → server receives no new app events.
+- [ ] Set `NEXT_PUBLIC_REALTIME_ENABLE=false` → browser no longer connects.
+- [ ] DB polling continues; leaderboard still updates.
+
+## 6. Pass / fail criteria
+
+**Pass only if:** no secrets in client bundle/console/network; `/internal/status`
+protected; smoke event works; the real leaderboard pilot works; rollback works;
+DB-polling fallback works; Discord bot untouched; no realtime-caused errors in
+Vercel logs; no sensitive payload in realtime events.
+
+**Fail if:** any secret appears in the client bundle/console/network; any
+private/admin room is joinable anonymously; `/internal/status` is public; the DB
+result path breaks; a realtime failure breaks the award flow; or CORS allows a
+wildcard in staging/prod mode.
+
+## 7. Evidence to collect (no secrets)
+
+- `/healthz` response.
+- `/internal/status` counters before/after the award.
+- Vercel logs showing no realtime-caused errors.
+- Leaderboard before/after screenshots.
+- Rollback confirmation.
+
+## 8. Production decision
+
+- Passing staging does **not** automatically enable production.
+- Production requires a separate go/no-go (see `PRODUCTION_DRY_RUN.md`).
+- Do **not** enable any new realtime event until the leaderboard pilot is stable
+  in production.
+
+## 9. Completed evidence — RC1 Preview verification (recorded 2026-06-10)
+
+Operator-verified RC1 run against the Vercel **Preview** environment and the
+**staging** realtime server. No secrets below.
+
+**Environment:**
+- Preview app: `https://ascendra-git-realtime-rc1-staging-abu3day.vercel.app`
+  (branch `realtime-rc1-staging`; Preview-specific auth URLs configured —
+  Discord login worked on Preview).
+- Staging realtime server: `https://realtime-staging.ascendrahub.com`
+  (`ascendra-realtime-staging.service`, app bound to `127.0.0.1:8787` behind
+  Caddy/TLS; port 8787 not publicly reachable).
+
+**Results:**
+- [x] **Server-side emit passed** — admin test-tournament result change →
+      Vercel server action emitted → `/internal/events` accepted;
+      `internalEventsAccepted`, `emittedEvents`, `emittedRooms`, and
+      `lastEventAt` all advanced on `/internal/status`.
+- [x] **Browser WebSocket passed** — `socket.io/?EIO=4&transport=websocket`
+      upgraded with status `101` against `realtime-staging.ascendrahub.com`.
+- [x] **Leaderboard live update passed** — with the Preview leaderboard open, a
+      test result change incremented the realtime counters and the leaderboard
+      refreshed live.
+- [x] **Kill-switch rollback passed** — `REALTIME_ENABLE_SOCKET=false` +
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` → WebSocket disappeared; DB-polling
+      fallback continued updating the leaderboard.
+- [x] **Production untouched** — no Production env changes; both flags were
+      returned to `false` after testing and remain off.
+
+**Status: Preview RC1 sign-off COMPLETE.** Production go-live remains a
+separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). No second realtime event is
+approved; the expansion checklist still applies.
+
+> Superseded by RC2 (§10) — RC1 remains valid history; RC2 is the current
+> verified baseline.
+
+## 10. Completed evidence — RC2 Preview verification (recorded 2026-06-11)
+
+Operator-verified RC2 run (`leaderboard.updated` + `tournament.result.updated`)
+against the Vercel **Preview** environment and the **staging** realtime server.
+Same environment as §9. No secrets below.
+
+**Results:**
+- [x] **Leaderboard live refresh passed** — leaderboard page refreshed live
+      (RC1 behavior retained under RC2).
+- [x] **Tournament page live refresh passed** — after updating a test result,
+      the same tournament's details page refreshed live via the
+      `tournament:{id}` room.
+- [x] **Room isolation passed** — a different tournament's page did **not**
+      refresh incorrectly.
+- [x] **Browser WebSocket passed** — socket connection worked throughout the
+      test.
+- [x] **Kill-switch rollback passed** — after turning the flags off, the
+      WebSocket stopped and the DB-polling fallback continued working.
+- [x] **Production untouched** — no Production env changes; Preview flags
+      returned to `REALTIME_ENABLE_SOCKET=false` and
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` and remain off.
+
+**Status: Preview RC2 sign-off COMPLETE.** Production go-live remains a
+separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
+remains disabled. No further realtime event is approved; the expansion
+checklist still applies (one event type per batch).
+
+> Superseded by RC3 (§11) — RC2 remains valid history; RC3 is the current
+> verified baseline.
+
+## 11. Completed evidence — RC3 Preview verification (recorded 2026-06-11)
+
+Operator-verified RC3 run (`leaderboard.updated` + `tournament.result.updated`
++ `tournament.bracket.generated`) against the Vercel **Preview** environment
+and the **staging** realtime server. Same environment as §9. No secrets below.
+
+**Results:**
+- [x] **Browser WebSocket passed** — socket connection worked throughout the
+      test.
+- [x] **Bracket-generated live refresh passed** — after generating the bracket
+      for a test tournament, `tournament.bracket.generated` was emitted and the
+      same tournament's page refreshed live via the `tournament:{id}` room.
+- [x] **Room isolation passed** — a different tournament's page did **not**
+      refresh incorrectly.
+- [x] **Polling fallback passed** — the DB-polling fallback remained intact.
+- [x] **Kill-switch rollback passed** — after returning both flags to `false`,
+      the WebSocket stopped and the DB-polling fallback continued working.
+- [x] **Production untouched** — no Production env changes; Preview flags
+      returned to `REALTIME_ENABLE_SOCKET=false` and
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` and remain off.
+
+**Status: Preview RC3 sign-off COMPLETE.** Production go-live remains a
+separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
+remains disabled. No further realtime event is approved; the expansion
+checklist still applies (one event type per batch).
+
+> Superseded by RC4 (§12) — RC3 remains valid history; RC4 is the current
+> verified baseline.
+
+## 12. Completed evidence — RC4 Preview verification (recorded 2026-06-11)
+
+Operator-verified RC4 run (`leaderboard.updated` + `tournament.result.updated`
++ `tournament.bracket.generated` + `tournament.status.updated`) against the
+Vercel **Preview** environment and the **staging** realtime server. Same
+environment as §9. No secrets below.
+
+**Results:**
+- [x] **Browser WebSocket passed** — socket connection worked throughout the
+      test.
+- [x] **Status-change live refresh passed** — after changing a test
+      tournament's status, `tournament.status.updated` was emitted and the
+      same tournament's page refreshed live via the `tournament:{id}` room.
+- [x] **Room isolation passed** — a different tournament's page did **not**
+      refresh incorrectly.
+- [x] **Polling fallback passed** — the DB-polling fallback remained intact.
+- [x] **Kill-switch rollback passed** — after returning both flags to `false`,
+      the WebSocket stopped and the DB-polling fallback continued working.
+- [x] **Production untouched** — no Production env changes; Preview flags
+      returned to `REALTIME_ENABLE_SOCKET=false` and
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` and remain off.
+
+**Status: Preview RC4 sign-off COMPLETE.** Production go-live remains a
+separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
+remains disabled. No further realtime event is approved; the expansion
+checklist still applies (one event type per batch).
+
+> Superseded by RC5 (§13) — RC4 remains valid history; RC5 is the current
+> verified baseline.
+
+## 13. Completed evidence — RC5 Preview verification (recorded 2026-06-11)
+
+Operator-verified RC5 run (RC4 scope + `tournament.match.report_submitted`)
+against the Vercel **Preview** environment and the **staging** realtime
+server. Same environment as §9. No secrets below.
+
+**Results:**
+- [x] **Browser WebSocket passed** — socket connection worked throughout the
+      test.
+- [x] **Match-report live refresh passed** — after submitting a normal match
+      report, `tournament.match.report_submitted` was emitted and the same
+      match's page refreshed live via the `match:{id}` room.
+- [x] **Room isolation passed** — a different match's page did **not**
+      refresh incorrectly.
+- [x] **Polling fallback passed** — the DB-polling fallback remained intact.
+- [x] **Kill-switch rollback passed** — after returning both flags to `false`,
+      the WebSocket stopped and the DB-polling fallback continued working.
+- [x] **Production untouched** — no Production env changes; Preview flags
+      returned to `REALTIME_ENABLE_SOCKET=false` and
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` and remain off.
+
+**Status: Preview RC5 sign-off COMPLETE.** Production go-live remains a
+separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
+remains disabled. No further realtime event is approved; the expansion
+checklist still applies (one event type per batch).
+
+> Superseded by RC6 (§14) — RC5 remains valid history; RC6 is the current
+> verified baseline.
+
+## 14. Completed evidence — RC6 Preview verification (recorded 2026-06-11)
+
+Operator-verified RC6 run (RC5 scope + `tournament.match.confirmed`) against
+the Vercel **Preview** environment and the **staging** realtime server. Same
+environment as §9. No secrets below.
+
+**Results:**
+- [x] **Browser WebSocket passed** — socket connection worked throughout the
+      test.
+- [x] **Match-confirmed live refresh passed** — after confirming a test
+      match, `tournament.match.confirmed` was emitted and the same match's
+      page refreshed live via the `match:{id}` room.
+- [x] **Room isolation passed** — a different match's page did **not**
+      refresh incorrectly.
+- [x] **Polling fallback passed** — the DB-polling fallback remained intact.
+- [x] **Kill-switch rollback passed** — after returning both flags to `false`,
+      the WebSocket stopped and the DB-polling fallback continued working.
+- [x] **Production untouched** — no Production env changes; Preview flags
+      returned to `REALTIME_ENABLE_SOCKET=false` and
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` and remain off.
+
+**Status: Preview RC6 sign-off COMPLETE.** Production go-live remains a
+separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
+remains disabled. No further realtime event is approved; the expansion
+checklist still applies (one event type per batch).
+
+> Superseded by RC7 (§15) — RC6 remains valid history; RC7 is the current
+> verified baseline.
+
+## 15. Completed evidence — RC7 Preview verification (recorded 2026-06-11)
+
+Operator-verified RC7 run (RC6 scope + `tournament.match.advanced`) against
+the Vercel **Preview** environment and the **staging** realtime server. Same
+environment as §9. No secrets below.
+
+**Results:**
+- [x] **Browser WebSocket passed** — socket connection worked throughout the
+      test.
+- [x] **Match-advanced live refresh passed** — after bracket advancement,
+      `tournament.match.advanced` was emitted and the same match's page
+      refreshed live via the `match:{id}` room.
+- [x] **Tournament live refresh passed** — the same tournament's details page
+      refreshed live via the `tournament:{id}` room after bracket advancement.
+- [x] **Room isolation passed** — a different match's page and a different
+      tournament's page did **not** refresh incorrectly.
+- [x] **Polling fallback passed** — the DB-polling fallback remained intact.
+- [x] **Kill-switch rollback passed** — after returning both flags to `false`,
+      the WebSocket stopped and the DB-polling fallback continued working.
+- [x] **Production untouched** — no Production env changes; Preview flags
+      returned to `REALTIME_ENABLE_SOCKET=false` and
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` and remain off.
+
+**Status: Preview RC7 sign-off COMPLETE.** Production go-live remains a
+separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
+remains disabled. No further realtime event is approved; the expansion
+checklist still applies (one event type per batch).
+
+> Superseded by RC8 (§16) — RC7 remains valid history; RC8 is the current
+> verified baseline.
+
+## 16. Completed evidence — RC8 Preview verification (recorded 2026-06-11)
+
+Operator-verified RC8 run (RC7 scope + `tournament.registration.updated`)
+against the Vercel **Preview** environment and the **staging** realtime server.
+Same environment as §9. No secrets below.
+
+**Results:**
+- [x] **Browser WebSocket passed** — socket connection worked throughout the
+      test.
+- [x] **Registration live refresh passed** — after a registration/admin
+      registration action, `tournament.registration.updated` was emitted and
+      the same tournament's details page refreshed live via the
+      `tournament:{id}` room.
+- [x] **Room isolation passed** — a different tournament's page did **not**
+      refresh incorrectly.
+- [x] **Polling fallback passed** — the DB-polling fallback remained intact.
+- [x] **Kill-switch rollback passed** — after returning both flags to `false`,
+      the WebSocket stopped and the DB-polling fallback continued working.
+- [x] **Production untouched** — no Production env changes; Preview flags
+      returned to `REALTIME_ENABLE_SOCKET=false` and
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` and remain off.
+
+**Status: Preview RC8 sign-off COMPLETE.** Production go-live remains a
+separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
+remains disabled.
+
+> Superseded by RC9 (§17) — RC8 remains valid history; RC9 is the current
+> verified baseline.
+
+## 17. Completed evidence — RC9 Preview verification (recorded 2026-06-11)
+
+Operator-verified RC9 run (RC8 scope + `notification.created` to the private
+`notifications:{userId}` room) against the Vercel **Preview** environment and
+the **staging** realtime server. Same environment as §9. No secrets below.
+
+**Results:**
+- [x] **Browser WebSocket passed** — socket connection worked throughout the
+      test.
+- [x] **Private notification delivery passed** — `notification.created` was
+      delivered through the private `notifications:{userId}` room and the
+      intended signed-in user's notification UI refreshed live from server
+      data.
+- [x] **Cross-user isolation passed** — a different signed-in user did **not**
+      receive the notification event.
+- [x] **Anonymous/private-room denial passed** — anonymous private-room access
+      remained blocked.
+- [x] **Polling fallback passed** — the DB-polling fallback remained intact.
+- [x] **Kill-switch rollback passed** — after returning both flags to `false`,
+      the WebSocket stopped and the DB-polling fallback continued working.
+- [x] **Production untouched** — no Production env changes; Preview flags
+      returned to `REALTIME_ENABLE_SOCKET=false` and
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` and remain off.
+
+**Status: Preview RC9 sign-off COMPLETE.** Production go-live remains a
+separate manual go/no-go (`PRODUCTION_DRY_RUN.md`). Anonymous browser realtime
+remains disabled.
+
+> Superseded by RC10 (§18) — RC9 remains valid history; RC10 is the current
+> verified baseline.
+
+## 18. Completed evidence — RC10 Preview verification (recorded 2026-06-12)
+
+Operator-verified RC10 run (RC9 scope + `tournaments.updated` to the new
+public `tournaments` room) against the Vercel **Preview** environment and the
+**staging** realtime server. Same environment as §9. No secrets below.
+
+**Results:**
+- [x] **Browser WebSocket passed** — socket connection worked throughout the
+      test.
+- [x] **Tournament-list live refresh passed** — after a tournament
+      list-impacting action, `tournaments.updated` was delivered through the
+      public `tournaments` room and `/tournaments` refreshed live; the
+      homepage tournament list/cards refreshed live where the consumer is
+      mounted.
+- [x] **Room isolation passed** — unrelated rooms/pages did **not** refresh
+      incorrectly.
+- [x] **Polling fallback passed** — the DB-polling/fetch fallback remained
+      intact.
+- [x] **Kill-switch rollback passed** — after returning both flags to `false`,
+      the WebSocket stopped and the DB-polling fallback continued working.
+- [x] **Production untouched** — no Production env changes; Preview flags
+      returned to `REALTIME_ENABLE_SOCKET=false` and
+      `NEXT_PUBLIC_REALTIME_ENABLE=false` and remain off.
+
+**Status: Preview RC10 sign-off COMPLETE — RC10 is the final verified realtime
+pilot baseline (LOCKED).** No further realtime event, room, emitter, or
+consumer is approved. Production go-live remains a separate manual go/no-go —
+see `docs/realtime-production-readiness.md` and `PRODUCTION_DRY_RUN.md`.
+Anonymous browser realtime remains disabled.

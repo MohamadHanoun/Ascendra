@@ -81,6 +81,7 @@ export type ProfileSectionLabels = {
   teamInvitations: string;
   noPendingInvitations: string;
   myTeams: string;
+  teamsLead: string;
   noTeamsTitle: string;
   noTeamsDescription: string;
   createTeam: string;

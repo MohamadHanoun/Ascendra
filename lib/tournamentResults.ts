@@ -7,6 +7,7 @@ import {
   createPointEvent,
 } from "@/lib/ranking/rankingService";
 import { createRealtimeEvent } from "@/lib/realtime";
+import { dispatchRealtimeEventSoon } from "@/lib/realtime/dispatchRealtime";
 
 const scoringDefaults = {
   participation: 10,
@@ -312,6 +313,29 @@ async function publishAwardRealtimeEvents(tournamentId: string) {
       payload: { tournamentId },
     }),
   ]);
+
+  // RC2 pilots (Batches 1R + 2A) — ONLY leaderboard.updated and
+  // tournament.result.updated. Additive and flag-gated (no-op unless
+  // REALTIME_ENABLE_SOCKET === "true"). The helper schedules each emit via
+  // Next.js after() so the serverless instance stays alive until it settles,
+  // without blocking this response. The DB RealtimeEvents above remain the
+  // source of truth; these never throw and cannot affect the award mutation.
+  // Minimal, ID-only payloads. The manual inline-save admin path
+  // (adminTournamentResultActions) intentionally remains polling-only.
+  dispatchRealtimeEventSoon({
+    type: "leaderboard.updated",
+    audience: "public",
+    entityType: "leaderboard",
+    entityId: "global",
+    payload: { tournamentId },
+  });
+  dispatchRealtimeEventSoon({
+    type: "tournament.result.updated",
+    audience: "public",
+    entityType: "tournament",
+    entityId: tournamentId,
+    payload: { tournamentId },
+  });
 }
 
 async function upsertTournamentResult(input: {

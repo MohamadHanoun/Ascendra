@@ -1,9 +1,14 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { useRealtimeEvents } from "@/hooks/useRealtimeEvents";
+import {
+  useRealtimePublicRoom,
+  useRealtimeSocket,
+} from "@/components/realtime/realtimeContext";
+import { shouldRefreshTournamentDetailsFromRealtimeEvent } from "@/components/tournament/tournamentRealtimeUtils";
 
 type TournamentDetailsRealtimeProps = {
   tournamentId: string;
@@ -80,6 +85,24 @@ export default function TournamentDetailsRealtime({
       }
     },
   });
+
+  // Additive socket trigger (Batch 2A — inert unless realtime is enabled and
+  // connected). Joins only the public tournament:{id} room and re-runs the
+  // same debounced router.refresh; the socket event is only used to match
+  // this tournament and is never trusted for UI state or logged.
+  useRealtimePublicRoom(`tournament:${tournamentId}`);
+  const { subscribe } = useRealtimeSocket();
+  const refreshSoonRef = useRef(refreshSoon);
+  refreshSoonRef.current = refreshSoon;
+
+  useEffect(() => {
+    const unsubscribe = subscribe((event) => {
+      if (shouldRefreshTournamentDetailsFromRealtimeEvent(event, tournamentId)) {
+        refreshSoonRef.current();
+      }
+    });
+    return unsubscribe;
+  }, [subscribe, tournamentId]);
 
   return null;
 }

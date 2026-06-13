@@ -13,6 +13,7 @@ import {
 } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { createRealtimeEvent } from "@/lib/realtime";
+import { dispatchRealtimeEventSoon } from "@/lib/realtime/dispatchRealtime";
 
 export type TournamentRegistrationActionResult = {
   ok: boolean;
@@ -206,6 +207,16 @@ function revalidateTournamentRegistrationViews(tournamentId: string) {
   revalidatePath("/admin");
 }
 
+function dispatchRegistrationUpdatedRealtime(tournamentId: string) {
+  dispatchRealtimeEventSoon({
+    type: "tournament.registration.updated",
+    audience: "public",
+    entityType: "tournament",
+    entityId: tournamentId,
+    payload: { tournamentId },
+  });
+}
+
 async function publishRegistrationRealtimeEvent(params: {
   tournamentId: string;
   teamId: string;
@@ -231,6 +242,8 @@ async function publishRegistrationRealtimeEvent(params: {
       payload: params,
     }),
   ]);
+
+  dispatchRegistrationUpdatedRealtime(params.tournamentId);
 }
 
 async function notifyRegistrationUsers(input: {
