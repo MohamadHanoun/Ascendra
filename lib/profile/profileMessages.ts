@@ -31,6 +31,7 @@ export type ProfileMessages = {
     pendingInvitations: string;
     noPendingInvitations: string;
     myTeams: string;
+    teamsLead: string;
     teamOverview: string;
     noTeamsTitle: string;
     noTeamsDescription: string;
@@ -223,6 +224,7 @@ export const profileMessages: Record<Locale, ProfileMessages> = {
       pendingInvitations: "pending invitations",
       noPendingInvitations: "No pending invitations.",
       myTeams: "My teams",
+      teamsLead: "Manage your teams and invitations.",
       teamOverview: "Team overview",
       noTeamsTitle: "No teams yet",
       noTeamsDescription: "Create your first team from the section below.",
@@ -419,6 +421,7 @@ export const profileMessages: Record<Locale, ProfileMessages> = {
       pendingInvitations: "دعوات معلقة",
       noPendingInvitations: "لا توجد دعوات معلقة.",
       myTeams: "فرقي",
+      teamsLead: "أدر فرقك ودعواتك.",
       teamOverview: "نظرة عامة على الفرق",
       noTeamsTitle: "لا توجد فرق بعد",
       noTeamsDescription: "أنشئ فريقك الأول من القسم الموجود بالأسفل.",
